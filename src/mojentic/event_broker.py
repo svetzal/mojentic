@@ -1,7 +1,7 @@
 from typing import Annotated, List
 
-from channel import Channel
-from event import Event
+from mojentic.channel import Channel
+from mojentic.event import Event
 
 
 class EventBroker:
