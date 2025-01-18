@@ -1,7 +1,7 @@
 from typing import Annotated, List
 from collections import deque
 
-from src.mojentic.event import Event
+from mojentic.event import Event
 
 
 class Channel:
