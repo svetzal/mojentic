@@ -1,0 +1,30 @@
+[project]
+name = "mojentic"
+version = "0.1.0"
+authors = [
+    { name = "Stacey Vetzal", email = "stacey@mojility.ca" },
+]
+description = "Mojentic is an agentic framework that aims to provide a simple and flexible way to assemble teams of agents to solve complex problems."
+readme = "README.md"
+requires-python = ">=3.11"
+classifiers = [
+    'Programming Language :: Python :: 3',
+    'License :: OSI Approved :: MIT License',
+    'Operating System :: OS Independent',
+]
+
+dependencies = [
+    "ollama",
+    "pydantic",
+    "pytest",
+    "pytest-mock"
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project.urls]
+Homepage = "https://github.com/mojility/mojentic"
+Issues = "https://github.com/mojility/mojentic/issues"
+
