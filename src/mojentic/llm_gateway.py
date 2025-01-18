@@ -8,7 +8,7 @@ class LLMGateway():
     def __init__(self, model: str):
         self.model = model
 
-    def generate(self, messages: List[Message], response_model: BaseModel) -> BaseModel:
+    def generate_model(self, messages: List[Message], response_model: BaseModel) -> BaseModel:
         response = chat(
             model=self.model,
             messages=messages,
