@@ -4,13 +4,11 @@ from collections import deque
 from mojentic.event import Event
 
 
-class Channel:
-    name: Annotated[str, "The name of the channel."]
-    queue: Annotated[deque[Event], "The queue of messages on the channel."] = deque()
-    subscribers: Annotated[List, "The agents subscribed to the channel."] = []
-
+class Channel():
     def __init__(self, name: str):
-        self.name = name
+        self.name: str = name
+        self.queue: Annotated[deque[Event], "The queue of messages on the channel."] = deque()
+        self.subscribers: Annotated[List, "The agents subscribed to the channel."] = []
 
     def enqueue(self, message):
         self.queue.append(message)
