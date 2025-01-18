@@ -1,8 +1,8 @@
 from typing import Annotated
 
-from mojentic.base_agent import BaseAgent
-from mojentic.event_broker import EventBroker
-from mojentic.llm_gateway import LLMGateway
+from src.mojentic.base_agent import BaseAgent
+from src.mojentic.event_broker import EventBroker
+from src.mojentic.llm_gateway import LLMGateway
 
 
 class BaseLLMAgent(BaseAgent):

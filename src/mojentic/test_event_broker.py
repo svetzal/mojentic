@@ -1,9 +1,9 @@
 import pytest
 
-from mojentic.base_agent import BaseAgent
-from mojentic.channel import Channel
-from mojentic.event import Event
-from mojentic.event_broker import EventBroker
+from src.mojentic.base_agent import BaseAgent
+from src.mojentic.channel import Channel
+from src.mojentic.event import Event
+from src.mojentic.event_broker import EventBroker
 
 
 @pytest.fixture

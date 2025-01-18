@@ -1,8 +1,8 @@
 from typing import Annotated, List
 
-from mojentic.event import Event
-from mojentic.event_broker import EventBroker
-from mojentic.tool import Tool
+from src.mojentic.event import Event
+from src.mojentic.event_broker import EventBroker
+from src.mojentic.tool import Tool
 
 
 class BaseAgent:
