@@ -7,10 +7,11 @@ from mojentic.logger import logger
 
 
 class Router:
-    def __init__(self, routes=None):
+    def __init__(self, routes=None, batch_size=5):
         if routes is None:
             routes = {}
         self.routes = routes
+        self.batch_size = batch_size
         self.event_queue = []
         self._stop_event = threading.Event()
         self._thread = threading.Thread(target=self._dispatch_events)
@@ -34,16 +35,19 @@ class Router:
 
     def _dispatch_events(self):
         while not self._stop_event.is_set():
-            logger.debug("Checking for events")
-            if len(self.event_queue) > 0:
-                logger.debug(f"{len(self.event_queue)} events in queue")
-                event = self.event_queue.pop(0)
-                logger.debug(f"Processing event: {event}")
-                agents = self.routes.get(type(event), [])
-                logger.debug(f"Found {len(agents)} agents for event type {type(event)}")
-                for agent in agents:
-                    logger.debug(f"Sending event to agent {agent}")
-                    events = agent.receive_event(event)
-                    logger.debug(f"Agent {agent} returned {len(events)} events")
+            for _ in range(self.batch_size):
+                logger.debug("Checking for events")
+                if len(self.event_queue) > 0:
+                    logger.debug(f"{len(self.event_queue)} events in queue")
+                    event = self.event_queue.pop(0)
+                    logger.debug(f"Processing event: {event}")
+                    agents = self.routes.get(type(event), [])
+                    logger.debug(f"Found {len(agents)} agents for event type {type(event)}")
+                    events = []
+                    for agent in agents:
+                        logger.debug(f"Sending event to agent {agent}")
+                        received_events = agent.receive_event(event)
+                        logger.debug(f"Agent {agent} returned {len(events)} events")
+                        events.extend(received_events)
                     self.event_queue.extend(events)
             sleep(1)
