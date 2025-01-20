@@ -21,6 +21,7 @@ class GreetingClassifiedEvent(ContentClassifiedEvent):
     pass
 
 class ClassificationCompleteEvent(Event):
+    # content: str
     classifications: List[str]
 
 
@@ -49,10 +50,10 @@ class SolicitationClassifierAgent(BaseAgent):
 
 
 class CorrelationAggregatorAgent(BaseAgent):
-    def __init__(self):
+    def __init__(self, event_types_needed=[]):
         super().__init__()
         self.results = {}
-        self.event_types_needed = []
+        self.event_types_needed = event_types_needed
 
     def _get_and_reset_results(self, event):
         results = self.results[event.correlation_id]
@@ -60,12 +61,13 @@ class CorrelationAggregatorAgent(BaseAgent):
         return results
 
     def _capture_results_if_needed(self, event):
-        if type(event) in self.event_types_needed:
-            results = self.results.get(event.correlation_id, [])
-            results.append(event)
-            self.results[event.correlation_id] = results
+        # if type(event) in self.event_types_needed:
+        results = self.results.get(event.correlation_id, [])
+        results.append(event)
+        self.results[event.correlation_id] = results
 
     def _has_all_needed(self, event):
+        self._capture_results_if_needed(event)
         event_types_captured = [type(e) for e in self.results.get(event.correlation_id, [])]
         finished = all([event_type in event_types_captured for event_type in self.event_types_needed])
         logger.debug(f"Captured: {event_types_captured}, Needed: {self.event_types_needed}, Finished: {finished}")
@@ -74,16 +76,13 @@ class CorrelationAggregatorAgent(BaseAgent):
 
 class ClassificationAggregatorAgent(CorrelationAggregatorAgent):
     def __init__(self):
-        super().__init__()
-        self.event_types_needed = [GreetingClassifiedEvent, SolicitationClassifiedEvent]
+        super().__init__([GreetingClassifiedEvent, SolicitationClassifiedEvent])
 
     def receive_event(self, event) -> [Event]:
-        # seen = self._register_correlation_id(event)
-        self._capture_results_if_needed(event)
-
         if self._has_all_needed(event):
             filtered_results = [r.classification for r in self._get_and_reset_results(event) if r.classification != "other"]
             return [ClassificationCompleteEvent(source=type(self), correlation_id=event.correlation_id,
+                                                # content=self.source_event(event).content,
                                                 classifications=filtered_results)]
         return []
 
