@@ -113,6 +113,7 @@ classifier_agent = GreetingClassifierAgent()
 classifier_agent2 = SolicitationClassifierAgent()
 aggregate_agent = ClassificationAggregatorAgent()
 
+# This is very explicitly declared, if each Agent declared what event types it can consume, we could make this reactive
 router = Router({
     ContentEvent: [classifier_agent, classifier_agent2],
     GreetingClassifiedEvent: [aggregate_agent],
