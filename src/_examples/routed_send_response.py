@@ -1,11 +1,14 @@
 from typing import List
 
 from mojentic.base_agent import BaseAgent
+from mojentic.correlation_aggregator_agent import CorrelationAggregatorAgent
 from mojentic.event import Event
 from mojentic.router import Router
 
-from mojentic.logger import logger
 
+#
+# Declare domain specific events
+#
 
 class ContentEvent(Event):
     content: str
@@ -28,6 +31,10 @@ class ClassificationCompleteEvent(Event):
     content: str
     classifications: List[str]
 
+
+#
+# Declare domain specific agents
+#
 
 class GreetingClassifierAgent(BaseAgent):
     def receive_event(self, event) -> [Event]:
@@ -63,31 +70,6 @@ class SolicitationClassifierAgent(BaseAgent):
         return output
 
 
-class CorrelationAggregatorAgent(BaseAgent):
-    def __init__(self, event_types_needed=[]):
-        super().__init__()
-        self.results = {}
-        self.event_types_needed = event_types_needed
-
-    def _get_and_reset_results(self, event):
-        results = self.results[event.correlation_id]
-        self.results[event.correlation_id] = None
-        return results
-
-    def _capture_results_if_needed(self, event):
-        # if type(event) in self.event_types_needed:
-        results = self.results.get(event.correlation_id, [])
-        results.append(event)
-        self.results[event.correlation_id] = results
-
-    def _has_all_needed(self, event):
-        self._capture_results_if_needed(event)
-        event_types_captured = [type(e) for e in self.results.get(event.correlation_id, [])]
-        finished = all([event_type in event_types_captured for event_type in self.event_types_needed])
-        logger.debug(f"Captured: {event_types_captured}, Needed: {self.event_types_needed}, Finished: {finished}")
-        return finished
-
-
 class ClassificationAggregatorAgent(CorrelationAggregatorAgent):
     def __init__(self):
         super().__init__([GreetingClassifiedEvent, SolicitationClassifiedEvent])
@@ -108,6 +90,10 @@ class OutputAgent(BaseAgent):
         return []
 
 
+#
+# Set up the system
+#
+
 output_agent = OutputAgent()
 classifier_agent = GreetingClassifierAgent()
 classifier_agent2 = SolicitationClassifierAgent()
@@ -120,6 +106,10 @@ router = Router({
     SolicitationClassifiedEvent: [aggregate_agent],
     ClassificationCompleteEvent: [output_agent]
 }, batch_size=10)
+
+#
+# Send in events!
+#
 
 router.dispatch(ContentEvent(source=str, content="Hello, World"))
 router.dispatch(ContentEvent(source=str, content="Buy now!"))
