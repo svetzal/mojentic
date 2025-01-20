@@ -12,40 +12,54 @@ class ContentEvent(Event):
 
 
 class ContentClassifiedEvent(Event):
+    content: str
     classification: str
+
 
 class SolicitationClassifiedEvent(ContentClassifiedEvent):
     pass
 
+
 class GreetingClassifiedEvent(ContentClassifiedEvent):
     pass
 
-class ClassificationCompleteEvent(Event):
-    # content: str
-    classifications: List[str]
 
+class ClassificationCompleteEvent(Event):
+    content: str
+    classifications: List[str]
 
 
 class GreetingClassifierAgent(BaseAgent):
     def receive_event(self, event) -> [Event]:
         output = []
         if "hello" in event.content.lower():
-            output.append(GreetingClassifiedEvent(source=type(self), correlation_id=event.correlation_id,
-                                                 classification="greeting"))
+            output.append(GreetingClassifiedEvent(source=type(self),
+                                                  correlation_id=event.correlation_id,
+                                                  content=event.content,
+                                                  classification="greeting"))
         else:
             output.append(
-                GreetingClassifiedEvent(source=type(self), correlation_id=event.correlation_id, classification="other"))
+                GreetingClassifiedEvent(source=type(self),
+                                        correlation_id=event.correlation_id,
+                                        content=event.content,
+                                        classification="other"))
         return output
+
 
 class SolicitationClassifierAgent(BaseAgent):
     def receive_event(self, event) -> [Event]:
         output = []
         if "buy" in event.content.lower():
-            output.append(SolicitationClassifiedEvent(source=type(self), correlation_id=event.correlation_id,
-                                                 classification="solicitation"))
+            output.append(SolicitationClassifiedEvent(source=type(self),
+                                                      correlation_id=event.correlation_id,
+                                                      content=event.content,
+                                                      classification="solicitation"))
         else:
             output.append(
-                SolicitationClassifiedEvent(source=type(self), correlation_id=event.correlation_id, classification="other"))
+                SolicitationClassifiedEvent(source=type(self),
+                                            correlation_id=event.correlation_id,
+                                            content=event.content,
+                                            classification="other"))
         return output
 
 
@@ -80,9 +94,10 @@ class ClassificationAggregatorAgent(CorrelationAggregatorAgent):
 
     def receive_event(self, event) -> [Event]:
         if self._has_all_needed(event):
-            filtered_results = [r.classification for r in self._get_and_reset_results(event) if r.classification != "other"]
+            filtered_results = [r.classification for r in self._get_and_reset_results(event) if
+                                r.classification != "other"]
             return [ClassificationCompleteEvent(source=type(self), correlation_id=event.correlation_id,
-                                                # content=self.source_event(event).content,
+                                                content=event.content,
                                                 classifications=filtered_results)]
         return []
 
