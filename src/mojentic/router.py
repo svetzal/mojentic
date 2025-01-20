@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from mojentic.logger import logger
 
+
 # This does a lot more than routing, perhaps splitting out a dispatcher or controller?
 class Router:
     def __init__(self, routes=None, batch_size=5):
