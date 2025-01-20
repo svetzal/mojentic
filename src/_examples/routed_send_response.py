@@ -45,11 +45,10 @@ class GreetingClassifierAgent(BaseAgent):
                                                   content=event.content,
                                                   classification="greeting"))
         else:
-            output.append(
-                GreetingClassifiedEvent(source=type(self),
-                                        correlation_id=event.correlation_id,
-                                        content=event.content,
-                                        classification="other"))
+            output.append(GreetingClassifiedEvent(source=type(self),
+                                                  correlation_id=event.correlation_id,
+                                                  content=event.content,
+                                                  classification="other"))
         return output
 
 
@@ -62,11 +61,10 @@ class SolicitationClassifierAgent(BaseAgent):
                                                       content=event.content,
                                                       classification="solicitation"))
         else:
-            output.append(
-                SolicitationClassifiedEvent(source=type(self),
-                                            correlation_id=event.correlation_id,
-                                            content=event.content,
-                                            classification="other"))
+            output.append(SolicitationClassifiedEvent(source=type(self),
+                                                      correlation_id=event.correlation_id,
+                                                      content=event.content,
+                                                      classification="other"))
         return output
 
 
@@ -76,8 +74,9 @@ class ClassificationAggregatorAgent(CorrelationAggregatorAgent):
 
     def receive_event(self, event) -> [Event]:
         if self._has_all_needed(event):
-            filtered_results = [r.classification for r in self._get_and_reset_results(event) if
-                                r.classification != "other"]
+            # We don't care about the "other" classifications
+            filtered_results = [r.classification for r in self._get_and_reset_results(event)
+                                if r.classification != "other"]
             return [ClassificationCompleteEvent(source=type(self), correlation_id=event.correlation_id,
                                                 content=event.content,
                                                 classifications=filtered_results)]
@@ -101,9 +100,9 @@ aggregate_agent = ClassificationAggregatorAgent()
 
 # This is very explicitly declared, if each Agent declared what event types it can consume, we could make this reactive
 router = Router({
-    ContentEvent: [classifier_agent, classifier_agent2],
-    GreetingClassifiedEvent: [aggregate_agent],
-    SolicitationClassifiedEvent: [aggregate_agent],
+    ContentEvent: [classifier_agent, classifier_agent2, output_agent],
+    GreetingClassifiedEvent: [aggregate_agent, output_agent],
+    SolicitationClassifiedEvent: [aggregate_agent, output_agent],
     ClassificationCompleteEvent: [output_agent]
 }, batch_size=10)
 
