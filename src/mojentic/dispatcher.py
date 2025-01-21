@@ -43,5 +43,6 @@ class Dispatcher:
                         received_events = agent.receive_event(event)
                         logger.debug(f"Agent {agent} returned {len(events)} events")
                         events.extend(received_events)
-                    self.event_queue.extend(events)
+                    for fe in events:
+                        self.dispatch(fe)
             sleep(1)
