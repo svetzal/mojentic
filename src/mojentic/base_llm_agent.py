@@ -1,8 +1,8 @@
 from typing import Annotated
 
 from ollama import Message
+from pydantic import BaseModel
 
-from _examples.simple_llm import ResponseModel
 from mojentic.base_agent import BaseAgent
 from mojentic.llm_gateway import LLMGateway
 
@@ -12,11 +12,12 @@ class BaseLLMAgent(BaseAgent):
     behaviour: Annotated[str, "The personality and behavioural traits of the agent."]
     instructions: Annotated[str, "The instructions for the agent to follow when receiving events."]
 
-    def __init__(self, llm: LLMGateway, behaviour: str, instructions: str):
+    def __init__(self, llm: LLMGateway, behaviour: str, instructions: str, response_model: BaseModel):
         super().__init__()
         self.llm = llm
         self.behaviour = behaviour
         self.instructions = instructions
+        self.response_model = response_model
 
     def _create_initial_messages(self):
         messages = [
@@ -32,7 +33,7 @@ class BaseLLMAgent(BaseAgent):
         ])
         response = self.llm.generate_model(
             messages=messages,
-            response_model=ResponseModel
+            response_model=self.response_model
         )
         return response
 

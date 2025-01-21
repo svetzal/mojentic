@@ -21,10 +21,11 @@ class ResponseModel(BaseModel):
 
 
 class RequestAgent(BaseLLMAgent):
-    def __init__(self, llm: LLMGateway):
+    def __init__(self, llm: LLMGateway, response_model: BaseModel):
         super().__init__(llm,
                          "You are a friendly encyclopedia, with a focus on geography.",
-                         "Respond to the user's question with a relevant answer.")
+                         "Respond to the user's question with a relevant answer.",
+                         response_model)
 
     def receive_event(self, event):
         response = self.generate_response(event.text)
@@ -37,7 +38,7 @@ class OutputAgent(BaseAgent):
         return []
 
 
-request_agent = RequestAgent(LLMGateway("llama3.1-instruct-8b-32k"))
+request_agent = RequestAgent(LLMGateway("llama3.1-instruct-8b-32k"), ResponseModel)
 output_agent = OutputAgent()
 
 router = Router({
