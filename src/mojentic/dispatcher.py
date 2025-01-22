@@ -3,6 +3,7 @@ import threading
 from time import sleep
 from uuid import uuid4
 
+from mojentic.event import TerminateEvent
 from mojentic.logger import logger
 
 
@@ -44,5 +45,7 @@ class Dispatcher:
                         logger.debug(f"Agent {agent} returned {len(events)} events")
                         events.extend(received_events)
                     for fe in events:
+                        if type(fe) == TerminateEvent:
+                            self._stop_event.set()
                         self.dispatch(fe)
             sleep(1)

@@ -15,6 +15,7 @@ class RequestEvent(Event):
 
 class ResponseEvent(Event):
     text: str
+    memory: dict
 
 
 class ResponseModel(BaseModel):
@@ -25,17 +26,24 @@ class RequestAgent(BaseLLMAgent):
     def __init__(self, llm: LLMGateway, memory: SharedWorkingMemory, response_model: BaseModel):
         super().__init__(llm,
                          memory,
-                         "You are a friendly encyclopedia, with a focus on geography.",
+                         "You are a helpful assistant, and you like to make note of new things that you learn.",
                          "Respond to the user's question with a relevant answer.",
                          response_model)
 
     def receive_event(self, event):
         response = self.generate_response(event.text)
-        return [ResponseEvent(source=type(self), correlation_id=event.correlation_id, text=response.text)]
+        return [ResponseEvent(source=type(self), correlation_id=event.correlation_id, text=response.text, memory=self.memory.get_working_memory())]
 
 
-llm = LLMGateway("llama3.1-instruct-8b-32k")
-request_agent = RequestAgent(llm, SharedWorkingMemory(), ResponseModel)
+memory = SharedWorkingMemory({
+    "User": {
+        "name": "Stacey",
+        "age": 56,
+    }
+})
+
+llm = LLMGateway("llama3.3-instruct-70b-32k")
+request_agent = RequestAgent(llm, memory, ResponseModel)
 output_agent = OutputAgent()
 
 router = Router({
@@ -44,4 +52,5 @@ router = Router({
 })
 
 dispatcher = Dispatcher(router)
-dispatcher.dispatch(RequestEvent(source=str, text="What is the capital of Canada?"))
+dispatcher.dispatch(
+    RequestEvent(source=str, text="What is my name, and how old am I? And, did you know I have a dog named Boomer, and two cats named Spot and Beau?"))
