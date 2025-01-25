@@ -4,6 +4,28 @@ complex problems. Design goals are to be asynchronous with a pubsub messaging ar
 """
 import importlib.metadata as _importlib_metadata
 
+import logging
+import structlog
+
+logging.basicConfig(level=logging.INFO)
+structlog.configure(logger_factory=structlog.stdlib.LoggerFactory(), processors=[
+    structlog.stdlib.filter_by_level,
+    structlog.stdlib.add_logger_name,
+    structlog.stdlib.add_log_level,
+    structlog.processors.TimeStamper(fmt="iso"),
+    structlog.processors.JSONRenderer()
+])
+logger = structlog.get_logger()
+logger.info("Starting logger")
+
+# logger = logging.getLogger("mojentic")
+# path = Path().cwd()
+# log_filename = path / 'output.log'
+# print(f"Logging to {log_filename}")
+# logging.basicConfig(filename=log_filename, level=logging.DEBUG)
+# logger.info("Starting logger")
+
+
 __version__: str
 try:
     __version__ = _importlib_metadata.version(__name__)

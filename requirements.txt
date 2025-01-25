@@ -1,4 +1,9 @@
-ollama
 pydantic
 pytest
 pytest-mock
+structlog
+ollama
+openai
+tiktoken
+parsedatetime
+pytz

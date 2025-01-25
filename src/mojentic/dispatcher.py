@@ -3,8 +3,11 @@ import threading
 from time import sleep
 from uuid import uuid4
 
+import structlog
+
 from mojentic.event import TerminateEvent
-from mojentic.logger import logger
+
+logger = structlog.get_logger()
 
 
 class Dispatcher:

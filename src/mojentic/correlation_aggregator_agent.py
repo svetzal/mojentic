@@ -1,5 +1,10 @@
+import logging
+
+import structlog
+
 from mojentic.base_agent import BaseAgent
-from mojentic.logger import logger
+
+logger = structlog.get_logger()
 
 
 class CorrelationAggregatorAgent(BaseAgent):
