@@ -1,8 +1,9 @@
 import structlog
 from pydantic import BaseModel
 
-from mojentic.llm.adapters import LLMGateway, OllamaGateway
-from mojentic.llm.tokenizer_gateway import TokenizerGateway
+from mojentic.llm.gateways.ollama import OllamaGateway
+from mojentic.llm.gateways.llm_gateway import LLMGateway
+from mojentic.llm.gateways.tokenizer_gateway import TokenizerGateway
 
 logger = structlog.get_logger()
 

@@ -3,7 +3,7 @@ from typing import List
 
 from pydantic import BaseModel
 
-from mojentic.llm.adapters import LLMGateway
+from mojentic.llm.gateways.llm_gateway import LLMGateway
 
 
 class LLMSize(str, Enum):
