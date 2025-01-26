@@ -1,11 +1,11 @@
 from typing import Optional
 
-from parsedatetime import Calendar
+from parsedatetime import Calendar, VERSION_CONTEXT_STYLE
 from pytz import timezone
 
 
 def resolve_date(relative_date_found: str, reference_date_in_iso8601: Optional[str] = None) -> dict[str, str]:
-    cal = Calendar()
+    cal = Calendar(version=VERSION_CONTEXT_STYLE)
 
     if reference_date_in_iso8601:
         reference_date, _ = cal.parseDT(reference_date_in_iso8601)

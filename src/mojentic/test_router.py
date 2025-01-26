@@ -10,28 +10,28 @@ def router():
     return Router()
 
 
-class TestEvent(Event):
+class SampleEvent(Event):
     pass
 
 
 def test_router_add_route(mocker, router):
     test_agent = BaseAgent()
-    router.add_route(TestEvent, test_agent)
+    router.add_route(SampleEvent, test_agent)
 
-    event = TestEvent(source=str)
+    event = SampleEvent(source=str)
     assert router.get_agents(event) == [test_agent]
 
 
 def test_router_add_multiple_agents(mocker, router):
     test_agent1 = BaseAgent()
     test_agent2 = BaseAgent()
-    router.add_route(TestEvent, test_agent1)
-    router.add_route(TestEvent, test_agent2)
+    router.add_route(SampleEvent, test_agent1)
+    router.add_route(SampleEvent, test_agent2)
 
-    event = TestEvent(source=str)
+    event = SampleEvent(source=str)
     assert router.get_agents(event) == [test_agent1, test_agent2]
 
 
 def test_router_get_agents_no_agents(mocker, router):
-    event = TestEvent(source=str)
+    event = SampleEvent(source=str)
     assert router.get_agents(event) == []
