@@ -1,0 +1,46 @@
+import os
+
+from pydantic import BaseModel, Field
+
+from mojentic.llm.gateways.openai import OpenAIGateway
+from mojentic.llm.llm_broker import LLMBroker
+from mojentic.llm.gateways.models import LLMMessage
+from mojentic.llm.tools.date_resolver import resolve_date_tool
+
+
+def openai_llm(model="gpt-4o"):
+    api_key = os.getenv("OPENAI_API_KEY")
+    gateway = OpenAIGateway(api_key)
+    llm = LLMBroker(model=model, adapter=gateway)
+    return llm
+
+
+def ollama_llm(model="llama3.3-70b-32k"):
+    llm = LLMBroker(model=model)
+    return llm
+
+
+def check_simple_textgen(llm):
+    result = llm.generate(messages=[(LLMMessage(content='Hello, how are you?'))])
+    print(result)
+
+
+def check_structured_output(llm):
+    class Sentiment(BaseModel):
+        label: str = Field(..., title="Description", description="label for the sentiment")
+
+    result = llm.generate_object([{'role': 'user', 'content': "Hello, how are you?"}], object_model=Sentiment)
+    print(result.label)
+
+
+def check_tool_use(llm):
+    result = llm.generate(messages=[(LLMMessage(content='What is the date on Friday?'))],
+                          tools=[resolve_date_tool])
+    print(result)
+
+
+check_simple_textgen(openai_llm())
+check_tool_use(openai_llm())
+
+check_simple_textgen(ollama_llm())
+check_tool_use(ollama_llm())
