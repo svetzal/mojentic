@@ -1,7 +1,11 @@
+import json
+
 import structlog
 from openai import OpenAI
 
 from mojentic.llm.gateways.llm_gateway import LLMGateway
+from mojentic.llm.gateways.models import LLMToolCall, LLMGatewayResponse
+from mojentic.llm.gateways.openai_messages_adapter import adapt_messages_to_openai
 
 logger = structlog.get_logger()
 
@@ -10,21 +14,87 @@ class OpenAIGateway(LLMGateway):
     def __init__(self, api_key):
         self.client = OpenAI(api_key=api_key)
 
-    def complete(self, **args):
+    def complete(self, **args) -> LLMGatewayResponse:
         openai_args = {
             'model': args['model'],
-            'messages': args['messages'],
+            'messages': adapt_messages_to_openai(args['messages']),
         }
 
-        if 'response_model' in args and args['response_model'] is not None:
-            openai_args['response_format'] = args['response_model']
-            response = self.client.beta.chat.completions.parse(**openai_args)
-            return {
-                'content': response.choices[0].message.content,
-                'model': response.choices[0].message.parsed,
-            }
-        else:
-            response = self.client.chat.completions.create(**openai_args)
-            return {
-                'content': response.choices[0].message.content,
-            }
+        completion = self.client.chat.completions.create
+
+        if 'object_model' in args and args['object_model'] is not None:
+            openai_args['response_format'] = args['object_model']
+            completion = self.client.beta.chat.completions.parse
+
+        if 'tools' in args and args['tools'] is not None:
+            openai_args['tools'] = [t['descriptor'] for t in args['tools']]
+
+        response = completion(**openai_args)
+
+        object = None
+        tool_calls = []
+
+        if 'object_model' in args and args['object_model'] is not None:
+            object = args['object_model'].parse(response.choices[0].message.parsed)
+
+        if response.choices[0].message.tool_calls is not None:
+            for t in response.choices[0].message.tool_calls:
+                arguments = {}
+                args_dict = json.loads(t.function.arguments)
+                for k in args_dict:
+                    arguments[str(k)] = str(args_dict[k])
+                tool_call = LLMToolCall(id=t.id, name=t.function.name, arguments=arguments)
+                tool_calls.append(tool_call)
+
+        return LLMGatewayResponse(
+            content=response.choices[0].message.content,
+            object=object,
+            tool_calls=tool_calls,
+        )
+
+# response = client.chat.completions.create(
+#  model="gpt-4o",
+#  messages=[
+#    {
+#      "role": "user",
+#      "content": [
+#        {
+#          "type": "text",
+#          "text": "Tell me the date on Friday"
+#        }
+#      ]
+#    },
+#    {
+#      "role": "assistant",
+#      "tool_calls": [
+#        {
+#          "id": "call_o6bKcEAWDuyF2AeTQ2dcVc20",
+#          "type": "function",
+#          "function": {
+#            "name": "resolve_date",
+#            "arguments": "{\"relative_date_found\":\"Friday\"}"
+#          }
+#        }
+#      ]
+#    },
+#    {
+#      "role": "tool",
+#      "content": [
+#        {
+#          "type": "text",
+#          "text": "2025-01-31"
+#        }
+#      ],
+#      "tool_call_id": "call_o6bKcEAWDuyF2AeTQ2dcVc20"
+#    },
+#    {
+#      "role": "assistant",
+#      "content": [
+#        {
+#          "type": "text",
+#          "text": "The date on Friday is January 31, 2025."
+#        }
+#      ]
+#    }
+#  ],
+#

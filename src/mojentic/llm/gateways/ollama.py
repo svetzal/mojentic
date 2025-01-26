@@ -2,6 +2,8 @@ import structlog
 from ollama import Options, ChatResponse, chat
 
 from mojentic.llm.gateways.llm_gateway import LLMGateway
+from mojentic.llm.gateways.models import LLMToolCall, LLMGatewayResponse
+from mojentic.llm.gateways.ollama_messages_adapter import adapt_messages_to_ollama
 
 logger = structlog.get_logger()
 
@@ -16,35 +18,42 @@ class OllamaGateway(LLMGateway):
             options.num_predict = args['num_predict']
         return options
 
-    def complete(self, **args):
+    def complete(self, **args) -> LLMGatewayResponse:
         logger.info("Delegating to Ollama for completion", **args)
 
         options = self._extract_options_from_args(args)
 
         ollama_args = {
             'model': args['model'],
-            'messages': args['messages'],
+            'messages': adapt_messages_to_ollama(args['messages']),
             'options': options
         }
 
-        if 'response_model' in args and args['response_model'] is not None:
-            ollama_args['format'] = args['response_model'].model_json_schema()
+        if 'object_model' in args and args['object_model'] is not None:
+            ollama_args['format'] = args['object_model'].model_json_schema()
 
-        if 'tools' in args:
+        if 'tools' in args and args['tools'] is not None:
             ollama_args['tools'] = [t['descriptor'] for t in args['tools']]
 
         response: ChatResponse = chat(**ollama_args)
 
         object = None
-        if 'response_model' in args:
+        tool_calls = []
+
+        if 'object_model' in args:
             try:
-                object = args['response_model'].model_validate_json(response.message.content)
+                object = args['object_model'].model_validate_json(response.message.content)
             except Exception as e:
                 logger.error("Failed to validate model in", error=str(e), response=response.message.content,
-                             response_model=args['response_model'])
+                             object_model=args['object_model'])
 
-        return {
-            'content': response.message.content,
-            'object': object,
-            'tool_calls': response.message.tool_calls
-        }
+        if response.message.tool_calls is not None:
+            tool_calls = [LLMToolCall(name=t.function.name,
+                                      arguments={str(k): str(t.function.arguments[k]) for k in t.function.arguments}) \
+                          for t in response.message.tool_calls]
+
+        return LLMGatewayResponse(
+            content=response.message.content,
+            object=object,
+            tool_calls=tool_calls,
+        )

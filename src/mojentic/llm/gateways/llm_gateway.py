@@ -1,6 +1,6 @@
-class LLMGateway:
-    def complete(self, **args):
-        raise NotImplementedError
+from mojentic.llm.gateways.models import LLMGatewayResponse
 
-    def complete_with_object(self, **args):
+
+class LLMGateway:
+    def complete(self, **args) -> LLMGatewayResponse:
         raise NotImplementedError

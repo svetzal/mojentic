@@ -69,9 +69,9 @@ class BaseLLMAgentWithMemory(BaseLLMAgent):
         messages.extend([
             {"role": "user", "content": content},
         ])
-        response = self.llm.generate_model(
+        response = self.llm.generate_object(
             messages=messages,
-            response_model=ResponseWithMemory
+            object_model=ResponseWithMemory
         )
         self.memory.merge_to_working_memory(response.memory)
 

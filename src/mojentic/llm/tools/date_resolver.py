@@ -27,6 +27,7 @@ resolve_date_tool = {
         "function": {
             "name": "resolve_date",
             "description": "Convert text that specifies a relative date, and convert it to an absolute date.",
+            # "strict": True,
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -39,7 +40,8 @@ resolve_date_tool = {
                         "description": "The date from which the resolved date should be calculated. If not provided, the current date is used."
                     }
                 },
-                "required": ["relevant_date_found"]
+                "additionalProperties": False,
+                "required": ["relative_date_found"]
             },
         },
     },
