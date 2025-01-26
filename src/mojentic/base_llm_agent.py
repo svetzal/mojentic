@@ -54,11 +54,8 @@ class BaseLLMAgentWithMemory(BaseLLMAgent):
     def _create_initial_messages(self):
         messages = super()._create_initial_messages()
         messages.extend([
-            {
-                "role": "user",
-                "content": f"This is what you remember:\n{json.dumps(self.memory.get_working_memory(), indent=2)}\n\nAdd anything new you learn to your working memory."
-            },
-            {"role": "user", "content": self.instructions},
+            LLMMessage(content=f"This is what you remember:\n{json.dumps(self.memory.get_working_memory(), indent=2)}\n\nAdd anything new you learn to your working memory."),
+            LLMMessage(role=MessageRole.User, content=self.instructions),
         ])
         return messages
 
@@ -69,7 +66,7 @@ class BaseLLMAgentWithMemory(BaseLLMAgent):
 
         messages = self._create_initial_messages()
         messages.extend([
-            {"role": "user", "content": content},
+            LLMMessage(content=content),
         ])
         response = self.llm.generate_object(
             messages=messages,

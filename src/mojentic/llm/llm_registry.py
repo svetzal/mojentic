@@ -14,7 +14,7 @@ class LLMSize(str, Enum):
     giant = 'giant'
 
 
-class LLMCapability(BaseModel):
+class LLMCapability(str, Enum):
     tool_use = "tool_use"
     structured_output = "structured_output"
 
