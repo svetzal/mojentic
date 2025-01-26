@@ -13,7 +13,7 @@ def adapt_messages_to_openai(messages: List[LLMMessage]):
     for m in messages:
         if m.role == MessageRole.System:
             new_messages.append({'role': 'system', 'content': m.content})
-        if m.role == MessageRole.User:
+        elif m.role == MessageRole.User:
             new_messages.append({'role': 'user', 'content': m.content})
         elif m.role == MessageRole.Assistant:
             msg = {'role': 'assistant', 'content': m.content or ''}
