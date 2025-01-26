@@ -2,6 +2,18 @@ from mojentic.llm.gateways.models import LLMMessage, MessageRole, LLMToolCall
 from mojentic.llm.gateways.ollama_messages_adapter import adapt_messages_to_ollama
 
 
+def test_simple_system_message():
+    messages = [LLMMessage(role=MessageRole.System, content="This is a system message")]
+
+    adapted_messages = adapt_messages_to_ollama(messages)
+
+    assert adapted_messages == [
+        {
+            'role': 'system',
+            'content': 'This is a system message'
+        }
+    ]
+
 def test_simple_user_message():
     messages = [LLMMessage(role=MessageRole.User, content="Hello, how are you?")]
 

@@ -33,7 +33,10 @@ class BaseLLMAgent(BaseAgent):
         messages = self._create_initial_messages()
         messages.append(LLMMessage(content=content))
 
-        response = self.llm.generate(messages, response_model=self.response_model, tools=self.tools)
+        if self.response_model is not None:
+            response = self.llm.generate_object(messages, object_model=self.response_model)
+        else:
+            response = self.llm.generate(messages, tools=self.tools)
 
         return response
 
