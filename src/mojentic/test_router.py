@@ -1,5 +1,3 @@
-from time import sleep
-
 import pytest
 
 from mojentic.base_agent import BaseAgent

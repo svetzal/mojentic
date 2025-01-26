@@ -1,5 +1,3 @@
-import logging
-
 import structlog
 
 from mojentic.base_agent import BaseAgent

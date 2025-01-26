@@ -7,8 +7,10 @@ from mojentic.llm.gateways.openai import OpenAIGateway
 api_key = os.getenv("OPENAI_API_KEY")
 gateway = OpenAIGateway(api_key)
 
+
 class Feeling(BaseModel):
     label: str = Field(..., description="The label describing the feeling.")
+
 
 response = gateway.complete(
     model="gpt-4o-mini",

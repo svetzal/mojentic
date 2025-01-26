@@ -48,7 +48,7 @@ class Dispatcher:
                         logger.debug(f"Agent {agent} returned {len(events)} events")
                         events.extend(received_events)
                     for fe in events:
-                        if type(fe) == TerminateEvent:
+                        if type(fe) is TerminateEvent:
                             self._stop_event.set()
                         self.dispatch(fe)
             sleep(1)

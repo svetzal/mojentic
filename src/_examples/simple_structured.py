@@ -4,7 +4,6 @@ from mojentic.base_llm_agent import BaseLLMAgent
 from mojentic.dispatcher import Dispatcher
 from mojentic.event import Event
 from mojentic.llm.llm_broker import LLMBroker
-from mojentic.llm.tools.date_resolver import resolve_date_tool
 from mojentic.output_agent import OutputAgent
 from mojentic.router import Router
 
@@ -16,6 +15,7 @@ class RequestEvent(Event):
 class CapitolCityModel(BaseModel):
     country: str = Field(..., description="The name of the country")
     capitol_city: str = Field(..., description="The name of the capitol city")
+
 
 class ResponseEvent(Event):
     capitol: CapitolCityModel

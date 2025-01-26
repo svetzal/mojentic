@@ -36,7 +36,8 @@ resolve_date_tool = {
                     },
                     "reference_date_in_iso8601": {
                         "type": "string",
-                        "description": "The date from which the resolved date should be calculated, in YYYY-MM-DD format. If not provided, the current date is used."
+                        "description": "The date from which the resolved date should be calculated, in YYYY-MM-DD"
+                                       " format. If not provided, the current date is used."
                     }
                 },
                 "additionalProperties": False,

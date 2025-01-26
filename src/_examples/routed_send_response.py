@@ -99,7 +99,8 @@ classifier_agent = GreetingClassifierAgent()
 classifier_agent2 = SolicitationClassifierAgent()
 aggregate_agent = ClassificationAggregatorAgent()
 
-# - This is very explicitly declared, if each Agent declared what event types it can consume, we could make this reactive
+# - This is very explicitly declared, if each Agent declared what event types it can consume, we could make this
+#   reactive
 # - We must send the same aggregate_agent in for both Greeting and Solicitation classified events, or it can't aggregate
 #   across them!
 router = Router({

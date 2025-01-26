@@ -49,7 +49,7 @@ class OllamaGateway(LLMGateway):
 
         if response.message.tool_calls is not None:
             tool_calls = [LLMToolCall(name=t.function.name,
-                                      arguments={str(k): str(t.function.arguments[k]) for k in t.function.arguments}) \
+                                      arguments={str(k): str(t.function.arguments[k]) for k in t.function.arguments})
                           for t in response.message.tool_calls]
 
         return LLMGatewayResponse(

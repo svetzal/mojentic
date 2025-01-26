@@ -56,7 +56,7 @@ class LLMRegistry:
         self.llms.append(entry)
 
     def find_first(self, size: LLMSize, type: LLMType, capabiilties: List[LLMCapability]) -> LLMRegistryEntry:
-        return next((llm for llm in self.llms \
-                     if llm.capabilities.size == size \
-                         and llm.capabilities.type == type \
-                         and all([llm.capabilities.supports(capability) for capability in capabiilties])), None)
+        return next((llm for llm in self.llms
+                     if llm.capabilities.size == size
+                     and llm.capabilities.type == type
+                     and all([llm.capabilities.supports(capability) for capability in capabiilties])), None)

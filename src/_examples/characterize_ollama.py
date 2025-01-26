@@ -1,5 +1,3 @@
-import json
-
 from ollama import chat
 from pydantic import BaseModel, Field
 

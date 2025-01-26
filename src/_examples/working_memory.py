@@ -26,13 +26,21 @@ class RequestAgent(BaseLLMAgentWithMemory):
     def __init__(self, llm: LLMBroker, memory: SharedWorkingMemory, response_model: BaseModel):
         super().__init__(llm,
                          memory,
-                         "You are a helpful assistant, and you like to make note of new things that you learn.",
+                         "You are a helpful assistant, and you like to make note of new things"
+                         " that you learn.",
                          "Answer the user's question, use what you know, and what you remember.",
                          response_model)
 
     def receive_event(self, event):
         response = self.generate_response(event.text)
-        return [ResponseEvent(source=type(self), correlation_id=event.correlation_id, text=response.text, memory=self.memory.get_working_memory())]
+        return [
+            ResponseEvent(
+                source=type(self),
+                correlation_id=event.correlation_id,
+                text=response.text,
+                memory=self.memory.get_working_memory()
+            )
+        ]
 
 
 memory = SharedWorkingMemory({
@@ -53,4 +61,6 @@ router = Router({
 
 dispatcher = Dispatcher(router)
 dispatcher.dispatch(
-    RequestEvent(source=str, text="What is my name, and how old am I? And, did you know I have a dog named Boomer, and two cats named Spot and Beau?"))
+    RequestEvent(source=str,
+                 text="What is my name, and how old am I? And, did you know I have a dog named Boomer, and two cats"
+                      " named Spot and Beau?"))

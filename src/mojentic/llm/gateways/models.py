@@ -19,13 +19,13 @@ class LLMToolCall(BaseModel):
 
 class LLMMessage(BaseModel):
     role: MessageRole = MessageRole.User
-    content: Optional[Union[str, dict[str,str]]] = None
+    content: Optional[Union[str, dict[str, str]]] = None
     object: Optional[BaseModel] = None
     tool_calls: Optional[List[LLMToolCall]] = None
 
 
 class LLMGatewayResponse(BaseModel):
-    content: Optional[Union[str, dict[str,str]]] = Field(None, description="The content of the response.")
+    content: Optional[Union[str, dict[str, str]]] = Field(None, description="The content of the response.")
     object: Optional[BaseModel] = Field(None, description="Parsed response object")
     tool_calls: List[LLMToolCall] = Field(default_factory=list,
                                           description="List of requested tool calls from the llm.")

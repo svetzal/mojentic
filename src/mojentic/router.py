@@ -11,5 +11,3 @@ class Router:
 
     def get_agents(self, event):
         return self.routes.get(type(event), [])
-
-

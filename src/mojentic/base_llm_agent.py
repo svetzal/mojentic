@@ -1,7 +1,6 @@
 import json
 from typing import Annotated, Optional, Type
 
-from ollama import Message
 from pydantic import BaseModel, Field
 
 from mojentic.base_agent import BaseAgent
@@ -14,7 +13,8 @@ class BaseLLMAgent(BaseAgent):
     llm: LLMBroker
     behaviour: Annotated[str, "The personality and behavioural traits of the agent."]
 
-    def __init__(self, llm: LLMBroker, behaviour: str = "You are a helpful assistant.", response_model: Optional[Type[BaseModel]] = None):
+    def __init__(self, llm: LLMBroker, behaviour: str = "You are a helpful assistant.",
+                 response_model: Optional[Type[BaseModel]] = None):
         super().__init__()
         self.llm = llm
         self.behaviour = behaviour
@@ -54,7 +54,8 @@ class BaseLLMAgentWithMemory(BaseLLMAgent):
     def _create_initial_messages(self):
         messages = super()._create_initial_messages()
         messages.extend([
-            LLMMessage(content=f"This is what you remember:\n{json.dumps(self.memory.get_working_memory(), indent=2)}\n\nAdd anything new you learn to your working memory."),
+            LLMMessage(content=f"This is what you remember:\n{json.dumps(self.memory.get_working_memory(), indent=2)}"
+                               f"\n\nAdd anything new you learn to your working memory."),
             LLMMessage(role=MessageRole.User, content=self.instructions),
         ])
         return messages
