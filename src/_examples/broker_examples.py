@@ -40,7 +40,9 @@ def check_tool_use(llm):
 
 
 check_simple_textgen(openai_llm())
+check_structured_output(openai_llm())
 check_tool_use(openai_llm())
 
 check_simple_textgen(ollama_llm())
+check_structured_output(ollama_llm())
 check_tool_use(ollama_llm())
