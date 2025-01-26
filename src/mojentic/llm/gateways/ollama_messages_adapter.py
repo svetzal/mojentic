@@ -11,6 +11,8 @@ logger = structlog.get_logger()
 def adapt_messages_to_ollama(messages: List[LLMMessage]):
     new_messages: List[dict[str, str]] = []
     for m in messages:
+        if m.role == MessageRole.System:
+            new_messages.append({'role': 'system', 'content': m.content})
         if m.role == MessageRole.User:
             new_messages.append({'role': 'user', 'content': m.content})
         elif m.role == MessageRole.Assistant:

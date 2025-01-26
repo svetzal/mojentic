@@ -5,6 +5,7 @@ from ollama import Message
 from pydantic import BaseModel, Field
 
 from mojentic.base_agent import BaseAgent
+from mojentic.llm.gateways.models import LLMMessage, MessageRole
 from mojentic.llm.llm_broker import LLMBroker
 from mojentic.shared_working_memory import SharedWorkingMemory
 
@@ -22,7 +23,7 @@ class BaseLLMAgent(BaseAgent):
 
     def _create_initial_messages(self):
         return [
-            {'role': 'system', 'content': self.behaviour},
+            LLMMessage(role=MessageRole.System, content=self.behaviour),
         ]
 
     def add_tool(self, tool):
@@ -30,9 +31,7 @@ class BaseLLMAgent(BaseAgent):
 
     def generate_response(self, content):
         messages = self._create_initial_messages()
-        messages.extend([
-            {"role": "user", "content": content},
-        ])
+        messages.append(LLMMessage(content=content))
 
         response = self.llm.generate(messages, response_model=self.response_model, tools=self.tools)
 

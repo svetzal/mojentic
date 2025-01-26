@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 
 class MessageRole(Enum):
+    System = 'system'
     User = 'user'
     Assistant = 'assistant'
     Tool = 'tool'
