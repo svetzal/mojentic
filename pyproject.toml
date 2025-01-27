@@ -1,8 +1,8 @@
 [project]
 name = "mojentic"
-version = "0.1.0"
+version = "0.2.0"
 authors = [
-    { name = "Stacey Vetzal", email = "stacey@mojility.ca" },
+    { name = "Stacey Vetzal", email = "stacey@vetzal.com" },
 ]
 description = "Mojentic is an agentic framework that aims to provide a simple and flexible way to assemble teams of agents to solve complex problems."
 readme = "README.md"
@@ -14,10 +14,14 @@ classifiers = [
 ]
 
 dependencies = [
-    "ollama",
     "pydantic",
-    "pytest",
-    "pytest-mock"
+    "structlog",
+    "ollama",
+    "openai",
+    "tiktoken",
+    "parsedatetime",
+    "pytz",
+    "serpapi",
 ]
 
 [build-system]
