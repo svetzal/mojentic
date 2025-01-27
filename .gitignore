@@ -1,5 +1,6 @@
 .idea
 dist
+site
 .venv
 __pycache__
 *.log
