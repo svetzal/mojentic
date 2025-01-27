@@ -19,7 +19,7 @@ listen for and what events it will emit.
 
 Let's start with something simple.
 
-```python
+```py { linenums=1 }
 from mojentic import Event
 
 
@@ -35,7 +35,7 @@ The BaseLLMAgent provides a convenient way to make a call to an LLM, using its `
 sent to the agent through the `receive_event` method, and any events it wishes to push back into the system are created
 and returned.
 
-```python
+```py { linenums=12 }
 from mojentic.agents import BaseLLMAgent
 from mojentic.llm import LLMBroker
 
@@ -45,7 +45,7 @@ class GeographyExpertAgent(BaseLLMAgent):
         super().__init__(
             llm,
             "You are a friendly encyclopedia,"  # This will be the
-            " specializing in geography.")  # system prompt
+            " specializing in geography.")      # system prompt
 
     def receive_event(self, event):
         # event.text contains the user's input, used as a prompt for the LLM
@@ -57,7 +57,7 @@ class GeographyExpertAgent(BaseLLMAgent):
             ResponseEvent(
                 source=type(self),
                 correlation_id=event.correlation_id,  # include the source
-                # event's correlation_id
+                                                      # event's correlation_id
                 text=response)
         ]
 ```
@@ -69,19 +69,19 @@ Let's prepare to set the agent in motion.
 Because we're extending the BaseLLMAgent, first we need to define the LLM that we'll use. By default, Mojentic will use
 a local Ollama instance, and look for the name of the model you specify when creating the `LLMBroker`.
 
-```python
+```py { linenums=38 }
 llm = LLMBroker("llama3.1-instruct-8b-32k")
 ```
 
 We'll create our agent with a reference to the LLM we want it to use.
 
-```python
+```py { linenums=39 }
 geo_agent = GeographyExpertAgent(llm)
 ```
 
 Let's include an OutputAgent, which will just print any incoming events to the console.
 
-```python
+```py { linenums=42 }
 from mojentic.agents import OutputAgent
 
 output_agent = OutputAgent()
@@ -89,7 +89,7 @@ output_agent = OutputAgent()
 
 Now, let's use the Router to define the flow of events through the system.
 
-```python
+```py { linenums=47 }
 from mojentic import Router
 
 router = Router({
@@ -105,13 +105,13 @@ router = Router({
 
 The Dispatcher manages event propagation through the system, to each agent in its own thread.
 
-```python
+```py { linenums=59 }
 dispatcher = Dispatcher(router)
 ```
 
 Finally, let's inject a new event into the system.
 
-```python
+```py { linenums=60 }
 dispatcher.dispatch(
     RequestEvent(
         source=str,

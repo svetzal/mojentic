@@ -45,7 +45,7 @@ results.
 
 If you're using Ollama, the simplest way to instantiate an [LLMBroker] is:
 
-```python
+```py { linenums=1 }
 from mojentic.llm import LLMBroker
 
 llm = LLMBroker("llama3.3")
@@ -59,7 +59,7 @@ The [LLMBroker] can be initialized with an explicit gateway, which will be used 
 
 In this case connect to a local Ollama instance that has the `llama3.3` model available.
 
-```python
+```py { linenums=1 }
 from mojentic.llm import LLMBroker
 from mojentic.llm.gateways import OllamaGateway
 
@@ -68,7 +68,7 @@ llm = LLMBroker("llama3.3", gateway=OllamaGateway())
 
 If you want to connect to an Ollama instance on a different computer or server, you can specify the host and port:
 
-```python
+```py { linenums=1 }
 from mojentic.llm import LLMBroker
 from mojentic.llm.gateways import OllamaGateway
 
@@ -80,7 +80,7 @@ llm = LLMBroker(
 
 You can also pass through any headers you may need for authentication or other purposes:
 
-```python
+```py { linenums=1 }
 from mojentic.llm import LLMBroker
 from mojentic.llm.gateways import OllamaGateway
 
@@ -97,7 +97,7 @@ llm = LLMBroker(
 
 If you have access to an OpenAI model, you can use the [OpenAIGateway] to connect to it.
 
-```python
+```py { linenums=1 }
 import os
 from mojentic.llm import LLMBroker
 from mojentic.llm.gateways import OpenAIGateway

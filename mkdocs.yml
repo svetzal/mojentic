@@ -1,16 +1,29 @@
 site_name: Mojentic
 theme:
   name: material
+  features:
+    - content.code.copy
+    - content.code.select
 plugins:
   - search
   - autorefs
   - mkdocstrings:
       handlers:
         python:
-          paths: ["src"]
+          paths: [ "src" ]
           options:
             annotations_path: brief
       enable_inventory: true
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+
 nav:
   - Home: index.md
   - Using LLMs: broker.md
