@@ -1,0 +1,20 @@
+site_name: Mojentic
+theme:
+  name: material
+plugins:
+  - search
+  - autorefs
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: ["src"]
+          options:
+            annotations_path: brief
+      enable_inventory: true
+nav:
+  - Home: index.md
+  - Using LLMs: broker.md
+  - API Documentation: api.md
+
+repo_name: mojility/mojentic
+repo_url: https://github.com/mojility/mojentic
