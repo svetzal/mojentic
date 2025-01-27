@@ -11,7 +11,7 @@ from mojentic.llm.tools.date_resolver import resolve_date_tool
 def openai_llm(model="gpt-4o"):
     api_key = os.getenv("OPENAI_API_KEY")
     gateway = OpenAIGateway(api_key)
-    llm = LLMBroker(model=model, adapter=gateway)
+    llm = LLMBroker(model=model, gateway=gateway)
     return llm
 
 

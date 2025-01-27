@@ -16,16 +16,16 @@ class LLMBroker():
     tokenizer: TokenizerGateway
     model: str
 
-    def __init__(self, model: str, adapter: LLMGateway = None, tokenizer: TokenizerGateway = None):
+    def __init__(self, model: str, gateway: LLMGateway = None, tokenizer: TokenizerGateway = None):
         self.model = model
         if tokenizer is None:
             self.tokenizer = TokenizerGateway()
         else:
             self.tokenizer = tokenizer
-        if adapter is None:
+        if gateway is None:
             self.adapter = OllamaGateway()
         else:
-            self.adapter = adapter
+            self.adapter = gateway
 
     def generate(self, messages: List[LLMMessage], tools=None, temperature=1.0, num_ctx=32768, num_predict=-1) -> str:
         approximate_tokens = len(self.tokenizer.encode(self._content_to_count(messages)))

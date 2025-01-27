@@ -1,7 +1,7 @@
 from typing import List
 
-from mojentic.base_agent import BaseAgent
-from mojentic.correlation_aggregator_agent import CorrelationAggregatorAgent
+from mojentic.agents.base_agent import BaseAgent
+from mojentic.agents.correlation_aggregator_agent import CorrelationAggregatorAgent
 from mojentic.event import Event
 from mojentic.router import Router
 from mojentic.dispatcher import Dispatcher

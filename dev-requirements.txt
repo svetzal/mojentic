@@ -1,0 +1,6 @@
+pytest
+pytest-mock
+
+mkdocs
+mkdocstrings[python]
+mkdocs-material

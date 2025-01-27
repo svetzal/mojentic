@@ -1,12 +1,12 @@
 from pydantic import BaseModel
 
-from mojentic.base_llm_agent import BaseLLMAgentWithMemory
+from mojentic.agents.base_llm_agent import BaseLLMAgentWithMemory
 from mojentic.dispatcher import Dispatcher
 from mojentic.event import Event
 from mojentic.llm.llm_broker import LLMBroker
-from mojentic.output_agent import OutputAgent
+from mojentic.agents.output_agent import OutputAgent
 from mojentic.router import Router
-from mojentic.shared_working_memory import SharedWorkingMemory
+from mojentic.context.shared_working_memory import SharedWorkingMemory
 
 
 class RequestEvent(Event):

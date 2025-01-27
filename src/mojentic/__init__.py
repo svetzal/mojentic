@@ -7,6 +7,12 @@ import importlib.metadata as _importlib_metadata
 import logging
 import structlog
 
+
+from .dispatcher import Dispatcher
+from .event import Event
+from .router import Router
+
+
 logging.basicConfig(level=logging.INFO)
 structlog.configure(logger_factory=structlog.stdlib.LoggerFactory(), processors=[
     structlog.stdlib.filter_by_level,

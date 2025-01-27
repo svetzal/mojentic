@@ -1,7 +1,7 @@
 import pytest
 from pydantic import BaseModel
 
-from mojentic.base_llm_agent import BaseLLMAgent
+from mojentic.agents.base_llm_agent import BaseLLMAgent
 from mojentic.event import Event
 from mojentic.llm.gateways.models import MessageRole, LLMMessage
 from mojentic.llm.llm_broker import LLMBroker

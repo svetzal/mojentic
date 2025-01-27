@@ -1,8 +1,8 @@
-from mojentic.base_llm_agent import BaseLLMAgent
+from mojentic.agents.base_llm_agent import BaseLLMAgent
 from mojentic.dispatcher import Dispatcher
 from mojentic.event import Event
 from mojentic.llm.llm_broker import LLMBroker
-from mojentic.output_agent import OutputAgent
+from mojentic.agents.output_agent import OutputAgent
 from mojentic.router import Router
 
 
@@ -17,7 +17,7 @@ class ResponseEvent(Event):
 class RequestAgent(BaseLLMAgent):
     def __init__(self, llm: LLMBroker):
         super().__init__(llm,
-                         "You are a friendly encyclopedia, with a focus on geography.")
+                         "You are a friendly encyclopedia, specializing in geography.")
 
     def receive_event(self, event):
         response = self.generate_response(event.text)
@@ -34,4 +34,4 @@ router = Router({
 })
 
 dispatcher = Dispatcher(router)
-dispatcher.dispatch(RequestEvent(source=str, text="What is the capital of Canada?"))
+dispatcher.dispatch(RequestEvent(source=str, text="What is the capitol of Canada?"))

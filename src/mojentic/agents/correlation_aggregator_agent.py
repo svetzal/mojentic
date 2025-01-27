@@ -1,6 +1,6 @@
 import structlog
 
-from mojentic.base_agent import BaseAgent
+from mojentic.agents.base_agent import BaseAgent
 
 logger = structlog.get_logger()
 

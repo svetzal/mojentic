@@ -1,5 +1,5 @@
 import structlog
-from ollama import Options, ChatResponse, chat
+from ollama import Client, Options, ChatResponse
 
 from mojentic.llm.gateways.llm_gateway import LLMGateway
 from mojentic.llm.gateways.models import LLMToolCall, LLMGatewayResponse
@@ -9,6 +9,9 @@ logger = structlog.get_logger()
 
 
 class OllamaGateway(LLMGateway):
+    def __init__(self, host="http://localhost:11434", headers={}):
+        self.client = Client(host=host, headers=headers)
+
     def _extract_options_from_args(self, args):
         options = Options(
             temperature=args['temperature'],
@@ -35,7 +38,7 @@ class OllamaGateway(LLMGateway):
         if 'tools' in args and args['tools'] is not None:
             ollama_args['tools'] = [t['descriptor'] for t in args['tools']]
 
-        response: ChatResponse = chat(**ollama_args)
+        response: ChatResponse = self.client.chat(**ollama_args)
 
         object = None
         tool_calls = []

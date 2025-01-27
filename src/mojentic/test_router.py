@@ -1,6 +1,6 @@
 import pytest
 
-from mojentic.base_agent import BaseAgent
+from mojentic.agents.base_agent import BaseAgent
 from mojentic.event import Event
 from mojentic.router import Router
 
