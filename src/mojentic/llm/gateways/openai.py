@@ -27,7 +27,7 @@ class OpenAIGateway(LLMGateway):
             completion = self.client.beta.chat.completions.parse
 
         if 'tools' in args and args['tools'] is not None:
-            openai_args['tools'] = [t['descriptor'] for t in args['tools']]
+            openai_args['tools'] = [t.descriptor for t in args['tools']]
 
         response = completion(**openai_args)
 

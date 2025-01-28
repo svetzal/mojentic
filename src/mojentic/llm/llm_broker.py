@@ -42,13 +42,12 @@ class LLMBroker():
         if result.tool_calls and tools is not None:
             logger.info("Tool call requested")
             for tool_call in result.tool_calls:
-                if function_descriptor := next((t for t in tools if
-                                                t['descriptor']['function']['name'] == tool_call.name),
+                if tool := next((t for t in tools if
+                                                t.matches(tool_call.name)),
                                                None):
                     logger.info('Calling function', function=tool_call.name)
                     logger.info('Arguments:', arguments=tool_call.arguments)
-                    python_function = function_descriptor["python_function"]
-                    output = python_function(**tool_call.arguments)
+                    output = tool.run(**tool_call.arguments)
                     logger.info('Function output', output=output)
                     messages.append(LLMMessage(role=MessageRole.Assistant, tool_calls=[tool_call]))
                     messages.append(LLMMessage(role=MessageRole.Tool, content=output, tool_calls=[tool_call]))

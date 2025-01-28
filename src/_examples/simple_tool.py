@@ -4,7 +4,7 @@ from mojentic.agents.base_llm_agent import BaseLLMAgent
 from mojentic.dispatcher import Dispatcher
 from mojentic.event import Event
 from mojentic.llm.llm_broker import LLMBroker
-from mojentic.llm.tools.date_resolver import resolve_date_tool
+from mojentic.llm.tools.date_resolver import ResolveDateTool
 from mojentic.agents.output_agent import OutputAgent
 from mojentic.router import Router
 
@@ -25,7 +25,7 @@ class RequestAgent(BaseLLMAgent):
     def __init__(self, llm: LLMBroker):
         super().__init__(llm,
                          "You are a helpful assistant.")
-        self.add_tool(resolve_date_tool)
+        self.add_tool(ResolveDateTool())
 
     def receive_event(self, event):
         response = self.generate_response(event.text)

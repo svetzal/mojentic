@@ -1,4 +1,4 @@
-from mojentic.llm.tools.date_resolver import resolve_date
+from mojentic.llm.tools.date_resolver import resolve_date, DateResolverTool
 
 
 def test_resolve_date_without_reference():

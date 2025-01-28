@@ -1,6 +1,7 @@
 from mojentic.agents.base_llm_agent import BaseLLMAgent
 from mojentic.dispatcher import Dispatcher
 from mojentic.event import Event
+from mojentic.llm.gateways import OllamaGateway
 from mojentic.llm.llm_broker import LLMBroker
 from mojentic.agents.output_agent import OutputAgent
 from mojentic.router import Router
@@ -25,6 +26,7 @@ class RequestAgent(BaseLLMAgent):
 
 
 llm = LLMBroker("llama3.1-instruct-8b-32k")
+# llm = LLMBroker("llama3.1:8b", gateway=OllamaGateway(host="http://odin.local:11434"))
 request_agent = RequestAgent(llm)
 output_agent = OutputAgent()
 

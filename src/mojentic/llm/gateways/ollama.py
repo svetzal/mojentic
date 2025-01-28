@@ -36,7 +36,7 @@ class OllamaGateway(LLMGateway):
             ollama_args['format'] = args['object_model'].model_json_schema()
 
         if 'tools' in args and args['tools'] is not None:
-            ollama_args['tools'] = [t['descriptor'] for t in args['tools']]
+            ollama_args['tools'] = [t.descriptor for t in args['tools']]
 
         response: ChatResponse = self.client.chat(**ollama_args)
 
