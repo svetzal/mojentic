@@ -4,8 +4,8 @@ from pydantic import BaseModel, Field
 
 from mojentic.llm.gateways.openai import OpenAIGateway
 from mojentic.llm.llm_broker import LLMBroker
-from mojentic.llm.gateways.models import LLMMessage
-from mojentic.llm.tools.date_resolver import resolve_date_tool
+from mojentic.llm.gateways.models import LLMMessage, MessageRole
+from mojentic.llm.tools.date_resolver import ResolveDateTool
 
 
 def openai_llm(model="gpt-4o"):
@@ -29,13 +29,13 @@ def check_structured_output(llm):
     class Sentiment(BaseModel):
         label: str = Field(..., title="Description", description="label for the sentiment")
 
-    result = llm.generate_object([{'role': 'user', 'content': "Hello, how are you?"}], object_model=Sentiment)
+    result = llm.generate_object(messages=[LLMMessage(content="Hello, how are you?")], object_model=Sentiment)
     print(result.label)
 
 
 def check_tool_use(llm):
     result = llm.generate(messages=[(LLMMessage(content='What is the date on Friday?'))],
-                          tools=[resolve_date_tool])
+                          tools=[ResolveDateTool()])
     print(result)
 
 

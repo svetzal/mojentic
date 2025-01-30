@@ -1,3 +1,4 @@
+import json
 from typing import List
 
 import structlog
@@ -50,7 +51,7 @@ class LLMBroker():
                     output = tool.run(**tool_call.arguments)
                     logger.info('Function output', output=output)
                     messages.append(LLMMessage(role=MessageRole.Assistant, tool_calls=[tool_call]))
-                    messages.append(LLMMessage(role=MessageRole.Tool, content=output, tool_calls=[tool_call]))
+                    messages.append(LLMMessage(role=MessageRole.Tool, content=json.dumps(output), tool_calls=[tool_call]))
                     # {'role': 'tool', 'content': str(output), 'name': tool_call.name, 'tool_call_id': tool_call.id})
                     return self.generate(messages, tools, temperature, num_ctx, num_predict)
                 else:
@@ -60,14 +61,14 @@ class LLMBroker():
 
         return result.content
 
-    def _content_to_count(self, messages):
+    def _content_to_count(self, messages: List[LLMMessage]):
         content = ""
         for message in messages:
-            if 'content' in message and message['content']:
-                content += message['content']
+            if message.content:
+                content += message.content
         return content
 
-    def generate_object(self, messages, object_model, temperature=1.0, num_ctx=32768, num_predict=-1) -> BaseModel:
+    def generate_object(self, messages: List[LLMMessage], object_model, temperature=1.0, num_ctx=32768, num_predict=-1) -> BaseModel:
         approximate_tokens = len(self.tokenizer.encode(self._content_to_count(messages)))
         logger.info(f"Requesting llm response with approx {approximate_tokens} tokens")
         result = self.adapter.complete(model=self.model, messages=messages, object_model=object_model,

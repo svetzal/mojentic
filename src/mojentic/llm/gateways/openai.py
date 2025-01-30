@@ -35,7 +35,7 @@ class OpenAIGateway(LLMGateway):
         tool_calls = []
 
         if 'object_model' in args and args['object_model'] is not None:
-            object = args['object_model'].parse(response.choices[0].message.parsed)
+            object = response.choices[0].message.parsed
 
         if response.choices[0].message.tool_calls is not None:
             for t in response.choices[0].message.tool_calls:
