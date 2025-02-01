@@ -11,10 +11,30 @@ logger = structlog.get_logger()
 
 
 class OpenAIGateway(LLMGateway):
+    """
+    This class is a gateway to the OpenAI LLM service.
+
+    Args:
+        api_key (str): The OpenAI API key to use.
+    """
     def __init__(self, api_key):
         self.client = OpenAI(api_key=api_key)
 
     def complete(self, **args) -> LLMGatewayResponse:
+        """
+        This method completes the LLM request by delegating to the Ollama service.
+
+        Args:
+            model (str): The name of the model to use, as appears in `ollama list`
+            messages (List[LLMMessage]): A list of messages to send to the LLM.
+            object_model (Optional[BaseModel]): The model to use for validating the response.
+            tools (List[LLMTool]): A list of tools to use with the LLM. If a tool call is requested, the tool will be called and the output will be included in the response.
+            temperature (float): The temperature to use for the response. Defaults to 1.0
+            num_ctx (int): The number of context tokens to use. Defaults to 32768.
+            num_predict (int): The number of tokens to predict. Defaults to no limit.
+        Returns:
+            LLMGatewayResponse: The response from the Ollama service.
+        """
         openai_args = {
             'model': args['model'],
             'messages': adapt_messages_to_openai(args['messages']),
