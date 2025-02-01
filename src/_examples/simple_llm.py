@@ -25,7 +25,9 @@ class RequestAgent(BaseLLMAgent):
         return [ResponseEvent(source=type(self), correlation_id=event.correlation_id, text=response)]
 
 
-llm = LLMBroker("llama3.1-instruct-8b-32k")
+# llm = LLMBroker("deepseek-r1:70b")
+# llm = LLMBroker("llama3.1-instruct-8b-32k")
+llm = LLMBroker("qwen2.5:0.5b")
 # llm = LLMBroker("llama3.1:8b", gateway=OllamaGateway(host="http://odin.local:11434"))
 request_agent = RequestAgent(llm)
 output_agent = OutputAgent()

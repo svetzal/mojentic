@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from pydantic import BaseModel
 
@@ -23,24 +24,27 @@ class ResponseEvent(Event):
 class ResponseModel(BaseModel):
     text: str
 
+base_dir = Path(__file__).parent.parent.parent.parent / "code-playground"
 
 class RequestAgent(BaseLLMAgent):
     def __init__(self, llm: LLMBroker):
         super().__init__(llm,
                          "You are a helpful assistant.")
-        self.add_tool(ReadFileTool("/tmp"))
-        self.add_tool(WriteFileTool("/tmp"))
+        self.add_tool(ReadFileTool(str(base_dir)))
+        self.add_tool(WriteFileTool(str(base_dir)))
 
     def receive_event(self, event):
         response = self.generate_response(event.text)
         return [ResponseEvent(source=type(self), correlation_id=event.correlation_id, text=response)]
 
-with open("/tmp/ernie.md", 'w') as file:
-    file.write("""
-# Ernie the Caterpillar
-
-This is an unfinished story about Ernie, the most adorable and colourful caterpillar.
-""".strip())
+# with open(base_dir / "spec.md", 'w') as file:
+#     file.write("""
+# Primes
+#
+# You are to write some python code that will generate the first 100 prime numbers.
+#
+# Store the code in a file called primes.py
+# """.strip())
 
 #
 # OK this example is fun, it shows trying to make 2 consecutive
@@ -52,14 +56,11 @@ This is an unfinished story about Ernie, the most adorable and colourful caterpi
 #
 
 
-# llm = LLMBroker("llama3.3-70b-32k")
-# llm = LLMBroker("llama3.1:70b")
-# llm = LLMBroker("llama3.1:8b")
-llm = LLMBroker("qwen2.5:7b")
+# llm = LLMBroker("qwen2.5-coder:32b")
 # llm = LLMBroker("llama3.3")
-# api_key = os.getenv("OPENAI_API_KEY")
-# gateway = OpenAIGateway(api_key)
-# llm = LLMBroker(model="gpt-4o-mini", gateway=gateway)
+api_key = os.getenv("OPENAI_API_KEY")
+gateway = OpenAIGateway(api_key)
+llm = LLMBroker(model="gpt-4o", gateway=gateway)
 request_agent = RequestAgent(llm)
 output_agent = OutputAgent()
 
@@ -69,5 +70,16 @@ router = Router({
 })
 
 dispatcher = Dispatcher(router)
-dispatcher.dispatch(RequestEvent(source=str, text="Step 1 - Read the unfinished story in ernie.md\n"
-                                                  "Step 2 - Complete the story and store it in ernie2.md"))
+dispatcher.dispatch(RequestEvent(source=str, text="""
+# Mandelbrodt Set
+
+You are to implement a program that will generate an image of the Mandelbrot set.
+
+The program should be written in Swift for macOS utilizing SwiftUI.
+
+The program should generate an image of the Mandelbrot set and display it in a window.
+
+Generate any files you require to store the source code.
+
+Generate a README.md file that includes instructions on how to run the program.
+"""))

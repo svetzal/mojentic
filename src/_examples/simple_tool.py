@@ -31,8 +31,9 @@ class RequestAgent(BaseLLMAgent):
         response = self.generate_response(event.text)
         return [ResponseEvent(source=type(self), correlation_id=event.correlation_id, text=response)]
 
-
-llm = LLMBroker("llama3.3-70b-32k")
+# llm = LLMBroker("deepseek-r1:70b")
+# llm = LLMBroker("llama3.3-70b-32k")
+llm = LLMBroker("qwen2.5:7b")
 request_agent = RequestAgent(llm)
 output_agent = OutputAgent()
 

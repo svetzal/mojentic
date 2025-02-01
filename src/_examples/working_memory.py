@@ -23,13 +23,13 @@ class ResponseModel(BaseModel):
 
 
 class RequestAgent(BaseLLMAgentWithMemory):
-    def __init__(self, llm: LLMBroker, memory: SharedWorkingMemory, response_model: BaseModel):
+    def __init__(self, llm: LLMBroker, memory: SharedWorkingMemory):
         super().__init__(llm,
                          memory,
                          "You are a helpful assistant, and you like to make note of new things"
                          " that you learn.",
                          "Answer the user's question, use what you know, and what you remember.",
-                         response_model)
+                         ResponseModel)
 
     def receive_event(self, event):
         response = self.generate_response(event.text)
@@ -50,8 +50,9 @@ memory = SharedWorkingMemory({
     }
 })
 
-llm = LLMBroker("llama3.3-instruct-70b-32k")
-request_agent = RequestAgent(llm, memory, ResponseModel)
+llm = LLMBroker("deepseek-r1:70b")
+# llm = LLMBroker("llama3.3-instruct-70b-32k")
+request_agent = RequestAgent(llm, memory)
 output_agent = OutputAgent()
 
 router = Router({

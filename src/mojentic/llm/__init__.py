@@ -1,2 +1,2 @@
 from .llm_broker import LLMBroker
-from .llm_registry import LLMRegistry
+from mojentic.llm.registry.llm_registry import LLMRegistry
