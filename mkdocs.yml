@@ -11,8 +11,16 @@ plugins:
       handlers:
         python:
           paths: [ "src" ]
+          import:
+            - https://docs.python.org/3/objects.inv
+            - https://docs.pydantic.dev/latest/objects.inv
+            - https://jcristharif.com/msgspec//objects.inv
           options:
+            docstring_style: "numpy"
+            heading_level: 1
             annotations_path: brief
+            extensions:
+              - griffe_fieldz
       enable_inventory: true
 
 markdown_extensions:
@@ -28,7 +36,10 @@ nav:
   - Home: index.md
   - Getting Started: get_started.md
   - Using LLMs: broker.md
-  - API Documentation: api.md
+  - API Documentation:
+    - Intro: api_0.md
+    - Layer 1: api_1.md
+    - Layer 2: api_2.md
 
 repo_name: mojility/mojentic
 repo_url: https://github.com/mojility/mojentic

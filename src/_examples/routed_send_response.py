@@ -1,7 +1,7 @@
 from typing import List
 
 from mojentic.agents.base_agent import BaseAgent
-from mojentic.agents.correlation_aggregator_agent import CorrelationAggregatorAgent
+from mojentic.agents.correlation_aggregator_agent import BaseAggregatingAgent
 from mojentic.event import Event
 from mojentic.router import Router
 from mojentic.dispatcher import Dispatcher
@@ -69,7 +69,7 @@ class SolicitationClassifierAgent(BaseAgent):
         return output
 
 
-class ClassificationAggregatorAgent(CorrelationAggregatorAgent):
+class ClassificationAggregatorAgent(BaseAggregatingAgent):
     def __init__(self):
         super().__init__([GreetingClassifiedEvent, SolicitationClassifiedEvent])
 

@@ -5,7 +5,7 @@ from mojentic.agents.base_agent import BaseAgent
 logger = structlog.get_logger()
 
 
-class CorrelationAggregatorAgent(BaseAgent):
+class BaseAggregatingAgent(BaseAgent):
     def __init__(self, event_types_needed=[]):
         super().__init__()
         self.results = {}

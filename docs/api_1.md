@@ -1,8 +1,4 @@
-# API Reference
-
-Here is the API reference for the publicly available elements of the library.
-
-## Level 0 Modules - LLM Abstraction
+# Layer 1 - LLM Abstraction
 
 ::: mojentic.llm.LLMBroker
     options:
@@ -28,16 +24,20 @@ Here is the API reference for the publicly available elements of the library.
         merge_init_into_class: false
         group_by_category: false
 
-## Level 1 Modules - Simple Agent Mechanics
-
-::: mojentic.agents.BaseAgent
+::: mojentic.llm.gateways.models.LLMMessage
     options:
         show_root_heading: true
         merge_init_into_class: false
         group_by_category: false
 
-::: mojentic.agents.BaseLLMAgent
+::: mojentic.llm.gateways.models.LLMToolCall
+    options:
+        show_root_heading: true
+        merge_init_into_class: false
+        group_by_category: false
 
-::: mojentic.agents.CorrelationAggregatorAgent
-
-::: mojentic.agents.OutputAgent
+::: mojentic.llm.gateways.models.LLMGatewayResponse
+    options:
+        show_root_heading: true
+        merge_init_into_class: false
+        group_by_category: false
