@@ -96,14 +96,14 @@ def test_assistant_message_with_tool_call(tool_name, tool_arguments):
 
 
 def test_tool_response_message(tool_call):
-    messages = [LLMMessage(role=MessageRole.Tool, content={"date": "Friday"}, tool_calls=[tool_call])]
+    messages = [LLMMessage(role=MessageRole.Tool, content='{"date": "Friday"}', tool_calls=[tool_call])]
 
     adapted_messages = adapt_messages_to_openai(messages)
 
     assert adapted_messages == [
         {
             'role': 'tool',
-            'content': json.dumps({"date": "Friday"}),
+            'content': '{"date": "Friday"}',
             'tool_call_id': tool_call.id
         }
     ]

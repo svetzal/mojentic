@@ -30,7 +30,7 @@ def adapt_messages_to_ollama(messages: List[LLMMessage]):
         elif m.role == MessageRole.Tool:
             new_messages.append({
                 'role': 'tool',
-                'content': json.dumps(m.content),
+                'content': m.content,
             })
         else:
             logger.error("Unknown message role", role=m.role)

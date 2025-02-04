@@ -1,3 +1,5 @@
+import json
+
 from mojentic.llm.gateways.models import LLMMessage, MessageRole, LLMToolCall
 from mojentic.llm.gateways.ollama_messages_adapter import adapt_messages_to_ollama
 
@@ -73,7 +75,7 @@ def test_assistant_message_with_tool_call():
 
 
 def test_tool_response_message():
-    messages = [LLMMessage(role=MessageRole.Tool, content={"date": "Friday"})]
+    messages = [LLMMessage(role=MessageRole.Tool, content=json.dumps({"date": "Friday"}))]
 
     adapted_messages = adapt_messages_to_ollama(messages)
 

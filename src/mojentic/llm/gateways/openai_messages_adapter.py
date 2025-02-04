@@ -30,7 +30,7 @@ def adapt_messages_to_openai(messages: List[LLMMessage]):
         elif m.role == MessageRole.Tool:
             new_messages.append({
                 'role': 'tool',
-                'content': json.dumps(m.content),
+                'content': m.content,
                 'tool_call_id': m.tool_calls[0].id
             })
         else:
