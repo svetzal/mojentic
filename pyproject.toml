@@ -1,6 +1,6 @@
 [project]
 name = "mojentic"
-version = "0.2.0"
+version = "0.2.1"
 authors = [
     { name = "Stacey Vetzal", email = "stacey@vetzal.com" },
 ]
@@ -34,4 +34,3 @@ where = ["src"]
 [project.urls]
 Homepage = "https://github.com/mojility/mojentic"
 Issues = "https://github.com/mojility/mojentic/issues"
-
