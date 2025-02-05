@@ -7,8 +7,8 @@ logger = structlog.get_logger()
 
 
 class TokenizerGateway:
-    def __init__(self):
-        self.tokenizer = tiktoken.get_encoding("cl100k_base")
+    def __init__(self, model: str = "cl100k_base"):
+        self.tokenizer = tiktoken.get_encoding(model)
 
     def encode(self, text: str) -> List:
         logger.debug("encode", text=text)
