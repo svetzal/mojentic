@@ -13,3 +13,7 @@ class TokenizerGateway:
     def encode(self, text: str) -> List:
         logger.debug("encode", text=text)
         return self.tokenizer.encode(text)
+
+    def decode(self, tokens: List) -> str:
+        logger.debug("decode", tokens=tokens)
+        return self.tokenizer.decode(tokens)
