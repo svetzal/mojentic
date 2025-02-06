@@ -15,6 +15,9 @@ At this layer we have:
   Gateway, and is the primary interface for interacting with the LLM on the other side. The LLMBroker correctly handles
   text generation, structured output, and tool use.
 
+- [ChatSession](api_1.md#mojentic.llm.ChatSession): This is a simple class that wraps the LLMBroker and provides a
+  conversational interface to the LLM with context size management. It is a good starting point for building a chatbot.
+
 - [OllamaGateway](api_1.md#mojentic.llm.OllamaGateway), [OpenAIGateway](api_1.md#mojentic.llm.OpenAIGateway): These are
   out-of-the-box adapters that will interact with models available through
   Ollama and OpenAI.

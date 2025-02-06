@@ -16,7 +16,6 @@ class LLMBroker():
     """
     This class is responsible for managing interaction with a Large Language Model. It abstracts the user
     from the specific mechanics of the LLM and provides a common interface for generating responses.
-
     """
 
     adapter: LLMGateway

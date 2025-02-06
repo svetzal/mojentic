@@ -6,6 +6,12 @@
         merge_init_into_class: false
         group_by_category: false
 
+::: mojentic.llm.ChatSession
+    options:
+        show_root_heading: true
+        merge_init_into_class: false
+        group_by_category: false
+
 ::: mojentic.llm.gateways.LLMGateway
     options:
         show_root_heading: true
