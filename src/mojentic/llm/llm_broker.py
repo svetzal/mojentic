@@ -26,10 +26,14 @@ class LLMBroker():
         """
         Create an instance of the LLMBroker.
 
-        Args:
-            model (str): The name of the model to use.
-            gateway (Optional[LLMGateway]): The gateway to use for communication with the LLM. If None, a gateway is created that will utilize a local Ollama server.
-            tokenizer (Optional[TokenizerGateway]): The gateway to use for tokenization. This is used to log approximate token counts for the LLM calls. If None, `mxbai-embed-large` is used on a local Ollama server.
+        Parameters
+        ----------
+        model
+            The name of the model to use.
+        gateway
+            The gateway to use for communication with the LLM. If None, a gateway is created that will utilize a local Ollama server.
+        tokenizer
+            The gateway to use for tokenization. This is used to log approximate token counts for the LLM calls. If None, `mxbai-embed-large` is used on a local Ollama server.
         """
         self.model = model
         if tokenizer is None:
@@ -45,15 +49,23 @@ class LLMBroker():
         """
         Generate a text response from the LLM.
 
-        Args:
-            messages (List[LLMMessage]): A list of messages to send to the LLM.
-            tools (List[LLMTool]): A list of tools to use with the LLM. If a tool call is requested, the tool will be called and the output will be included in the response.
-            temperature (float): The temperature to use for the response. Defaults to 1.0
-            num_ctx (int): The number of context tokens to use. Defaults to 32768.
-            num_predict (int): The number of tokens to predict. Defaults to no limit.
+        Parameters
+        ----------
+        messages : LLMMessage
+            A list of messages to send to the LLM.
+        tools : List[Tool]
+            A list of tools to use with the LLM. If a tool call is requested, the tool will be called and the output will be included in the response.
+        temperature : float
+            The temperature to use for the response. Defaults to 1.0
+        num_ctx : int
+            The number of context tokens to use. Defaults to 32768.
+        num_predict : int
+            The number of tokens to predict. Defaults to no limit.
 
-        Returns:
-            str: The response from the LLM.
+        Returns
+        -------
+        str
+            The response from the LLM.
         """
         approximate_tokens = len(self.tokenizer.encode(self._content_to_count(messages)))
         logger.info(f"Requesting llm response with approx {approximate_tokens} tokens")
@@ -100,15 +112,23 @@ class LLMBroker():
         """
         Generate a structured response from the LLM and return it as an object.
 
-        Args:
-            messages (List[LLMMessage]): A list of messages to send to the LLM.
-            object_model (BaseModel): The class of the model to use for the structured response data.
-            temperature (float): The temperature to use for the response. Defaults to 1.0
-            num_ctx (int): The number of context tokens to use. Defaults to 32768.
-            num_predict (int): The number of tokens to predict. Defaults to no limit.
+        Parameters
+        ----------
+        messages : List[LLMMessage]
+            A list of messages to send to the LLM.
+        object_model : BaseModel
+            The class of the model to use for the structured response data.
+        temperature : float
+            The temperature to use for the response. Defaults to 1.0.
+        num_ctx : int
+            The number of context tokens to use. Defaults to 32768.
+        num_predict : int
+            The number of tokens to predict. Defaults to no limit.
 
-        Returns:
-            BaseModel: An instance of the model class provided containing the structured response data.
+        Returns
+        -------
+        BaseModel
+            An instance of the model class provided containing the structured response data.
         """
         approximate_tokens = len(self.tokenizer.encode(self._content_to_count(messages)))
         logger.info(f"Requesting llm response with approx {approximate_tokens} tokens")

@@ -25,12 +25,18 @@ class ChatSession:
         """
         Create an instance of the ChatSession.
 
-        Args:
-            llm (LLMBroker): The broker to use for generating responses.
-            system_prompt (Optional[str]): The prompt to use for the system messages. Defaults to "You are a helpful assistant."
-            max_context (Optional[int]): The maximum number of tokens to keep in the context. Defaults to 32768.
-            tokenizer_gateway (Optional[TokenizerGateway]): The gateway to use for tokenization. If None, `mxbai-embed-large` is used on a local Ollama server.
-            temperature (float): The temperature to use for the response. Defaults to 1.0
+        Parameters
+        ----------
+        llm : LLMBroker
+            The broker to use for generating responses.
+        system_prompt : str, optional
+            The prompt to use for the system messages. Defaults to "You are a helpful assistant."
+        max_context : int, optional
+            The maximum number of tokens to keep in the context. Defaults to 32768.
+        tokenizer_gateway : TokenizerGateway, optional
+            The gateway to use for tokenization. If None, `mxbai-embed-large` is used on a local Ollama server.
+        temperature : float, optional
+            The temperature to use for the response. Defaults to 1.0.
         """
 
         self.llm = llm
@@ -49,11 +55,15 @@ class ChatSession:
         """
         Send a query to the LLM and return the response. Also records the query and response in the ongoing chat session.
 
-        Args:
-            query (str): The query to send to the LLM.
+        Parameters
+        ----------
+        query : str
+            The query to send to the LLM.
 
-        Returns:
-            str: The response from the LLM.
+        Returns
+        -------
+        str
+            The response from the LLM.
         """
         self.insert_message(LLMMessage(role=MessageRole.User, content=query))
         response = self.llm.generate(self.messages, temperature=0.1)
@@ -64,8 +74,10 @@ class ChatSession:
         """
         Add a message onto the end of the chat session. If the total token count exceeds the max context, the oldest messages are removed.
 
-        Args:
-            message (LLMMessage): The message to add to the chat session.
+        Parameters
+        ----------
+        message : LLMMessage
+            The message to add to the chat session.
         """
         self.messages.append(self._build_sized_message(message))
         total_length = sum([msg.token_length for msg in self.messages])
