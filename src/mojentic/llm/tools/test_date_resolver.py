@@ -2,6 +2,7 @@ import pytest
 
 from mojentic.llm.tools.date_resolver import ResolveDateTool
 
+
 @pytest.fixture
 def tool():
     return ResolveDateTool()

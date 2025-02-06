@@ -19,6 +19,7 @@ class OpenAIGateway(LLMGateway):
     api_key : str
         The OpenAI API key to use.
     """
+
     def __init__(self, api_key):
         self.client = OpenAI(api_key=api_key)
 
@@ -35,7 +36,8 @@ class OpenAIGateway(LLMGateway):
         object_model : Optional[BaseModel]
             The model to use for validating the response.
         tools : Optional[List[LLMTool]]
-            A list of tools to use with the LLM. If a tool call is requested, the tool will be called and the output will be included in the response.
+            A list of tools to use with the LLM. If a tool call is requested, the tool will be called and the output
+            will be included in the response.
         temperature : float, optional
             The temperature to use for the response. Defaults to 1.0.
         num_ctx : int, optional

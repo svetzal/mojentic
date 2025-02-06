@@ -24,7 +24,9 @@ class ResponseEvent(Event):
 class ResponseModel(BaseModel):
     text: str
 
+
 base_dir = Path(__file__).parent.parent.parent.parent / "code-playground"
+
 
 class RequestAgent(BaseLLMAgent):
     def __init__(self, llm: LLMBroker):
@@ -36,6 +38,7 @@ class RequestAgent(BaseLLMAgent):
     def receive_event(self, event):
         response = self.generate_response(event.text)
         return [ResponseEvent(source=type(self), correlation_id=event.correlation_id, text=response)]
+
 
 # with open(base_dir / "spec.md", 'w') as file:
 #     file.write("""

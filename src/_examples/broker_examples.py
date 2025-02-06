@@ -2,9 +2,9 @@ import os
 
 from pydantic import BaseModel, Field
 
+from mojentic.llm.gateways.models import LLMMessage
 from mojentic.llm.gateways.openai import OpenAIGateway
 from mojentic.llm.llm_broker import LLMBroker
-from mojentic.llm.gateways.models import LLMMessage, MessageRole
 from mojentic.llm.tools.date_resolver import ResolveDateTool
 
 

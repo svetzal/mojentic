@@ -11,12 +11,15 @@ from mojentic.llm.gateways.models import LLMMessage, MessageRole, LLMGatewayResp
 def mock_gateway(mocker):
     return mocker.MagicMock()
 
+
 @pytest.fixture
 def llm_broker(mock_gateway):
     return LLMBroker(model="test-model", gateway=mock_gateway)
 
+
 class DummyModel(BaseModel):
     pass
+
 
 def test_generate_simple_message(llm_broker, mock_gateway):
     test_response_content = "I am fine, thank you!"
@@ -27,6 +30,7 @@ def test_generate_simple_message(llm_broker, mock_gateway):
 
     assert result == test_response_content
     mock_gateway.complete.assert_called_once()
+
 
 def test_generate_with_tool_call(llm_broker, mock_gateway, mocker):
     messages = [LLMMessage(role=MessageRole.User, content="What is the date on Friday?")]
@@ -47,6 +51,7 @@ def test_generate_with_tool_call(llm_broker, mock_gateway, mocker):
     assert result == "The date is Friday."
     assert mock_gateway.complete.call_count == 2
     mock_tool.run.assert_called_once_with(date="Friday")
+
 
 def test_generate_object(llm_broker, mock_gateway):
     messages = [LLMMessage(role=MessageRole.User, content="Analyze this text.")]

@@ -16,7 +16,8 @@ organic_search_tool = {
         "type": "function",
         "function": {
             "name": "organic_search",
-            "description": "Search the Internet for information matching the given query and return the organic search results.",
+            "description":
+                "Search the Internet for information matching the given query and return the organic search results.",
             "parameters": {
                 "type": "object",
                 "properties": {

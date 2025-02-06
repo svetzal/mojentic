@@ -9,7 +9,7 @@ from mojentic.llm.llm_broker import LLMBroker
 from mojentic.context.shared_working_memory import SharedWorkingMemory
 
 
-class   BaseLLMAgent(BaseAgent):
+class BaseLLMAgent(BaseAgent):
     llm: LLMBroker
     behaviour: Annotated[str, "The personality and behavioural traits of the agent."]
 

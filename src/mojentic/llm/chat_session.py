@@ -53,7 +53,8 @@ class ChatSession:
 
     def send(self, query):
         """
-        Send a query to the LLM and return the response. Also records the query and response in the ongoing chat session.
+        Send a query to the LLM and return the response. Also records the query and response in the ongoing chat
+        session.
 
         Parameters
         ----------
@@ -72,7 +73,8 @@ class ChatSession:
 
     def insert_message(self, message: LLMMessage):
         """
-        Add a message onto the end of the chat session. If the total token count exceeds the max context, the oldest messages are removed.
+        Add a message onto the end of the chat session. If the total token count exceeds the max context, the oldest
+        messages are removed.
 
         Parameters
         ----------

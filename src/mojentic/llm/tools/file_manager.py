@@ -15,6 +15,7 @@ class FilesystemGateway:
         with open(os.path.join(path, file_name), 'w') as f:
             f.write(content)
 
+
 class FileManager:
     def __init__(self, path: str, fs=None):
         self.path: str = path
@@ -29,6 +30,7 @@ class FileManager:
 
     def write(self, file_name, content):
         self.fs.write(self.path, file_name, content)
+
 
 class ListFilesTool(FileManager):
     def run(self, extension):
@@ -55,6 +57,7 @@ class ListFilesTool(FileManager):
                 },
             },
         }
+
 
 class ReadFileTool(LLMTool):
     def __init__(self, path: str, fs=None):
@@ -84,6 +87,7 @@ class ReadFileTool(LLMTool):
                 },
             },
         }
+
 
 class WriteFileTool(LLMTool):
     def __init__(self, path: str, fs=None):

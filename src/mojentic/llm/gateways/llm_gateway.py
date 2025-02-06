@@ -12,6 +12,7 @@ class LLMGateway:
 
     To create a new gateway, inherit from this class and implement the `complete` method.
     """
+
     def complete(self,
                  model: str,
                  messages: List[LLMMessage],
@@ -32,7 +33,8 @@ class LLMGateway:
         object_model : Optional[BaseModel]
             The model to use for validating the response.
         tools : Optional[List[LLMTool]]
-            A list of tools to use with the LLM. If a tool call is requested, the tool will be called and the output will be included in the response.
+            A list of tools to use with the LLM. If a tool call is requested, the tool will be called and the output
+            will be included in the response.
         temperature : float
             The temperature to use for the response. Defaults to 1.0.
         num_ctx : int

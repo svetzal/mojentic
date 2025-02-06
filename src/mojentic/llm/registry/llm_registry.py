@@ -1,6 +1,6 @@
 import re
 from enum import Enum
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -54,16 +54,16 @@ class LLMRegistry:
                      llm.characteristics.tools == tools and llm.characteristics.structured_output == structured_output),
                     None)
 
-    def find_fastest(self, tools: Optional[bool] = None, structured_output: Optional[bool] = None) -> Optional[
-        LLMRegistryEntry]:
+    def find_fastest(self, tools: Optional[bool] = None, structured_output: Optional[bool] = None) \
+            -> Optional[LLMRegistryEntry]:
         return self._find_by_criteria(tools, structured_output, reverse=False)
 
-    def find_smartest(self, tools: Optional[bool] = None, structured_output: Optional[bool] = None) -> Optional[
-        LLMRegistryEntry]:
+    def find_smartest(self, tools: Optional[bool] = None, structured_output: Optional[bool] = None) \
+            -> Optional[LLMRegistryEntry]:
         return self._find_by_criteria(tools, structured_output, reverse=True)
 
-    def _find_by_criteria(self, tools: Optional[bool], structured_output: Optional[bool], reverse: bool) -> Optional[
-        LLMRegistryEntry]:
+    def _find_by_criteria(self, tools: Optional[bool], structured_output: Optional[bool], reverse: bool) \
+            -> Optional[LLMRegistryEntry]:
         filtered = sorted(self.llms, key=lambda x: x.characteristics.parameter_size_float, reverse=reverse)
         filtered = [llm for llm in filtered if not llm.characteristics.embeddings]
         if tools is not None:

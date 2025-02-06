@@ -19,6 +19,7 @@ class OllamaGateway(LLMGateway):
     headers : dict, optional
         The headers to send with the request. Defaults to an empty dict.
     """
+
     def __init__(self, host="http://localhost:11434", headers={}):
         self.client = Client(host=host, headers=headers)
 
@@ -44,7 +45,8 @@ class OllamaGateway(LLMGateway):
         object_model : Optional[BaseModel]
             The model to use for validating the response.
         tools : Optional[List[LLMTool]]
-            A list of tools to use with the LLM. If a tool call is requested, the tool will be called and the output will be included in the response.
+            A list of tools to use with the LLM. If a tool call is requested, the tool will be called and the output
+            will be included in the response.
         temperature : float, optional
             The temperature to use for the response. Defaults to 1.0.
         num_ctx : int, optional

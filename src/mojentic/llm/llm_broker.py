@@ -31,9 +31,11 @@ class LLMBroker():
         model
             The name of the model to use.
         gateway
-            The gateway to use for communication with the LLM. If None, a gateway is created that will utilize a local Ollama server.
+            The gateway to use for communication with the LLM. If None, a gateway is created that will utilize a local
+            Ollama server.
         tokenizer
-            The gateway to use for tokenization. This is used to log approximate token counts for the LLM calls. If None, `mxbai-embed-large` is used on a local Ollama server.
+            The gateway to use for tokenization. This is used to log approximate token counts for the LLM calls. If
+            None, `mxbai-embed-large` is used on a local Ollama server.
         """
         self.model = model
         if tokenizer is None:
@@ -54,7 +56,8 @@ class LLMBroker():
         messages : LLMMessage
             A list of messages to send to the LLM.
         tools : List[Tool]
-            A list of tools to use with the LLM. If a tool call is requested, the tool will be called and the output will be included in the response.
+            A list of tools to use with the LLM. If a tool call is requested, the tool will be called and the output
+            will be included in the response.
         temperature : float
             The temperature to use for the response. Defaults to 1.0
         num_ctx : int
