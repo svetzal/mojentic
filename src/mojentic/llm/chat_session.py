@@ -1,8 +1,9 @@
-from typing import List
+from typing import List, Optional
 
 from mojentic.llm import LLMBroker
 from mojentic.llm.gateways.models import LLMMessage, MessageRole
 from mojentic.llm.gateways.tokenizer_gateway import TokenizerGateway
+from mojentic.llm.tools.llm_tool import LLMTool
 
 
 class SizedLLMMessage(LLMMessage):
@@ -19,6 +20,7 @@ class ChatSession:
     def __init__(self,
                  llm: LLMBroker,
                  system_prompt: str = "You are a helpful assistant.",
+                 tools: Optional[List[LLMTool]] = None,
                  max_context: int = 32768,
                  tokenizer_gateway: TokenizerGateway = None,
                  temperature: float = 1.0):
@@ -31,6 +33,8 @@ class ChatSession:
             The broker to use for generating responses.
         system_prompt : str, optional
             The prompt to use for the system messages. Defaults to "You are a helpful assistant."
+        tools : List[LLMTool], optional
+            The tools you want to make available to the LLM. Defaults to None.
         max_context : int, optional
             The maximum number of tokens to keep in the context. Defaults to 32768.
         tokenizer_gateway : TokenizerGateway, optional
@@ -41,6 +45,7 @@ class ChatSession:
 
         self.llm = llm
         self.system_prompt = system_prompt
+        self.tools = tools
         self.max_context = max_context
         self.temperature = temperature
 
@@ -67,7 +72,7 @@ class ChatSession:
             The response from the LLM.
         """
         self.insert_message(LLMMessage(role=MessageRole.User, content=query))
-        response = self.llm.generate(self.messages, temperature=0.1)
+        response = self.llm.generate(self.messages, tools=self.tools, temperature=0.1)
         self.insert_message(LLMMessage(role=MessageRole.Assistant, content=response))
         return response
 
