@@ -20,8 +20,8 @@ class OllamaGateway(LLMGateway):
         The headers to send with the request. Defaults to an empty dict.
     """
 
-    def __init__(self, host="http://localhost:11434", headers={}):
-        self.client = Client(host=host, headers=headers)
+    def __init__(self, host="http://localhost:11434", headers={}, timeout=None):
+        self.client = Client(host=host, headers=headers, timeout=timeout)
 
     def _extract_options_from_args(self, args):
         options = Options(

@@ -2,9 +2,9 @@ from typing import List
 
 from mojentic.agents.base_agent import BaseAgent
 from mojentic.agents.correlation_aggregator_agent import BaseAggregatingAgent
+from mojentic.dispatcher import Dispatcher
 from mojentic.event import Event
 from mojentic.router import Router
-from mojentic.dispatcher import Dispatcher
 
 
 #

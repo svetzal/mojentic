@@ -3,15 +3,13 @@ Mojentic is an agentic framework that aims to provide a simple and flexible way 
 complex problems. Design goals are to be asynchronous with a pubsub messaging architecture.
 """
 import importlib.metadata as _importlib_metadata
-
 import logging
-import structlog
 
+import structlog
 
 from .dispatcher import Dispatcher
 from .event import Event
 from .router import Router
-
 
 logging.basicConfig(level=logging.INFO)
 structlog.configure(logger_factory=structlog.stdlib.LoggerFactory(), processors=[

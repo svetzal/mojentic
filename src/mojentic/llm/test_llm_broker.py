@@ -1,10 +1,10 @@
-import pytest
 from unittest.mock import MagicMock
 
+import pytest
 from pydantic import BaseModel
 
-from mojentic.llm.llm_broker import LLMBroker
 from mojentic.llm.gateways.models import LLMMessage, MessageRole, LLMGatewayResponse, LLMToolCall
+from mojentic.llm.llm_broker import LLMBroker
 
 
 @pytest.fixture

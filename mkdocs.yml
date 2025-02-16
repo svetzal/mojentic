@@ -37,9 +37,9 @@ nav:
   - Getting Started: get_started.md
   - Using LLMs: broker.md
   - API Documentation:
-    - Intro: api_0.md
-    - Layer 1: api_1.md
-    - Layer 2: api_2.md
+      - Intro: api_0.md
+      - Layer 1: api_1.md
+      - Layer 2: api_2.md
 
 repo_name: mojility/mojentic
 repo_url: https://github.com/mojility/mojentic

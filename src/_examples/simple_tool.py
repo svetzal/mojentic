@@ -1,11 +1,11 @@
 from pydantic import BaseModel
 
 from mojentic.agents.base_llm_agent import BaseLLMAgent
+from mojentic.agents.output_agent import OutputAgent
 from mojentic.dispatcher import Dispatcher
 from mojentic.event import Event
 from mojentic.llm.llm_broker import LLMBroker
 from mojentic.llm.tools.date_resolver import ResolveDateTool
-from mojentic.agents.output_agent import OutputAgent
 from mojentic.router import Router
 
 

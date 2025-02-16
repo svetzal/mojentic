@@ -4,9 +4,9 @@ from typing import Annotated, Optional, Type
 from pydantic import BaseModel, Field
 
 from mojentic.agents.base_agent import BaseAgent
+from mojentic.context.shared_working_memory import SharedWorkingMemory
 from mojentic.llm.gateways.models import LLMMessage, MessageRole
 from mojentic.llm.llm_broker import LLMBroker
-from mojentic.context.shared_working_memory import SharedWorkingMemory
 
 
 class BaseLLMAgent(BaseAgent):

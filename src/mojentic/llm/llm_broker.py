@@ -4,9 +4,9 @@ from typing import List, Optional
 import structlog
 from pydantic import BaseModel
 
+from mojentic.llm.gateways.llm_gateway import LLMGateway
 from mojentic.llm.gateways.models import MessageRole, LLMMessage, LLMGatewayResponse
 from mojentic.llm.gateways.ollama import OllamaGateway
-from mojentic.llm.gateways.llm_gateway import LLMGateway
 from mojentic.llm.gateways.tokenizer_gateway import TokenizerGateway
 
 logger = structlog.get_logger()
