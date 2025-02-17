@@ -73,6 +73,7 @@ class ChatSession:
         """
         self.insert_message(LLMMessage(role=MessageRole.User, content=query))
         response = self.llm.generate(self.messages, tools=self.tools, temperature=0.1)
+        self._ensure_all_messages_are_sized()
         self.insert_message(LLMMessage(role=MessageRole.Assistant, content=response))
         return response
 
@@ -92,6 +93,14 @@ class ChatSession:
             total_length -= self.messages.pop(1).token_length
 
     def _build_sized_message(self, message):
-        new_message_length = len(self.tokenizer_gateway.encode(message.content))
-        new_message = SizedLLMMessage(**message.model_dump(), token_length=new_message_length)
-        return new_message
+        if message.content is None:
+            return SizedLLMMessage(**message.model_dump(), token_length=0)
+        else:
+            new_message_length = len(self.tokenizer_gateway.encode(message.content))
+            new_message = SizedLLMMessage(**message.model_dump(), token_length=new_message_length)
+            return new_message
+
+    def _ensure_all_messages_are_sized(self):
+        for i, message in enumerate(self.messages):
+            if not isinstance(message, SizedLLMMessage):
+                self.messages[i] = self._build_sized_message(message)
