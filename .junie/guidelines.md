@@ -32,7 +32,26 @@ src/
    pip install -r requirements.txt
    pip install -r dev-requirements.txt
    ```
-3. Install pre-commit hooks (recommended)
+3. Install pre-commit hooks (recommended):
+   ```bash
+   # Create a pre-commit hook that runs pytest
+   cat > .git/hooks/pre-commit << 'EOL'
+   #!/bin/sh
+
+   # Run pytest
+   echo "Running pytest..."
+   python -m pytest
+
+   # Store the exit code
+   exit_code=$?
+
+   # Exit with pytest's exit code
+   exit $exit_code
+   EOL
+
+   # Make the hook executable
+   chmod +x .git/hooks/pre-commit
+   ```
 
 ## Testing Guidelines
 - Tests are co-located with implementation files
@@ -50,6 +69,12 @@ src/
 4. Keep code complexity low
 5. Use type hints
 6. Co-locate tests with implementation
+
+## Documentation
+- Built with MkDocs and Material theme
+- API documentation uses mkdocstrings
+- Build docs locally: `mkdocs serve`
+- Build for production: `mkdocs build`
 
 ## Running Scripts
 1. Example scripts are in `src/_examples/`

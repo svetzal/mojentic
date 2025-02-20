@@ -29,7 +29,7 @@ class ResolveDateTool(LLMTool):
             "type": "function",
             "function": {
                 "name": "resolve_date",
-                "description": "Convert text that specifies a relative date, and convert it to an absolute date.",
+                "description": "Convert text that specifies a relative date, and convert it to an absolute date. If no reference date is provided, the current date is used.",
                 "parameters": {
                     "type": "object",
                     "properties": {
