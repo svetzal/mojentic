@@ -86,3 +86,6 @@ class OpenAIGateway(LLMGateway):
             object=object,
             tool_calls=tool_calls,
         )
+
+    def get_available_models(self) -> list[str]:
+        return [m.id for m in self.client.models.list()]

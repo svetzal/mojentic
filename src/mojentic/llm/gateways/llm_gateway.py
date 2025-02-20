@@ -48,3 +48,14 @@ class LLMGateway:
             The response from the Ollama service.
         """
         raise NotImplementedError
+
+    def get_available_models(self) -> List[str]:
+        """
+        Get the list of available models.
+
+        Returns
+        -------
+        List[str]
+            The list of available models.
+        """
+        raise NotImplementedError

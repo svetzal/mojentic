@@ -1,3 +1,5 @@
+from typing import List
+
 import structlog
 from ollama import Client, Options, ChatResponse
 
@@ -97,3 +99,6 @@ class OllamaGateway(LLMGateway):
             object=object,
             tool_calls=tool_calls,
         )
+
+    def get_available_models(self) -> List[str]:
+        return [m.model for m in self.client.list().models]
