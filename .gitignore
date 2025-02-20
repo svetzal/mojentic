@@ -4,3 +4,4 @@ site
 .venv
 __pycache__
 *.log
+mojentic.egg-info
