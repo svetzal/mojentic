@@ -25,6 +25,8 @@ You are to solve a problem by reasoning and acting on the information you have. 
 {format_current_context(event.context)}
 {format_available_tools(self.tools)}
 
+Your Instructions:
+Given our context and what we've done so far, and the tools available, create a step-by-step plan to answer the query. 
             """.strip()
 
             return prompt

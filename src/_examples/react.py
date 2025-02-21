@@ -1,14 +1,10 @@
+from _examples.react.agents.decisioning_agent import DecisioningAgent
+from _examples.react.agents.thinking_agent import ThinkingAgent
+from _examples.react.models.base import CurrentContext
+from _examples.react.models.events import InvokeThinking, InvokeDecisioning
 from mojentic import Router, Dispatcher
 from mojentic.agents import OutputAgent
 from mojentic.llm import LLMBroker
-
-from _examples.react import (
-    ThinkingAgent,
-    DecisioningAgent,
-    CurrentContext,
-    InvokeThinking,
-    InvokeDecisioning,
-)
 
 # llm = LLMBroker("llama3.3-70b-32k")
 llm = LLMBroker("deepseek-r1:70b")
