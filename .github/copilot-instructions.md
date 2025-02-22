@@ -12,4 +12,6 @@ Do not write Given/When/Then or Act/Arrange/Assert comments over those areas of 
 
 The test file must be placed in the same folder as the file containing the test subject.
 
+Do not write conditional statements in tests, each test must fail for only one clear reason.
+
 Use type hints for all functions and methods.

@@ -3,7 +3,7 @@ from mojentic.llm.gateways.ollama import OllamaGateway
 from mojentic.llm.tools.date_resolver import ResolveDateTool
 
 #
-# This is here 2025-02-21 to demonstrate a deficiency in Ollama tool calling
+# This is here 2025-02-21 to demonstrate a deficiency in Ollama/llama tool calling
 # using the Stream option. We can't get chunk by chunk responses from the LLM
 # when using tools. This limits our ability to explore streaming capabilities
 # in the mojentic API, so I'm pausing this work for now until this is resolved.
