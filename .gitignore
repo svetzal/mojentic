@@ -5,3 +5,4 @@ site
 __pycache__
 *.log
 mojentic.egg-info
+.coverage

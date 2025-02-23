@@ -1,5 +1,5 @@
 import json
-from typing import Annotated, Optional, Type
+from typing import Annotated, Optional, Type, List
 
 from pydantic import BaseModel, Field
 
@@ -7,6 +7,7 @@ from mojentic.agents.base_agent import BaseAgent
 from mojentic.context.shared_working_memory import SharedWorkingMemory
 from mojentic.llm.gateways.models import LLMMessage, MessageRole
 from mojentic.llm.llm_broker import LLMBroker
+from mojentic.llm.tools.llm_tool import LLMTool
 
 
 class BaseLLMAgent(BaseAgent):
@@ -14,12 +15,12 @@ class BaseLLMAgent(BaseAgent):
     behaviour: Annotated[str, "The personality and behavioural traits of the agent."]
 
     def __init__(self, llm: LLMBroker, behaviour: str = "You are a helpful assistant.",
-                 response_model: Optional[Type[BaseModel]] = None):
+                 tools: Optional[List[LLMTool]] = None, response_model: Optional[Type[BaseModel]] = None):
         super().__init__()
         self.llm = llm
         self.behaviour = behaviour
         self.response_model = response_model
-        self.tools = []
+        self.tools = tools or []
 
     def _create_initial_messages(self):
         return [

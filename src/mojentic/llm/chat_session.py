@@ -54,6 +54,7 @@ class ChatSession:
         else:
             self.tokenizer_gateway = tokenizer_gateway
 
+        self.messages = []
         self.insert_message(LLMMessage(role=MessageRole.System, content=self.system_prompt))
 
     def send(self, query):
