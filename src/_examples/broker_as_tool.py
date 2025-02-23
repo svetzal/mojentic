@@ -5,6 +5,10 @@ from mojentic.llm.tools.date_resolver import ResolveDateTool
 from mojentic.llm.tools.file_manager import FileManager, ListFilesTool, ReadFileTool, WriteFileTool
 from mojentic.llm.tools.tool_wrapper import ToolWrapper
 
+#
+# This is largely a fail, but it was interesting.
+#
+
 temporal_specialist = BaseLLMAgent(
     llm=LLMBroker(model="qwen2.5:7b"),
     tools=[ResolveDateTool()],
