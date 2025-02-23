@@ -26,7 +26,7 @@ Mojentic uses a specification-style approach to testing that makes tests more re
 
 3. **Given-When-Then Pattern**
    - Document scenarios in docstrings using Given-When-Then
-   - Use comments to separate test sections
+   - Use a blank line between Given, When, and Then sections
    ```python
    def should_handle_specific_case(self):
        """
@@ -34,13 +34,10 @@ Mojentic uses a specification-style approach to testing that makes tests more re
        When an action occurs
        Then expect specific outcome
        """
-       # Given
        initial_setup()
 
-       # When
        result = perform_action()
 
-       # Then
        assert_expected_outcome(result)
    ```
 
@@ -112,16 +109,6 @@ pytest path/to/specific_spec.py
 # Show specification-style output
 pytest --verbose
 ```
-
-### Converting Existing Tests
-
-When converting existing tests to specification style:
-
-1. Rename test file to `*_spec.py`
-2. Organize tests into descriptive classes
-3. Rename test methods to use `should_` prefix
-4. Add clear docstrings using Given-When-Then
-5. Structure test code with Given-When-Then comments
 
 ### Additional Resources
 
