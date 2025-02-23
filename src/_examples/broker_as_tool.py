@@ -22,7 +22,7 @@ knowledge_specialist = BaseLLMAgent(
         ReadFileTool(path="local"),
         WriteFileTool(path="local"),
     ],
-    behaviour="You are a knowledge management who focuses on sorting out facts and information, able to organize elemental ideas and make connections between them. You can list files to find out where you stored information, read files to review that information, and write files to store that information for later retrieval."
+    behaviour="You are a knowledge management agent who focuses on sorting out facts and information, able to organize elemental ideas and make connections between them. You can list files to find out where you stored information, read files to review that information, and write files to store that information for later retrieval."
 )
 
 if not os.path.exists("local"):

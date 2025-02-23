@@ -5,6 +5,9 @@ complex problems. Design goals are to be asynchronous with a pubsub messaging ar
 
 ## Small Units of Computation
 
+> The agentic aspects of this framework are in the highest state of flux. This is a very early draft. The [first layer](api_1.md)
+> has stabilized, but the [second layer](api_2.md) is being used right now to explore a variety of ideas.
+
 Agents are the smallest unit of computation in Mojentic. They are responsible for processing events and emitting new
 events. Agents can be combined to form complex systems.
 
@@ -20,6 +23,11 @@ This will require you to break down the work you want to do into these small uni
 like commands, think tell-don't-ask in the extreme.
 
 ## Event-Driven
+
+> The event-driven nature of is also very much in flux. Early thread-based agents lead to more complex synchronization
+> than I wanted, so I'm using different agent formations to explore eventing in a more practical way.
+
+> The key purpose of events will be to support auditability and debugging of agentic flows.
 
 Events are the only way agents communicate with each other. Events are simple data classes that are passed around the
 system. Events are immutable.
