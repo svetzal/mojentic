@@ -6,3 +6,4 @@ tiktoken
 parsedatetime
 pytz
 serpapi
+colorama

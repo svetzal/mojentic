@@ -1,5 +1,5 @@
 import json
-from typing import List, Optional
+from typing import List, Optional, Type
 
 import structlog
 from pydantic import BaseModel
@@ -110,7 +110,7 @@ class LLMBroker():
                 content += message.content
         return content
 
-    def generate_object(self, messages: List[LLMMessage], object_model, temperature=1.0, num_ctx=32768,
+    def generate_object(self, messages: List[LLMMessage], object_model: Type[BaseModel], temperature=1.0, num_ctx=32768,
                         num_predict=-1) -> BaseModel:
         """
         Generate a structured response from the LLM and return it as an object.

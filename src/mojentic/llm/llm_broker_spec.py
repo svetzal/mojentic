@@ -7,8 +7,18 @@ from mojentic.llm.gateways.models import LLMMessage, MessageRole, LLMGatewayResp
 from mojentic.llm.llm_broker import LLMBroker
 
 
-class DummyModel(BaseModel):
-    pass
+class SimpleModel(BaseModel):
+    text: str
+    number: int
+
+class NestedModel(BaseModel):
+    title: str
+    details: SimpleModel
+
+class ComplexModel(BaseModel):
+    name: str
+    items: list[SimpleModel]
+    metadata: dict[str, str]
 
 
 @pytest.fixture
@@ -87,24 +97,90 @@ class DescribeLLMBroker:
         Specifications for generating structured objects through the LLM broker
         """
 
-        def should_generate_structured_object_from_messages(self, llm_broker, mock_gateway):
+        def should_generate_simple_model(self, llm_broker, mock_gateway):
             """
-            Given messages requiring structured output
-            When generating an object
-            Then it should return the structured object from LLM
+            Given messages requiring a simple structured output
+            When generating an object with SimpleModel
+            Then it should return the validated SimpleModel object
             """
             # Given
-            messages = [LLMMessage(role=MessageRole.User, content="Analyze this text.")]
-            mock_object = DummyModel()
+            messages = [LLMMessage(role=MessageRole.User, content="Generate a simple object")]
+            mock_object = SimpleModel(text="test", number=42)
             mock_gateway.complete.return_value = LLMGatewayResponse(
-                content="",
+                content='{"text": "test", "number": 42}',
                 object=mock_object,
                 tool_calls=[]
             )
 
             # When
-            result = llm_broker.generate_object(messages, object_model=MagicMock())
+            result = llm_broker.generate_object(messages, object_model=SimpleModel)
 
             # Then
-            assert result == mock_object
+            assert isinstance(result, SimpleModel)
+            assert result.text == "test"
+            assert result.number == 42
+            mock_gateway.complete.assert_called_once()
+
+        def should_generate_nested_model(self, llm_broker, mock_gateway):
+            """
+            Given messages requiring a nested structured output
+            When generating an object with NestedModel
+            Then it should return the validated NestedModel object
+            """
+            # Given
+            messages = [LLMMessage(role=MessageRole.User, content="Generate a nested object")]
+            mock_object = NestedModel(
+                title="main",
+                details=SimpleModel(text="nested", number=123)
+            )
+            mock_gateway.complete.return_value = LLMGatewayResponse(
+                content='{"title": "main", "details": {"text": "nested", "number": 123}}',
+                object=mock_object,
+                tool_calls=[]
+            )
+
+            # When
+            result = llm_broker.generate_object(messages, object_model=NestedModel)
+
+            # Then
+            assert isinstance(result, NestedModel)
+            assert result.title == "main"
+            assert isinstance(result.details, SimpleModel)
+            assert result.details.text == "nested"
+            assert result.details.number == 123
+            mock_gateway.complete.assert_called_once()
+
+        def should_generate_complex_model(self, llm_broker, mock_gateway):
+            """
+            Given messages requiring a complex structured output
+            When generating an object with ComplexModel
+            Then it should return the validated ComplexModel object
+            """
+            # Given
+            messages = [LLMMessage(role=MessageRole.User, content="Generate a complex object")]
+            mock_object = ComplexModel(
+                name="test",
+                items=[
+                    SimpleModel(text="item1", number=1),
+                    SimpleModel(text="item2", number=2)
+                ],
+                metadata={"key1": "value1", "key2": "value2"}
+            )
+            mock_gateway.complete.return_value = LLMGatewayResponse(
+                content='{"name": "test", "items": [{"text": "item1", "number": 1}, {"text": "item2", "number": 2}], "metadata": {"key1": "value1", "key2": "value2"}}',
+                object=mock_object,
+                tool_calls=[]
+            )
+
+            # When
+            result = llm_broker.generate_object(messages, object_model=ComplexModel)
+
+            # Then
+            assert isinstance(result, ComplexModel)
+            assert result.name == "test"
+            assert len(result.items) == 2
+            assert all(isinstance(item, SimpleModel) for item in result.items)
+            assert result.items[0].text == "item1"
+            assert result.items[1].number == 2
+            assert result.metadata == {"key1": "value1", "key2": "value2"}
             mock_gateway.complete.assert_called_once()

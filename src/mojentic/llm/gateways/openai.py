@@ -58,8 +58,9 @@ class OpenAIGateway(LLMGateway):
         completion = self.client.chat.completions.create
 
         if 'object_model' in args and args['object_model'] is not None:
-            openai_args['response_format'] = args['object_model']
-            completion = self.client.beta.chat.completions.parse
+            openai_args['response_format'] = {"type": "json_object"}
+            openai_args['functions'] = [{"name": "output", "parameters": args['object_model'].model_json_schema()}]
+            openai_args['function_call'] = {"name": "output"}
 
         if 'tools' in args and args['tools'] is not None:
             openai_args['tools'] = [t.descriptor for t in args['tools']]
@@ -70,7 +71,12 @@ class OpenAIGateway(LLMGateway):
         tool_calls = []
 
         if 'object_model' in args and args['object_model'] is not None:
-            object = response.choices[0].message.parsed
+            try:
+                response_content = response.choices[0].message.content
+                object = args['object_model'].model_validate_json(response_content)
+            except Exception as e:
+                logger.error("Failed to validate model", error=str(e), response=response_content,
+                           object_model=args['object_model'])
 
         if response.choices[0].message.tool_calls is not None:
             for t in response.choices[0].message.tool_calls:

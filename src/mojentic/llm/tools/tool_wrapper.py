@@ -7,8 +7,8 @@ from mojentic.llm.gateways.models import LLMMessage, MessageRole
 class ToolWrapper(LLMTool):
     def __init__(self, agent: BaseLLMAgent, name: str, description: str):
         self.agent = agent
-        self.name = name  # agent.__class__.__name__.lower()
-        self.description = description
+        self.tool_name = name  # agent.__class__.__name__.lower()
+        self.tool_description = description
 
     def run(self, input: str) -> str:
         messages = self.agent._create_initial_messages()
@@ -20,8 +20,8 @@ class ToolWrapper(LLMTool):
         return {
             "type": "function",
             "function": {
-                "name": self.name,
-                "description": self.description,
+                "name": self.tool_name,
+                "description": self.tool_description,
                 "parameters": {
                     "type": "object",
                     "properties": {

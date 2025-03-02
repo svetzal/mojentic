@@ -162,5 +162,23 @@ class OllamaGateway(LLMGateway):
                 #         )
 
     def get_available_models(self) -> List[str]:
+        """
+        Get the list of available local models.
+
+        Returns
+        -------
+        List[str]
+            The list of available models.
+        """
         return [m.model for m in self.client.list().models]
 
+    def pull_model(self, model: str) -> None:
+        """
+        Pull the model from the Ollama service.
+
+        Parameters
+        ----------
+        model : str
+            The name of the model to pull.
+        """
+        self.client.pull(model)

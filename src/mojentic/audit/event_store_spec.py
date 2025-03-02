@@ -1,12 +1,5 @@
 from mojentic import Event
-
-
-class EventStore:
-    def __init__(self):
-        self.events = []
-
-    def store(self, event):
-        self.events.append(event)
+from mojentic.audit.event_store import EventStore
 
 
 class DescribeEventStore:
