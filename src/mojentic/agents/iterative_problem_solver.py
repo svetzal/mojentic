@@ -9,6 +9,28 @@ logger = structlog.get_logger()
 
 
 class IterativeProblemSolver:
+    """An agent that solves problems iteratively using available tools.
+
+    This solver breaks down complex problems into steps, using available tools to accomplish
+    the task. It maintains context throughout the process and provides structured results.
+
+    Attributes:
+        user_request: The original request to be processed
+        max_loops: Maximum number of iterations before giving up
+        chat: The chat session maintaining conversation context
+
+    The final result is formatted according to whether the task succeeded or failed:
+    - For successful tasks:
+        - Direct answer or solution
+        - Relevant outputs and results
+        - Concise, solution-focused response
+    - For failed tasks:
+        - Specific explanation of what couldn't be accomplished
+        - Description of partial progress (if any)
+        - Suggested alternatives (where applicable)
+
+    The response maintains professionalism and focuses on outcomes rather than process.
+    """
     user_request: str
     max_loops: int
     chat: ChatSession
@@ -56,6 +78,29 @@ If you have the answer, say only "DONE".
 
         print(stop_message)
 
-        result = self.chat.send("Summarize the final result, and only the final result, without commenting on the process by which you achieved it.")
+        success = "DONE".lower() in result.lower()
+        final_prompt = f"""
+Given the original user request:
+{self.user_request}
+
+Your task has {"succeeded" if success else "failed"}. Please provide a final response following these guidelines:
+
+1. Format your response in a clear, structured manner
+2. If successful:
+   - Provide the direct answer or solution
+   - Include any relevant output or results
+   - Keep it concise and focused on the solution
+3. If failed:
+   - Explain what specifically couldn't be accomplished
+   - If possible, describe what partial progress was made
+   - Suggest alternative approaches if applicable
+
+Remember:
+- Focus only on the final outcome
+- Do not describe the process or steps taken
+- Do not include any meta-commentary about the response itself
+- Be direct and professional in your response
+"""
+        result = self.chat.send(final_prompt)
 
         return result
