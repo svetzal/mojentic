@@ -73,6 +73,11 @@ src/
 ## Documentation
 - Built with MkDocs and Material theme
 - API documentation uses mkdocstrings
+- Supports mermaid.js diagrams in markdown files:
+  ```mermaid
+  graph LR
+      A[Doc] --> B[Feature]
+  ```
 - Build docs locally: `mkdocs serve`
 - Build for production: `mkdocs build`
 

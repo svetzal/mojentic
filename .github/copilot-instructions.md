@@ -2,6 +2,8 @@
 
 In general, favour declarative code styles over imperative code styles.
 
+Use pydantic, not @dataclass, for data objects with strong types.
+
 Favour list and dictionary comprehensions over for loops.
 
 Every implementation you write should have a corresponding test.
@@ -20,7 +22,7 @@ Use type hints for all functions and methods.
 
 # Using Mojentic
 
-If you need to write a tool for the LLM, model the implementation after mojentic.llm.tools.date_resolver.ResolveDateTool
+If you need to write a tool for the LLM, model the implementation after mojentic.llm.tools.date_resolver.ResolveDateTool.
 
 If you need to write a tool for the LLM that uses an LLM, in the tool's initializer take the LLMBroker object as a parameter.
 

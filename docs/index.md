@@ -31,3 +31,24 @@ like commands, think tell-don't-ask in the extreme.
 
 Events are the only way agents communicate with each other. Events are simple data classes that are passed around the
 system. Events are immutable.
+
+Here's a high-level overview of how events flow through the system:
+
+```mermaid
+flowchart LR
+    A1[Agent 1] --> |Event 1| A2[Agent 2]
+    A2 --> |Event 2| A3[Agent 3]
+    A2 --> |Event 3| A4[Agent 4]
+    A3 --> |Event 4| A1
+
+    subgraph Shared Memory
+    M[(Working Memory)]
+    end
+
+    A1 -.-> M
+    A2 -.-> M
+    A3 -.-> M
+    A4 -.-> M
+```
+
+The diagram above shows how agents communicate through events (solid lines) and can access shared working memory (dotted lines) when needed.
