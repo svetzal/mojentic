@@ -6,3 +6,5 @@ __pycache__
 *.log
 mojentic.egg-info
 .coverage
+.vscode
+.DS_Store
