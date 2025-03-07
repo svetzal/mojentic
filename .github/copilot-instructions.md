@@ -1,3 +1,5 @@
+# General Rules
+
 In general, favour declarative code styles over imperative code styles.
 
 Favour list and dictionary comprehensions over for loops.
@@ -15,3 +17,11 @@ The test file must be placed in the same folder as the file containing the test 
 Do not write conditional statements in tests, each test must fail for only one clear reason.
 
 Use type hints for all functions and methods.
+
+# Using Mojentic
+
+If you need to write a tool for the LLM, model the implementation after mojentic.llm.tools.date_resolver.ResolveDateTool
+
+If you need to write a tool for the LLM that uses an LLM, in the tool's initializer take the LLMBroker object as a parameter.
+
+Don't ask the LLM to generate JSON directly, make use of the LLMBroker.generate_object() method.
