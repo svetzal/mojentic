@@ -12,8 +12,8 @@ from mojentic.llm import LLMBroker
 def main():
     # llm = LLMBroker(model="MFDoom/deepseek-r1-tool-calling:14b")
     # llm = LLMBroker(model="qwen2.5:14b")
-    # llm = LLMBroker(model="qwq")
-    llm = LLMBroker(model="qwq:32b-fp16")
+    llm = LLMBroker(model="qwq")
+    # llm = LLMBroker(model="qwq:32b-fp16")
     # llm = LLMBroker(model="llama3.3-70b-32k")
 
     user_request = """

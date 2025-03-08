@@ -63,7 +63,18 @@ class IterativeProblemSolver:
    - Validate results before proceeding
    - Provide clear, actionable outputs
 
-Your role is to solve user requests efficiently while maintaining high standards of reliability and effectiveness.""",
+5. Response Format Requirements (MANDATORY):
+   You MUST start EVERY response with one of these exact prefixes:
+   - "DONE: " when the task is fully completed
+   - "CONTINUE: " when more work is needed
+   - "FAIL: " when the task cannot be completed
+
+   Examples of correct responses:
+   - "DONE: Marketing plan completed with all requested components: demographics defined, channels selected, budget allocated, and timeline created."
+   - "CONTINUE: Demographics and channels defined | Next: Creating budget breakdown and timeline"
+   - "FAIL: Unable to access required market data | Attempted market research | Suggest conducting primary research"
+
+Your role is to solve user requests efficiently while maintaining high standards of reliability and effectiveness. Remember: EVERY response MUST start with one of the specified prefixes.""",
             tools=available_tools,
         )
 
@@ -85,10 +96,17 @@ Approach this task systematically:
    - Document any important outputs
 
 3. STATUS ASSESSMENT
-Respond with one of:
-   - "DONE: <brief result>" if the task is completed successfully
-   - "CONTINUE: <progress summary> | <next step>" if more steps are needed
+You MUST start your response with EXACTLY one of these formats:
+   - "DONE: <brief result>" when the task is fully completed
+     Example: "DONE: Marketing plan completed with comprehensive strategy for eco-friendly products"
+
+   - "CONTINUE: <progress summary> | <next step>" when more work is needed
+     Example: "CONTINUE: Target audience defined and channels selected | Creating budget breakdown"
+
    - "FAIL: <specific reason> | <attempted approach> | <suggested alternative>" if unsuccessful
+     Example: "FAIL: Market data unavailable | Attempted secondary research | Suggest user interviews"
+
+IMPORTANT: Your response MUST begin with one of these exact prefixes. Do not skip the prefix or modify its format.
 
 Remember to:
 - Use tools strategically and combine them when beneficial
@@ -155,6 +173,7 @@ Provide a comprehensive final response with the following structure:
    - Progress Made: Valuable intermediate results
    - Alternative Approaches: Other potential solutions
    - Next Steps: Recommended actions
+   - Draft Work-In-Progress: The detailed current state of the solution
 
 Guidelines:
 - Prioritize clarity and actionability
