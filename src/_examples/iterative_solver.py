@@ -12,15 +12,17 @@ from mojentic.llm import LLMBroker
 def main():
     # llm = LLMBroker(model="MFDoom/deepseek-r1-tool-calling:14b")
     # llm = LLMBroker(model="qwen2.5:14b")
+    # llm = LLMBroker(model="qwen2.5:14b")
+    # llm = LLMBroker(model="qwen2.5:7b")
     llm = LLMBroker(model="qwq")
     # llm = LLMBroker(model="qwq:32b-fp16")
     # llm = LLMBroker(model="llama3.3-70b-32k")
 
-    user_request = """
-I want to launch a new brand of eco-friendly home cleaning products. Can you create a marketing plan detailing target demographics, promotional channels, a rough budget breakdown, and a timeline of major milestones? Please include example social media copy, key talking points for a press release, and measurable success criteria for each channel. For any photos or graphics, create a prompt I can use with stable-diffusion to generate visuals.
-    """.strip()
+#     user_request = """
+# I want to launch a new brand of eco-friendly home cleaning products. Can you create a marketing plan detailing target demographics, promotional channels, a rough budget breakdown, and a timeline of major milestones? Please include example social media copy, key talking points for a press release, and measurable success criteria for each channel. For any photos or graphics, create a prompt I can use with stable-diffusion to generate visuals.
+#     """.strip()
 
-    # user_request = "What's the date next Friday?"
+    user_request = "What's the date next Friday?"
 
     ooda = IterativeProblemSolver(
         llm=llm,

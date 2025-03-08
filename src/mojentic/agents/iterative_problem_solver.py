@@ -29,7 +29,15 @@ class IterativeProblemSolver:
         - Description of partial progress (if any)
         - Suggested alternatives (where applicable)
 
-    The response maintains professionalism and focuses on outcomes rather than process.
+    Each response from the LLM must contain one of these exact status markers:
+    - "DONE:" for completed tasks
+    - "CONTINUE:" for tasks needing more work
+    - "FAIL:" for unsuccessful tasks
+
+    The status marker can appear anywhere in the response, but it must be exact
+    (including the colon). Everything after the marker is considered the details
+    of the response. The response maintains professionalism and focuses on
+    outcomes rather than process.
     """
     user_request: str
     max_loops: int
@@ -123,9 +131,21 @@ Remember to:
             result = self.step()
             print(result)
 
-            # Parse the response
-            status = result.split(":")[0].strip().upper()
-            details = result[result.find(":")+1:].strip() if ":" in result else ""
+            # Parse the response using exact marker detection
+            status = None
+            details = ""
+
+            # Look for exact markers
+            for marker in ["DONE:", "CONTINUE:", "FAIL:"]:
+                if marker in result:
+                    status = marker[:-1]  # Remove the colon
+                    # Extract everything after the marker
+                    details = result[result.index(marker) + len(marker):].strip()
+                    break
+
+            if not status:
+                stop_message = "Task failed: Response format error - missing status marker"
+                break
 
             if status == "FAIL":
                 stop_message = f"Task failed: {details}"
