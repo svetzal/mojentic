@@ -54,7 +54,7 @@ src/
    ```
 
 ## Testing Guidelines
-- Tests are co-located with implementation files
+- Tests are co-located with implementation files (test file must be in the same folder as the implementation)
 - Run tests: `pytest`
 - Linting: `flake8 src`
 - Code style:
@@ -62,13 +62,32 @@ src/
   - Max complexity: 10
   - Follow numpy docstring style
 
+### Testing Best Practices
+- Use pytest for testing, with mocker if you require mocking
+- Do not use unittest or MagicMock directly, use it through the mocker wrapper
+- Use @fixture markers for pytest fixtures
+- Break up fixtures into smaller fixtures if they are too large
+- Do not write Given/When/Then or Act/Arrange/Assert comments
+- Separate test phases with a single blank line
+- Do not write conditional statements in tests
+- Each test must fail for only one clear reason
+
 ## Best Practices
 1. Follow the existing project structure
 2. Write tests for new functionality
 3. Document using numpy-style docstrings
 4. Keep code complexity low
-5. Use type hints
+5. Use type hints for all functions and methods
 6. Co-locate tests with implementation
+7. Favor declarative code styles over imperative code styles
+8. Use pydantic (not @dataclass) for data objects with strong types
+9. Favor list and dictionary comprehensions over for loops
+
+## Mojentic Development
+### LLM Tool Development
+1. When writing a new LLM tool, model the implementation after `mojentic.llm.tools.date_resolver.ResolveDateTool`
+2. For LLM-based tools, take the LLMBroker object as a parameter in the tool's initializer
+3. Don't ask the LLM to generate JSON directly, use the `LLMBroker.generate_object()` method instead
 
 ## Documentation
 - Built with MkDocs and Material theme

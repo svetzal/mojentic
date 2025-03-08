@@ -20,6 +20,12 @@ Do not write conditional statements in tests, each test must fail for only one c
 
 Use type hints for all functions and methods.
 
+Keep code complexity low (max complexity: 10).
+
+Follow numpy docstring style for documentation.
+
+Maximum line length is 127 characters.
+
 # Using Mojentic
 
 If you need to write a tool for the LLM, model the implementation after mojentic.llm.tools.date_resolver.ResolveDateTool.
