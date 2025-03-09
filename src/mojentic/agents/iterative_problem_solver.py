@@ -9,198 +9,104 @@ logger = structlog.get_logger()
 
 
 class IterativeProblemSolver:
-    """An agent that solves problems iteratively using available tools.
+    """An agent that iteratively attempts to solve a problem using available tools.
 
-    This solver breaks down complex problems into steps, using available tools to accomplish
-    the task. It maintains context throughout the process and provides structured results.
+    This solver uses a chat-based approach to break down and solve complex problems.
+    It will continue attempting to solve the problem until it either succeeds,
+    fails explicitly, or reaches the maximum number of iterations.
 
-    Attributes:
-        user_request: The original request to be processed
-        max_loops: Maximum number of iterations before giving up
-        chat: The chat session maintaining conversation context
-
-    The final result is formatted according to whether the task succeeded or failed:
-    - For successful tasks:
-        - Direct answer or solution
-        - Relevant outputs and results
-        - Concise, solution-focused response
-    - For failed tasks:
-        - Specific explanation of what couldn't be accomplished
-        - Description of partial progress (if any)
-        - Suggested alternatives (where applicable)
-
-    Each response from the LLM must contain one of these exact status markers:
-    - "DONE:" for completed tasks
-    - "CONTINUE:" for tasks needing more work
-    - "FAIL:" for unsuccessful tasks
-
-    The status marker can appear anywhere in the response, but it must be exact
-    (including the colon). Everything after the marker is considered the details
-    of the response. The response maintains professionalism and focuses on
-    outcomes rather than process.
+    Attributes
+    ----------
+    user_request : str
+        The original request or problem to be solved
+    max_iterations : int
+        Maximum number of attempts to solve the problem
+    chat : ChatSession
+        The chat session used for problem-solving interaction
     """
+
     user_request: str
-    max_loops: int
+    max_iterations: int
     chat: ChatSession
 
-    def __init__(self, llm: LLMBroker, user_request: str, available_tools: List[LLMTool], max_loops: int = 3):
+    def __init__(self, llm: LLMBroker, user_request: str, available_tools: List[LLMTool], max_iterations: int = 3):
+        """Initialize the IterativeProblemSolver.
+
+        Parameters
+        ----------
+        llm : LLMBroker
+            The language model broker to use for generating responses
+        user_request : str
+            The problem or request to be solved
+        available_tools : List[LLMTool]
+            List of tools that can be used to solve the problem
+        max_iterations : int, optional
+            Maximum number of attempts to solve the problem, by default 3
+        """
         self.available_tools = available_tools
         self.user_request = user_request
-        self.max_loops = max_loops
+        self.max_iterations = max_iterations
         self.chat = ChatSession(
             llm=llm,
-            system_prompt="""You are an advanced problem-solving agent with the following capabilities and responsibilities:
-
-1. Strategic Thinking:
-   - Break down complex problems into manageable steps
-   - Plan ahead and anticipate potential challenges
-   - Adapt your approach based on intermediate results
-
-2. Tool Expertise:
-   - Analyze available tools and their optimal use cases
-   - Select the most appropriate tools for each task
-   - Combine tools effectively when needed
-
-3. Progress Management:
-   - Track progress towards the goal
-   - Identify and handle edge cases
-   - Maintain context across multiple steps
-
-4. Quality Standards:
-   - Ensure accuracy and completeness of solutions
-   - Validate results before proceeding
-   - Provide clear, actionable outputs
-
-5. Response Format Requirements (MANDATORY):
-   You MUST start EVERY response with one of these exact prefixes:
-   - "DONE: " when the task is fully completed
-   - "CONTINUE: " when more work is needed
-   - "FAIL: " when the task cannot be completed
-
-   Examples of correct responses:
-   - "DONE: Marketing plan completed with all requested components: demographics defined, channels selected, budget allocated, and timeline created."
-   - "CONTINUE: Demographics and channels defined | Next: Creating budget breakdown and timeline"
-   - "FAIL: Unable to access required market data | Attempted market research | Suggest conducting primary research"
-
-Your role is to solve user requests efficiently while maintaining high standards of reliability and effectiveness. Remember: EVERY response MUST start with one of the specified prefixes.""",
+            system_prompt="You are a helpful assistant, working on behalf of the user on a specific user request.",
             tools=available_tools,
         )
 
     def step(self) -> str:
+        """Execute a single problem-solving step.
+
+        This method sends a prompt to the chat session asking it to work on the user's request
+        using available tools. The response should indicate success ("DONE") or failure ("FAIL").
+
+        Returns
+        -------
+        str
+            The response from the chat session, indicating the step's outcome
+        """
         prompt = f"""
 Given the user request:
 {self.user_request}
 
-Approach this task systematically:
+Use the tools at your disposal to act on their request. You may wish to create a step-by-step plan for more complicated requests.
 
-1. ANALYSIS
-   - Review the current state and progress
-   - Identify the next key objective
-   - List relevant tools for this step
-
-2. EXECUTION
-   - Use selected tools to accomplish the objective
-   - Validate results before proceeding
-   - Document any important outputs
-
-3. STATUS ASSESSMENT
-You MUST start your response with EXACTLY one of these formats:
-   - "DONE: <brief result>" when the task is fully completed
-     Example: "DONE: Marketing plan completed with comprehensive strategy for eco-friendly products"
-
-   - "CONTINUE: <progress summary> | <next step>" when more work is needed
-     Example: "CONTINUE: Target audience defined and channels selected | Creating budget breakdown"
-
-   - "FAIL: <specific reason> | <attempted approach> | <suggested alternative>" if unsuccessful
-     Example: "FAIL: Market data unavailable | Attempted secondary research | Suggest user interviews"
-
-IMPORTANT: Your response MUST begin with one of these exact prefixes. Do not skip the prefix or modify its format.
-
-Remember to:
-- Use tools strategically and combine them when beneficial
-- Maintain context across steps
-- Adapt your approach based on intermediate results
+If you cannot provide an answer, say only "FAIL".
+If you have the answer, say only "DONE".
 """
         return self.chat.send(prompt)
 
     def run(self):
-        loops_remaining = self.max_loops
-        progress_history = []
+        """Execute the problem-solving process.
+
+        This method runs the iterative problem-solving process, continuing until one of
+        these conditions is met:
+        - The task is completed successfully ("DONE")
+        - The task fails explicitly ("FAIL")
+        - The maximum number of iterations is reached
+
+        Returns
+        -------
+        str
+            A summary of the final result, excluding the process details
+        """
+        iterations_remaining = self.max_iterations
 
         while True:
             result = self.step()
-            print(result)
 
-            # Parse the response using exact marker detection
-            status = None
-            details = ""
-
-            # Look for exact markers
-            for marker in ["DONE:", "CONTINUE:", "FAIL:"]:
-                if marker in result:
-                    status = marker[:-1]  # Remove the colon
-                    # Extract everything after the marker
-                    details = result[result.index(marker) + len(marker):].strip()
-                    break
-
-            if not status:
-                stop_message = "Task failed: Response format error - missing status marker"
+            if "FAIL".lower() in result.lower():
+                logger.info("Task failed", user_request=self.user_request, result=result)
+                break
+            elif "DONE".lower() in result.lower():
+                logger.info("Task completed", user_request=self.user_request, result=result)
                 break
 
-            if status == "FAIL":
-                stop_message = f"Task failed: {details}"
-                break
-            elif status == "DONE":
-                stop_message = f"Task completed: {details}"
-                break
-            elif status == "CONTINUE":
-                progress_summary, next_step = details.split("|") if "|" in details else (details, "")
-                progress_history.append({"summary": progress_summary.strip(), "next": next_step.strip()})
-
-            loops_remaining -= 1
-            if loops_remaining == 0:
-                stop_message = f"Task failed: max loops reached. Progress made: {len(progress_history)} steps"
+            iterations_remaining -= 1
+            if iterations_remaining == 0:
+                logger.info("Max iterations reached", max_iterations=self.max_iterations,
+                            user_request=self.user_request, result=result)
                 break
 
-        print(stop_message)
-
-        success = status == "DONE"
-        progress_summary = "\n".join([f"- {p['summary']}" for p in progress_history]) if progress_history else "No intermediate steps recorded"
-
-        final_prompt = f"""
-Given the original user request:
-{self.user_request}
-
-Task Status: {"Succeeded" if success else "Failed"}
-Progress Summary:
-{progress_summary}
-
-Provide a comprehensive final response with the following structure:
-
-1. Solution Status (Required)
-   - Outcome: Clear statement of the final result
-   - Confidence Level: High/Medium/Low with brief justification
-   - Quality Metrics: Completeness, accuracy, and reliability assessment
-
-2. If Successful:
-   - Primary Solution: Direct and actionable answer
-   - Key Results: Specific outputs or findings
-   - Validation: How the solution was verified
-   - Limitations: Any constraints or assumptions
-
-3. If Failed:
-   - Blocking Issues: Specific obstacles encountered
-   - Progress Made: Valuable intermediate results
-   - Alternative Approaches: Other potential solutions
-   - Next Steps: Recommended actions
-   - Draft Work-In-Progress: The detailed current state of the solution
-
-Guidelines:
-- Prioritize clarity and actionability
-- Include quantitative metrics where possible
-- Focus on outcomes and value delivered
-- Maintain professional and direct tone
-"""
-        result = self.chat.send(final_prompt)
+        result = self.chat.send(
+            "Summarize the final result, and only the final result, without commenting on the process by which you achieved it.")
 
         return result

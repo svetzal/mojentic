@@ -24,14 +24,28 @@ At this layer we have:
 
 ::: mojentic.agents.BaseAgent
 options:
-show_root_heading: true
-merge_init_into_class: false
-group_by_category: false
+  show_root_heading: true
+  merge_init_into_class: false
+  group_by_category: false
 
 ::: mojentic.agents.BaseLLMAgent
+  show_root_heading: true
+  merge_init_into_class: false
+  group_by_category: false
 
 ::: mojentic.agents.BaseAggregatingAgent
+  show_root_heading: true
+  merge_init_into_class: false
+  group_by_category: false
 
 ## Convenient Common Agents
 
 ::: mojentic.agents.OutputAgent
+  show_root_heading: true
+  merge_init_into_class: false
+  group_by_category: false
+
+::: mojentic.agents.IterativeProblemSolver
+  show_root_heading: true
+  merge_init_into_class: false
+  group_by_category: false

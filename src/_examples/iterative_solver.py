@@ -28,7 +28,7 @@ def main():
         llm=llm,
         user_request=user_request,
         available_tools=[AskUserTool(), ResolveDateTool()],
-        max_loops=5
+        max_iterations=5
     )
     result = ooda.run()
     print(f"User Request:\n{user_request}\n")
