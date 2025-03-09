@@ -71,6 +71,8 @@ src/
 - Separate test phases with a single blank line
 - Do not write conditional statements in tests
 - Each test must fail for only one clear reason
+- "Don't Mock what you don't own" only write mocks for our own gateway classes, do not mock other library internals or
+  even private functions or methods in our own code.
 
 ## Best Practices
 1. Follow the existing project structure
