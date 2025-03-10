@@ -102,6 +102,35 @@ src/
 - Build docs locally: `mkdocs serve`
 - Build for production: `mkdocs build`
 
+## Release Process
+1. Update CHANGELOG.md:
+   - All notable changes should be documented under the [Unreleased] section
+   - Group changes into categories:
+     - Added: New features
+     - Changed: Changes in existing functionality
+     - Deprecated: Soon-to-be removed features
+     - Removed: Removed features
+     - Fixed: Bug fixes
+     - Security: Security vulnerability fixes
+   - Each entry should be clear and understandable to end-users
+   - Reference relevant issue/PR numbers where applicable
+
+2. Creating a Release:
+   - Ensure `pyproject.toml` has the next release version
+   - Ensure all changes are documented in CHANGELOG.md
+     - Move [Unreleased] changes to the new version section (e.g., [1.0.0])
+   - Follow semantic versioning:
+     - MAJOR version for incompatible API changes
+     - MINOR version for backward-compatible new functionality
+     - PATCH version for backward-compatible bug fixes
+
+3. Best Practices:
+   - Keep entries concise but descriptive
+   - Write from the user's perspective
+   - Include migration instructions for breaking changes
+   - Document API changes thoroughly
+   - Update documentation to reflect the changes
+
 ## Running Scripts
 1. Example scripts are in `src/_examples/`
 2. Basic usage:
