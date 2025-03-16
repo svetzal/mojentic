@@ -38,9 +38,9 @@ markdown_extensions:
 
 nav:
   - Home: index.md
-  - Getting Started: get_started.md
   - Using LLMs: broker.md
-  - Using Agents: ipa.md
+  - Getting Started with Layer 1: starter_1.md
+  - Iterative Problem Solver: ipa.md
   - API Documentation:
       - Intro: api_0.md
       - Layer 1: api_1.md
