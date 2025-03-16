@@ -19,6 +19,50 @@ At this layer we have:
 - [LLMGateway](api_1.md#mojentic.llm.LLMGateway): This is the abstract class that all LLM adapters must inherit from. It
   provides a common interface and isolation point for interacting with LLMs.
 
+## Working with Images
+
+Mojentic supports sending images to LLMs through the `image_paths` parameter in the `LLMMessage` class. This allows you to perform image analysis, OCR, and other vision-based tasks.
+
+### Usage Example
+
+```python
+from mojentic.llm.gateways import OllamaGateway
+from mojentic.llm.gateways.models import LLMMessage
+from pathlib import Path
+
+# Initialize the gateway
+llmg = OllamaGateway()
+
+# Send a message with an image
+response = llmg.complete(
+    model="gemma3",  # Use an image-capable model
+    messages=[
+        LLMMessage(
+            content="Describe what you see in this image.",
+            image_paths=[
+                str(Path.cwd() / "images" / "example.jpg")
+            ]
+        )
+    ],
+)
+
+print(response)
+```
+
+### Important Notes
+
+- **Image-Capable Models**: You must use an image-capable model to process images. Not all models support image analysis.
+  - For Ollama: Models like "gemma3", "llava", and "bakllava" support image analysis
+  - For OpenAI: Models like "gpt-4-vision-preview" and "gpt-4o" support image analysis
+
+- **Image Formats**: Supported image formats include JPEG, PNG, GIF, and WebP.
+
+- **Implementation Details**:
+  - For Ollama: Images are passed directly as file paths
+  - For OpenAI: Images are base64-encoded and included in the message content
+
+- **Performance Considerations**: Image analysis may require more tokens and processing time than text-only requests.
+
 ## Building Blocks
 
 ::: mojentic.llm.LLMBroker

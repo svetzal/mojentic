@@ -46,6 +46,9 @@ class LLMMessage(BaseModel):
         The object representation of the message.
     tool_calls : Optional[List[LLMToolCall]]
         A list of tool calls to be made available to the LLM.
+    image_paths : Optional[List[str]]
+        A list of file paths to images to be included with the message.
+        Note: You must use an image-capable model to process images.
     """
     role: MessageRole = MessageRole.User
     content: Optional[str] = None
