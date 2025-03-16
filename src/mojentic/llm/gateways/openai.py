@@ -58,9 +58,8 @@ class OpenAIGateway(LLMGateway):
         completion = self.client.chat.completions.create
 
         if 'object_model' in args and args['object_model'] is not None:
-            openai_args['response_format'] = {"type": "json_object"}
-            openai_args['functions'] = [{"name": "output", "parameters": args['object_model'].model_json_schema()}]
-            openai_args['function_call'] = {"name": "output"}
+            completion = self.client.beta.chat.completions.parse
+            openai_args['response_format'] = args['object_model']
 
         if 'tools' in args and args['tools'] is not None:
             openai_args['tools'] = [t.descriptor for t in args['tools']]
