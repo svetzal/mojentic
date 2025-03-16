@@ -13,7 +13,10 @@ def adapt_messages_to_ollama(messages: List[LLMMessage]):
         if m.role == MessageRole.System:
             new_messages.append({'role': 'system', 'content': m.content})
         elif m.role == MessageRole.User:
-            new_messages.append({'role': 'user', 'content': m.content})
+            msg = {'role': 'user', 'content': m.content}
+            if m.image_paths is not None:
+                msg['images'] = m.image_paths
+            new_messages.append(msg)
         elif m.role == MessageRole.Assistant:
             msg = {'role': 'assistant', 'content': m.content or ''}
             if m.tool_calls is not None:

@@ -86,6 +86,50 @@ class DescribeOpenAIMessagesAdapter:
                 }
             ]
 
+        def should_adapt_user_message_with_image_paths(self, mocker):
+            """
+            Given a user message with image paths
+            When adapting to OpenAI format
+            Then it should convert to the correct format with structured content array
+            """
+            # Mock the open function to avoid reading actual files
+            mock_file = mocker.mock_open(read_data=b'fake_image_data')
+            mocker.patch('builtins.open', mock_file)
+
+            # Mock base64 encoding to return a predictable value
+            mock_b64encode = mocker.patch('base64.b64encode')
+            mock_b64encode.return_value = b'ZmFrZV9pbWFnZV9kYXRhX2VuY29kZWQ='  # 'fake_image_data_encoded' in base64
+
+            image_paths = ["/path/to/image1.jpg", "/path/to/image2.png"]
+            messages = [LLMMessage(role=MessageRole.User, content="What's in these images?", image_paths=image_paths)]
+
+            adapted_messages = adapt_messages_to_openai(messages)
+
+            # The content should be a structured array with text and images
+            assert adapted_messages == [
+                {
+                    'role': 'user',
+                    'content': [
+                        {
+                            'type': 'text',
+                            'text': "What's in these images?"
+                        },
+                        {
+                            'type': 'image_url',
+                            'image_url': {
+                                'url': 'data:image/jpg;base64,ZmFrZV9pbWFnZV9kYXRhX2VuY29kZWQ='
+                            }
+                        },
+                        {
+                            'type': 'image_url',
+                            'image_url': {
+                                'url': 'data:image/png;base64,ZmFrZV9pbWFnZV9kYXRhX2VuY29kZWQ='
+                            }
+                        }
+                    ]
+                }
+            ]
+
     class DescribeToolMessages:
         """
         Specifications for adapting messages with tool calls and responses

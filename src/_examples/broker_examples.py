@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from pydantic import BaseModel, Field
 
@@ -38,11 +39,19 @@ def check_tool_use(llm):
                           tools=[ResolveDateTool()])
     print(result)
 
+def check_image_analysis(llm):
+    result = llm.generate(messages=[
+        (LLMMessage(content='What is in this image?',
+                    image_paths=[str(Path.cwd() / 'images' / 'flash_rom.jpg')]))
+    ])
+    print(result)
 
 check_simple_textgen(openai_llm())
 check_structured_output(openai_llm())
 check_tool_use(openai_llm())
+check_image_analysis(openai_llm())
 
 check_simple_textgen(ollama_llm())
 check_structured_output(ollama_llm())
 check_tool_use(ollama_llm())
+check_image_analysis(ollama_llm(model="gemma3:27b"))

@@ -59,6 +59,25 @@ class DescribeOllamaMessagesAdapter:
                 }
             ]
 
+        def should_adapt_user_message_with_image_paths(self):
+            """
+            Given a user message with image paths
+            When adapting to Ollama format
+            Then it should convert to the correct format with images key
+            """
+            image_paths = ["/path/to/image1.jpg", "/path/to/image2.jpg"]
+            messages = [LLMMessage(role=MessageRole.User, content="What's in these images?", image_paths=image_paths)]
+
+            adapted_messages = adapt_messages_to_ollama(messages)
+
+            assert adapted_messages == [
+                {
+                    'role': 'user',
+                    'content': "What's in these images?",
+                    'images': image_paths
+                }
+            ]
+
         def should_adapt_assistant_message(self):
             """
             Given an assistant message

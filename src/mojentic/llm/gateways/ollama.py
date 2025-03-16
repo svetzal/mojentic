@@ -30,10 +30,10 @@ class OllamaGateway(LLMGateway):
 
     def _extract_options_from_args(self, args):
         options = Options(
-            temperature=args['temperature'],
-            num_ctx=args['num_ctx']
+            temperature=args.get('temperature', 1.0),
+            num_ctx=args.get('num_ctx', 32768),
         )
-        if args['num_predict'] > 0:
+        if args.get('num_predict', 0) > 0:
             options.num_predict = args['num_predict']
         return options
 

@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Type
 
 from pydantic import BaseModel
 
@@ -16,7 +16,7 @@ class LLMGateway:
     def complete(self,
                  model: str,
                  messages: List[LLMMessage],
-                 object_model: Optional[BaseModel] = None,
+                 object_model: Optional[Type[BaseModel]] = None,
                  tools: Optional[List[LLMTool]] = None,
                  temperature: float = 1.0,
                  num_ctx: int = 32768,

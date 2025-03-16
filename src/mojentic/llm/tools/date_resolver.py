@@ -3,6 +3,7 @@ from typing import Optional
 from parsedatetime import Calendar, VERSION_CONTEXT_STYLE
 from pytz import timezone
 
+from mojentic.llm import LLMBroker
 from mojentic.llm.tools.llm_tool import LLMTool
 
 

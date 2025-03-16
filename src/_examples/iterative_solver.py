@@ -1,8 +1,8 @@
 import logging
 
-from mojentic.agents.iterative_problem_solver import IterativeProblemSolver
-
 logging.basicConfig(level=logging.WARN)
+
+from mojentic.agents.iterative_problem_solver import IterativeProblemSolver
 
 from mojentic.llm.tools.date_resolver import ResolveDateTool
 from mojentic.llm.tools.ask_user_tool import AskUserTool

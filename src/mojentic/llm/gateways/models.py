@@ -51,6 +51,7 @@ class LLMMessage(BaseModel):
     content: Optional[str] = None
     object: Optional[BaseModel] = None
     tool_calls: Optional[List[LLMToolCall]] = None
+    image_paths: Optional[List[str]] = None
 
 
 class LLMGatewayResponse(BaseModel):

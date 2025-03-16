@@ -1,8 +1,9 @@
 from ollama import chat
 from pydantic import BaseModel, Field
 
+from mojentic.llm.gateways.models import LLMMessage, MessageRole
 from mojentic.llm.gateways.ollama import OllamaGateway
-from mojentic.llm.tools.date_resolver import resolve_date_tool
+from mojentic.llm.tools.date_resolver import ResolveDateTool
 
 
 def check_ollama_gateway():
@@ -13,8 +14,8 @@ def check_ollama_gateway():
 
     response = gateway.complete(
         model="llama3.2:1b",
-        messages=[{'role': 'user', 'content': "Hello, how are you?"}],
-        response_model=Feeling,
+        messages=[LLMMessage(content="Hello, how are you?")],
+        object_model=Feeling,
         temperature=1.0,
         num_ctx=32768,
         num_predict=-1
@@ -70,7 +71,7 @@ def check_tools_call():
                 'content': '{"relative_date": "Friday", "resolved_date": "2025-01-31"}',
             }
         ],
-        tools=[resolve_date_tool['descriptor']]
+        tools=[ResolveDateTool().descriptor]
     )
     print(response)
     # print(response.message.model_dump_json(indent=2))
@@ -78,5 +79,5 @@ def check_tools_call():
     # print(resolve_date_tool['python_function'](relative_date_found='Friday'))
 
 
-# check_ollama_gateway()
-check_tools_call()
+check_ollama_gateway()
+# check_tools_call()
