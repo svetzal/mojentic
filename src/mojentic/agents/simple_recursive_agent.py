@@ -4,11 +4,13 @@ This implementation provides a more declarative approach to problem-solving.
 """
 
 import asyncio
-from typing import Optional, Callable, Awaitable, Union
+from typing import List, Optional
+
+from pydantic import BaseModel
 
 from mojentic.llm.gateways.models import LLMMessage
 from mojentic.llm.llm_broker import LLMBroker
-from pydantic import BaseModel
+from mojentic.llm.tools.llm_tool import LLMTool
 
 
 class ProblemState(BaseModel):
@@ -116,29 +118,34 @@ class SimpleRecursiveAgent:
     A simple recursive agent that can solve problems by recursively applying an LLM.
     This implementation uses a declarative, event-driven approach.
     """
+    max_iterations: int
+    llm: LLMBroker
+    emitter: EventEmitter
+    available_tools: List[LLMTool]
 
-    def __init__(self, model_name: str = "llama3.3-70b-32k", max_iterations: int = 5):
+    def __init__(self, llm: LLMBroker, available_tools: Optional[List[LLMTool]] = None, max_iterations: int = 5):
         """
         Initialize the SimpleRecursiveAgent.
 
         Parameters
         ----------
-        model_name : str
-            The name of the LLM model to use
+        llm : LLMBroker
+            The language model broker to use for generating responses
         max_iterations : int
             The maximum number of iterations to perform
+        available_tools : Optional[List[LLMTool]]
+            List of tools that can be used to solve the problem
         """
-        self.model_name = model_name
         self.max_iterations = max_iterations
-        self.llm = LLMBroker(model=model_name)
+        self.llm = llm
+        self.available_tools = available_tools or []
         self.emitter = EventEmitter()
 
         # Set up event handlers
         self.emitter.subscribe(ProblemSubmittedEvent, self._handle_problem_submitted)
         self.emitter.subscribe(IterationCompletedEvent, self._handle_iteration_completed)
 
-    async def solve(self, problem: str,
-                    callback: Optional[Callable[[str], Union[None, Awaitable[None]]]] = None) -> Optional[str]:
+    async def solve(self, problem: str) -> str:
         """
         Solve a problem asynchronously.
 
@@ -146,14 +153,11 @@ class SimpleRecursiveAgent:
         ----------
         problem : str
             The problem to solve
-        callback : Optional[Callable[[str], Union[None, Awaitable[None]]]], optional
-            Optional callback function to be called when the solution is available.
-            Can be a regular function or a coroutine function.
 
         Returns
         -------
-        Optional[str]
-            The solution to the problem if callback is None, otherwise None
+        str
+            The solution to the problem
         """
         # Create a future to signal when the solution is ready
         solution_future = asyncio.Future()
@@ -166,13 +170,6 @@ class SimpleRecursiveAgent:
             if not solution_future.done():
                 solution_future.set_result(event.state.solution)
 
-                # Call the user-provided callback if any
-                if callback:
-                    if asyncio.iscoroutinefunction(callback):
-                        await callback(event.state.solution)
-                    else:
-                        callback(event.state.solution)
-
         # Subscribe to completion events
         self.emitter.subscribe(ProblemSolvedEvent, handle_solution_event)
         self.emitter.subscribe(ProblemFailedEvent, handle_solution_event)
@@ -180,10 +177,6 @@ class SimpleRecursiveAgent:
 
         # Start the solving process
         self.emitter.emit(ProblemSubmittedEvent(state=state))
-
-        # If a callback is provided, return immediately
-        if callback:
-            return None
 
         # Wait for the solution or timeout
         try:
@@ -295,4 +288,4 @@ If you have the answer, say only "DONE".
 
         # Use asyncio.to_thread to run the synchronous generate method in a separate thread
         # without blocking the event loop
-        return await asyncio.to_thread(self.llm.generate, messages)
+        return await asyncio.to_thread(self.llm.generate, messages, tools=self.available_tools)

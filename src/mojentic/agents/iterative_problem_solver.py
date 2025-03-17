@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 import structlog
 
@@ -29,7 +29,7 @@ class IterativeProblemSolver:
     max_iterations: int
     chat: ChatSession
 
-    def __init__(self, llm: LLMBroker, user_request: str, available_tools: List[LLMTool], max_iterations: int = 3):
+    def __init__(self, llm: LLMBroker, user_request: str, available_tools: Optional[List[LLMTool]] = None, max_iterations: int = 3):
         """Initialize the IterativeProblemSolver.
 
         Parameters
@@ -38,18 +38,18 @@ class IterativeProblemSolver:
             The language model broker to use for generating responses
         user_request : str
             The problem or request to be solved
-        available_tools : List[LLMTool]
-            List of tools that can be used to solve the problem
+        available_tools : Optional[List[LLMTool]], optional
+            List of tools that can be used to solve the problem, by default None
         max_iterations : int, optional
             Maximum number of attempts to solve the problem, by default 3
         """
-        self.available_tools = available_tools
+        self.available_tools = available_tools or []
         self.user_request = user_request
         self.max_iterations = max_iterations
         self.chat = ChatSession(
             llm=llm,
             system_prompt="You are a helpful assistant, working on behalf of the user on a specific user request.",
-            tools=available_tools,
+            tools=self.available_tools,
         )
 
     def step(self) -> str:

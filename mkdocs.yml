@@ -40,7 +40,9 @@ nav:
   - Home: index.md
   - Using LLMs: broker.md
   - Getting Started with Layer 1: starter_1.md
-  - Iterative Problem Solver: ipa.md
+  - Agents:
+      - Iterative Problem Solver: ipa.md
+      - Simple Recursive Agent: sra.md
   - API Documentation:
       - Intro: api_0.md
       - Layer 1: api_1.md
