@@ -126,7 +126,7 @@ while True:
     query = input("You: ")
     if not query:
         break
-    
+
     response = chat_session.send(query)
     print(f"AI: {response}")
 ```
@@ -150,7 +150,7 @@ while True:
     query = input("You: ")
     if not query:
         break
-    
+
     response = chat_session.send(query)
     print(f"AI: {response}")
 ```
@@ -166,6 +166,7 @@ from mojentic.llm import LLMBroker, ChatSession
 from mojentic.llm.tools.date_resolver import ResolveDateTool
 from mojentic.llm.tools.llm_tool import LLMTool
 
+
 # Define a custom tool for iterative problem solving
 class IterativeProblemSolverTool(LLMTool):
     def __init__(self, llm: LLMBroker, tools: List[LLMTool]):
@@ -174,11 +175,10 @@ class IterativeProblemSolverTool(LLMTool):
 
     def run(self, problem_to_solve: str):
         solver = IterativeProblemSolver(
-            llm=self.llm, 
-            user_request=problem_to_solve, 
+            llm=self.llm,
             available_tools=self.tools
         )
-        return solver.run()
+        return solver.solve(problem_to_solve)
 
     @property
     def descriptor(self):
@@ -201,12 +201,13 @@ class IterativeProblemSolverTool(LLMTool):
             }
         }
 
+
 # Create an LLMBroker
 llm = LLMBroker(model="llama3.3-70b-32k")
 
 # Create a ChatSession with the custom tool
 chat_session = ChatSession(
-    llm, 
+    llm,
     tools=[IterativeProblemSolverTool(llm=llm, tools=[ResolveDateTool()])]
 )
 
@@ -215,7 +216,7 @@ while True:
     query = input("You: ")
     if not query:
         break
-    
+
     response = chat_session.send(query)
     print(f"AI: {response}")
 ```

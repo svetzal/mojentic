@@ -16,8 +16,8 @@ class IterativeProblemSolverTool(LLMTool):
         self.tools = tools
 
     def run(self, problem_to_solve: str):
-        solver = IterativeProblemSolver(llm=self.llm, user_request=problem_to_solve, available_tools=self.tools)
-        return solver.run()
+        solver = IterativeProblemSolver(llm=self.llm, available_tools=self.tools)
+        return solver.solve(problem_to_solve)
 
     @property
     def descriptor(self):

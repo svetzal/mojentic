@@ -28,13 +28,12 @@ def main():
     # Create the problem solver with necessary tools
     solver = IterativeProblemSolver(
         llm=llm,
-        user_request=user_request,
         available_tools=[AskUserTool(), ResolveDateTool()],
         max_iterations=5
     )
 
     # Run the solver and get the result
-    result = solver.run()
+    result = solver.solve(user_request)
 
     # Display the results
     print(f"User Request:\n{user_request}\n")

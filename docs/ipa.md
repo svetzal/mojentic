@@ -41,12 +41,11 @@ user_request = "What's the date next Tuesday?"
 # Create the problem solver with necessary tools
 solver = IterativeProblemSolver(
     llm=llm,
-    user_request=user_request,
     available_tools=[ResolveDateTool()],
     max_iterations=3  # Maximum number of iterations
 )
 
 # Run the solver and get the final result
-result = solver.run()
+result = solver.solve(user_request)
 print(result)
 ```

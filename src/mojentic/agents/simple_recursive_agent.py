@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from mojentic.llm.gateways.models import LLMMessage
 from mojentic.llm.llm_broker import LLMBroker
 from mojentic.llm.tools.llm_tool import LLMTool
+from mojentic.llm.chat_session import ChatSession
 
 
 class ProblemState(BaseModel):
@@ -114,14 +115,30 @@ class EventEmitter:
 
 
 class SimpleRecursiveAgent:
-    """
-    A simple recursive agent that can solve problems by recursively applying an LLM.
-    This implementation uses a declarative, event-driven approach.
+    """An agent that recursively attempts to solve a problem using available tools.
+
+    This agent uses an event-driven approach to manage the problem-solving process.
+    It will continue attempting to solve the problem until it either succeeds,
+    fails explicitly, or reaches the maximum number of recursions.
+
+    Attributes
+    ----------
+    max_iterations : int
+        The maximum number of iterations to perform
+    llm : LLMBroker
+        The language model broker to use for generating responses
+    emitter : EventEmitter
+        The pubsub event emitter used to manage events
+    available_tools : List[LLMTool]
+        List of tools that can be used to solve the problem
+    chat : ChatSession
+        The chat session used for problem-solving interaction
     """
     max_iterations: int
     llm: LLMBroker
-    emitter: EventEmitter
     available_tools: List[LLMTool]
+    emitter: EventEmitter
+    chat: ChatSession
 
     def __init__(self, llm: LLMBroker, available_tools: Optional[List[LLMTool]] = None, max_iterations: int = 5):
         """
@@ -140,6 +157,15 @@ class SimpleRecursiveAgent:
         self.llm = llm
         self.available_tools = available_tools or []
         self.emitter = EventEmitter()
+
+        # Initialize the chat session
+        self.chat = ChatSession(
+            llm=llm,
+            system_prompt="You are a problem-solving assistant that can solve complex problems step by step. "
+                         "You analyze problems, break them down into smaller parts, and solve them systematically. "
+                         "If you cannot solve a problem completely in one step, you make progress and identify what to do next.",
+            tools=self.available_tools
+        )
 
         # Set up event handlers
         self.emitter.subscribe(ProblemSubmittedEvent, self._handle_problem_submitted)
@@ -266,26 +292,18 @@ If you have the answer, say only "DONE".
 
     async def _generate(self, prompt: str) -> str:
         """
-        Generate a response using the LLM asynchronously.
+        Generate a response using the ChatSession asynchronously.
 
         Parameters
         ----------
         prompt : str
-            The prompt to send to the LLM
+            The prompt to send to the ChatSession
 
         Returns
         -------
         str
             The generated response
         """
-        # Create the messages for the LLM
-        messages = [
-            LLMMessage(content="You are a problem-solving assistant that can solve complex problems step by step. "
-                               "You analyze problems, break them down into smaller parts, and solve them systematically. "
-                               "If you cannot solve a problem completely in one step, you make progress and identify what to do next."),
-            LLMMessage(content=prompt)
-        ]
-
-        # Use asyncio.to_thread to run the synchronous generate method in a separate thread
+        # Use asyncio.to_thread to run the synchronous send method in a separate thread
         # without blocking the event loop
-        return await asyncio.to_thread(self.llm.generate, messages, tools=self.available_tools)
+        return await asyncio.to_thread(self.chat.send, prompt)
