@@ -7,8 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2025-03-17
+
 ### Added
+- Added SimpleRecursiveAgent for enhanced problem-solving capabilities
+- Added image analysis support in LLM gateways
+- Added "Getting Started with Mojentic API Layer 1" guide
 - Added support for image file paths in OllamaGateway's complete and complete_stream methods
+
+### Changed
+- Refactored IterativeProblemSolver to remove user_request parameter for improved clarity
+- Refactored IterativeProblemSolver and SimpleRecursiveAgent for improved flexibility
+- Updated navigation in documentation
+
+### Fixed
+- Fixed structured output for OpenAI
+- Fixed documentation links
 
 ## [0.2.6] - 2025-03-09
 
