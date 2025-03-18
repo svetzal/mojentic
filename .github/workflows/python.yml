@@ -35,7 +35,12 @@ jobs:
           flake8 src --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --ignore=F401
       - name: Test with pytest
         run: |
-          pytest
+          pytest --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: junit/test-results.xml
       - name: Build MkDocs site
         run: |
           pip install mkdocs mkdocs-material mkdocstrings
