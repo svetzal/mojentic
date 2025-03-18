@@ -26,8 +26,11 @@ Mojentic is a framework that provides a simple and flexible way to interact with
 ```bash
 # Install from PyPI
 pip install mojentic
+```
 
-# Or install from source
+Or install from source
+
+```bash
 git clone https://github.com/mojility/mojentic.git
 cd mojentic
 pip install -e .
