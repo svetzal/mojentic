@@ -1,4 +1,5 @@
 import json
+from typing import Type, List
 
 import structlog
 from openai import OpenAI
@@ -67,7 +68,7 @@ class OpenAIGateway(LLMGateway):
         response = completion(**openai_args)
 
         object = None
-        tool_calls = []
+        tool_calls: List[LLMToolCall] = []
 
         if 'object_model' in args and args['object_model'] is not None:
             try:
@@ -94,3 +95,26 @@ class OpenAIGateway(LLMGateway):
 
     def get_available_models(self) -> list[str]:
         return [m.id for m in self.client.models.list()]
+
+    def calculate_embeddings(self, text: str, model: str = "text-embedding-3-large"):
+        """
+        Calculate embeddings for the given text using the specified OpenAI model.
+
+        Parameters
+        ----------
+        text : str
+            The text to calculate embeddings for.
+        model : str, optional
+            The name of the OpenAI embeddings model to use. Defaults to "text-embedding-3-large".
+
+        Returns
+        -------
+        list
+            The embeddings for the text.
+        """
+        logger.debug("calculate_embeddings", text=text, model=model)
+        response = self.client.embeddings.create(
+            model=model,
+            input=text
+        )
+        return response.data[0].embedding
