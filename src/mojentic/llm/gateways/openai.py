@@ -94,7 +94,15 @@ class OpenAIGateway(LLMGateway):
         )
 
     def get_available_models(self) -> list[str]:
-        return [m.id for m in self.client.models.list()]
+        """
+        Get the list of available OpenAI models, sorted alphabetically.
+
+        Returns
+        -------
+        list[str]
+            The list of available models, sorted alphabetically.
+        """
+        return sorted([m.id for m in self.client.models.list()])
 
     def calculate_embeddings(self, text: str, model: str = "text-embedding-3-large") -> List[float]:
         """

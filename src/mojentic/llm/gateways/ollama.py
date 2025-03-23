@@ -163,14 +163,14 @@ class OllamaGateway(LLMGateway):
 
     def get_available_models(self) -> List[str]:
         """
-        Get the list of available local models.
+        Get the list of available local models, sorted alphabetically.
 
         Returns
         -------
         List[str]
-            The list of available models.
+            The list of available models, sorted alphabetically.
         """
-        return [m.model for m in self.client.list().models]
+        return sorted([m.model for m in self.client.list().models])
 
     def pull_model(self, model: str) -> None:
         """
