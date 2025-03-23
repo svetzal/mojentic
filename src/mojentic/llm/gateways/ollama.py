@@ -183,7 +183,7 @@ class OllamaGateway(LLMGateway):
         """
         self.client.pull(model)
 
-    def calculate_embeddings(self, text: str, model: str = "mxbai-embed-large"):
+    def calculate_embeddings(self, text: str, model: str = "mxbai-embed-large") -> List[float]:
         """
         Calculate embeddings for the given text using the specified model.
 

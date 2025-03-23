@@ -1,4 +1,4 @@
-from typing import List, Optional, Type
+from typing import List, Optional, Type, Any
 
 from pydantic import BaseModel
 
@@ -57,5 +57,23 @@ class LLMGateway:
         -------
         List[str]
             The list of available models.
+        """
+        raise NotImplementedError
+
+    def calculate_embeddings(self, text: str, model: str = None) -> List[float]:
+        """
+        Calculate embeddings for the given text using the specified model.
+
+        Parameters
+        ----------
+        text : str
+            The text to calculate embeddings for.
+        model : str, optional
+            The name of the model to use for embeddings. Default value depends on the implementation.
+
+        Returns
+        -------
+        List[Any]
+            The embeddings for the text.
         """
         raise NotImplementedError

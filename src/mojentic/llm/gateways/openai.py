@@ -96,7 +96,7 @@ class OpenAIGateway(LLMGateway):
     def get_available_models(self) -> list[str]:
         return [m.id for m in self.client.models.list()]
 
-    def calculate_embeddings(self, text: str, model: str = "text-embedding-3-large"):
+    def calculate_embeddings(self, text: str, model: str = "text-embedding-3-large") -> List[float]:
         """
         Calculate embeddings for the given text using the specified OpenAI model.
 

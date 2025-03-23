@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2025-03-25
+
+### Added
+- Added stubbed calculate_embeddings method to LLMGateway base class for standardized interface
+- Added return type annotations to calculate_embeddings methods in OllamaGateway and OpenAIGateway
+
+### Fixed
+- Added missing documentation for embeddings functionality in API Layer 1 guide
+
 ## [0.4.0] - 2025-03-23
 
 ### Added
