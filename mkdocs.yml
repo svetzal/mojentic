@@ -43,8 +43,11 @@ nav:
     - Getting Started with Layer 1: starter_1.md
     - Examples and Tutorials (Layer 1):
       - Simple Text Generation: simple_text_generation.md
+      - Building Chatbots: chat_sessions.md
       - Structured Output: structured_output.md
+      - Building Tools: building_tools.md
       - Tool Usage: tool_usage.md
+      - Building Chatbots with Tools: chat_sessions_with_tools.md
       - Image Analysis: image_analysis.md
   - Layer 2 - Agents:
       - Iterative Problem Solver: ipa.md
