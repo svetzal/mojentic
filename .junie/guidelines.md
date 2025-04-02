@@ -110,6 +110,9 @@ src/
   ```
 - Build docs locally: `mkdocs serve`
 - Build for production: `mkdocs build`
+- Markdown files
+    - Use `#` for top-level headings
+    - Put blank lines above and below bulleted lists, numbered lists, headings, quotations, and code blocks
 
 ## Release Process
 1. Update CHANGELOG.md:
