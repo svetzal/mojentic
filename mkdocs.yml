@@ -39,8 +39,14 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Using LLMs: broker.md
-  - Getting Started with Layer 1: starter_1.md
-  - Agents:
+  - Layer 1 - Core:
+    - Getting Started with Layer 1: starter_1.md
+    - Examples and Tutorials (Layer 1):
+      - Simple Text Generation: simple_text_generation.md
+      - Structured Output: structured_output.md
+      - Tool Usage: tool_usage.md
+      - Image Analysis: image_analysis.md
+  - Layer 2 - Agents:
       - Iterative Problem Solver: ipa.md
       - Simple Recursive Agent: sra.md
   - API Documentation:

@@ -14,15 +14,24 @@ Mojentic is an agentic framework that provides a simple and flexible way to asse
 
 ## Project Structure
 ```
+docs/                  # Documentation files (MkDocs)
 src/
-├── mojentic/           # Main package
+├── mojentic/          # Main package
 │   ├── agents/        # Agent implementations
+│   ├── audit/         # Audit and logging functionality
 │   ├── context/       # Shared memory and context
-│   ├── llm/          # LLM integration
-│   │   ├── gateways/ # LLM provider adapters
-│   │   ├── registry/ # Model registration
-│   │   └── tools/    # Utility tools
+│   ├── llm/           # LLM integration
+│   │   ├── gateways/  # LLM provider adapters
+│   │   ├── registry/  # Model registration
+│   │   └── tools/     # Utility tools
+│   ├── utils/         # Utility functions and helpers
+│   ├── dispatcher.py  # Event dispatching functionality
+│   ├── event.py       # Event definitions
+│   ├── router.py      # Message routing
+│   └── router_spec.py # Router specifications
 ├── _examples/         # Usage examples
+    ├── images/        # Example images for image analysis
+    └── react/         # ReAct pattern examples
 ```
 
 ## Development Setup
