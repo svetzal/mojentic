@@ -31,7 +31,7 @@ from mojentic.llm.gateways.models import LLMMessage
 from mojentic.llm.llm_broker import LLMBroker
 
 # Create an LLM broker (model parameter is required)
-llm = LLMBroker(model="llama3")
+llm = LLMBroker(model="qwen2.5:14b")
 
 # Generate a response to a simple prompt
 result = llm.generate(messages=[LLMMessage(content='Hello, how are you?')])

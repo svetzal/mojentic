@@ -38,7 +38,7 @@ class Sentiment(BaseModel):
     label: str = Field(..., title="Description", description="label for the sentiment")
 
 # Create an LLM broker with a specified model
-llm = LLMBroker(model="llama3")
+llm = LLMBroker(model="qwen2.5:14b")
 
 # Generate structured output
 result = llm.generate_object(
