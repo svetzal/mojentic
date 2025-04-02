@@ -195,13 +195,13 @@ class CurrentDateTimeTool(LLMTool):
         from datetime import datetime
         current_time = datetime.now()
         formatted_time = current_time.strftime(format_string)
-        
+
         return {
             "current_datetime": formatted_time,
             "timestamp": current_time.timestamp(),
             "timezone": datetime.now().astimezone().tzname()
         }
-    
+
     @property
     def descriptor(self):
         return {
@@ -249,7 +249,7 @@ from mojentic.llm.tools.llm_tool import LLMTool
 class CounterTool(LLMTool):
     def __init__(self):
         self.count = 0
-    
+
     def run(self, action: str = "increment") -> dict:
         """Manages a simple counter."""
         if action.lower() == "increment":
@@ -258,12 +258,12 @@ class CounterTool(LLMTool):
             self.count -= 1
         elif action.lower() == "reset":
             self.count = 0
-        
+
         return {
             "count": self.count,
             "action_performed": action
         }
-    
+
     @property
     def descriptor(self):
         return {

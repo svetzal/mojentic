@@ -5,6 +5,7 @@
 When working with Large Language Models (LLMs), the most basic operation is generating text responses to prompts. This fundamental capability forms the foundation for more complex interactions and is essential for any application that requires natural language processing.
 
 Simple text generation is useful when you need to:
+
 - Get quick answers or explanations from an LLM
 - Generate creative content like stories or descriptions
 - Obtain information or assistance on various topics
@@ -13,6 +14,7 @@ Simple text generation is useful when you need to:
 ## When to Apply This Approach
 
 Use simple text generation when:
+
 - You need straightforward text responses without structured data
 - You're just getting started with Mojentic and want to test basic functionality
 - Your use case doesn't require complex tools or structured outputs

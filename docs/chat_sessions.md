@@ -5,6 +5,7 @@
 When working with Large Language Models (LLMs), simple text generation is useful for one-off interactions, but many applications require ongoing conversations where the model remembers previous exchanges. This is where chat sessions come in.
 
 Chat sessions are essential when you need to:
+
 - Build conversational agents or chatbots
 - Maintain context across multiple user interactions
 - Create applications where the LLM needs to remember previous information
@@ -13,6 +14,7 @@ Chat sessions are essential when you need to:
 ## When to Apply This Approach
 
 Use chat sessions when:
+
 - Your application requires multi-turn conversations
 - You need the LLM to reference information from earlier in the conversation
 - You want to create a more interactive and engaging user experience

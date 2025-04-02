@@ -14,6 +14,7 @@ This capability transforms LLMs from simple text generators into powerful data e
 ## When to Apply This Approach
 
 Use structured output generation when:
+
 - You need to extract specific data points from LLM responses
 - Your application requires typed data rather than raw text
 - You want to enforce a schema on LLM outputs
