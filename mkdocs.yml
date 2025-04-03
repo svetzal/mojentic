@@ -4,6 +4,12 @@ theme:
   features:
     - content.code.copy
     - content.code.select
+  palette:
+    primary: custom
+    accent: custom
+  custom_dir: docs/overrides
+  logo: assets/mojility_favicon.png
+  favicon: assets/mojility_favicon.png
 plugins:
   - search
   - autorefs

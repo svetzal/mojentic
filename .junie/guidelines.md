@@ -3,6 +3,15 @@
 ## Project Overview
 Mojentic is an agentic framework that provides a simple and flexible way to assemble teams of agents to solve complex problems. It supports integration with various LLM providers and includes tools for task automation.
 
+## Identity and Branding Guidelines
+
+As Mojentic is a Mojility product, it is important to maintain a consistent identity and branding across all materials. The following guidelines should be followed:
+
+- **Logo**: Use the official Mojility logo in all branding materials. The logo should be used in its original colors and proportions
+- **Color Palette**: Use the official Mojility color palette for all branding materials. The primary colors are:
+  - Accent Green: #6bb660
+  - Dark Grey: #666767
+
 ## Tech Stack
 - Python 3.11+
 - Key Dependencies:
