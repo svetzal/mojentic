@@ -12,6 +12,31 @@ Large Language Models (LLMs) are powerful for generating text, but they have lim
 
 Tools essentially allow LLMs to request specialized capabilities. When an LLM identifies the need for a tool, it makes a request that the Mojentic LLMBroker detects. The broker then calls the appropriate tool and passes the results back to the LLM, making the system much more powerful and practical for real-world applications.
 
+```mermaid
+sequenceDiagram
+    participant You
+    participant Mojentic
+    participant LLM
+    participant Tool
+
+    You->>Mojentic: Send Request
+    Mojentic->>LLM: Call LLM
+    loop
+        LLM->>Mojentic: Request Tool
+        Mojentic->>Tool: Validate / Sanitize Parameters, Call Tool
+        activate Tool
+        Tool->>Mojentic: Return Result
+        deactivate Tool
+        Mojentic->>LLM: Format Result
+    end
+    LLM->>Mojentic: Generate Response
+    Mojentic->>You: Return Response
+```
+
+All you have to do as a developer is supply the available tools to the LLMBroker, and it will handle the rest. The LLM will automatically request the tools it needs, and the broker will manage the execution and response formatting.
+
+> Not all LLMs support tool usage, and not all those that do will issue multiple tool calls per request.
+
 ## When to Apply This Approach
 
 Use tools with LLMs when:
