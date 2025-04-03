@@ -10,6 +10,7 @@ Chat sessions provide a way to maintain context across multiple interactions, wh
 - Provide more accurate and helpful responses
 - Solve complex problems that require both conversation memory and specialized capabilities
 
+
 This combination creates intelligent assistants that can both remember your conversation history and take action when needed.
 
 ## When to Apply This Approach
@@ -21,11 +22,14 @@ Use chat sessions with tools when:
 - You want to create assistants that can both converse naturally and perform specific tasks
 - Your use case involves complex problem-solving that benefits from both memory and specialized tools
 
+
 Common examples include:
+
 - Personal assistants that can schedule appointments and answer questions about your calendar
 - Customer support bots that can look up order information while maintaining conversation context
 - Research assistants that can search for information and maintain the thread of an investigation
 - Technical support chatbots that can diagnose problems and access documentation
+
 
 ## Getting Started
 
@@ -76,6 +80,7 @@ These imports provide:
 - `LLMBroker`: The interface for interacting with LLMs
 - `ResolveDateTool`: A built-in tool for resolving date-related queries
 
+
 ### 2. Create an LLM broker
 
 ```python
@@ -113,6 +118,7 @@ This loop:
 - Prints the response
 - Continues until the user enters an empty query
 
+
 When the user asks a date-related question, the LLM will automatically use the `ResolveDateTool` to provide an accurate response.
 
 ## How Tool Usage Works in Chat Sessions
@@ -126,6 +132,7 @@ When a user sends a message to a chat session with tools:
 5. The LLM incorporates the tool results into its response
 6. The response is added to the conversation history
 7. The cycle continues with each new user message
+
 
 This process happens automatically, with the LLM deciding when and how to use the available tools based on the conversation context.
 
@@ -306,11 +313,13 @@ When building chatbots with tools, follow these best practices:
 - **Complementary capabilities**: Choose tools that complement each other and the LLM's capabilities
 - **Clear boundaries**: Each tool should have a clear and distinct purpose
 
+
 ### 2. Provide Clear System Prompts
 
 - **Set expectations**: Use the system prompt to tell the LLM when and how to use tools
 - **Define the chatbot's role**: Clearly state what the chatbot should and shouldn't do
 - **Guide tool usage**: Provide guidelines for when the LLM should use tools vs. its own knowledge
+
 
 Example system prompt:
 ```
@@ -325,11 +334,13 @@ For general knowledge questions, use your training data instead of tools.
 - **Fallback responses**: Provide fallback options when tools fail
 - **Transparent communication**: Be clear with users when a tool fails and why
 
+
 ### 4. Balance Tool Usage with Conversation Flow
 
 - **Natural integration**: Tool usage should feel like a natural part of the conversation
 - **Avoid over-reliance**: Don't use tools when the LLM's knowledge is sufficient
 - **Maintain context**: Ensure tool usage doesn't disrupt the conversation flow
+
 
 ## Summary
 
@@ -340,5 +351,6 @@ Chat sessions with tools in Mojentic provide a powerful way to build intelligent
 3. How to use multiple tools in a chat session
 4. How to create custom tools for chat sessions
 5. Best practices for building effective chatbots with tools
+
 
 By combining chat sessions with tools, you can create more capable, accurate, and helpful AI assistants that maintain conversation context while also performing specialized tasks and accessing external information.
