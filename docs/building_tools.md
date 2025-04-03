@@ -125,7 +125,7 @@ Default is '%Y-%m-%d %H:%M:%S'.
 Every tool in Mojentic must implement two key components:
 
 1. **The `run` method**: This contains the actual functionality of your tool
-2. **The `descriptor` property**: This tells the LLM how to use your tool
+2. **The `descriptor` property**: This describes your tool's capabilities so the LLM knows when to request it
 
 ### The `run` Method
 
@@ -143,7 +143,7 @@ In our example, the `run` method:
 
 ### The `descriptor` Property
 
-The `descriptor` property is crucial - it's how you communicate your tool's capabilities to the LLM. This property returns a dictionary that follows the OpenAI function calling format, containing:
+The `descriptor` property is crucial - it communicates your tool's capabilities so the LLM can determine when to request it. This property returns a dictionary that follows the OpenAI function calling format, containing:
 
 - **name**: A unique identifier for your tool
 - **description**: A clear explanation of what your tool does
@@ -153,9 +153,11 @@ The `descriptor` property is crucial - it's how you communicate your tool's capa
   - Whether they're required or optional
 
 The descriptor is essentially the "API documentation" that helps the LLM understand:
-- When and why to use your tool
-- What information to provide to your tool
+- When and why to request your tool
+- What parameters to include in the request
 - What to expect in return
+
+When the LLM makes a tool request, the LLMBroker detects it, calls the appropriate tool, and passes the results back to the LLM.
 
 ## Using Your Custom Tool
 
@@ -181,11 +183,12 @@ result = llm.generate(
 print(result)
 ```
 
-When the LLM receives a query about the current time or date, it will:
-1. Recognize that it needs current time information
-2. Call the `CurrentDateTimeTool`
-3. Receive the current date and time
-4. Incorporate this information into its response
+When the LLM receives a query about the current time or date, the following happens:
+1. The LLM recognizes that it needs current time information
+2. The LLM requests that the `CurrentDateTimeTool` be called
+3. The LLMBroker detects this request and calls the tool
+4. The LLMBroker passes the tool's result back to the LLM
+5. The LLM incorporates this information into its response
 
 ## Best Practices for Tool Design
 

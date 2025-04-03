@@ -10,7 +10,7 @@ Large Language Models (LLMs) are powerful for generating text, but they have lim
 - Improve the accuracy and reliability of LLM responses
 - Create more powerful and versatile AI applications
 
-Tools essentially give LLMs the ability to "call functions" when they need specialized capabilities, making them much more powerful and practical for real-world applications.
+Tools essentially allow LLMs to request specialized capabilities. When an LLM identifies the need for a tool, it makes a request that the Mojentic LLMBroker detects. The broker then calls the appropriate tool and passes the results back to the LLM, making the system much more powerful and practical for real-world applications.
 
 ## When to Apply This Approach
 
@@ -85,20 +85,22 @@ result = llm.generate(
 ```
 
 The key difference from simple text generation:
-- We provide the `tools` parameter with a list of tools the LLM can use
+- We provide the `tools` parameter with a list of tools that can be used during the generation process
 - In this case, we're providing the `ResolveDateTool`
-- When the LLM determines it needs date-related information, it will use this tool
+- When the LLM determines it needs date-related information, it will request the tool, which the LLMBroker will detect, execute, and pass the results back to the LLM
 
 ### 4. Behind the scenes
 
 When the LLM receives the query "What is the date on Friday?", it recognizes that it needs to determine a specific date. Here's what happens:
 
 1. The LLM recognizes that it needs to resolve a date
-2. It decides to use the `ResolveDateTool`
-3. The tool calculates the date of the upcoming Friday
-4. The LLM incorporates this information into its response
+2. It requests that the `ResolveDateTool` be called
+3. The LLMBroker detects this request and calls the tool
+4. The tool calculates the date of the upcoming Friday
+5. The LLMBroker passes the tool's result back to the LLM
+6. The LLM incorporates this information into its response
 
-This process is handled automatically by Mojentic's tool integration system.
+This process is handled automatically by Mojentic's LLMBroker and tool integration system.
 
 ## Creating Custom Tools
 
@@ -176,7 +178,7 @@ result = llm.generate(
 Using tools with LLMs in Mojentic allows you to extend the capabilities of language models beyond simple text generation. In this example, we've learned:
 
 1. How to provide tools to an LLM using the `tools` parameter
-2. How the LLM automatically decides when to use a tool
+2. How the LLM requests tools and the LLMBroker handles these requests
 3. How to create custom tools for specialized tasks
 4. How to use multiple tools together
 

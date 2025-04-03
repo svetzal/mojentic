@@ -119,7 +119,7 @@ This loop:
 - Continues until the user enters an empty query
 
 
-When the user asks a date-related question, the LLM will automatically use the `ResolveDateTool` to provide an accurate response.
+When the user asks a date-related question, the LLM will recognize the need for date information and request the `ResolveDateTool`. The LLMBroker will detect this request, call the tool, and pass the results back to the LLM, which will then provide an accurate response.
 
 ## How Tool Usage Works in Chat Sessions
 
@@ -127,14 +127,16 @@ When a user sends a message to a chat session with tools:
 
 1. The message is added to the conversation history
 2. The entire conversation history is sent to the LLM, along with the available tools
-3. The LLM determines if it needs to use any tools to respond appropriately
-4. If needed, the LLM calls the relevant tool(s) and receives the results
-5. The LLM incorporates the tool results into its response
-6. The response is added to the conversation history
-7. The cycle continues with each new user message
+3. The LLM determines if it needs tool assistance to respond appropriately
+4. If needed, the LLM requests that specific tool(s) be called with certain parameters
+5. The LLMBroker detects these requests and calls the relevant tool(s)
+6. The LLMBroker passes the tool results back to the LLM
+7. The LLM incorporates the tool results into its response
+8. The response is added to the conversation history
+9. The cycle continues with each new user message
 
 
-This process happens automatically, with the LLM deciding when and how to use the available tools based on the conversation context.
+This process happens automatically, with the LLM requesting tools when needed and the LLMBroker handling these requests based on the conversation context.
 
 ## Example Conversation
 
@@ -158,7 +160,7 @@ Notice how the chatbot maintains the conversation context while also providing a
 
 ## Using Multiple Tools
 
-You can provide multiple tools to a chat session, and the LLM will choose the appropriate one based on the conversation:
+You can provide multiple tools to a chat session, and the LLM will request the appropriate ones based on the conversation needs:
 
 ```python
 from mojentic.llm import ChatSession, LLMBroker
@@ -184,7 +186,7 @@ response = chat_session.send("What's the weather like in New York today, and wha
 print(response)
 ```
 
-In this example, the LLM might use both the `WeatherTool` and the `ResolveDateTool` to provide a comprehensive response.
+In this example, the LLM might request both the `WeatherTool` and the `ResolveDateTool`, which the LLMBroker would execute and pass the results back to the LLM to provide a comprehensive response.
 
 ## Creating Custom Tools for Chat Sessions
 
