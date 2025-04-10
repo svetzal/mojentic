@@ -58,7 +58,7 @@ print(f"OpenAI embeddings dimension: {len(openai_embeddings)}")
 
 - **Embedding Dimensions**:
   - Different models produce embeddings with different dimensions
-  - Ollama's "mxbai-embed-large" typically produces 4096-dimensional embeddings
+  - Ollama's "mxbai-embed-large" typically produces 1024-dimensional embeddings
   - OpenAI's "text-embedding-3-large" typically produces 3072-dimensional embeddings
 
 - **Performance Considerations**:

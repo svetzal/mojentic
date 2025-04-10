@@ -62,7 +62,7 @@ from mojentic.llm.llm_broker import LLMBroker
 from mojentic.llm.tools.date_resolver import ResolveDateTool
 
 # Create an LLM broker with a specified model
-llm = LLMBroker(model="llama3")
+llm = LLMBroker(model="qwen2.5")
 
 # Generate a response with tool assistance
 result = llm.generate(
@@ -95,7 +95,7 @@ These imports provide:
 ### 2. Create an LLM broker
 
 ```python
-llm = LLMBroker(model="llama3")
+llm = LLMBroker(model="qwen2.5")
 ```
 
 Just like in previous examples, we create an LLM broker with a required model parameter that specifies which LLM to use.
@@ -129,7 +129,7 @@ This process is handled automatically by Mojentic's LLMBroker and tool integrati
 
 ## Creating Custom Tools
 
-While Mojentic provides several built-in tools, you can also create your own custom tools. Here's a simple example of creating a custom calculator tool:
+While Mojentic provides several built-in tools, you can also create your own custom tools. Here's a simple example of creating a custom calculator tool - but see if you can spot the potential security issues with this approach:
 
 ```python
 from pydantic import BaseModel, Field
@@ -151,13 +151,15 @@ class CalculatorTool(LLMTool):
             return f"Error evaluating expression: {str(e)}"
 
 # Use the custom tool
-llm = LLMBroker(model="llama3")
+llm = LLMBroker(model="qwen2.5")
 result = llm.generate(
     messages=[LLMMessage(content='What is 123 * 456?')],
     tools=[CalculatorTool()]
 )
 print(result)
 ```
+
+Right, the use of `eval()` is a potential security risk, as it can execute arbitrary code. In a production environment, you should implement proper validation and sanitization of the input to avoid security vulnerabilities.
 
 ## Using Multiple Tools
 
@@ -167,7 +169,7 @@ You can provide multiple tools to the LLM, and it will choose the appropriate on
 from mojentic.llm.tools.web_search import WebSearchTool
 
 # Create an LLM broker with a specified model
-llm = LLMBroker(model="llama3")
+llm = LLMBroker(model="qwen2.5")
 
 # Generate a response with multiple tools
 result = llm.generate(
