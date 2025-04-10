@@ -159,7 +159,7 @@ result = llm.generate(
 print(result)
 ```
 
-Right, the use of `eval()` is a potential security risk, as it can execute arbitrary code. In a production environment, you should implement proper validation and sanitization of the input to avoid security vulnerabilities.
+Right, the use of `eval()` is a potential security risk, as it can execute arbitrary code. You should implement proper validation and sanitization of the input to avoid security vulnerabilities.
 
 ## Using Multiple Tools
 
