@@ -41,8 +41,8 @@ from mojentic.llm.llm_broker import LLMBroker
 llm = LLMBroker(model="gemma3:27b")  # For Ollama, use a multimodal model
 
 # Build a message with an image using MessageBuilder
-message = MessageBuilder('What is in this image?')
-    .add_image(Path.cwd() / 'src' / '_examples' / 'images' / 'flash_rom.jpg')
+message = MessageBuilder('What is in this image?') \
+    .add_image(Path.cwd() / 'src' / '_examples' / 'images' / 'flash_rom.jpg') \
     .build()
 
 # Generate a response that includes image analysis
