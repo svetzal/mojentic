@@ -126,7 +126,7 @@ class MessageBuilder():
         content = self.file_gateway.read(file_path)
         return (f"File: {file_path}\n"
                 f"```{self.type_sensor.get_language(file_path)}\n"
-                f"{content}\n"
+                f"{content.strip()}\n"
                 f"```\n")
 
 

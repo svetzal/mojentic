@@ -14,6 +14,14 @@ def file_gateway(mocker):
     file_gateway.is_binary.return_value = False
     return file_gateway
 
+@pytest.fixture
+def file_path():
+    return Path("/path/to/file.txt")
+
+@pytest.fixture
+def whitespace_file_content():
+    return "\n\n  \n  test file content with whitespace  \n\n  \n"
+
 
 @pytest.fixture
 def message_builder(file_gateway):
@@ -143,6 +151,30 @@ class DescribeMessageBuilder:
             assert "```python" in result
             assert "test file content" in result
             assert "```" in result
+
+        def should_strip_whitespace_from_file_content(self, message_builder, file_gateway, file_path, whitespace_file_content, mocker):
+            """
+            Given a MessageBuilder
+            When _file_content_partial is called with content that has whitespace above and below
+            Then it should strip the whitespace when putting it in code fences
+            """
+            # Use the fixtures instead of creating file path and content directly
+            file_gateway.read.return_value = whitespace_file_content
+            mocker.patch.object(message_builder.type_sensor, 'get_language', return_value='text')
+
+            result = message_builder._file_content_partial(file_path)
+
+            file_gateway.read.assert_called_with(file_path)
+            assert "File: /path/to/file.txt" in result
+            assert "```text" in result
+            assert "test file content with whitespace" in result
+            assert "```" in result
+            # Verify that the content in the code fence doesn't have leading/trailing whitespace
+            lines = result.split('\n')
+            code_fence_start_index = lines.index("```text")
+            code_fence_end_index = lines.index("```", code_fence_start_index + 1)
+            code_content = lines[code_fence_start_index + 1:code_fence_end_index]
+            assert code_content == ["test file content with whitespace"]
 
     class DescribeAddImageMethod:
         """
