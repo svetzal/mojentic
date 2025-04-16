@@ -48,9 +48,12 @@ class FileTypeSensor:
         """
         Add or update a mapping from a file extension to a language declaration.
 
-        Args:
-            extension: The file extension without the leading dot (e.g., 'py', 'js')
-            language: The language identifier for markdown code-fence (e.g., 'python', 'javascript')
+        Parameters
+        ----------
+        extension : str
+            The file extension without the leading dot (e.g., 'py', 'js')
+        language : str
+            The language identifier for markdown code-fence (e.g., 'python', 'javascript')
         """
         self.extension_map[extension] = language
 
@@ -58,10 +61,14 @@ class FileTypeSensor:
         """
         Determine the language declaration for a file based on its extension.
 
-        Args:
-            file_path: Path to the file
+        Parameters
+        ----------
+        file_path : Path
+            Path to the file
 
-        Returns:
+        Returns
+        -------
+        str
             Language declaration for markdown code-fence
         """
         ext = file_path.suffix[1:]  # Remove the leading dot
@@ -86,9 +93,11 @@ class MessageBuilder():
         """
         Initialize a new MessageBuilder with optional text content.
 
-        Args:
-            content: Optional text content for the message. If None, the message will only
-                    contain added files and images.
+        Parameters
+        ----------
+        content : str, optional
+            Optional text content for the message. If None, the message will only
+            contain added files and images.
         """
         self.role = MessageRole.User
         self.content = content
@@ -104,10 +113,14 @@ class MessageBuilder():
         This method reads the file content and formats it with appropriate markdown code-fence
         syntax highlighting based on the file extension.
 
-        Args:
-            file_path: Path to the file to be read and formatted
+        Parameters
+        ----------
+        file_path : Path
+            Path to the file to be read and formatted
 
-        Returns:
+        Returns
+        -------
+        str
             Formatted string containing the file path and content with markdown code-fence
         """
         content = self.file_gateway.read(file_path)
@@ -121,14 +134,20 @@ class MessageBuilder():
         """
         Add a single image to the message.
 
-        Args:
-            image_path: Path to the image file. Can be a string or Path object.
+        Parameters
+        ----------
+        image_path : Union[str, Path]
+            Path to the image file. Can be a string or Path object.
 
-        Returns:
+        Returns
+        -------
+        MessageBuilder
             The MessageBuilder instance for method chaining.
 
-        Raises:
-            FileNotFoundError: If the specified image file does not exist.
+        Raises
+        ------
+        FileNotFoundError
+            If the specified image file does not exist.
         """
         if isinstance(image_path, str):
             image_path = Path(image_path)
@@ -142,14 +161,20 @@ class MessageBuilder():
         """
         Add a single file to the message.
 
-        Args:
-            file_path: Path to the file. Can be a string or Path object.
+        Parameters
+        ----------
+        file_path : Union[str, Path]
+            Path to the file. Can be a string or Path object.
 
-        Returns:
+        Returns
+        -------
+        MessageBuilder
             The MessageBuilder instance for method chaining.
 
-        Raises:
-            FileNotFoundError: If the specified file does not exist.
+        Raises
+        ------
+        FileNotFoundError
+            If the specified file does not exist.
         """
         if isinstance(file_path, str):
             file_path = Path(file_path)
@@ -163,11 +188,15 @@ class MessageBuilder():
         """
         Add multiple images to the message.
 
-        Args:
-            *image_paths: Variable number of image paths. Can be strings or Path objects.
-                          Can include glob patterns like '*.jpg' to include all JPG and PNG images in a directory.
+        Parameters
+        ----------
+        *image_paths : Union[str, Path]
+            Variable number of image paths. Can be strings or Path objects.
+            Can include glob patterns like '*.jpg' to include all JPG and PNG images in a directory.
 
-        Returns:
+        Returns
+        -------
+        MessageBuilder
             The MessageBuilder instance for method chaining.
         """
         for path in image_paths:
@@ -191,12 +220,16 @@ class MessageBuilder():
         """
         Add multiple text files to the message, ignoring binary files.
 
-        Args:
-            *file_paths: Variable number of file paths. Can be strings or Path objects.
-                         Can include glob patterns like '*.txt' to include all text files in a directory.
-                         If a directory is provided, all text files in the directory will be added.
+        Parameters
+        ----------
+        *file_paths : Union[str, Path]
+            Variable number of file paths. Can be strings or Path objects.
+            Can include glob patterns like '*.txt' to include all text files in a directory.
+            If a directory is provided, all text files in the directory will be added.
 
-        Returns:
+        Returns
+        -------
+        MessageBuilder
             The MessageBuilder instance for method chaining.
         """
         for path in file_paths:
@@ -228,7 +261,9 @@ class MessageBuilder():
         LLMMessage object that can be sent to an LLM. If files have been added, their contents
         will be formatted and included in the message content.
 
-        Returns:
+        Returns
+        -------
+        LLMMessage
             An LLMMessage object containing the message content and image paths.
         """
         if self.file_paths:

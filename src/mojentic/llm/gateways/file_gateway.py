@@ -14,10 +14,14 @@ class FileGateway:
         """
         Check if a file exists.
 
-        Args:
-            path: Path to the file
+        Parameters
+        ----------
+        path : Union[Path, str]
+            Path to the file
 
-        Returns:
+        Returns
+        -------
+        bool
             True if the file exists, False otherwise
         """
         if isinstance(path, str):
@@ -28,10 +32,14 @@ class FileGateway:
         """
         Check if a file is binary.
 
-        Args:
-            path: Path to the file
+        Parameters
+        ----------
+        path : Union[Path, str]
+            Path to the file
 
-        Returns:
+        Returns
+        -------
+        bool
             True if the file is binary, False otherwise
         """
         if isinstance(path, str):
