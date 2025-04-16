@@ -1,6 +1,7 @@
 # Mojentic Development Guidelines
 
 ## Project Overview
+
 Mojentic is an agentic framework that provides a simple and flexible way to assemble teams of agents to solve complex problems. It supports integration with various LLM providers and includes tools for task automation.
 
 ## Identity and Branding Guidelines
@@ -13,6 +14,7 @@ As Mojentic is a Mojility product, it is important to maintain a consistent iden
   - Dark Grey: #666767
 
 ## Tech Stack
+
 - Python 3.11+
 - Key Dependencies:
   - pydantic: Data validation
@@ -104,16 +106,22 @@ src/
 - Favor list and dictionary comprehensions over for loops
 
 ## Documentation Style Requirements
-- Documentation is built by mkdocs, with the mkdocstrings plugin
-- Markdown should have a blank line above and below paragraphs, headings, lists, quotations, and code blocks
+
+- Documentation is written in Markdown format, built by mkdocs, with the mkdocstrings plugin
+- Headings start at Level 1 (`#`)
+- Must have a blank line above and below paragraphs, headings, lists, quotations, and code blocks
+- Lists should not have blank lines between items
 
 ## Mojentic Development
+
 ### LLM Tool Development
+
 1. When writing a new LLM tool, model the implementation after `mojentic.llm.tools.date_resolver.ResolveDateTool`
 2. For LLM-based tools, take the LLMBroker object as a parameter in the tool's initializer
 3. Don't ask the LLM to generate JSON directly, use the `LLMBroker.generate_object()` method instead
 
 ## Documentation
+
 - Built with MkDocs and Material theme
 - API documentation uses mkdocstrings
 - Supports mermaid.js diagrams in markdown files:
@@ -128,6 +136,7 @@ src/
     - Put blank lines above and below bulleted lists, numbered lists, headings, quotations, and code blocks
 
 ## Release Process
+
 1. Update CHANGELOG.md:
    - All notable changes should be documented under the [Unreleased] section
    - Group changes into categories:
@@ -157,6 +166,7 @@ src/
    - Update documentation to reflect the changes
 
 ## Running Scripts
+
 1. Example scripts are in `src/_examples/`
 2. Basic usage:
    ```python
@@ -213,6 +223,7 @@ When preparing a release, follow these steps:
 #### Major Releases (x.0.0)
 
 Major releases may include:
+
 - Breaking API changes (eg tool plugin interfacing)
 - Significant architectural changes
 - Removal of deprecated features
@@ -226,6 +237,7 @@ For major releases, consider:
 #### Minor Releases (0.x.0)
 
 Minor releases may include:
+
 - New features
 - Non-breaking enhancements
 - Deprecation notices (but not removal of deprecated features)
@@ -239,12 +251,14 @@ For minor releases:
 #### Patch Releases (0.0.x)
 
 Patch releases should be limited to:
+
 - Bug fixes
 - Security updates
 - Performance improvements that don't change behavior
 - Documentation corrections
 
 For patch releases:
+
 - Clearly describe the issues fixed
 - Avoid introducing new features
 - Maintain strict backward compatibility

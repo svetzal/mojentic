@@ -11,7 +11,6 @@ Chat sessions are essential when you need to:
 - Create applications where the LLM needs to remember previous information
 - Develop more natural and coherent conversational experiences
 
-
 ## When to Apply This Approach
 
 Use chat sessions when:
@@ -21,7 +20,6 @@ Use chat sessions when:
 - You want to create a more interactive and engaging user experience
 - Your use case involves complex dialogues that build on previous exchanges
 
-
 ## The Key Difference: Expanding Context
 
 The fundamental difference between simple text generation and chat sessions is the **expanding context**. With each new message in a chat session:
@@ -30,7 +28,6 @@ The fundamental difference between simple text generation and chat sessions is t
 2. All previous messages (within token limits) are sent to the LLM with each new query
 3. The LLM can reference and build upon earlier parts of the conversation
 4. The conversation maintains coherence and continuity across multiple exchanges
-
 
 This expanding context allows for more natural conversations and enables the LLM to provide responses that are consistent with the ongoing dialogue.
 
@@ -77,7 +74,6 @@ These imports provide:
 - `ChatSession`: The class that manages the conversation state
 - `LLMBroker`: The interface for interacting with LLMs
 
-
 ### 2. Create an LLM broker
 
 ```python
@@ -115,14 +111,12 @@ This loop:
 - Prints the response
 - Continues until the user enters an empty query
 
-
 The magic happens in the `chat_session.send(query)` method, which:
 1. Adds the user's query to the conversation history
 2. Sends the entire conversation history to the LLM
 3. Gets the response from the LLM
 4. Adds the response to the conversation history
 5. Returns the response
-
 
 ## Customizing Your Chat Session
 
@@ -148,7 +142,6 @@ Chat sessions automatically manage the context length to stay within the model's
 - New messages are added to the conversation history
 - When the total token count exceeds `max_context`, older messages are removed (except the system prompt)
 - This ensures the conversation can continue indefinitely without exceeding token limits
-
 
 ## Using Different LLM Providers
 
@@ -204,6 +197,5 @@ Chat sessions in Mojentic provide a powerful way to build conversational applica
 3. How the conversation history is maintained and managed
 4. Ways to customize your chat session with system prompts and other parameters
 5. How to use different LLM providers and add tools to enhance functionality
-
 
 By leveraging chat sessions, you can create more engaging and coherent conversational experiences that maintain context across multiple interactions.
