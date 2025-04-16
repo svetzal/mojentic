@@ -40,6 +40,7 @@ class FileTypeSensor:
             'json': 'json',
             'csv': 'csv',
             'xml': 'xml',
+            'md': 'markdown',
         }
         self.default_language = 'text'
 
