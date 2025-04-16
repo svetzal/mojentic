@@ -93,6 +93,60 @@ result = llm.generate(messages=[message])
 print(result)
 ```
 
+### Loading Prompt Content from a File
+
+This example shows how to load a prompt from a file instead of hardcoding it in your code:
+
+```python
+from mojentic.llm import LLMBroker
+from mojentic.llm import MessageBuilder
+from pathlib import Path
+
+# Create an LLM broker
+llm = LLMBroker(model="gemma3:27b")
+
+# Load prompt content from a file
+message = MessageBuilder() \
+    .load_content(Path.cwd() / "prompts" / "code_review_prompt.txt") \
+    .add_file(Path.cwd() / "src" / "main.py") \
+    .build()
+
+# Generate a response
+result = llm.generate(messages=[message])
+print(result)
+```
+
+### Using Template Substitution in Prompts
+
+This example demonstrates how to use template substitution when loading prompt content from a file:
+
+```python
+from mojentic.llm import LLMBroker
+from mojentic.llm import MessageBuilder
+from pathlib import Path
+
+# Create an LLM broker
+llm = LLMBroker(model="gemma3:27b")
+
+# Assume prompt_template.txt contains:
+# "Please review this {language} code for {aspect} issues:"
+
+# Load prompt content with template substitution
+message = MessageBuilder() \
+    .load_content(
+        Path.cwd() / "prompts" / "prompt_template.txt",
+        template_values={"language": "Python", "aspect": "security"}
+    ) \
+    .add_file(Path.cwd() / "src" / "main.py") \
+    .build()
+
+# The prompt will become: "Please review this Python code for security issues:"
+
+# Generate a response
+result = llm.generate(messages=[message])
+print(result)
+```
+
 ## Important Considerations
 
 ### LLM Context Size Limitations
@@ -124,6 +178,7 @@ For large datasets:
 - **add_images()**: Add multiple images at once, with support for glob patterns
 - **add_file()**: Add a single file's content to the message
 - **add_files()**: Add multiple files at once, with support for glob patterns
+- **load_content()**: Load content from a file into the message, replacing any existing content, with optional template value substitution
 - **build()**: Create the final LLMMessage object to send to the LLM
 
 ## API Reference

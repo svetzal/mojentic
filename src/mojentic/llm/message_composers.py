@@ -253,6 +253,47 @@ class MessageBuilder():
 
         return self
 
+    def load_content(self, file_path: Union[str, Path], template_values: Optional[Dict[str, str]] = None) -> "MessageBuilder":
+        """
+        Load content from a file into the content field of the MessageBuilder.
+
+        This method reads the content of the specified file and sets it as the content
+        of the MessageBuilder, replacing any existing content. If template_values is provided,
+        placeholders in the content will be replaced with the corresponding values.
+
+        Parameters
+        ----------
+        file_path : Union[str, Path]
+            Path to the file to load content from. Can be a string or Path object.
+        template_values : Optional[Dict[str, str]], optional
+            Dictionary of values used to replace placeholders in the content.
+            For example, if the content contains "{greeting}" and template_values is
+            {"greeting": "Hello, World!"}, then "{greeting}" will be replaced with
+            "Hello, World!". Default is None.
+
+        Returns
+        -------
+        MessageBuilder
+            The MessageBuilder instance for method chaining.
+
+        Raises
+        ------
+        FileNotFoundError
+            If the specified file does not exist.
+        """
+        if isinstance(file_path, str):
+            file_path = Path(file_path)
+        if not self.file_gateway.exists(file_path):
+            raise FileNotFoundError(f"File not found: {file_path}")
+        self.content = self.file_gateway.read(file_path)
+
+        # Replace placeholders with template values if provided
+        if template_values:
+            for key, value in template_values.items():
+                self.content = self.content.replace(f"{{{key}}}", value)
+
+        return self
+
     def build(self) -> LLMMessage:
         """
         Build the final LLMMessage from the accumulated content, images, and files.

@@ -7,10 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2025-04-16
+
+### Added
+- Added load_content method to MessageBuilder to load content directly from a file
+- Added template substitution functionality to load_content method in MessageBuilder
+
 ### Fixed
 - Strip leading and trailing whitespace from file content in message composers
 
-## [0.5.0] - 2025-04-01
+## [0.5.0] - 2025-04-14
 
 ### Added
 - Added MessageBuilder class for constructing LLM messages with text content, images, and files

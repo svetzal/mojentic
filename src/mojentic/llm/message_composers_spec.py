@@ -270,6 +270,63 @@ class DescribeMessageBuilder:
             assert matching_files[0] in message_builder.image_paths
             assert matching_files[1] in message_builder.image_paths
 
+    class DescribeLoadContentMethod:
+        """
+        Specifications for the load_content method
+        """
+
+        def should_load_content_from_file(self, message_builder, file_gateway, file_path):
+            """
+            Given a MessageBuilder
+            When load_content is called with a file path
+            Then it should load the content from the file and set it as the content
+            """
+            result = message_builder.load_content(file_path)
+
+            file_gateway.read.assert_called_once_with(file_path)
+            assert message_builder.content == "test file content"
+            assert result is message_builder  # Returns self for method chaining
+
+        def should_convert_string_path_to_path_object(self, message_builder, file_gateway):
+            """
+            Given a MessageBuilder
+            When load_content is called with a string path
+            Then it should convert the string to a Path object
+            """
+            file_path_str = "/path/to/file.txt"
+
+            message_builder.load_content(file_path_str)
+
+            file_gateway.read.assert_called_once_with(Path(file_path_str))
+
+        def should_raise_error_if_file_not_found(self, message_builder, file_gateway, file_path):
+            """
+            Given a MessageBuilder
+            When load_content is called with a non-existent file
+            Then it should raise a FileNotFoundError
+            """
+            file_gateway.exists.return_value = False
+
+            with pytest.raises(FileNotFoundError):
+                message_builder.load_content(file_path)
+
+        def should_replace_placeholders_with_template_values(self, message_builder, file_gateway, file_path):
+            """
+            Given a MessageBuilder
+            When load_content is called with a file path and template values
+            Then it should replace placeholders in the content with the corresponding values
+            """
+            # Set up the file content with placeholders
+            file_gateway.read.return_value = "Hello, {name}! Today is {day}."
+
+            # Call load_content with template values
+            template_values = {"name": "World", "day": "Monday"}
+            result = message_builder.load_content(file_path, template_values)
+
+            # Verify that placeholders were replaced
+            assert message_builder.content == "Hello, World! Today is Monday."
+            assert result is message_builder  # Returns self for method chaining
+
 
 class DescribeTypeSensor:
     """
