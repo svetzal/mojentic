@@ -9,6 +9,7 @@ API Layer 1 is focused on abstracting the functionality of Large Language Models
 The key components of this layer include:
 
 - **LLMBroker**: The main entry point for interacting with LLMs
+- **MessageBuilder**: A convenient way to construct rich prompt messages for LLMs that include images or text files
 - **ChatSession**: A conversational interface with context management
 - **LLM Gateways**: Adapters for specific LLM providers (Ollama, OpenAI)
 - **Tools**: Utilities that extend LLM capabilities
