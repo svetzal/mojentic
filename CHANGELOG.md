@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2025-04-01
+
+### Added
+- Added MessageBuilder class for constructing LLM messages with text content, images, and files
+- Added FileTypeSensor for detecting file types added to LLMMessages
+
+### Changed
+- Minor version update for improved stability and performance
+
+### Fixed
+- Refactored docstrings to use consistent 'Parameters' and 'Returns' sections in file_gateway and message_composers
+
 ## [0.4.2] - 2025-03-27
 
 ### Changed
