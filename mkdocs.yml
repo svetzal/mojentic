@@ -48,7 +48,7 @@ nav:
   - Layer 1 - Core:
     - Getting Started with Layer 1:
       - The Basics: starter_1.md
-      - Message Composers: message_builders.md
+      - Message Composers: message_composers.md
     - Examples and Tutorials (Layer 1):
       - Simple Text Generation: simple_text_generation.md
       - Building Chatbots: chat_sessions.md

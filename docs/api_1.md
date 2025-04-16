@@ -19,7 +19,7 @@ At this layer we have:
 - [LLMGateway](api_1.md#mojentic.llm.LLMGateway): This is the abstract class that all LLM adapters must inherit from. It
   provides a common interface and isolation point for interacting with LLMs.
 
-- [MessageBuilder](message_builders): This is a utility class for constructing messages
+- [MessageBuilder](message_composers): This is a utility class for constructing messages
   with text, images, and file contents using a fluent interface.
 
 ## Working with Embeddings
