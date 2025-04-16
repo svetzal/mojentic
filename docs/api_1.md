@@ -19,6 +19,9 @@ At this layer we have:
 - [LLMGateway](api_1.md#mojentic.llm.LLMGateway): This is the abstract class that all LLM adapters must inherit from. It
   provides a common interface and isolation point for interacting with LLMs.
 
+- [MessageBuilder](message_builder.md): This is a utility class for constructing messages
+  with text, images, and file contents using a fluent interface.
+
 ## Working with Embeddings
 
 Mojentic provides embeddings functionality through the `calculate_embeddings` method in both the `OllamaGateway` and `OpenAIGateway` classes. Embeddings are vector representations of text that capture semantic meaning, making them useful for similarity comparisons, clustering, and other NLP tasks.
@@ -67,32 +70,27 @@ print(f"OpenAI embeddings dimension: {len(openai_embeddings)}")
 
 ## Working with Images
 
-Mojentic supports sending images to LLMs through the `image_paths` parameter in the `LLMMessage` class. This allows you to perform image analysis, OCR, and other vision-based tasks.
+Mojentic supports sending images to LLMs using the `MessageBuilder` class. This allows you to perform image analysis, OCR, and other vision-based tasks with a clean, fluent interface.
 
 ### Usage Example
 
 ```python
-from mojentic.llm.gateways import OllamaGateway
-from mojentic.llm.gateways.models import LLMMessage
+from mojentic.llm import LLMBroker
+from mojentic.llm.message_composer import MessageBuilder
 from pathlib import Path
 
-# Initialize the gateway
-llmg = OllamaGateway()
+# Initialize the LLM broker
+llm = LLMBroker(model="gemma3:27b")  # Use an image-capable model
 
-# Send a message with an image
-response = llmg.complete(
-    model="gemma3",  # Use an image-capable model
-    messages=[
-        LLMMessage(
-            content="Describe what you see in this image.",
-            image_paths=[
-                str(Path.cwd() / "images" / "example.jpg")
-            ]
-        )
-    ],
-)
+# Build a message with an image
+message = MessageBuilder("Describe what you see in this image.") \
+    .add_image(Path.cwd() / "images" / "example.jpg") \
+    .build()
 
-print(response)
+# Generate a response
+result = llm.generate(messages=[message])
+
+print(result)
 ```
 
 ### Important Notes
@@ -104,12 +102,20 @@ print(response)
 - **Image Formats**: Supported image formats include JPEG, PNG, GIF, and WebP.
 
 - **Implementation Details**:
-  - For Ollama: Images are passed directly as file paths
-  - For OpenAI: Images are base64-encoded and included in the message content
+  - The `MessageBuilder` handles the appropriate encoding of images for different LLM providers
+  - For Ollama: Images are passed as file paths (handled internally by MessageBuilder)
+  - For OpenAI: Images are base64-encoded and included in the message content (handled internally by MessageBuilder)
 
 - **Performance Considerations**: Image analysis may require more tokens and processing time than text-only requests.
 
+
 ## Building Blocks
+
+:::: mojentic.llm.message_composer.MessageBuilder
+    options:
+        show_root_heading: true
+        merge_init_into_class: false
+        group_by_category: false
 
 ::: mojentic.llm.LLMBroker
     options:

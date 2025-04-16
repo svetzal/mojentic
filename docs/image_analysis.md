@@ -33,20 +33,20 @@ Here's a simple example of analyzing an image with an LLM:
 
 ```python
 from pathlib import Path
-from mojentic.llm.gateways.models import LLMMessage
+from mojentic.llm.message_composer import MessageBuilder
 from mojentic.llm.llm_broker import LLMBroker
 
 # Create an LLM broker with a multimodal model
 # Note: For OpenAI, use "gpt-4o" or another vision-capable model
 llm = LLMBroker(model="gemma3:27b")  # For Ollama, use a multimodal model
 
+# Build a message with an image using MessageBuilder
+message = MessageBuilder('What is in this image?')\
+    .add_image(Path.cwd() / 'src' / '_examples' / 'images' / 'flash_rom.jpg')\
+    .build()
+
 # Generate a response that includes image analysis
-result = llm.generate(messages=[
-    LLMMessage(
-        content='What is in this image?',
-        image_paths=[str(Path.cwd() / 'src' / '_examples' / 'images' / 'flash_rom.jpg')]
-    )
-])
+result = llm.generate(messages=[message])
 
 print(result)
 ```
@@ -61,13 +61,13 @@ Let's break down how this example works:
 
 ```python
 from pathlib import Path
-from mojentic.llm.gateways.models import LLMMessage
+from mojentic.llm.message_composer import MessageBuilder
 from mojentic.llm.llm_broker import LLMBroker
 ```
 
 These imports provide:
 - `Path`: A class for working with file paths in a cross-platform way
-- `LLMMessage`: A class for creating messages to send to the LLM
+- `MessageBuilder`: A class for building messages with images and files to send to the LLM
 - `LLMBroker`: The main interface for interacting with LLMs
 
 ### 2. Create an LLM broker with a multimodal model
@@ -80,19 +80,19 @@ For image analysis, you need to use a model that supports multimodal inputs:
 - For OpenAI, models like "gpt-4o" support vision
 - For Ollama, models like "gemma3" or "llava" support vision
 
-### 3. Create a message with an image
+### 3. Build a message with an image
 
 ```python
-message = LLMMessage(
-    content='What is in this image?',
-    image_paths=[str(Path.cwd() / 'src' / '_examples' / 'images' / 'flash_rom.jpg')]
-)
+message = MessageBuilder('What is in this image?')\
+    .add_image(Path.cwd() / 'src' / '_examples' / 'images' / 'flash_rom.jpg')\
+    .build()
 ```
 
 The key difference for image analysis:
-- We include the `image_paths` parameter in the `LLMMessage`
-- This parameter takes a list of file paths to the images you want to analyze
-- You can include multiple images in a single message
+- We use `MessageBuilder` to create a message with an image
+- The `add_image()` method adds an image to the message
+- The `build()` method creates the final message to send to the LLM
+- You can chain multiple method calls to add multiple images or customize the message
 
 ### 4. Generate a response that includes image analysis
 
@@ -119,12 +119,11 @@ You can ask more specific questions about images to get targeted information:
 
 ```python
 # Ask a specific question about the image
-result = llm.generate(messages=[
-    LLMMessage(
-        content='Is there any text visible in this image? If so, what does it say?',
-        image_paths=[str(Path.cwd() / 'src' / '_examples' / 'images' / 'screen_cap.png')]
-    )
-])
+message = MessageBuilder('Is there any text visible in this image? If so, what does it say?')\
+    .add_image(Path.cwd() / 'src' / '_examples' / 'images' / 'screen_cap.png')\
+    .build()
+
+result = llm.generate(messages=[message])
 
 print(result)
 ```
@@ -135,15 +134,14 @@ You can include multiple images in a single message:
 
 ```python
 # Compare multiple images
-result = llm.generate(messages=[
-    LLMMessage(
-        content='Compare these two images and tell me the differences.',
-        image_paths=[
-            str(Path.cwd() / 'src' / '_examples' / 'images' / 'image1.jpg'),
-            str(Path.cwd() / 'src' / '_examples' / 'images' / 'image2.jpg')
-        ]
-    )
-])
+message = MessageBuilder('Compare these two images and tell me the differences.')\
+    .add_images(
+        Path.cwd() / 'src' / '_examples' / 'images' / 'image1.jpg',
+        Path.cwd() / 'src' / '_examples' / 'images' / 'image2.jpg'
+    )\
+    .build()
+
+result = llm.generate(messages=[message])
 
 print(result)
 ```
@@ -155,29 +153,30 @@ Just like with previous examples, you can use different LLM providers:
 ```python
 import os
 from mojentic.llm.gateways.openai import OpenAIGateway
+from mojentic.llm.message_composer import MessageBuilder
 
 # Set up OpenAI with a vision-capable model
 api_key = os.getenv("OPENAI_API_KEY")
 gateway = OpenAIGateway(api_key)
 llm = LLMBroker(model="gpt-4o", gateway=gateway)
 
+# Build a message with an image
+message = MessageBuilder('What is in this image?')\
+    .add_image(Path.cwd() / 'src' / '_examples' / 'images' / 'flash_rom.jpg')\
+    .build()
+
 # Generate a response that includes image analysis
-result = llm.generate(messages=[
-    LLMMessage(
-        content='What is in this image?',
-        image_paths=[str(Path.cwd() / 'src' / '_examples' / 'images' / 'flash_rom.jpg')]
-    )
-])
+result = llm.generate(messages=[message])
 ```
 
 ## Summary
 
 Image analysis with LLMs in Mojentic allows you to process and understand visual content alongside text. In this example, we've learned:
 
-1. How to create messages that include images using the `image_paths` parameter
+1. How to create messages that include images using the `MessageBuilder` class
 2. How to use multimodal models that can process both text and images
 3. How to ask specific questions about images
-4. How to work with multiple images
+4. How to work with multiple images using the `add_image()` and `add_images()` methods
 
 This capability enables a wide range of applications that combine visual and textual understanding, from content analysis to multimodal chatbots. By integrating image analysis with LLMs, you can build more versatile and powerful AI applications that can process and understand the world in a more human-like way.
 
