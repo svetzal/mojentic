@@ -83,8 +83,8 @@ from pathlib import Path
 llm = LLMBroker(model="gemma3:27b")  # Use an image-capable model
 
 # Build a message with an image
-message = MessageBuilder("Describe what you see in this image.")
-    .add_image(Path.cwd() / "images" / "example.jpg")
+message = MessageBuilder("Describe what you see in this image.") \
+    .add_image(Path.cwd() / "images" / "example.jpg") \
     .build()
 
 # Generate a response

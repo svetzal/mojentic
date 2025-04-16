@@ -17,8 +17,8 @@ from pathlib import Path
 llm = LLMBroker(model="gemma3:27b")
 
 # Build a message with a single image
-message = MessageBuilder("Please analyze this image and describe what you see:")
-    .add_image(Path.cwd() / "images" / "flash_rom.jpg")
+message = MessageBuilder("Please analyze this image and describe what you see:") \
+    .add_image(Path.cwd() / "images" / "flash_rom.jpg") \
     .build()
 
 # Generate a response
@@ -39,9 +39,9 @@ from pathlib import Path
 llm = LLMBroker(model="gemma3:27b")
 
 # Build a message with two images for comparison
-message = MessageBuilder("Compare these two images and tell me the differences:")
-    .add_image(Path.cwd() / "images" / "image1.jpg")
-    .add_image(Path.cwd() / "images" / "image2.jpg")
+message = MessageBuilder("Compare these two images and tell me the differences:") \
+    .add_image(Path.cwd() / "images" / "image1.jpg") \
+    .add_image(Path.cwd() / "images" / "image2.jpg") \
     .build()
 
 # Generate a response
@@ -62,8 +62,8 @@ from pathlib import Path
 llm = LLMBroker(model="gemma3:27b")
 
 # Build a message with a Java file
-message = MessageBuilder("Convert this Java code to Kotlin, maintaining the same functionality:")
-    .add_file(Path.cwd() / "src" / "example.java")
+message = MessageBuilder("Convert this Java code to Kotlin, maintaining the same functionality:") \
+    .add_file(Path.cwd() / "src" / "example.java") \
     .build()
 
 # Generate a response
@@ -84,8 +84,8 @@ from pathlib import Path
 llm = LLMBroker(model="gemma3:27b")
 
 # Build a message with multiple markdown files from a folder
-message = MessageBuilder("Summarize the key points from these markdown documents:")
-    .add_files(Path.cwd() / "docs" / "*.md")
+message = MessageBuilder("Summarize the key points from these markdown documents:") \
+    .add_files(Path.cwd() / "docs" / "*.md") \
     .build()
 
 # Generate a response

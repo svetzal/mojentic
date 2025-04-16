@@ -83,8 +83,8 @@ For image analysis, you need to use a model that supports multimodal inputs:
 ### 3. Build a message with an image
 
 ```python
-message = MessageBuilder('What is in this image?')\
-    .add_image(Path.cwd() / 'src' / '_examples' / 'images' / 'flash_rom.jpg')\
+message = MessageBuilder('What is in this image?') \
+    .add_image(Path.cwd() / 'src' / '_examples' / 'images' / 'flash_rom.jpg') \
     .build()
 ```
 
@@ -119,8 +119,8 @@ You can ask more specific questions about images to get targeted information:
 
 ```python
 # Ask a specific question about the image
-message = MessageBuilder('Is there any text visible in this image? If so, what does it say?')\
-    .add_image(Path.cwd() / 'src' / '_examples' / 'images' / 'screen_cap.png')\
+message = MessageBuilder('Is there any text visible in this image? If so, what does it say?') \
+    .add_image(Path.cwd() / 'src' / '_examples' / 'images' / 'screen_cap.png') \
     .build()
 
 result = llm.generate(messages=[message])
@@ -134,11 +134,11 @@ You can include multiple images in a single message:
 
 ```python
 # Compare multiple images
-message = MessageBuilder('Compare these two images and tell me the differences.')\
+message = MessageBuilder('Compare these two images and tell me the differences.') \
     .add_images(
         Path.cwd() / 'src' / '_examples' / 'images' / 'image1.jpg',
         Path.cwd() / 'src' / '_examples' / 'images' / 'image2.jpg'
-    )\
+    ) \
     .build()
 
 result = llm.generate(messages=[message])
@@ -161,8 +161,8 @@ gateway = OpenAIGateway(api_key)
 llm = LLMBroker(model="gpt-4o", gateway=gateway)
 
 # Build a message with an image
-message = MessageBuilder('What is in this image?')
-    .add_image(Path.cwd() / 'src' / '_examples' / 'images' / 'flash_rom.jpg')
+message = MessageBuilder('What is in this image?') \
+    .add_image(Path.cwd() / 'src' / '_examples' / 'images' / 'flash_rom.jpg') \
     .build()
 
 # Generate a response that includes image analysis
