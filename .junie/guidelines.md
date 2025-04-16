@@ -92,16 +92,20 @@ src/
 - "Don't Mock what you don't own" only write mocks for our own gateway classes, do not mock other library internals or
   even private functions or methods in our own code.
 
-## Best Practices
-1. Follow the existing project structure
-2. Write tests for new functionality
-3. Document using numpy-style docstrings
-4. Keep code complexity low
-5. Use type hints for all functions and methods
-6. Co-locate tests with implementation
-7. Favor declarative code styles over imperative code styles
-8. Use pydantic (not @dataclass) for data objects with strong types
-9. Favor list and dictionary comprehensions over for loops
+## Code Style Requirements
+- Follow the existing project structure
+- Write tests for new functionality
+- Document using numpy-style docstrings
+- Keep code complexity low
+- Use type hints for all functions and methods
+- Co-locate tests with implementation
+- Favor declarative code styles over imperative code styles
+- Use pydantic (not @dataclass) for data objects with strong types
+- Favor list and dictionary comprehensions over for loops
+
+## Documentation Style Requirements
+- Documentation is built by mkdocs, with the mkdocstrings plugin
+- Markdown should have a blank line above and below paragraphs, headings, lists, quotations, and code blocks
 
 ## Mojentic Development
 ### LLM Tool Development
