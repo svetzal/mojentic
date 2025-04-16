@@ -2,7 +2,7 @@ from pathlib import Path
 import sys
 import os
 
-from mojentic.llm.message_composer import MessageBuilder
+from mojentic.llm.message_composers import MessageBuilder
 
 # Get the project root directory (2 levels up from the current script)
 project_root = Path(os.path.dirname(os.path.abspath(__file__))).parent.parent

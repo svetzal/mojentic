@@ -5,7 +5,7 @@ from mojentic.llm.gateways.file_gateway import FileGateway
 from mojentic.llm.gateways.models import LLMMessage, MessageRole
 
 
-class TypeSensor:
+class FileTypeSensor:
     """Maps file extensions to language declarations for markdown code-fence."""
 
     def __init__(self):
@@ -79,7 +79,7 @@ class MessageBuilder():
     content: Optional[str]
     image_paths: List[Path]
     file_paths: List[Path]
-    type_sensor: TypeSensor
+    type_sensor: FileTypeSensor
 
     def __init__(self, content: str = None):
         """
@@ -93,7 +93,7 @@ class MessageBuilder():
         self.content = content
         self.image_paths = []
         self.file_paths = []
-        self.type_sensor = TypeSensor()
+        self.type_sensor = FileTypeSensor()
         self.file_gateway = FileGateway()
 
     def _file_content_partial(self, file_path: Path) -> str:

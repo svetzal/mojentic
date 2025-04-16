@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from mojentic.llm import LLMBroker
-from mojentic.llm.message_composer import MessagesBuilder, MessageBuilder
+from mojentic.llm.message_composers import MessagesBuilder, MessageBuilder
 
 llm = LLMBroker(model="gemma3:27b")
 

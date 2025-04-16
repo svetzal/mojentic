@@ -1,8 +1,9 @@
-import pytest
 from pathlib import Path
 
-from mojentic.llm.message_composer import MessageBuilder, TypeSensor
+import pytest
+
 from mojentic.llm.gateways.models import LLMMessage, MessageRole
+from mojentic.llm import MessageBuilder, FileTypeSensor
 
 
 @pytest.fixture
@@ -43,7 +44,7 @@ class DescribeMessageBuilder:
             assert builder.content is None
             assert builder.image_paths == []
             assert builder.file_paths == []
-            assert isinstance(builder.type_sensor, TypeSensor)
+            assert isinstance(builder.type_sensor, FileTypeSensor)
             assert isinstance(builder.file_gateway, object)
 
     class DescribeBuildMethod:
@@ -237,25 +238,6 @@ class DescribeMessageBuilder:
             assert matching_files[0] in message_builder.image_paths
             assert matching_files[1] in message_builder.image_paths
 
-        def should_combine_different_ways_to_specify_images(self, message_builder, mocker):
-            """
-            Given a MessageBuilder
-            When add_images is called with different types of paths
-            Then it should handle each type correctly
-            """
-            # Skip this test for now as it's too complex to fix
-            # The issue is that we can't mock the glob method on a Path object
-            # because it's a read-only attribute
-            # We've already verified the functionality in other tests
-            pytest.skip("This test is too complex to fix and the functionality is verified in other tests")
-
-            # The original test was trying to verify that add_images correctly handles
-            # different types of paths (specific image, directory, glob pattern)
-            # We've already verified this functionality in other tests:
-            # - should_add_multiple_specific_images
-            # - should_add_all_jpg_images_from_directory
-            # - should_add_images_matching_glob_pattern
-
 
 class DescribeTypeSensor:
     """
@@ -268,7 +250,7 @@ class DescribeTypeSensor:
         When it is initialized
         Then it should have default mappings
         """
-        sensor = TypeSensor()
+        sensor = FileTypeSensor()
 
         assert sensor.extension_map['py'] == 'python'
         assert sensor.extension_map['js'] == 'javascript'
@@ -280,7 +262,7 @@ class DescribeTypeSensor:
         When get_language is called with a known extension
         Then it should return the correct language
         """
-        sensor = TypeSensor()
+        sensor = FileTypeSensor()
         file_path = Path("/path/to/file.py")
 
         language = sensor.get_language(file_path)
@@ -293,7 +275,7 @@ class DescribeTypeSensor:
         When get_language is called with an unknown extension
         Then it should return the default language
         """
-        sensor = TypeSensor()
+        sensor = FileTypeSensor()
         file_path = Path("/path/to/file.unknown")
 
         language = sensor.get_language(file_path)
@@ -306,7 +288,7 @@ class DescribeTypeSensor:
         When add_language is called
         Then it should add the new mapping
         """
-        sensor = TypeSensor()
+        sensor = FileTypeSensor()
         sensor.add_language('custom', 'customlang')
 
         assert sensor.extension_map['custom'] == 'customlang'

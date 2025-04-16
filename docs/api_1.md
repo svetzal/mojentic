@@ -19,7 +19,7 @@ At this layer we have:
 - [LLMGateway](api_1.md#mojentic.llm.LLMGateway): This is the abstract class that all LLM adapters must inherit from. It
   provides a common interface and isolation point for interacting with LLMs.
 
-- [MessageBuilder](message_builder.md): This is a utility class for constructing messages
+- [MessageBuilder](message_builders): This is a utility class for constructing messages
   with text, images, and file contents using a fluent interface.
 
 ## Working with Embeddings
@@ -76,15 +76,15 @@ Mojentic supports sending images to LLMs using the `MessageBuilder` class. This 
 
 ```python
 from mojentic.llm import LLMBroker
-from mojentic.llm.message_composer import MessageBuilder
+from mojentic.llm.message_composers import MessageBuilder
 from pathlib import Path
 
 # Initialize the LLM broker
 llm = LLMBroker(model="gemma3:27b")  # Use an image-capable model
 
 # Build a message with an image
-message = MessageBuilder("Describe what you see in this image.") \
-    .add_image(Path.cwd() / "images" / "example.jpg") \
+message = MessageBuilder("Describe what you see in this image.")
+    .add_image(Path.cwd() / "images" / "example.jpg")
     .build()
 
 # Generate a response
@@ -111,7 +111,7 @@ print(result)
 
 ## Building Blocks
 
-:::: mojentic.llm.message_composer.MessageBuilder
+::: mojentic.llm.MessageBuilder
     options:
         show_root_heading: true
         merge_init_into_class: false

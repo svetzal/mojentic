@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from mojentic.llm.message_composer import MessageBuilder
+from mojentic.llm.message_composers import MessageBuilder
 
 # Test de-duplication of images
 print("Testing image de-duplication:")

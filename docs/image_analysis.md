@@ -33,7 +33,7 @@ Here's a simple example of analyzing an image with an LLM:
 
 ```python
 from pathlib import Path
-from mojentic.llm.message_composer import MessageBuilder
+from mojentic.llm.message_composers import MessageBuilder
 from mojentic.llm.llm_broker import LLMBroker
 
 # Create an LLM broker with a multimodal model
@@ -41,8 +41,8 @@ from mojentic.llm.llm_broker import LLMBroker
 llm = LLMBroker(model="gemma3:27b")  # For Ollama, use a multimodal model
 
 # Build a message with an image using MessageBuilder
-message = MessageBuilder('What is in this image?')\
-    .add_image(Path.cwd() / 'src' / '_examples' / 'images' / 'flash_rom.jpg')\
+message = MessageBuilder('What is in this image?')
+    .add_image(Path.cwd() / 'src' / '_examples' / 'images' / 'flash_rom.jpg')
     .build()
 
 # Generate a response that includes image analysis
@@ -61,7 +61,7 @@ Let's break down how this example works:
 
 ```python
 from pathlib import Path
-from mojentic.llm.message_composer import MessageBuilder
+from mojentic.llm.message_composers import MessageBuilder
 from mojentic.llm.llm_broker import LLMBroker
 ```
 
@@ -153,7 +153,7 @@ Just like with previous examples, you can use different LLM providers:
 ```python
 import os
 from mojentic.llm.gateways.openai import OpenAIGateway
-from mojentic.llm.message_composer import MessageBuilder
+from mojentic.llm.message_composers import MessageBuilder
 
 # Set up OpenAI with a vision-capable model
 api_key = os.getenv("OPENAI_API_KEY")
@@ -161,8 +161,8 @@ gateway = OpenAIGateway(api_key)
 llm = LLMBroker(model="gpt-4o", gateway=gateway)
 
 # Build a message with an image
-message = MessageBuilder('What is in this image?')\
-    .add_image(Path.cwd() / 'src' / '_examples' / 'images' / 'flash_rom.jpg')\
+message = MessageBuilder('What is in this image?')
+    .add_image(Path.cwd() / 'src' / '_examples' / 'images' / 'flash_rom.jpg')
     .build()
 
 # Generate a response that includes image analysis

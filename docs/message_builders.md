@@ -6,16 +6,16 @@ The `MessageBuilder` class simplifies the creation of messages with text, images
 
 ```python
 from mojentic.llm import LLMBroker
-from mojentic.llm.message_composer import MessageBuilder
+from mojentic.llm import MessageBuilder
 from pathlib import Path
 
 # Create an LLM broker
 llm = LLMBroker(model="gemma3:27b")
 
 # Build a message with text, an image, and a file
-message = MessageBuilder("Please analyze this image and code:")\
-    .add_image(Path.cwd() / "images" / "example.jpg")\
-    .add_file(Path.cwd() / "src" / "example.py")\
+message = MessageBuilder("Please analyze this image and code:")
+    .add_image(Path.cwd() / "images" / "example.jpg")
+    .add_file(Path.cwd() / "src" / "example.py")
     .build()
 
 # Generate a response
@@ -41,7 +41,7 @@ print(result)
 
 ## API Reference
 
-::: mojentic.llm.message_composer.MessageBuilder
+::: mojentic.llm.MessageBuilder
     options:
         show_root_heading: true
         merge_init_into_class: false
