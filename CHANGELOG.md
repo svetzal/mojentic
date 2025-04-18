@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.2] - 2025-04-18
+
+### Added
+- Added ability to use a file reference as a template value in MessageBuilder
+- Added documentation example for using file references as template values in MessageBuilder
+
 ## [0.5.1] - 2025-04-16
 
 ### Added

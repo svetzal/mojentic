@@ -253,7 +253,7 @@ class MessageBuilder():
 
         return self
 
-    def load_content(self, file_path: Union[str, Path], template_values: Optional[Dict[str, str]] = None) -> "MessageBuilder":
+    def load_content(self, file_path: Union[str, Path], template_values: Optional[Dict[str, Union[str, Path]]] = None) -> "MessageBuilder":
         """
         Load content from a file into the content field of the MessageBuilder.
 
@@ -265,11 +265,14 @@ class MessageBuilder():
         ----------
         file_path : Union[str, Path]
             Path to the file to load content from. Can be a string or Path object.
-        template_values : Optional[Dict[str, str]], optional
+        template_values : Optional[Dict[str, Union[str, Path]]], optional
             Dictionary of values used to replace placeholders in the content.
             For example, if the content contains "{greeting}" and template_values is
             {"greeting": "Hello, World!"}, then "{greeting}" will be replaced with
-            "Hello, World!". Default is None.
+            "Hello, World!".
+            If a value is a Path object, it will be treated as a file reference and the
+            content of that file will be used to replace the placeholder.
+            Default is None.
 
         Returns
         -------
@@ -290,7 +293,15 @@ class MessageBuilder():
         # Replace placeholders with template values if provided
         if template_values:
             for key, value in template_values.items():
-                self.content = self.content.replace(f"{{{key}}}", value)
+                if isinstance(value, Path):
+                    # If value is a Path, read the content of the file
+                    if not self.file_gateway.exists(value):
+                        raise FileNotFoundError(f"Template file not found: {value}")
+                    file_content = self.file_gateway.read(value).strip()
+                    self.content = self.content.replace(f"{{{key}}}", file_content)
+                else:
+                    # If value is a string, use it directly
+                    self.content = self.content.replace(f"{{{key}}}", value)
 
         return self
 

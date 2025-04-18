@@ -147,6 +147,39 @@ result = llm.generate(messages=[message])
 print(result)
 ```
 
+### Using File References as Template Values
+
+This example shows how to use file references as template values, where the content of the referenced file is used for substitution:
+
+```python
+from mojentic.llm import LLMBroker
+from mojentic.llm import MessageBuilder
+from pathlib import Path
+
+# Create an LLM broker
+llm = LLMBroker(model="gemma3:27b")
+
+# Assume prompt_template.txt contains:
+# "Please analyze this code according to these {guidelines}:"
+
+# Assume guidelines.txt contains detailed code review guidelines
+
+# Load prompt content with file reference as template value
+message = MessageBuilder() \
+    .load_content(
+        Path.cwd() / "prompts" / "prompt_template.txt",
+        template_values={"guidelines": Path.cwd() / "prompts" / "guidelines.txt"}
+    ) \
+    .add_file(Path.cwd() / "src" / "main.py") \
+    .build()
+
+# The {guidelines} placeholder will be replaced with the entire content of guidelines.txt
+
+# Generate a response
+result = llm.generate(messages=[message])
+print(result)
+```
+
 ## Important Considerations
 
 ### LLM Context Size Limitations
