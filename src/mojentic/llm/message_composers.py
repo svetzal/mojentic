@@ -318,11 +318,14 @@ class MessageBuilder():
         LLMMessage
             An LLMMessage object containing the message content and image paths.
         """
+        parts = []
         if self.file_paths:
             file_contents = [self._file_content_partial(p) for p in self.file_paths]
-            self.content = "\n\n".join(file_contents)
+            parts.append("\n\n".join(file_contents))
+        if self.content is not None:
+            parts.append(self.content)
         return LLMMessage(
             role=self.role,
-            content=self.content,
+            content="\n\n".join(parts),
             image_paths=[str(p) for p in self.image_paths]
         )
