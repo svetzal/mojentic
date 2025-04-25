@@ -21,7 +21,8 @@ class ResolveDateTool(LLMTool):
 
         return {
             "relative_date": relative_date_found,
-            "resolved_date": resolved_date.strftime('%Y-%m-%d')
+            "resolved_date": resolved_date.strftime('%Y-%m-%d'),
+            "summary": f"The date on '{relative_date_found}' is {resolved_date.strftime('%Y-%m-%d')}"
         }
 
     @property
@@ -30,7 +31,7 @@ class ResolveDateTool(LLMTool):
             "type": "function",
             "function": {
                 "name": "resolve_date",
-                "description": "Take text that specifies a relative date, and output an absolute date. If no reference date is provided, the current date is used.",
+                "description": "Take text that specifies a relative date, and output an absolute date. If no reference date is available, the current date is used.",
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -41,7 +42,7 @@ class ResolveDateTool(LLMTool):
                         "reference_date_in_iso8601": {
                             "type": "string",
                             "description": "The date from which the resolved date should be calculated, in YYYY-MM-DD"
-                                           " format. If not provided, the current date is used."
+                                           " format. Do not provide if you weren't provided one, I will assume the current date."
                         }
                     },
                     "additionalProperties": False,
