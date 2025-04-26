@@ -26,7 +26,7 @@ class IterativeProblemSolver:
     max_iterations: int
     chat: ChatSession
 
-    def __init__(self, llm: LLMBroker, available_tools: Optional[List[LLMTool]] = None, max_iterations: int = 3):
+    def __init__(self, llm: LLMBroker, available_tools: Optional[List[LLMTool]] = None, max_iterations: int = 3, system_prompt: Optional[str] = None):
         """Initialize the IterativeProblemSolver.
 
         Parameters
@@ -42,7 +42,7 @@ class IterativeProblemSolver:
         self.available_tools = available_tools or []
         self.chat = ChatSession(
             llm=llm,
-            system_prompt="You are a helpful assistant, working on behalf of the user on a specific user request.",
+            system_prompt=system_prompt or "You are a problem-solving assistant that can solve complex problems step by step.",
             tools=self.available_tools,
         )
 
