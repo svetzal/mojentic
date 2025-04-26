@@ -140,7 +140,7 @@ class SimpleRecursiveAgent:
     emitter: EventEmitter
     chat: ChatSession
 
-    def __init__(self, llm: LLMBroker, available_tools: Optional[List[LLMTool]] = None, max_iterations: int = 5):
+    def __init__(self, llm: LLMBroker, available_tools: Optional[List[LLMTool]] = None, max_iterations: int = 5, system_prompt: Optional[str] = None):
         """
         Initialize the SimpleRecursiveAgent.
 
@@ -161,7 +161,7 @@ class SimpleRecursiveAgent:
         # Initialize the chat session
         self.chat = ChatSession(
             llm=llm,
-            system_prompt="You are a problem-solving assistant that can solve complex problems step by step. "
+            system_prompt=system_prompt or "You are a problem-solving assistant that can solve complex problems step by step. "
                          "You analyze problems, break them down into smaller parts, and solve them systematically. "
                          "If you cannot solve a problem completely in one step, you make progress and identify what to do next.",
             tools=self.available_tools
