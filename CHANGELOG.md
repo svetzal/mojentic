@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.4] - 2025-04-30
+
+### Fixed
+- Added chunking functionality to OllamaGateway's calculate_embeddings method to handle oversized text inputs
+
 ## [0.5.3] - 2025-04-25
 
 ### Fixed
