@@ -1,5 +1,6 @@
 pydantic
 structlog
+numpy
 ollama
 openai
 anthropic
