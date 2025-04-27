@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Added chunking functionality to OllamaGateway's calculate_embeddings method to handle oversized text inputs
 
+### Added
+- ability to set system prompt in the SimpleRecursiveAgent and IterativeProblemSolver
+
 ## [0.5.3] - 2025-04-25
 
 ### Fixed
