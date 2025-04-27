@@ -1,12 +1,15 @@
 import json
-from typing import Type, List
+from itertools import islice
+from typing import Type, List, Iterable
 
+import numpy as np
 import structlog
 from openai import OpenAI
 
 from mojentic.llm.gateways.llm_gateway import LLMGateway
 from mojentic.llm.gateways.models import LLMToolCall, LLMGatewayResponse
 from mojentic.llm.gateways.openai_messages_adapter import adapt_messages_to_openai
+from mojentic.llm.gateways.tokenizer_gateway import TokenizerGateway
 
 logger = structlog.get_logger()
 
@@ -121,8 +124,28 @@ class OpenAIGateway(LLMGateway):
             The embeddings for the text.
         """
         logger.debug("calculate_embeddings", text=text, model=model)
-        response = self.client.embeddings.create(
-            model=model,
-            input=text
-        )
-        return response.data[0].embedding
+
+        embeddings = [self.client.embeddings.create(model=model, input=chunk).data[0].embedding
+                      for chunk in self._chunked_tokens(text, 8191)]
+        lengths = [len(embedding) for embedding in embeddings]
+
+        average = np.average(embeddings, axis=0, weights=lengths)
+        average = average / np.linalg.norm(average)
+        average = average.tolist()
+
+        return average
+
+    def _batched(self, iterable: Iterable, n: int):
+        """Batch data into tuples of length n. The last batch may be shorter."""
+        # batched('ABCDEFG', 3) --> ABC DEF G
+        if n < 1:
+            raise ValueError('n must be at least one')
+        it = iter(iterable)
+        while batch := tuple(islice(it, n)):
+            yield batch
+
+    def _chunked_tokens(self, text, chunk_length):
+        tokenizer = TokenizerGateway()
+        tokens = tokenizer.encode(text)
+        chunks_iterator = self._batched(tokens, chunk_length)
+        yield from chunks_iterator
