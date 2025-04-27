@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - ability to set system prompt in the SimpleRecursiveAgent and IterativeProblemSolver
+- added numpy to the dependency list, used by vector averaging function for chunking embeddings
 
 ## [0.5.3] - 2025-04-25
 

@@ -16,6 +16,7 @@ classifiers = [
 dependencies = [
     "pydantic",
     "structlog",
+    "numpy",
     "ollama",
     "openai",
     "anthropic",
