@@ -166,7 +166,7 @@ Right, the use of `eval()` is a potential security risk, as it can execute arbit
 You can provide multiple tools to the LLM, and it will choose the appropriate one based on the query:
 
 ```python
-from mojentic.llm.tools.web_search import WebSearchTool
+from mojentic.llm.tools.organic_web_search import WebSearchTool
 
 # Create an LLM broker with a specified model
 llm = LLMBroker(model="qwen2.5")

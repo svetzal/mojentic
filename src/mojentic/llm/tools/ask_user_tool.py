@@ -12,7 +12,7 @@ class AskUserTool(LLMTool):
             "type": "function",
             "function": {
                 "name": "ask_user",
-                "description": "If you do not know how to proceed, ask the user a question, or ask them to do something for you.",
+                "description": "If you do not know how to proceed, ask the user a question, or ask them for help or to do something for you.",
                 "parameters": {
                     "type": "object",
                     "properties": {
