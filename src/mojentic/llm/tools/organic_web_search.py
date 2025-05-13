@@ -11,7 +11,7 @@ class OrganicWebSearchTool(LLMTool):
         self.api_key = api_key or os.getenv("SERPAPI_API_KEY")
 
     def run(self, query: str, engine: str = "google", location: str = None, hl: str = "en", gl="ca") -> str:
-        results = serpapi.search(q=query, engine=engine, location=location, hl=hl, gl=gl, api_key=api_key)
+        results = serpapi.search(q=query, engine=engine, location=location, hl=hl, gl=gl, api_key=self.api_key)
         # Limiting this to the organic results cuts this from 60K to 3K tokens
         return json.dumps(results['organic_results'], indent=2)
 
