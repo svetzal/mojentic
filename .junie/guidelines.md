@@ -88,11 +88,11 @@ src/
 - Use @fixture markers for pytest fixtures
 - Break up fixtures into smaller fixtures if they are too large
 - Do not write Given/When/Then or Act/Arrange/Assert comments
+- Do not write docstring comments on your should_ methods
 - Separate test phases with a single blank line
 - Do not write conditional statements in tests
 - Each test must fail for only one clear reason
-- "Don't Mock what you don't own" only write mocks for our own gateway classes, do not mock other library internals or
-  even private functions or methods in our own code.
+- "Don't Mock what you don't own" only write mocks for our own gateway classes, do not mock other library internals or even private functions or methods in our own code.
 
 ## Code Style Requirements
 - Follow the existing project structure

@@ -61,11 +61,6 @@ class DescribeMessageBuilder:
         """
 
         def should_build_message_with_content(self, message_builder):
-            """
-            Given a MessageBuilder with content
-            When build is called
-            Then it should return a message with that content
-            """
             message_builder.content = "Test content"
 
             message = message_builder.build()
@@ -76,11 +71,6 @@ class DescribeMessageBuilder:
             assert message.image_paths == []
 
         def should_build_message_with_role(self, message_builder):
-            """
-            Given a MessageBuilder with a specific role
-            When build is called
-            Then it should return a message with that role
-            """
             message_builder.role = MessageRole.Assistant
 
             message = message_builder.build()
@@ -88,11 +78,6 @@ class DescribeMessageBuilder:
             assert message.role == MessageRole.Assistant
 
         def should_build_message_with_image_paths(self, message_builder):
-            """
-            Given a MessageBuilder with image paths
-            When build is called
-            Then it should return a message with those image paths
-            """
             message_builder.image_paths = [Path("/path/to/image1.jpg"), Path("/path/to/image2.jpg")]
 
             message = message_builder.build()
@@ -100,11 +85,6 @@ class DescribeMessageBuilder:
             assert message.image_paths == ["/path/to/image1.jpg", "/path/to/image2.jpg"]
 
         def should_build_message_with_file_content(self, message_builder, file_gateway):
-            """
-            Given a MessageBuilder with file paths
-            When build is called
-            Then it should return a message with the file contents
-            """
             file_path = Path("/path/to/file.txt")
             message_builder.file_paths = [file_path]
 
@@ -115,11 +95,6 @@ class DescribeMessageBuilder:
             assert "File: /path/to/file.txt" in message.content
 
         def should_build_message_with_multiple_file_contents(self, message_builder, file_gateway):
-            """
-            Given a MessageBuilder with multiple file paths
-            When build is called
-            Then it should return a message with all file contents
-            """
             file_path1 = Path("/path/to/file1.txt")
             file_path2 = Path("/path/to/file2.txt")
             message_builder.file_paths = [file_path1, file_path2]
@@ -136,11 +111,6 @@ class DescribeMessageBuilder:
         """
 
         def should_format_file_content_with_language(self, message_builder, file_gateway, mocker):
-            """
-            Given a MessageBuilder
-            When _file_content_partial is called
-            Then it should format the file content with the correct language
-            """
             file_path = Path("/path/to/file.py")
             mocker.patch.object(message_builder.type_sensor, 'get_language', return_value='python')
 
@@ -153,11 +123,6 @@ class DescribeMessageBuilder:
             assert "```" in result
 
         def should_strip_whitespace_from_file_content(self, message_builder, file_gateway, file_path, whitespace_file_content, mocker):
-            """
-            Given a MessageBuilder
-            When _file_content_partial is called with content that has whitespace above and below
-            Then it should strip the whitespace when putting it in code fences
-            """
             # Use the fixtures instead of creating file path and content directly
             file_gateway.read.return_value = whitespace_file_content
             mocker.patch.object(message_builder.type_sensor, 'get_language', return_value='text')
@@ -182,11 +147,6 @@ class DescribeMessageBuilder:
         """
 
         def should_add_image_path_to_list(self, message_builder):
-            """
-            Given a MessageBuilder
-            When add_image is called with a path
-            Then it should add the path to the image_paths list
-            """
             image_path = Path("/path/to/image.jpg")
 
             result = message_builder.add_image(image_path)
@@ -195,11 +155,6 @@ class DescribeMessageBuilder:
             assert result is message_builder  # Returns self for method chaining
 
         def should_convert_string_path_to_path_object(self, message_builder):
-            """
-            Given a MessageBuilder
-            When add_image is called with a string path
-            Then it should convert the string to a Path object
-            """
             image_path_str = "/path/to/image.jpg"
 
             message_builder.add_image(image_path_str)
@@ -212,11 +167,6 @@ class DescribeMessageBuilder:
         """
 
         def should_add_multiple_specific_images(self, message_builder):
-            """
-            Given a MessageBuilder
-            When add_images is called with multiple specific image paths
-            Then it should add all paths to the image_paths list
-            """
             image_path1 = Path("/path/to/image1.jpg")
             image_path2 = Path("/path/to/image2.jpg")
 
@@ -227,11 +177,6 @@ class DescribeMessageBuilder:
             assert result is message_builder  # Returns self for method chaining
 
         def should_add_all_jpg_images_from_directory(self, message_builder, mocker):
-            """
-            Given a MessageBuilder
-            When add_images is called with a directory path
-            Then it should add all JPG images in that directory
-            """
             dir_path = Path("/path/to/images")
             jpg_files = [Path("/path/to/images/image1.jpg"), Path("/path/to/images/image2.jpg")]
 
@@ -246,11 +191,6 @@ class DescribeMessageBuilder:
             assert jpg_files[1] in message_builder.image_paths
 
         def should_add_images_matching_glob_pattern(self, message_builder, mocker):
-            """
-            Given a MessageBuilder
-            When add_images is called with a path containing a wildcard
-            Then it should add all matching files
-            """
             pattern_path = Path("/path/to/*.jpg")
             matching_files = [Path("/path/to/image1.jpg"), Path("/path/to/image2.jpg")]
 
@@ -276,11 +216,6 @@ class DescribeMessageBuilder:
         """
 
         def should_load_content_from_file(self, message_builder, file_gateway, file_path):
-            """
-            Given a MessageBuilder
-            When load_content is called with a file path
-            Then it should load the content from the file and set it as the content
-            """
             result = message_builder.load_content(file_path)
 
             file_gateway.read.assert_called_once_with(file_path)
@@ -288,11 +223,6 @@ class DescribeMessageBuilder:
             assert result is message_builder  # Returns self for method chaining
 
         def should_convert_string_path_to_path_object(self, message_builder, file_gateway):
-            """
-            Given a MessageBuilder
-            When load_content is called with a string path
-            Then it should convert the string to a Path object
-            """
             file_path_str = "/path/to/file.txt"
 
             message_builder.load_content(file_path_str)
@@ -300,22 +230,12 @@ class DescribeMessageBuilder:
             file_gateway.read.assert_called_once_with(Path(file_path_str))
 
         def should_raise_error_if_file_not_found(self, message_builder, file_gateway, file_path):
-            """
-            Given a MessageBuilder
-            When load_content is called with a non-existent file
-            Then it should raise a FileNotFoundError
-            """
             file_gateway.exists.return_value = False
 
             with pytest.raises(FileNotFoundError):
                 message_builder.load_content(file_path)
 
         def should_replace_placeholders_with_template_values(self, message_builder, file_gateway, file_path):
-            """
-            Given a MessageBuilder
-            When load_content is called with a file path and template values
-            Then it should replace placeholders in the content with the corresponding values
-            """
             # Set up the file content with placeholders
             file_gateway.read.return_value = "Hello, {name}! Today is {day}."
 

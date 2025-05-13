@@ -32,22 +32,10 @@ def llm_broker(mock_gateway):
 
 
 class DescribeLLMBroker:
-    """
-    Specification for the LLMBroker class which handles interactions with Language Learning Models.
-    """
 
     class DescribeMessageGeneration:
-        """
-        Specifications for generating messages through the LLM broker
-        """
 
         def should_generate_simple_response_for_user_message(self, llm_broker, mock_gateway):
-            """
-            Given a simple user message
-            When generating a response
-            Then it should return the LLM's response content
-            """
-            # Given
             test_response_content = "I am fine, thank you!"
             messages = [LLMMessage(role=MessageRole.User, content="Hello, how are you?")]
             mock_gateway.complete.return_value = LLMGatewayResponse(
@@ -56,20 +44,12 @@ class DescribeLLMBroker:
                 tool_calls=[]
             )
 
-            # When
             result = llm_broker.generate(messages)
 
-            # Then
             assert result == test_response_content
             mock_gateway.complete.assert_called_once()
 
         def should_handle_tool_calls_during_generation(self, llm_broker, mock_gateway, mocker):
-            """
-            Given a message that requires tool usage
-            When generating a response
-            Then it should properly handle tool calls and return final response
-            """
-            # Given
             messages = [LLMMessage(role=MessageRole.User, content="What is the date on Friday?")]
             tool_call = mocker.create_autospec(LLMToolCall, instance=True)
             tool_call.name = "resolve_date"
@@ -84,26 +64,15 @@ class DescribeLLMBroker:
             mock_tool.matches.return_value = True
             mock_tool.run.return_value = {"resolved_date": "Friday"}
 
-            # When
             result = llm_broker.generate(messages, tools=[mock_tool])
 
-            # Then
             assert result == "The date is Friday."
             assert mock_gateway.complete.call_count == 2
             mock_tool.run.assert_called_once_with(date="Friday")
 
     class DescribeObjectGeneration:
-        """
-        Specifications for generating structured objects through the LLM broker
-        """
 
         def should_generate_simple_model(self, llm_broker, mock_gateway):
-            """
-            Given messages requiring a simple structured output
-            When generating an object with SimpleModel
-            Then it should return the validated SimpleModel object
-            """
-            # Given
             messages = [LLMMessage(role=MessageRole.User, content="Generate a simple object")]
             mock_object = SimpleModel(text="test", number=42)
             mock_gateway.complete.return_value = LLMGatewayResponse(
@@ -112,22 +81,14 @@ class DescribeLLMBroker:
                 tool_calls=[]
             )
 
-            # When
             result = llm_broker.generate_object(messages, object_model=SimpleModel)
 
-            # Then
             assert isinstance(result, SimpleModel)
             assert result.text == "test"
             assert result.number == 42
             mock_gateway.complete.assert_called_once()
 
         def should_generate_nested_model(self, llm_broker, mock_gateway):
-            """
-            Given messages requiring a nested structured output
-            When generating an object with NestedModel
-            Then it should return the validated NestedModel object
-            """
-            # Given
             messages = [LLMMessage(role=MessageRole.User, content="Generate a nested object")]
             mock_object = NestedModel(
                 title="main",
@@ -139,10 +100,8 @@ class DescribeLLMBroker:
                 tool_calls=[]
             )
 
-            # When
             result = llm_broker.generate_object(messages, object_model=NestedModel)
 
-            # Then
             assert isinstance(result, NestedModel)
             assert result.title == "main"
             assert isinstance(result.details, SimpleModel)
@@ -151,12 +110,6 @@ class DescribeLLMBroker:
             mock_gateway.complete.assert_called_once()
 
         def should_generate_complex_model(self, llm_broker, mock_gateway):
-            """
-            Given messages requiring a complex structured output
-            When generating an object with ComplexModel
-            Then it should return the validated ComplexModel object
-            """
-            # Given
             messages = [LLMMessage(role=MessageRole.User, content="Generate a complex object")]
             mock_object = ComplexModel(
                 name="test",
@@ -172,10 +125,8 @@ class DescribeLLMBroker:
                 tool_calls=[]
             )
 
-            # When
             result = llm_broker.generate_object(messages, object_model=ComplexModel)
 
-            # Then
             assert isinstance(result, ComplexModel)
             assert result.name == "test"
             assert len(result.items) == 2
