@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional, List, Union, Type
+from typing import Optional, List, Union, Annotated, Literal
 
 from pydantic import BaseModel, Field
 
@@ -12,6 +12,34 @@ class MessageRole(Enum):
     User = 'user'
     Assistant = 'assistant'
     Tool = 'tool'
+
+
+class Annotations(BaseModel):
+    audience: list[MessageRole] | None = None
+    priority: Annotated[float, Field(ge=0.0, le=1.0)] | None = None
+
+
+class TextContent(BaseModel):
+    """Text content for a message."""
+
+    type: Literal["text"]
+    text: str
+    """The text content of the message."""
+    annotations: Annotations | None = None
+
+
+class ImageContent(BaseModel):
+    """Image content for a message."""
+
+    type: Literal["image"]
+    data: str
+    """The base64-encoded image data."""
+    mimeType: str
+    """
+    The MIME type of the image. Different providers may support different
+    image types.
+    """
+    annotations: Annotations | None = None
 
 
 class LLMToolCall(BaseModel):
