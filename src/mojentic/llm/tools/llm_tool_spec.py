@@ -43,20 +43,28 @@ class DescribeLLMTool:
         def should_convert_dict_result_to_json_string(self, mock_tool_with_dict_result):
             result = mock_tool_with_dict_result.call_tool()
 
-            assert "content" in result
-            assert isinstance(result["content"], list)
-            assert len(result["content"]) == 1
-            assert isinstance(result["content"][0], TextContent)
-            assert result["content"][0].text == json.dumps({"key": "value"})
+            assert result == {
+                "content": [
+                    {
+                        "type": "text",
+                        "text": '{"key": "value"}',
+                        "annotations": None
+                    }
+                ]
+            }
 
         def should_handle_string_result_directly(self, mock_tool_with_string_result):
             result = mock_tool_with_string_result.call_tool()
 
-            assert "content" in result
-            assert isinstance(result["content"], list)
-            assert len(result["content"]) == 1
-            assert isinstance(result["content"][0], TextContent)
-            assert result["content"][0].text == "test result"
+            assert result == {
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "test result",
+                        "annotations": None
+                    }
+                ]
+            }
 
         def should_pass_kwargs_to_run_method(self):
             mock_run = Mock(return_value="test result")

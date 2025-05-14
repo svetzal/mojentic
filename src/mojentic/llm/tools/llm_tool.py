@@ -13,7 +13,7 @@ class LLMTool:
             result = json.dumps(result)
         return {
             "content": [
-                TextContent(type="text", text=result),
+                TextContent(type="text", text=result).model_dump(),
             ]
         }
 
