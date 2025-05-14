@@ -7,14 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.5.6] - 2025-05-07
+## [0.5.7] - 2025-05-13
+
+### Fixed
+
+- Serialization bug in tool call results
+
+## [0.5.6] - 2025-05-13
 
 ### Added
 
 - Added comprehensive unit tests for task management tools
 - New function to wrap tool .run() function, for MCP compatibility
 
-## [0.5.5] - 2025-05-05
+## [0.5.5] - 2025-05-12
 
 ### Added
 
