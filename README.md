@@ -2,9 +2,9 @@
 
 Mojentic is a framework that provides a simple and flexible way to interact with Large Language Models (LLMs). It offers integration with various LLM providers and includes tools for structured output generation, task automation, and more. The future direction is to facilitate a team of agents, but the current focus is on robust LLM interaction capabilities.
 
-[![GitHub](https://img.shields.io/github/license/mojility/mojentic)](LICENSE.md)
+[![GitHub](https://img.shields.io/github/license/svetzal/mojentic)](LICENSE.md)
 [![Python Version](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/downloads/)
-[![Documentation](https://img.shields.io/badge/docs-latest-brightgreen)](https://mojility.github.io/mojentic/)
+[![Documentation](https://img.shields.io/badge/docs-latest-brightgreen)](https://svetzal.github.io/mojentic/)
 
 ## 🚀 Features
 
@@ -31,7 +31,7 @@ pip install mojentic
 Or install from source
 
 ```bash
-git clone https://github.com/mojility/mojentic.git
+git clone https://github.com/svetzal/mojentic.git
 cd mojentic
 pip install -e .
 ```
@@ -97,18 +97,17 @@ The primary focus is currently on the `llm` module, which provides robust capabi
 
 ## 📚 Documentation
 
-Visit [the documentation](https://mojility.github.io/mojentic/) for comprehensive guides, API reference, and examples.
+Visit [the documentation](https://svetzal.github.io/mojentic/) for comprehensive guides, API reference, and examples.
 
 ## 🧪 Development
 
 ```bash
 # Clone the repository
-git clone https://github.com/mojility/mojentic.git
+git clone https://github.com/svetzal/mojentic.git
 cd mojentic
 
 # Install dependencies
-pip install -r requirements.txt
-pip install -r dev-requirements.txt
+pip install -e ".[dev]"
 
 # Run tests
 pytest

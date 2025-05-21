@@ -49,8 +49,7 @@ src/
 1. Install Python 3.11 or higher
 2. Install dependencies:
    ```bash
-   pip install -r requirements.txt
-   pip install -r dev-requirements.txt
+   pip install -e ".[dev]"
    ```
 3. Install pre-commit hooks (recommended):
    ```bash
@@ -104,13 +103,6 @@ src/
 - Favor declarative code styles over imperative code styles
 - Use pydantic (not @dataclass) for data objects with strong types
 - Favor list and dictionary comprehensions over for loops
-
-## Documentation Style Requirements
-
-- Documentation is written in Markdown format, built by mkdocs, with the mkdocstrings plugin
-- Headings start at Level 1 (`#`)
-- Must have a blank line above and below paragraphs, headings, lists, quotations, and code blocks
-- Lists should not have blank lines between items
 
 ## Mojentic Development
 
@@ -208,12 +200,7 @@ When preparing a release, follow these steps:
    - Update any other documentation files that reference features or behaviors that have changed
    - Ensure installation instructions and examples are up to date
 
-4. **Synchronize Dependencies**:
-   - Ensure that dependencies in `requirements.txt` match those in `pyproject.toml`
-   - Update version constraints if necessary
-   - If new dependencies were added to one file, make sure they're added to the other
-
-5. **Final Verification**:
+4. **Final Verification**:
    - Run all tests to ensure they pass
    - Verify that the application works as expected with the updated version
    - Check that all documentation accurately reflects the current state of the project

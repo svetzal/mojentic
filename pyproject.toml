@@ -27,6 +27,18 @@ dependencies = [
     "colorama",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov",
+    "pytest-mock>=3.10.0",
+    "flake8>=6.0.0",
+    "mkdocs",
+    "mkdocstrings[python]",
+    "griffe-fieldz",
+    "mkdocs-material",
+]
+
 [build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
@@ -35,5 +47,5 @@ build-backend = "setuptools.build_meta"
 where = ["src"]
 
 [project.urls]
-Homepage = "https://github.com/mojility/mojentic"
-Issues = "https://github.com/mojility/mojentic/issues"
+Homepage = "https://github.com/svetzal/mojentic"
+Issues = "https://github.com/svetzal/mojentic/issues"
