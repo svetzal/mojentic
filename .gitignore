@@ -8,3 +8,5 @@ mojentic.egg-info
 .coverage
 .vscode
 .DS_Store
+/coverage.xml
+/junit/test-results.xml
