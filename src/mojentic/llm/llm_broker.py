@@ -23,7 +23,7 @@ class LLMBroker():
     adapter: LLMGateway
     tokenizer: TokenizerGateway
     model: str
-    tracer_system: Optional[TracerSystem]
+    tracer: Optional[TracerSystem]
 
     def __init__(self, model: str, gateway: Optional[LLMGateway] = None, tokenizer: Optional[TokenizerGateway] = None,
                  tracer: Optional[TracerSystem] = None):
@@ -44,7 +44,7 @@ class LLMBroker():
             Optional tracer system to record LLM calls and responses.
         """
         self.model = model
-        self.tracer_system = tracer
+        self.tracer = tracer
         
         if tokenizer is None:
             self.tokenizer = TokenizerGateway()
@@ -85,9 +85,9 @@ class LLMBroker():
         messages_for_tracer = [m.dict() for m in messages]
         
         # Record LLM call in tracer if available
-        if self.tracer_system:
+        if self.tracer:
             tools_for_tracer = [{"name": t.name, "description": t.description} for t in tools] if tools else None
-            self.tracer_system.record_llm_call(
+            self.tracer.record_llm_call(
                 self.model, 
                 messages_for_tracer, 
                 temperature,
@@ -109,9 +109,9 @@ class LLMBroker():
         call_duration_ms = (time.time() - start_time) * 1000
         
         # Record LLM response in tracer if available
-        if self.tracer_system:
+        if self.tracer:
             tool_calls_for_tracer = [tc.dict() for tc in result.tool_calls] if result.tool_calls else None
-            self.tracer_system.record_llm_response(
+            self.tracer.record_llm_response(
                 self.model,
                 result.content,
                 tool_calls=tool_calls_for_tracer,
@@ -129,7 +129,7 @@ class LLMBroker():
                     logger.info('Arguments:', arguments=tool_call.arguments)
                     
                     # Record tool call in tracer if available
-                    if self.tracer_system:
+                    if self.tracer:
                         # Get the arguments before calling the tool
                         tool_arguments = tool_call.arguments
                     
@@ -137,8 +137,8 @@ class LLMBroker():
                     output = tool.run(**tool_call.arguments)
                     
                     # Record tool call result in tracer if available
-                    if self.tracer_system:
-                        self.tracer_system.record_tool_call(
+                    if self.tracer:
+                        self.tracer.record_tool_call(
                             tool_call.name,
                             tool_arguments,
                             output,
@@ -196,8 +196,8 @@ class LLMBroker():
         messages_for_tracer = [m.dict() for m in messages]
         
         # Record LLM call in tracer if available
-        if self.tracer_system:
-            self.tracer_system.record_llm_call(
+        if self.tracer:
+            self.tracer.record_llm_call(
                 self.model, 
                 messages_for_tracer, 
                 temperature,
@@ -214,10 +214,10 @@ class LLMBroker():
         call_duration_ms = (time.time() - start_time) * 1000
         
         # Record LLM response in tracer with object representation if available
-        if self.tracer_system:
+        if self.tracer:
             # Convert object to string for tracer
             object_str = str(result.object.dict()) if hasattr(result.object, "dict") else str(result.object)
-            self.tracer_system.record_llm_response(
+            self.tracer.record_llm_response(
                 self.model,
                 f"Structured response: {object_str}",
                 call_duration_ms=call_duration_ms,
@@ -225,14 +225,3 @@ class LLMBroker():
             )
         
         return result.object
-        
-    def set_tracer_system(self, tracer: Optional[TracerSystem]) -> None:
-        """
-        Set or update the tracer system used by this LLMBroker.
-        
-        Parameters
-        ----------
-        tracer : TracerSystem or None
-            The tracer system to use, or None to disable tracing.
-        """
-        self.tracer_system = tracer

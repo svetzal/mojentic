@@ -87,8 +87,7 @@ def main():
     )
     
     # Create a tool with tracer system
-    date_tool = CurrentDatetimeTool()
-    date_tool.set_tracer_system(tracer_system)
+    date_tool = CurrentDatetimeTool(tracer=tracer_system)
     
     # Create agents
     request_agent = ChatAgent(llm, tools=[date_tool])

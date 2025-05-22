@@ -18,7 +18,7 @@ class Dispatcher:
         self.event_queue = []
         self._stop_event = threading.Event()
         self._thread = threading.Thread(target=self._dispatch_events)
-        self.tracer_system = tracer
+        self.tracer = tracer
 
         logger.debug("Starting event dispatch thread")
         self._thread.start()
@@ -48,8 +48,8 @@ class Dispatcher:
                         logger.debug(f"Sending event to agent {agent}")
                         
                         # Record agent interaction in tracer system if available
-                        if self.tracer_system:
-                            self.tracer_system.record_agent_interaction(
+                        if self.tracer:
+                            self.tracer.record_agent_interaction(
                                 from_agent=str(event.source),
                                 to_agent=str(type(agent)),
                                 event_type=str(type(event).__name__),
@@ -66,14 +66,3 @@ class Dispatcher:
                             self._stop_event.set()
                         self.dispatch(fe)
             sleep(1)
-    
-    def set_tracer_system(self, tracer) -> None:
-        """
-        Set or update the tracer system used by this Dispatcher.
-        
-        Parameters
-        ----------
-        tracer : TracerSystem, optional
-            The tracer system to use, or None to disable tracing.
-        """
-        self.tracer_system = tracer
