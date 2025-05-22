@@ -1,16 +1,15 @@
 """
-Example script demonstrating the tracer system with real LLMBroker usage.
+Example script demonstrating the tracer system with ChatSession and tools.
 
-This example shows how to use the tracer system to record and analyze
-LLM interactions, tool calls, and other system events in a real scenario.
+This example shows how to use the tracer system to monitor an interactive 
+chat session with LLMBroker and tools. When the user exits the session, 
+the script displays a summary of all traced events.
 """
-import time
 from datetime import datetime
 
 from mojentic.tracer import TracerSystem
 from mojentic.tracer.tracer_events import LLMCallTracerEvent, LLMResponseTracerEvent, ToolCallTracerEvent
-from mojentic.llm.llm_broker import LLMBroker
-from mojentic.llm.gateways.models import LLMMessage, MessageRole
+from mojentic.llm import ChatSession, LLMBroker
 from mojentic.llm.tools.date_resolver import ResolveDateTool
 
 
@@ -26,121 +25,84 @@ def print_tracer_events(events):
 
 
 def main():
-    """Run the tracer demo with real LLM interaction."""
-    # Create a tracer system for monitoring
+    """Run a chat session with tracer system to monitor interactions."""
+    # Create a tracer system to monitor all interactions
     tracer = TracerSystem()
     
     # Create an LLM broker with the tracer
-    # For a real example, you would use your preferred model and gateway
-    llm = LLMBroker(model="gpt-3.5-turbo", tracer=tracer)
+    llm_broker = LLMBroker(model="llama3.3-70b-32k", tracer=tracer)
     
     # Create a date resolver tool that will also use the tracer
-    date_tool = ResolveDateTool(llm_broker=llm, tracer=tracer)
+    date_tool = ResolveDateTool(llm_broker=llm_broker, tracer=tracer)
     
-    print("Demonstrating tracer system with LLM and tool interaction...")
+    # Create a chat session with the broker and tool
+    chat_session = ChatSession(llm_broker, tools=[date_tool])
     
-    # Simulate a conversation with the LLM
-    messages = [
-        LLMMessage(role=MessageRole.System, content="You are a helpful assistant."),
-        LLMMessage(role=MessageRole.User, content="What's the date next Friday?")
-    ]
+    print("Welcome to the chat session with tracer demonstration!")
+    print("Ask questions about dates (e.g., 'What day is next Friday?') or anything else.")
+    print("Behind the scenes, the tracer system is recording all interactions.")
+    print("Press Enter with no input to exit and see the trace summary.")
+    print("-" * 80)
     
-    try:
-        # Generate a response
-        # Note: In a real environment, this would call the actual LLM
-        # For this demo, we'll simulate the response
-        print("Simulating LLM call (would require actual API credentials)...")
-        
-        # Instead of making an actual LLM call which requires credentials,
-        # we'll manually record the events that would be generated
-        
-        # Simulate response time
-        time.sleep(1)
-        
-        # Manually record events for demonstration
-        tracer.record_llm_call(
-            model="gpt-3.5-turbo",
-            messages=[m.dict() for m in messages],
-            temperature=0.7,
-            tools=[date_tool.descriptor],
-            source=LLMBroker
-        )
-        
-        # Simulate LLM wanting to call the date tool
-        tracer.record_llm_response(
-            model="gpt-3.5-turbo",
-            content="I need to use a tool to answer that question.",
-            tool_calls=[{
-                "id": "call_123",
-                "name": "resolve_date",
-                "arguments": {"date_expression": "next Friday"}
-            }],
-            call_duration_ms=450.25,
-            source=LLMBroker
-        )
-        
-        # Simulate tool call
-        tracer.record_tool_call(
-            tool_name="resolve_date",
-            arguments={"date_expression": "next Friday"},
-            result="2023-05-26",
-            caller="LLMBroker",
-            source=ResolveDateTool
-        )
-        
-        # Simulate final response
-        tracer.record_llm_call(
-            model="gpt-3.5-turbo",
-            messages=[m.dict() for m in messages] + [
-                {"role": "assistant", "content": None, "tool_calls": [{"id": "call_123", "name": "resolve_date", "arguments": {"date_expression": "next Friday"}}]},
-                {"role": "tool", "content": "2023-05-26", "tool_call_id": "call_123"}
-            ],
-            temperature=0.7,
-            source=LLMBroker
-        )
-        
-        tracer.record_llm_response(
-            model="gpt-3.5-turbo",
-            content="The date next Friday is May 26, 2023.",
-            call_duration_ms=125.75,
-            source=LLMBroker
-        )
-        
-    except Exception as e:
-        print(f"Error: {e}")
-        print("This is expected in the demo without actual LLM credentials.")
-        print("We've recorded simulated events to demonstrate the tracer system.")
+    # Interactive chat session
+    while True:
+        query = input("You: ")
+        if not query:
+            print("Exiting chat session...")
+            break
+        else:
+            print("Assistant: ", end="")
+            response = chat_session.send(query)
+            print(response)
     
-    # Now let's query and display the tracer events
-    print("\nQuerying tracer events recorded during the interaction...")
+    # After the user exits, display tracer event summary
+    print("\nTracer System Summary")
+    print("=" * 80)
+    print(f"You just had a conversation with an LLM, and the tracer recorded everything!")
     
     # Get all events
     all_events = tracer.get_events()
     print(f"Total events recorded: {len(all_events)}")
     print_tracer_events(all_events)
     
-    # Filter events by type
-    print("\nFiltering events by type:")
+    # Show how to filter events by type
+    print("\nYou can filter events by type:")
+    
     llm_calls = tracer.get_events(event_type=LLMCallTracerEvent)
-    print(f"\nLLM Call Events: {len(llm_calls)}")
-    print_tracer_events(llm_calls)
+    print(f"LLM Call Events: {len(llm_calls)}")
+    if llm_calls:
+        print(f"Example: {llm_calls[0].printable_summary()}")
     
     llm_responses = tracer.get_events(event_type=LLMResponseTracerEvent)
-    print(f"\nLLM Response Events: {len(llm_responses)}")
-    print_tracer_events(llm_responses)
+    print(f"LLM Response Events: {len(llm_responses)}")
+    if llm_responses:
+        print(f"Example: {llm_responses[0].printable_summary()}")
     
     tool_calls = tracer.get_events(event_type=ToolCallTracerEvent)
-    print(f"\nTool Call Events: {len(tool_calls)}")
-    print_tracer_events(tool_calls)
+    print(f"Tool Call Events: {len(tool_calls)}")
+    if tool_calls:
+        print(f"Example: {tool_calls[0].printable_summary()}")
     
-    # Get the last 2 events regardless of type
-    print("\nGetting the last 2 events:")
-    last_events = tracer.get_last_n_tracer_events(2)
+    # Show the last few events
+    print("\nThe last few events:")
+    last_events = tracer.get_last_n_tracer_events(3)
     print_tracer_events(last_events)
     
-    # Time-based filtering example
-    print("\nTime-based filtering would look like:")
-    print("events = tracer.get_events(start_time=start_timestamp, end_time=end_timestamp)")
+    # Show how to use time-based filtering
+    print("\nYou can also filter events by time range:")
+    print("Example: tracer.get_events(start_time=start_timestamp, end_time=end_timestamp)")
+    
+    # Show how to extract specific information from events
+    if tool_calls:
+        print("\nDetailed analysis example - Tool usage stats:")
+        tool_names = {}
+        for event in tool_calls:
+            tool_name = event.tool_name
+            tool_names[tool_name] = tool_names.get(tool_name, 0) + 1
+        
+        print("Tool usage frequency:")
+        for tool_name, count in tool_names.items():
+            print(f"  - {tool_name}: {count} calls")
 
 
 if __name__ == "__main__":
