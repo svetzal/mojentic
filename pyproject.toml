@@ -38,6 +38,7 @@ dev = [
     "mkdocstrings[python]",
     "griffe-fieldz",
     "mkdocs-material",
+    "pymdown-extensions",
 ]
 
 [build-system]
