@@ -127,6 +127,22 @@ src/
     - Use `#` for top-level headings
     - Put blank lines above and below bulleted lists, numbered lists, headings, quotations, and code blocks
 
+### API Documentation
+
+API documentation uses mkdocstrings, which inserts module, class, and method documentation using certain markers in the markdown documents.
+
+eg.
+
+```
+::: mojentic.llm.MessageBuilder
+    options:
+        show_root_heading: true
+        merge_init_into_class: false
+        group_by_category: false
+```
+
+Always use the same `show_root_heading`, `merge_init_into_class`, and `group_by_category` options. Adjust the module and class name after the `:::` as needed.
+
 ## Release Process
 
 1. Update CHANGELOG.md:
