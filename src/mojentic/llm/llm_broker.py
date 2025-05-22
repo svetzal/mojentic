@@ -5,7 +5,7 @@ from typing import List, Optional, Type
 import structlog
 from pydantic import BaseModel
 
-from mojentic.audit.audit_system import AuditSystem
+from mojentic.tracer.tracer_system import TracerSystem
 from mojentic.llm.gateways.llm_gateway import LLMGateway
 from mojentic.llm.gateways.models import MessageRole, LLMMessage, LLMGatewayResponse
 from mojentic.llm.gateways.ollama import OllamaGateway
@@ -23,10 +23,10 @@ class LLMBroker():
     adapter: LLMGateway
     tokenizer: TokenizerGateway
     model: str
-    audit_system: Optional[AuditSystem]
+    tracer_system: Optional[TracerSystem]
 
     def __init__(self, model: str, gateway: Optional[LLMGateway] = None, tokenizer: Optional[TokenizerGateway] = None,
-                 audit_system: Optional[AuditSystem] = None):
+                 tracer_system: Optional[TracerSystem] = None):
         """
         Create an instance of the LLMBroker.
 
@@ -40,11 +40,11 @@ class LLMBroker():
         tokenizer
             The gateway to use for tokenization. This is used to log approximate token counts for the LLM calls. If
             None, `mxbai-embed-large` is used on a local Ollama server.
-        audit_system
-            Optional audit system to record LLM calls and responses.
+        tracer_system
+            Optional tracer system to record LLM calls and responses.
         """
         self.model = model
-        self.audit_system = audit_system
+        self.tracer_system = tracer_system
         
         if tokenizer is None:
             self.tokenizer = TokenizerGateway()
@@ -82,16 +82,16 @@ class LLMBroker():
         logger.info(f"Requesting llm response with approx {approximate_tokens} tokens")
         
         # Convert messages to serializable dict for audit
-        messages_for_audit = [m.dict() for m in messages]
+        messages_for_tracer = [m.dict() for m in messages]
         
-        # Record LLM call in audit if available
-        if self.audit_system:
-            tools_for_audit = [{"name": t.name, "description": t.description} for t in tools] if tools else None
-            self.audit_system.record_llm_call(
+        # Record LLM call in tracer if available
+        if self.tracer_system:
+            tools_for_tracer = [{"name": t.name, "description": t.description} for t in tools] if tools else None
+            self.tracer_system.record_llm_call(
                 self.model, 
-                messages_for_audit, 
+                messages_for_tracer, 
                 temperature,
-                tools=tools_for_audit,
+                tools=tools_for_tracer,
                 source=type(self)
             )
         
@@ -108,13 +108,13 @@ class LLMBroker():
         
         call_duration_ms = (time.time() - start_time) * 1000
         
-        # Record LLM response in audit if available
-        if self.audit_system:
-            tool_calls_for_audit = [tc.dict() for tc in result.tool_calls] if result.tool_calls else None
-            self.audit_system.record_llm_response(
+        # Record LLM response in tracer if available
+        if self.tracer_system:
+            tool_calls_for_tracer = [tc.dict() for tc in result.tool_calls] if result.tool_calls else None
+            self.tracer_system.record_llm_response(
                 self.model,
                 result.content,
-                tool_calls=tool_calls_for_audit,
+                tool_calls=tool_calls_for_tracer,
                 call_duration_ms=call_duration_ms,
                 source=type(self)
             )
@@ -128,17 +128,17 @@ class LLMBroker():
                     logger.info('Calling function', function=tool_call.name)
                     logger.info('Arguments:', arguments=tool_call.arguments)
                     
-                    # Record tool call in audit if available
-                    if self.audit_system:
+                    # Record tool call in tracer if available
+                    if self.tracer_system:
                         # Get the arguments before calling the tool
                         tool_arguments = tool_call.arguments
                     
                     # Call the tool
                     output = tool.run(**tool_call.arguments)
                     
-                    # Record tool call result in audit if available
-                    if self.audit_system:
-                        self.audit_system.record_tool_call(
+                    # Record tool call result in tracer if available
+                    if self.tracer_system:
+                        self.tracer_system.record_tool_call(
                             tool_call.name,
                             tool_arguments,
                             output,
@@ -193,13 +193,13 @@ class LLMBroker():
         logger.info(f"Requesting llm response with approx {approximate_tokens} tokens")
         
         # Convert messages to serializable dict for audit
-        messages_for_audit = [m.dict() for m in messages]
+        messages_for_tracer = [m.dict() for m in messages]
         
-        # Record LLM call in audit if available
-        if self.audit_system:
-            self.audit_system.record_llm_call(
+        # Record LLM call in tracer if available
+        if self.tracer_system:
+            self.tracer_system.record_llm_call(
                 self.model, 
-                messages_for_audit, 
+                messages_for_tracer, 
                 temperature,
                 tools=None,
                 source=type(self)
@@ -213,11 +213,11 @@ class LLMBroker():
         
         call_duration_ms = (time.time() - start_time) * 1000
         
-        # Record LLM response in audit with object representation if available
-        if self.audit_system:
-            # Convert object to string for audit
+        # Record LLM response in tracer with object representation if available
+        if self.tracer_system:
+            # Convert object to string for tracer
             object_str = str(result.object.dict()) if hasattr(result.object, "dict") else str(result.object)
-            self.audit_system.record_llm_response(
+            self.tracer_system.record_llm_response(
                 self.model,
                 f"Structured response: {object_str}",
                 call_duration_ms=call_duration_ms,
@@ -226,13 +226,13 @@ class LLMBroker():
         
         return result.object
         
-    def set_audit_system(self, audit_system: Optional[AuditSystem]) -> None:
+    def set_tracer_system(self, tracer_system: Optional[TracerSystem]) -> None:
         """
-        Set or update the audit system used by this LLMBroker.
+        Set or update the tracer system used by this LLMBroker.
         
         Parameters
         ----------
-        audit_system : AuditSystem or None
-            The audit system to use, or None to disable auditing.
+        tracer_system : TracerSystem or None
+            The tracer system to use, or None to disable tracing.
         """
-        self.audit_system = audit_system
+        self.tracer_system = tracer_system

@@ -12,13 +12,13 @@ logger = structlog.get_logger()
 
 
 class Dispatcher:
-    def __init__(self, router, shared_working_memory=None, batch_size=5, audit_system=None):
+    def __init__(self, router, shared_working_memory=None, batch_size=5, tracer_system=None):
         self.router = router
         self.batch_size = batch_size
         self.event_queue = []
         self._stop_event = threading.Event()
         self._thread = threading.Thread(target=self._dispatch_events)
-        self.audit_system = audit_system
+        self.tracer_system = tracer_system
 
         logger.debug("Starting event dispatch thread")
         self._thread.start()
@@ -47,9 +47,9 @@ class Dispatcher:
                     for agent in agents:
                         logger.debug(f"Sending event to agent {agent}")
                         
-                        # Record agent interaction in audit system if available
-                        if self.audit_system:
-                            self.audit_system.record_agent_interaction(
+                        # Record agent interaction in tracer system if available
+                        if self.tracer_system:
+                            self.tracer_system.record_agent_interaction(
                                 from_agent=str(event.source),
                                 to_agent=str(type(agent)),
                                 event_type=str(type(event).__name__),
@@ -67,13 +67,13 @@ class Dispatcher:
                         self.dispatch(fe)
             sleep(1)
     
-    def set_audit_system(self, audit_system) -> None:
+    def set_tracer_system(self, tracer_system) -> None:
         """
-        Set or update the audit system used by this Dispatcher.
+        Set or update the tracer system used by this Dispatcher.
         
         Parameters
         ----------
-        audit_system : AuditSystem, optional
-            The audit system to use, or None to disable auditing.
+        tracer_system : TracerSystem, optional
+            The tracer system to use, or None to disable tracing.
         """
-        self.audit_system = audit_system
+        self.tracer_system = tracer_system
