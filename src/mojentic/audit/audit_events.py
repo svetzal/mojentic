@@ -6,7 +6,6 @@ from typing import Any, Dict, List, Optional, Type
 from pydantic import Field
 
 from mojentic.event import Event
-from mojentic.llm.gateways.models import LLMMessage
 
 
 class AuditEvent(Event):

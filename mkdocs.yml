@@ -60,6 +60,8 @@ nav:
   - Layer 2 - Agents:
       - Iterative Problem Solver: ipa.md
       - Simple Recursive Agent: sra.md
+  - Observability:
+      - Audit System: audit.md
   - API Documentation:
       - Intro: api_0.md
       - Layer 1: api_1.md

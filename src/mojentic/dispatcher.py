@@ -1,6 +1,7 @@
 import logging
 import threading
 from time import sleep
+from typing import Optional, Type
 from uuid import uuid4
 
 import structlog
@@ -11,12 +12,13 @@ logger = structlog.get_logger()
 
 
 class Dispatcher:
-    def __init__(self, router, shared_working_memory=None, batch_size=5):
+    def __init__(self, router, shared_working_memory=None, batch_size=5, audit_system=None):
         self.router = router
         self.batch_size = batch_size
         self.event_queue = []
         self._stop_event = threading.Event()
         self._thread = threading.Thread(target=self._dispatch_events)
+        self.audit_system = audit_system
 
         logger.debug("Starting event dispatch thread")
         self._thread.start()
@@ -44,6 +46,18 @@ class Dispatcher:
                     events = []
                     for agent in agents:
                         logger.debug(f"Sending event to agent {agent}")
+                        
+                        # Record agent interaction in audit system if available
+                        if self.audit_system:
+                            self.audit_system.record_agent_interaction(
+                                from_agent=str(event.source),
+                                to_agent=str(type(agent)),
+                                event_type=str(type(event).__name__),
+                                event_id=event.correlation_id,
+                                source=type(self)
+                            )
+                        
+                        # Process the event through the agent
                         received_events = agent.receive_event(event)
                         logger.debug(f"Agent {agent} returned {len(events)} events")
                         events.extend(received_events)
@@ -52,3 +66,14 @@ class Dispatcher:
                             self._stop_event.set()
                         self.dispatch(fe)
             sleep(1)
+    
+    def set_audit_system(self, audit_system) -> None:
+        """
+        Set or update the audit system used by this Dispatcher.
+        
+        Parameters
+        ----------
+        audit_system : AuditSystem, optional
+            The audit system to use, or None to disable auditing.
+        """
+        self.audit_system = audit_system

@@ -1,9 +1,11 @@
 import json
+import time
 from typing import List, Optional, Type
 
 import structlog
 from pydantic import BaseModel
 
+from mojentic.audit.audit_system import AuditSystem
 from mojentic.llm.gateways.llm_gateway import LLMGateway
 from mojentic.llm.gateways.models import MessageRole, LLMMessage, LLMGatewayResponse
 from mojentic.llm.gateways.ollama import OllamaGateway
@@ -21,8 +23,10 @@ class LLMBroker():
     adapter: LLMGateway
     tokenizer: TokenizerGateway
     model: str
+    audit_system: Optional[AuditSystem]
 
-    def __init__(self, model: str, gateway: Optional[LLMGateway] = None, tokenizer: Optional[TokenizerGateway] = None):
+    def __init__(self, model: str, gateway: Optional[LLMGateway] = None, tokenizer: Optional[TokenizerGateway] = None,
+                 audit_system: Optional[AuditSystem] = None):
         """
         Create an instance of the LLMBroker.
 
@@ -36,8 +40,12 @@ class LLMBroker():
         tokenizer
             The gateway to use for tokenization. This is used to log approximate token counts for the LLM calls. If
             None, `mxbai-embed-large` is used on a local Ollama server.
+        audit_system
+            Optional audit system to record LLM calls and responses.
         """
         self.model = model
+        self.audit_system = audit_system
+        
         if tokenizer is None:
             self.tokenizer = TokenizerGateway()
         else:
@@ -72,7 +80,24 @@ class LLMBroker():
         """
         approximate_tokens = len(self.tokenizer.encode(self._content_to_count(messages)))
         logger.info(f"Requesting llm response with approx {approximate_tokens} tokens")
-
+        
+        # Convert messages to serializable dict for audit
+        messages_for_audit = [m.dict() for m in messages]
+        
+        # Record LLM call in audit if available
+        if self.audit_system:
+            tools_for_audit = [{"name": t.name, "description": t.description} for t in tools] if tools else None
+            self.audit_system.record_llm_call(
+                self.model, 
+                messages_for_audit, 
+                temperature,
+                tools=tools_for_audit,
+                source=type(self)
+            )
+        
+        # Measure call duration for audit
+        start_time = time.time()
+        
         result: LLMGatewayResponse = self.adapter.complete(
             model=self.model,
             messages=messages,
@@ -80,6 +105,19 @@ class LLMBroker():
             temperature=temperature,
             num_ctx=num_ctx,
             num_predict=num_predict)
+        
+        call_duration_ms = (time.time() - start_time) * 1000
+        
+        # Record LLM response in audit if available
+        if self.audit_system:
+            tool_calls_for_audit = [tc.dict() for tc in result.tool_calls] if result.tool_calls else None
+            self.audit_system.record_llm_response(
+                self.model,
+                result.content,
+                tool_calls=tool_calls_for_audit,
+                call_duration_ms=call_duration_ms,
+                source=type(self)
+            )
 
         if result.tool_calls and tools is not None:
             logger.info("Tool call requested")
@@ -89,7 +127,25 @@ class LLMBroker():
                                 None):
                     logger.info('Calling function', function=tool_call.name)
                     logger.info('Arguments:', arguments=tool_call.arguments)
+                    
+                    # Record tool call in audit if available
+                    if self.audit_system:
+                        # Get the arguments before calling the tool
+                        tool_arguments = tool_call.arguments
+                    
+                    # Call the tool
                     output = tool.run(**tool_call.arguments)
+                    
+                    # Record tool call result in audit if available
+                    if self.audit_system:
+                        self.audit_system.record_tool_call(
+                            tool_call.name,
+                            tool_arguments,
+                            output,
+                            caller="LLMBroker",
+                            source=type(self)
+                        )
+                    
                     logger.info('Function output', output=output)
                     messages.append(LLMMessage(role=MessageRole.Assistant, tool_calls=[tool_call]))
                     messages.append(
@@ -135,6 +191,48 @@ class LLMBroker():
         """
         approximate_tokens = len(self.tokenizer.encode(self._content_to_count(messages)))
         logger.info(f"Requesting llm response with approx {approximate_tokens} tokens")
+        
+        # Convert messages to serializable dict for audit
+        messages_for_audit = [m.dict() for m in messages]
+        
+        # Record LLM call in audit if available
+        if self.audit_system:
+            self.audit_system.record_llm_call(
+                self.model, 
+                messages_for_audit, 
+                temperature,
+                tools=None,
+                source=type(self)
+            )
+        
+        # Measure call duration for audit
+        start_time = time.time()
+        
         result = self.adapter.complete(model=self.model, messages=messages, object_model=object_model,
                                        temperature=temperature, num_ctx=num_ctx, num_predict=num_predict)
+        
+        call_duration_ms = (time.time() - start_time) * 1000
+        
+        # Record LLM response in audit with object representation if available
+        if self.audit_system:
+            # Convert object to string for audit
+            object_str = str(result.object.dict()) if hasattr(result.object, "dict") else str(result.object)
+            self.audit_system.record_llm_response(
+                self.model,
+                f"Structured response: {object_str}",
+                call_duration_ms=call_duration_ms,
+                source=type(self)
+            )
+        
         return result.object
+        
+    def set_audit_system(self, audit_system: Optional[AuditSystem]) -> None:
+        """
+        Set or update the audit system used by this LLMBroker.
+        
+        Parameters
+        ----------
+        audit_system : AuditSystem or None
+            The audit system to use, or None to disable auditing.
+        """
+        self.audit_system = audit_system
