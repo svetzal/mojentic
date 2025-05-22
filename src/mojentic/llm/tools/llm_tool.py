@@ -1,14 +1,40 @@
 import json
+from typing import Any, Dict, Optional
 
+from mojentic.tracer.tracer_system import TracerSystem
 from mojentic.llm.gateways.models import TextContent
 
 
 class LLMTool:
+    def __init__(self, tracer: Optional[TracerSystem] = None):
+        """
+        Initialize an LLM tool with optional tracer system.
+        
+        Parameters
+        ----------
+        tracer : TracerSystem, optional
+            The tracer system to use for recording tool usage.
+        """
+        # Use null_tracer if no tracer is provided
+        from mojentic.tracer import null_tracer
+        self.tracer = tracer or null_tracer
+        
     def run(self, **kwargs):
         raise NotImplementedError
 
     def call_tool(self, **kwargs):
+        # Execute the tool and capture the result
         result = self.run(**kwargs)
+            
+        # Record the tool call in the tracer system (always safe to call with null_tracer)
+        self.tracer.record_tool_call(
+            tool_name=self.name,
+            arguments=kwargs,
+            result=result,
+            source=type(self)
+        )
+        
+        # Format the result
         if isinstance(result, dict):
             result = json.dumps(result)
         return {
