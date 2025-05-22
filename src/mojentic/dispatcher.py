@@ -18,7 +18,10 @@ class Dispatcher:
         self.event_queue = []
         self._stop_event = threading.Event()
         self._thread = threading.Thread(target=self._dispatch_events)
-        self.tracer = tracer
+        
+        # Use null_tracer if no tracer is provided
+        from mojentic.tracer import null_tracer
+        self.tracer = tracer or null_tracer
 
         logger.debug("Starting event dispatch thread")
         self._thread.start()
@@ -47,11 +50,10 @@ class Dispatcher:
                     for agent in agents:
                         logger.debug(f"Sending event to agent {agent}")
                         
-                        # Record agent interaction in tracer system if available
-                        if self.tracer:
-                            self.tracer.record_agent_interaction(
-                                from_agent=str(event.source),
-                                to_agent=str(type(agent)),
+                        # Record agent interaction in tracer system
+                        self.tracer.record_agent_interaction(
+                            from_agent=str(event.source),
+                            to_agent=str(type(agent)),
                                 event_type=str(type(event).__name__),
                                 event_id=event.correlation_id,
                                 source=type(self)

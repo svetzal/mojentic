@@ -44,7 +44,10 @@ class LLMBroker():
             Optional tracer system to record LLM calls and responses.
         """
         self.model = model
-        self.tracer = tracer
+        
+        # Use null_tracer if no tracer is provided
+        from mojentic.tracer import null_tracer
+        self.tracer = tracer or null_tracer
         
         if tokenizer is None:
             self.tokenizer = TokenizerGateway()
@@ -84,16 +87,15 @@ class LLMBroker():
         # Convert messages to serializable dict for audit
         messages_for_tracer = [m.dict() for m in messages]
         
-        # Record LLM call in tracer if available
-        if self.tracer:
-            tools_for_tracer = [{"name": t.name, "description": t.description} for t in tools] if tools else None
-            self.tracer.record_llm_call(
-                self.model, 
-                messages_for_tracer, 
-                temperature,
-                tools=tools_for_tracer,
-                source=type(self)
-            )
+        # Record LLM call in tracer
+        tools_for_tracer = [{"name": t.name, "description": t.description} for t in tools] if tools else None
+        self.tracer.record_llm_call(
+            self.model, 
+            messages_for_tracer, 
+            temperature,
+            tools=tools_for_tracer,
+            source=type(self)
+        )
         
         # Measure call duration for audit
         start_time = time.time()
@@ -108,16 +110,15 @@ class LLMBroker():
         
         call_duration_ms = (time.time() - start_time) * 1000
         
-        # Record LLM response in tracer if available
-        if self.tracer:
-            tool_calls_for_tracer = [tc.dict() for tc in result.tool_calls] if result.tool_calls else None
-            self.tracer.record_llm_response(
-                self.model,
-                result.content,
-                tool_calls=tool_calls_for_tracer,
-                call_duration_ms=call_duration_ms,
-                source=type(self)
-            )
+        # Record LLM response in tracer
+        tool_calls_for_tracer = [tc.dict() for tc in result.tool_calls] if result.tool_calls else None
+        self.tracer.record_llm_response(
+            self.model,
+            result.content,
+            tool_calls=tool_calls_for_tracer,
+            call_duration_ms=call_duration_ms,
+            source=type(self)
+        )
 
         if result.tool_calls and tools is not None:
             logger.info("Tool call requested")
@@ -128,23 +129,20 @@ class LLMBroker():
                     logger.info('Calling function', function=tool_call.name)
                     logger.info('Arguments:', arguments=tool_call.arguments)
                     
-                    # Record tool call in tracer if available
-                    if self.tracer:
-                        # Get the arguments before calling the tool
-                        tool_arguments = tool_call.arguments
+                    # Get the arguments before calling the tool
+                    tool_arguments = tool_call.arguments
                     
                     # Call the tool
                     output = tool.run(**tool_call.arguments)
                     
-                    # Record tool call result in tracer if available
-                    if self.tracer:
-                        self.tracer.record_tool_call(
-                            tool_call.name,
-                            tool_arguments,
-                            output,
-                            caller="LLMBroker",
-                            source=type(self)
-                        )
+                    # Record tool call in tracer
+                    self.tracer.record_tool_call(
+                        tool_call.name,
+                        tool_arguments,
+                        output,
+                        caller="LLMBroker",
+                        source=type(self)
+                    )
                     
                     logger.info('Function output', output=output)
                     messages.append(LLMMessage(role=MessageRole.Assistant, tool_calls=[tool_call]))
@@ -195,15 +193,14 @@ class LLMBroker():
         # Convert messages to serializable dict for audit
         messages_for_tracer = [m.dict() for m in messages]
         
-        # Record LLM call in tracer if available
-        if self.tracer:
-            self.tracer.record_llm_call(
-                self.model, 
-                messages_for_tracer, 
-                temperature,
-                tools=None,
-                source=type(self)
-            )
+        # Record LLM call in tracer
+        self.tracer.record_llm_call(
+            self.model, 
+            messages_for_tracer, 
+            temperature,
+            tools=None,
+            source=type(self)
+        )
         
         # Measure call duration for audit
         start_time = time.time()
@@ -213,15 +210,14 @@ class LLMBroker():
         
         call_duration_ms = (time.time() - start_time) * 1000
         
-        # Record LLM response in tracer with object representation if available
-        if self.tracer:
-            # Convert object to string for tracer
-            object_str = str(result.object.dict()) if hasattr(result.object, "dict") else str(result.object)
-            self.tracer.record_llm_response(
-                self.model,
-                f"Structured response: {object_str}",
-                call_duration_ms=call_duration_ms,
-                source=type(self)
-            )
+        # Record LLM response in tracer with object representation
+        # Convert object to string for tracer
+        object_str = str(result.object.dict()) if hasattr(result.object, "dict") else str(result.object)
+        self.tracer.record_llm_response(
+            self.model,
+            f"Structured response: {object_str}",
+            call_duration_ms=call_duration_ms,
+            source=type(self)
+        )
         
         return result.object

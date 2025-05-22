@@ -279,3 +279,7 @@ class TracerSystem:
         Disable the tracer system.
         """
         self.enabled = False
+
+
+# Import and use the null tracer directly in client code via:
+# from mojentic.tracer import null_tracer

@@ -15,27 +15,24 @@ class LLMTool:
         tracer : TracerSystem, optional
             The tracer system to use for recording tool usage.
         """
-        self.tracer = tracer
+        # Use null_tracer if no tracer is provided
+        from mojentic.tracer import null_tracer
+        self.tracer = tracer or null_tracer
         
     def run(self, **kwargs):
         raise NotImplementedError
 
     def call_tool(self, **kwargs):
-        # Record tool call in tracer system if available
-        if self.tracer:
-            # Execute the tool and capture the result
-            result = self.run(**kwargs)
+        # Execute the tool and capture the result
+        result = self.run(**kwargs)
             
-            # Record the tool call in the tracer system
-            self.tracer.record_tool_call(
-                tool_name=self.name,
-                arguments=kwargs,
-                result=result,
-                source=type(self)
-            )
-        else:
-            # Simply execute the tool if no tracer system is available
-            result = self.run(**kwargs)
+        # Record the tool call in the tracer system (always safe to call with null_tracer)
+        self.tracer.record_tool_call(
+            tool_name=self.name,
+            arguments=kwargs,
+            result=result,
+            source=type(self)
+        )
         
         # Format the result
         if isinstance(result, dict):
