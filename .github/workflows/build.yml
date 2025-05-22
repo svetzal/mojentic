@@ -49,5 +49,12 @@ jobs:
       
       - name: Build MkDocs site
         run: |
-          pip install mkdocs mkdocs-material mkdocstrings
+          pip install mkdocs mkdocs-material mkdocstrings pymdown-extensions
           mkdocs build
+          
+      - name: Upload documentation site
+        uses: actions/upload-artifact@v3
+        with:
+          name: documentation-site
+          path: site/
+          retention-days: 1
