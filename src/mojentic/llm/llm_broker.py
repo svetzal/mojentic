@@ -26,7 +26,7 @@ class LLMBroker():
     tracer_system: Optional[TracerSystem]
 
     def __init__(self, model: str, gateway: Optional[LLMGateway] = None, tokenizer: Optional[TokenizerGateway] = None,
-                 tracer_system: Optional[TracerSystem] = None):
+                 tracer: Optional[TracerSystem] = None):
         """
         Create an instance of the LLMBroker.
 
@@ -40,11 +40,11 @@ class LLMBroker():
         tokenizer
             The gateway to use for tokenization. This is used to log approximate token counts for the LLM calls. If
             None, `mxbai-embed-large` is used on a local Ollama server.
-        tracer_system
+        tracer
             Optional tracer system to record LLM calls and responses.
         """
         self.model = model
-        self.tracer_system = tracer_system
+        self.tracer_system = tracer
         
         if tokenizer is None:
             self.tokenizer = TokenizerGateway()
@@ -226,13 +226,13 @@ class LLMBroker():
         
         return result.object
         
-    def set_tracer_system(self, tracer_system: Optional[TracerSystem]) -> None:
+    def set_tracer_system(self, tracer: Optional[TracerSystem]) -> None:
         """
         Set or update the tracer system used by this LLMBroker.
         
         Parameters
         ----------
-        tracer_system : TracerSystem or None
+        tracer : TracerSystem or None
             The tracer system to use, or None to disable tracing.
         """
-        self.tracer_system = tracer_system
+        self.tracer_system = tracer

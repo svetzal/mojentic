@@ -48,17 +48,17 @@ The tracer system integrates with key components:
 1. **With LLMBroker**:
    ```python
    tracer_system = TracerSystem()
-   llm = LLMBroker("model-name", tracer_system=tracer_system)
+   llm = LLMBroker("model-name", tracer=tracer_system)
    ```
 
 2. **With Dispatcher**:
    ```python
-   dispatcher = Dispatcher(router, tracer_system=tracer_system)
+   dispatcher = Dispatcher(router, tracer=tracer_system)
    ```
 
 3. **With Tools**:
    ```python
-   tool = SomeTool(tracer_system=tracer_system)
+   tool = SomeTool(tracer=tracer_system)
    # Or
    tool = SomeTool()
    tool.set_tracer_system(tracer_system)
@@ -105,11 +105,11 @@ from mojentic.llm.llm_broker import LLMBroker
 tracer_system = TracerSystem()
 
 # Create LLM broker with tracer system
-llm = LLMBroker("model-name", tracer_system=tracer_system)
+llm = LLMBroker("model-name", tracer=tracer_system)
 
 # Set up router and dispatcher
 router = Router({...})
-dispatcher = Dispatcher(router, tracer_system=tracer_system)
+dispatcher = Dispatcher(router, tracer=tracer_system)
 
 # Later, query events
 llm_calls = tracer_system.get_events(event_type=LLMCallTracerEvent)

@@ -12,13 +12,13 @@ logger = structlog.get_logger()
 
 
 class Dispatcher:
-    def __init__(self, router, shared_working_memory=None, batch_size=5, tracer_system=None):
+    def __init__(self, router, shared_working_memory=None, batch_size=5, tracer=None):
         self.router = router
         self.batch_size = batch_size
         self.event_queue = []
         self._stop_event = threading.Event()
         self._thread = threading.Thread(target=self._dispatch_events)
-        self.tracer_system = tracer_system
+        self.tracer_system = tracer
 
         logger.debug("Starting event dispatch thread")
         self._thread.start()
@@ -67,13 +67,13 @@ class Dispatcher:
                         self.dispatch(fe)
             sleep(1)
     
-    def set_tracer_system(self, tracer_system) -> None:
+    def set_tracer_system(self, tracer) -> None:
         """
         Set or update the tracer system used by this Dispatcher.
         
         Parameters
         ----------
-        tracer_system : TracerSystem, optional
+        tracer : TracerSystem, optional
             The tracer system to use, or None to disable tracing.
         """
-        self.tracer_system = tracer_system
+        self.tracer_system = tracer

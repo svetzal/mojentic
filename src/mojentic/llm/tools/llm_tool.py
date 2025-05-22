@@ -6,16 +6,16 @@ from mojentic.llm.gateways.models import TextContent
 
 
 class LLMTool:
-    def __init__(self, tracer_system: Optional[TracerSystem] = None):
+    def __init__(self, tracer: Optional[TracerSystem] = None):
         """
         Initialize an LLM tool with optional tracer system.
         
         Parameters
         ----------
-        tracer_system : TracerSystem, optional
+        tracer : TracerSystem, optional
             The tracer system to use for recording tool usage.
         """
-        self.tracer_system = tracer_system
+        self.tracer_system = tracer
         
     def run(self, **kwargs):
         raise NotImplementedError
@@ -61,13 +61,13 @@ class LLMTool:
     def matches(self, name: str):
         return name == self.name
         
-    def set_tracer_system(self, tracer_system: Optional[TracerSystem]) -> None:
+    def set_tracer_system(self, tracer: Optional[TracerSystem]) -> None:
         """
         Set or update the tracer system used by this tool.
         
         Parameters
         ----------
-        tracer_system : TracerSystem or None
+        tracer : TracerSystem or None
             The tracer system to use, or None to disable tracing.
         """
-        self.tracer_system = tracer_system
+        self.tracer_system = tracer

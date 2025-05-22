@@ -83,7 +83,7 @@ def main():
     llm = LLMBroker(
         model="demo-model", 
         gateway=FileGateway(response="I'm a simulated LLM response for demonstration purposes."),
-        tracer_system=tracer_system
+        tracer=tracer_system
     )
     
     # Create a tool with tracer system
@@ -100,7 +100,7 @@ def main():
         ResponseEvent: [output_agent]
     })
     
-    dispatcher = Dispatcher(router, tracer_system=tracer_system)
+    dispatcher = Dispatcher(router, tracer=tracer_system)
     
     # Process a user message
     print("User: What time is it?")
