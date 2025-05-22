@@ -49,7 +49,6 @@ jobs:
       
       - name: Build MkDocs site
         run: |
-          pip install mkdocs mkdocs-material mkdocstrings pymdown-extensions
           mkdocs build
           
       - name: Upload documentation site
