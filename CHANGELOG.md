@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2025-05-14
+
+### Added
+
+- Added observability via the TracerSystem, which provides a recorded trace of chat, llm, and tool interactions
+  throughout a session.
+
 ## [0.5.7] - 2025-05-13
 
 ### Fixed
