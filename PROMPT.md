@@ -43,6 +43,29 @@ structured_response = llm_broker.generate_object(messages, object_model=CapitalI
 print(structured_response.capital)  # "Paris"
 ```
 
+You can also get a list of available models from any LLM gateway implementation:
+
+```python
+from mojentic.llm.gateways import OllamaGateway, OpenAIGateway
+from mojentic.llm.gateways.anthropic import AnthropicGateway
+import os
+
+# List Ollama models
+ollama = OllamaGateway()
+ollama_models = ollama.get_available_models()
+print("Available Ollama models:", ollama_models)
+
+# List OpenAI models
+openai = OpenAIGateway(os.environ["OPENAI_API_KEY"])
+openai_models = openai.get_available_models()
+print("Available OpenAI models:", openai_models)
+
+# List Anthropic models
+anthropic = AnthropicGateway(os.environ["ANTHROPIC_API_KEY"])
+anthropic_models = anthropic.get_available_models()
+print("Available Anthropic models:", anthropic_models)
+```
+
 ### ChatSession
 
 Manages stateful conversations with automatic context management:
@@ -86,7 +109,7 @@ class WeatherTool(LLMTool):
     def run(self, location: str):
         # Implement weather lookup logic
         return {"temperature": 22, "conditions": "sunny"}
-    
+
     @property
     def descriptor(self):
         return {
@@ -149,6 +172,100 @@ response = agent.generate_response("My name is Alice.")
 response = agent.generate_response("What's my name?")  # Will know the name is Alice
 ```
 
+### Tracer
+
+Monitor and analyze interactions with LLMs and tools for debugging and observability:
+
+```python
+from mojentic.tracer import TracerSystem
+from mojentic.tracer.tracer_events import (
+    LLMCallTracerEvent, 
+    LLMResponseTracerEvent, 
+    ToolCallTracerEvent,
+    AgentInteractionTracerEvent
+)
+from mojentic.llm import LLMBroker, ChatSession
+from mojentic.llm.tools.date_resolver import ResolveDateTool
+
+# Create a tracer system
+tracer = TracerSystem()
+
+# Integrate with LLMBroker
+llm_broker = LLMBroker(model="llama3.3-70b-32k", tracer=tracer)
+
+# Integrate with tools
+date_tool = ResolveDateTool(llm_broker=llm_broker, tracer=tracer)
+
+# Create a chat session with the broker and tool
+chat_session = ChatSession(llm_broker, tools=[date_tool])
+
+# Use the chat session normally
+response = chat_session.send("What day is next Friday?")
+
+# Retrieve and analyze traced events
+all_events = tracer.get_events()
+print(f"Total events recorded: {len(all_events)}")
+
+# Filter events by type
+llm_calls = tracer.get_events(event_type=LLMCallTracerEvent)
+llm_responses = tracer.get_events(event_type=LLMResponseTracerEvent)
+tool_calls = tracer.get_events(event_type=ToolCallTracerEvent)
+agent_interactions = tracer.get_events(event_type=AgentInteractionTracerEvent)
+
+# Get the last few events
+last_events = tracer.get_last_n_tracer_events(3)
+
+# Filter events by time range
+start_time = 1625097600.0  # Unix timestamp
+end_time = 1625184000.0    # Unix timestamp
+time_filtered_events = tracer.get_events(start_time=start_time, end_time=end_time)
+
+# Print event summaries
+for event in last_events:
+    print(event.printable_summary())
+
+# Extract specific information from events
+if tool_calls:
+    tool_usage = {}
+    for event in tool_calls:
+        tool_name = event.tool_name
+        tool_usage[tool_name] = tool_usage.get(tool_name, 0) + 1
+
+    print("Tool usage frequency:")
+    for tool_name, count in tool_usage.items():
+        print(f"  - {tool_name}: {count} calls")
+```
+
+#### Tracer Event Types
+
+The tracer system captures different types of events:
+
+1. **LLMCallTracerEvent**: Records when an LLM is called
+   - `model`: The LLM model used
+   - `messages`: The messages sent to the LLM
+   - `temperature`: The temperature setting used
+   - `tools`: The tools available to the LLM
+
+2. **LLMResponseTracerEvent**: Records when an LLM responds
+   - `model`: The LLM model used
+   - `content`: The content of the response
+   - `tool_calls`: Any tool calls made by the LLM
+   - `call_duration_ms`: Duration of the call in milliseconds
+
+3. **ToolCallTracerEvent**: Records tool usage
+   - `tool_name`: Name of the tool called
+   - `arguments`: Arguments provided to the tool
+   - `result`: Result returned by the tool
+   - `caller`: Component that called the tool
+
+4. **AgentInteractionTracerEvent**: Records agent interactions
+   - `from_agent`: Agent sending the event
+   - `to_agent`: Agent receiving the event
+   - `event_type`: Type of event being processed
+   - `event_id`: Unique identifier for the event
+
+Each event has a `printable_summary()` method that formats the event information for display.
+
 ## Best Practices
 
 1. **Model Selection**: Choose appropriate models for your task:
@@ -162,3 +279,5 @@ response = agent.generate_response("What's my name?")  # Will know the name is A
 4. **Tools**: Extend capabilities with tools rather than complex prompting
 
 5. **Memory**: Use BaseLLMAgentWithMemory when information needs to persist across interactions
+
+6. **Tracing**: Use the TracerSystem to monitor and debug interactions with LLMs and tools
