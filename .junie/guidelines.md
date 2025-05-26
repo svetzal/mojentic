@@ -1,5 +1,7 @@
 # Mojentic Development Guidelines
 
+You must update this guidelines file (`.junie/guidelines.md`) when you learn new things about the user's expectations, especially if the user tells you to remember something.
+
 ## Project Overview
 
 Mojentic is an agentic framework that provides a simple and flexible way to assemble teams of agents to solve complex problems. It supports integration with various LLM providers and includes tools for task automation.
@@ -74,6 +76,7 @@ src/
 
 ## Testing Guidelines
 - Tests are co-located with implementation files (test file must be in the same folder as the implementation)
+- We write tests as specifications, therefore you can find all the tests in the *_spec.py files
 - Run tests: `pytest`
 - Linting: `flake8 src`
 - Code style:
@@ -91,7 +94,6 @@ src/
 - Separate test phases with a single blank line
 - Do not write conditional statements in tests
 - Each test must fail for only one clear reason
-- "Don't Mock what you don't own" only write mocks for our own gateway classes, do not mock other library internals or even private functions or methods in our own code.
 
 ## Code Style Requirements
 - Follow the existing project structure

@@ -10,6 +10,53 @@ from mojentic.llm.gateways.models import LLMMessage, MessageRole
 logger = structlog.get_logger()
 
 
+def read_file_as_binary(file_path: str) -> bytes:
+    """Read a file as binary data.
+
+    This function encapsulates the external library call to open() so it can be mocked in tests.
+
+    Args:
+        file_path: Path to the file to read
+
+    Returns:
+        Binary content of the file
+    """
+    with open(file_path, "rb") as file:
+        return file.read()
+
+
+def encode_base64(data: bytes) -> str:
+    """Encode binary data as base64 string.
+
+    This function encapsulates the external library call to base64.b64encode() so it can be mocked in tests.
+
+    Args:
+        data: Binary data to encode
+
+    Returns:
+        Base64-encoded string
+    """
+    return base64.b64encode(data).decode('utf-8')
+
+
+def get_image_type(file_path: str) -> str:
+    """Determine image type from file extension.
+
+    This function encapsulates the external library call to os.path.splitext() so it can be mocked in tests.
+
+    Args:
+        file_path: Path to the image file
+
+    Returns:
+        Image type (e.g., 'jpg', 'png')
+    """
+    _, ext = os.path.splitext(file_path)
+    image_type = ext.lstrip('.').lower()
+    if image_type not in ['jpeg', 'jpg', 'png', 'gif', 'webp']:
+        image_type = 'jpeg'  # Default to jpeg if unknown extension
+    return image_type
+
+
 def adapt_messages_to_openai(messages: List[LLMMessage]):
     new_messages: List[dict[str, Any]] = []
     for m in messages:
@@ -25,21 +72,17 @@ def adapt_messages_to_openai(messages: List[LLMMessage]):
                 # Add each image as a base64-encoded URL
                 for image_path in m.image_paths:
                     try:
-                        with open(image_path, "rb") as image_file:
-                            base64_image = base64.b64encode(image_file.read()).decode('utf-8')
+                        # Use our encapsulated methods instead of direct library calls
+                        binary_data = read_file_as_binary(image_path)
+                        base64_image = encode_base64(binary_data)
+                        image_type = get_image_type(image_path)
 
-                            # Determine image type from file extension
-                            _, ext = os.path.splitext(image_path)
-                            image_type = ext.lstrip('.').lower()
-                            if image_type not in ['jpeg', 'jpg', 'png', 'gif', 'webp']:
-                                image_type = 'jpeg'  # Default to jpeg if unknown extension
-
-                            content.append({
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:image/{image_type};base64,{base64_image}"
-                                }
-                            })
+                        content.append({
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/{image_type};base64,{base64_image}"
+                            }
+                        })
                     except Exception as e:
                         logger.error("Failed to encode image", error=str(e), image_path=image_path)
 

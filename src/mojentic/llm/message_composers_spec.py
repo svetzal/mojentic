@@ -176,39 +176,57 @@ class DescribeMessageBuilder:
             assert image_path2 in message_builder.image_paths
             assert result is message_builder  # Returns self for method chaining
 
-        def should_add_all_jpg_images_from_directory(self, message_builder, mocker):
-            dir_path = Path("/path/to/images")
-            jpg_files = [Path("/path/to/images/image1.jpg"), Path("/path/to/images/image2.jpg")]
+        def should_add_all_jpg_images_from_directory(self, message_builder, mocker, tmp_path):
+            # Create a temporary directory with test image files
+            dir_path = tmp_path / "images"
+            dir_path.mkdir()
 
-            # Mock is_dir, glob, and exists methods
-            mocker.patch.object(Path, 'is_dir', return_value=True)
-            mocker.patch.object(Path, 'glob', return_value=jpg_files)
-            mocker.patch.object(Path, 'exists', return_value=True)
+            # Create empty test image files
+            image1_path = dir_path / "image1.jpg"
+            image2_path = dir_path / "image2.jpg"
+            image1_path.touch()
+            image2_path.touch()
 
+            # Create a text file that should be ignored
+            text_file_path = dir_path / "text.txt"
+            text_file_path.touch()
+
+            # Use the real directory for the test
             message_builder.add_images(dir_path)
 
-            assert jpg_files[0] in message_builder.image_paths
-            assert jpg_files[1] in message_builder.image_paths
+            # Convert to strings for easier comparison
+            image_paths_str = [str(p) for p in message_builder.image_paths]
 
-        def should_add_images_matching_glob_pattern(self, message_builder, mocker):
-            pattern_path = Path("/path/to/*.jpg")
-            matching_files = [Path("/path/to/image1.jpg"), Path("/path/to/image2.jpg")]
+            # Verify only jpg files were added
+            assert str(image1_path) in image_paths_str
+            assert str(image2_path) in image_paths_str
+            assert str(text_file_path) not in image_paths_str
 
-            # Mock methods
-            mocker.patch.object(Path, 'is_dir', return_value=False)
-            mocker.patch.object(Path, 'glob', return_value=matching_files)
-            mocker.patch.object(Path, 'is_file', return_value=True)
-            mocker.patch.object(Path, 'exists', return_value=True)
+        def should_add_images_matching_glob_pattern(self, message_builder, tmp_path):
+            # Create a temporary directory with test image files
+            dir_path = tmp_path / "glob_test"
+            dir_path.mkdir()
 
-            # Mock the parent property and its glob method
-            parent_mock = mocker.MagicMock()
-            parent_mock.glob.return_value = matching_files
-            mocker.patch.object(Path, 'parent', parent_mock)
+            # Create test image files
+            image1_path = dir_path / "image1.jpg"
+            image2_path = dir_path / "image2.jpg"
+            image3_path = dir_path / "other.png"  # Should not match
+            image1_path.touch()
+            image2_path.touch()
+            image3_path.touch()
+
+            # Use a real glob pattern
+            pattern_path = dir_path / "*.jpg"
 
             message_builder.add_images(pattern_path)
 
-            assert matching_files[0] in message_builder.image_paths
-            assert matching_files[1] in message_builder.image_paths
+            # Convert to strings for easier comparison
+            image_paths_str = [str(p) for p in message_builder.image_paths]
+
+            # Verify only jpg files matching the pattern were added
+            assert str(image1_path) in image_paths_str
+            assert str(image2_path) in image_paths_str
+            assert str(image3_path) not in image_paths_str
 
     class DescribeLoadContentMethod:
         """

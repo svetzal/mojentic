@@ -92,13 +92,13 @@ class DescribeOpenAIMessagesAdapter:
             When adapting to OpenAI format
             Then it should convert to the correct format with structured content array
             """
-            # Mock the open function to avoid reading actual files
-            mock_file = mocker.mock_open(read_data=b'fake_image_data')
-            mocker.patch('builtins.open', mock_file)
-
-            # Mock base64 encoding to return a predictable value
-            mock_b64encode = mocker.patch('base64.b64encode')
-            mock_b64encode.return_value = b'ZmFrZV9pbWFnZV9kYXRhX2VuY29kZWQ='  # 'fake_image_data_encoded' in base64
+            # Patch our own methods that encapsulate external library calls
+            mocker.patch('mojentic.llm.gateways.openai_messages_adapter.read_file_as_binary', 
+                         return_value=b'fake_image_data')
+            mocker.patch('mojentic.llm.gateways.openai_messages_adapter.encode_base64', 
+                         return_value='ZmFrZV9pbWFnZV9kYXRhX2VuY29kZWQ=')
+            mocker.patch('mojentic.llm.gateways.openai_messages_adapter.get_image_type', 
+                         side_effect=lambda path: 'jpg' if path.endswith('.jpg') else 'png')
 
             image_paths = ["/path/to/image1.jpg", "/path/to/image2.png"]
             messages = [LLMMessage(role=MessageRole.User, content="What's in these images?", image_paths=image_paths)]
