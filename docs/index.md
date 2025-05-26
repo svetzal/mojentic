@@ -27,7 +27,7 @@ like commands, think tell-don't-ask in the extreme.
 > The event-driven nature of is also very much in flux. Early thread-based agents lead to more complex synchronization
 > than I wanted, so I'm using different agent formations to explore eventing in a more practical way.
 
-> The key purpose of events will be to support auditability and debugging of agentic flows.
+> The key purpose of events will be to support traceability and debugging of agentic flows.
 
 Events are the only way agents communicate with each other. Events are simple data classes that are passed around the
 system. Events are immutable.

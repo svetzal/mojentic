@@ -10,7 +10,8 @@ from mojentic.llm.tools.llm_tool import LLMTool
 class MockLLMTool(LLMTool):
     """A mock implementation of LLMTool for testing purposes."""
 
-    def __init__(self, run_result=None):
+    def __init__(self, run_result=None, tracer=None):
+        super().__init__(tracer=tracer)
         self._run_result = run_result
         self._descriptor = {
             "function": {

@@ -1,9 +1,11 @@
 import json
+import time
 from typing import List, Optional, Type
 
 import structlog
 from pydantic import BaseModel
 
+from mojentic.tracer.tracer_system import TracerSystem
 from mojentic.llm.gateways.llm_gateway import LLMGateway
 from mojentic.llm.gateways.models import MessageRole, LLMMessage, LLMGatewayResponse
 from mojentic.llm.gateways.ollama import OllamaGateway
@@ -21,8 +23,10 @@ class LLMBroker():
     adapter: LLMGateway
     tokenizer: TokenizerGateway
     model: str
+    tracer: Optional[TracerSystem]
 
-    def __init__(self, model: str, gateway: Optional[LLMGateway] = None, tokenizer: Optional[TokenizerGateway] = None):
+    def __init__(self, model: str, gateway: Optional[LLMGateway] = None, tokenizer: Optional[TokenizerGateway] = None,
+                 tracer: Optional[TracerSystem] = None):
         """
         Create an instance of the LLMBroker.
 
@@ -36,8 +40,15 @@ class LLMBroker():
         tokenizer
             The gateway to use for tokenization. This is used to log approximate token counts for the LLM calls. If
             None, `mxbai-embed-large` is used on a local Ollama server.
+        tracer
+            Optional tracer system to record LLM calls and responses.
         """
         self.model = model
+        
+        # Use null_tracer if no tracer is provided
+        from mojentic.tracer import null_tracer
+        self.tracer = tracer or null_tracer
+        
         if tokenizer is None:
             self.tokenizer = TokenizerGateway()
         else:
@@ -72,7 +83,23 @@ class LLMBroker():
         """
         approximate_tokens = len(self.tokenizer.encode(self._content_to_count(messages)))
         logger.info(f"Requesting llm response with approx {approximate_tokens} tokens")
-
+        
+        # Convert messages to serializable dict for audit
+        messages_for_tracer = [m.dict() for m in messages]
+        
+        # Record LLM call in tracer
+        tools_for_tracer = [{"name": t.name, "description": t.description} for t in tools] if tools else None
+        self.tracer.record_llm_call(
+            self.model, 
+            messages_for_tracer, 
+            temperature,
+            tools=tools_for_tracer,
+            source=type(self)
+        )
+        
+        # Measure call duration for audit
+        start_time = time.time()
+        
         result: LLMGatewayResponse = self.adapter.complete(
             model=self.model,
             messages=messages,
@@ -80,6 +107,18 @@ class LLMBroker():
             temperature=temperature,
             num_ctx=num_ctx,
             num_predict=num_predict)
+        
+        call_duration_ms = (time.time() - start_time) * 1000
+        
+        # Record LLM response in tracer
+        tool_calls_for_tracer = [tc.dict() for tc in result.tool_calls] if result.tool_calls else None
+        self.tracer.record_llm_response(
+            self.model,
+            result.content,
+            tool_calls=tool_calls_for_tracer,
+            call_duration_ms=call_duration_ms,
+            source=type(self)
+        )
 
         if result.tool_calls and tools is not None:
             logger.info("Tool call requested")
@@ -89,7 +128,22 @@ class LLMBroker():
                                 None):
                     logger.info('Calling function', function=tool_call.name)
                     logger.info('Arguments:', arguments=tool_call.arguments)
+                    
+                    # Get the arguments before calling the tool
+                    tool_arguments = tool_call.arguments
+                    
+                    # Call the tool
                     output = tool.run(**tool_call.arguments)
+                    
+                    # Record tool call in tracer
+                    self.tracer.record_tool_call(
+                        tool_call.name,
+                        tool_arguments,
+                        output,
+                        caller="LLMBroker",
+                        source=type(self)
+                    )
+                    
                     logger.info('Function output', output=output)
                     messages.append(LLMMessage(role=MessageRole.Assistant, tool_calls=[tool_call]))
                     messages.append(
@@ -135,6 +189,35 @@ class LLMBroker():
         """
         approximate_tokens = len(self.tokenizer.encode(self._content_to_count(messages)))
         logger.info(f"Requesting llm response with approx {approximate_tokens} tokens")
+        
+        # Convert messages to serializable dict for audit
+        messages_for_tracer = [m.dict() for m in messages]
+        
+        # Record LLM call in tracer
+        self.tracer.record_llm_call(
+            self.model, 
+            messages_for_tracer, 
+            temperature,
+            tools=None,
+            source=type(self)
+        )
+        
+        # Measure call duration for audit
+        start_time = time.time()
+        
         result = self.adapter.complete(model=self.model, messages=messages, object_model=object_model,
                                        temperature=temperature, num_ctx=num_ctx, num_predict=num_predict)
+        
+        call_duration_ms = (time.time() - start_time) * 1000
+        
+        # Record LLM response in tracer with object representation
+        # Convert object to string for tracer
+        object_str = str(result.object.dict()) if hasattr(result.object, "dict") else str(result.object)
+        self.tracer.record_llm_response(
+            self.model,
+            f"Structured response: {object_str}",
+            call_duration_ms=call_duration_ms,
+            source=type(self)
+        )
+        
         return result.object
