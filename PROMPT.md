@@ -281,3 +281,23 @@ Each event has a `printable_summary()` method that formats the event information
 5. **Memory**: Use BaseLLMAgentWithMemory when information needs to persist across interactions
 
 6. **Tracing**: Use the TracerSystem to monitor and debug interactions with LLMs and tools
+
+7. **Observable EventStore**: Use the EventStore's callback functionality to react to events in real-time:
+   ```python
+   from mojentic.tracer import TracerSystem
+   from mojentic.tracer.event_store import EventStore
+   from mojentic.tracer.tracer_events import LLMCallTracerEvent
+
+   # Create a callback function to process events as they are stored
+   def on_event_stored(event):
+       if isinstance(event, LLMCallTracerEvent):
+           print(f"LLM call to model {event.model} with {len(event.messages)} messages")
+
+   # Create an EventStore with the callback
+   event_store = EventStore(on_store_callback=on_event_stored)
+
+   # Create a TracerSystem with the observable EventStore
+   tracer = TracerSystem(event_store=event_store)
+
+   # Now use the tracer as normal - your callback will be triggered for each event
+   ```

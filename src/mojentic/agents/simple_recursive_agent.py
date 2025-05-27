@@ -8,17 +8,16 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-from mojentic.llm.gateways.models import LLMMessage
+from mojentic.llm.chat_session import ChatSession
 from mojentic.llm.llm_broker import LLMBroker
 from mojentic.llm.tools.llm_tool import LLMTool
-from mojentic.llm.chat_session import ChatSession
 
 
-class ProblemState(BaseModel):
+class GoalState(BaseModel):
     """
     Represents the state of a problem-solving process.
     """
-    problem: str
+    goal: str
     iteration: int = 0
     max_iterations: int = 5
     solution: Optional[str] = None
@@ -29,10 +28,10 @@ class SolverEvent(BaseModel):
     """
     Base class for solver events.
     """
-    state: ProblemState
+    state: GoalState
 
 
-class ProblemSubmittedEvent(SolverEvent):
+class GoalSubmittedEvent(SolverEvent):
     """
     Event triggered when a problem is submitted for solving.
     """
@@ -46,14 +45,14 @@ class IterationCompletedEvent(SolverEvent):
     response: str
 
 
-class ProblemSolvedEvent(SolverEvent):
+class GoalAchievedEvent(SolverEvent):
     """
     Event triggered when a problem is solved.
     """
     pass
 
 
-class ProblemFailedEvent(SolverEvent):
+class GoalFailedEvent(SolverEvent):
     """
     Event triggered when a problem cannot be solved.
     """
@@ -168,7 +167,7 @@ class SimpleRecursiveAgent:
         )
 
         # Set up event handlers
-        self.emitter.subscribe(ProblemSubmittedEvent, self._handle_problem_submitted)
+        self.emitter.subscribe(GoalSubmittedEvent, self._handle_problem_submitted)
         self.emitter.subscribe(IterationCompletedEvent, self._handle_iteration_completed)
 
     async def solve(self, problem: str) -> str:
@@ -189,7 +188,7 @@ class SimpleRecursiveAgent:
         solution_future = asyncio.Future()
 
         # Create the initial problem state
-        state = ProblemState(problem=problem, max_iterations=self.max_iterations)
+        state = GoalState(goal=problem, max_iterations=self.max_iterations)
 
         # Define handlers for completion events
         async def handle_solution_event(event):
@@ -197,12 +196,12 @@ class SimpleRecursiveAgent:
                 solution_future.set_result(event.state.solution)
 
         # Subscribe to completion events
-        self.emitter.subscribe(ProblemSolvedEvent, handle_solution_event)
-        self.emitter.subscribe(ProblemFailedEvent, handle_solution_event)
+        self.emitter.subscribe(GoalAchievedEvent, handle_solution_event)
+        self.emitter.subscribe(GoalFailedEvent, handle_solution_event)
         self.emitter.subscribe(TimeoutEvent, handle_solution_event)
 
         # Start the solving process
-        self.emitter.emit(ProblemSubmittedEvent(state=state))
+        self.emitter.emit(GoalSubmittedEvent(state=state))
 
         # Wait for the solution or timeout
         try:
@@ -215,13 +214,13 @@ class SimpleRecursiveAgent:
                 self.emitter.emit(TimeoutEvent(state=state))
             return timeout_message
 
-    async def _handle_problem_submitted(self, event: ProblemSubmittedEvent):
+    async def _handle_problem_submitted(self, event: GoalSubmittedEvent):
         """
         Handle a problem submitted event.
 
         Parameters
         ----------
-        event : ProblemSubmittedEvent
+        event : GoalSubmittedEvent
             The problem submitted event to handle
         """
         # Start the first iteration
@@ -243,31 +242,31 @@ class SimpleRecursiveAgent:
         if "FAIL".lower() in response.lower():
             state.solution = f"Failed to solve after {state.iteration} iterations:\n{response}"
             state.is_complete = True
-            self.emitter.emit(ProblemFailedEvent(state=state))
+            self.emitter.emit(GoalFailedEvent(state=state))
             return
         elif "DONE".lower() in response.lower():
             state.solution = response
             state.is_complete = True
-            self.emitter.emit(ProblemSolvedEvent(state=state))
+            self.emitter.emit(GoalAchievedEvent(state=state))
             return
 
         # Check if we've reached the maximum number of iterations
         if state.iteration >= state.max_iterations:
             state.solution = f"Best solution after {state.max_iterations} iterations:\n{response}"
             state.is_complete = True
-            self.emitter.emit(ProblemSolvedEvent(state=state))
+            self.emitter.emit(GoalAchievedEvent(state=state))
             return
 
         # If the problem is not solved and we haven't reached max_iterations, continue with next iteration
         await self._process_iteration(state)
 
-    async def _process_iteration(self, state: ProblemState):
+    async def _process_iteration(self, state: GoalState):
         """
         Process a single iteration of the problem-solving process.
 
         Parameters
         ----------
-        state : ProblemState
+        state : GoalState
             The current state of the problem-solving process
         """
         # Increment the iteration counter
@@ -276,7 +275,7 @@ class SimpleRecursiveAgent:
         # Create a prompt for the LLM
         prompt = f"""
 Given the user request:
-{state.problem}
+{state.goal}
 
 Use the tools at your disposal to act on their request. You may wish to create a step-by-step plan for more complicated requests.
 

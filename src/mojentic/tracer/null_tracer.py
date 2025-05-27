@@ -12,20 +12,20 @@ from mojentic.tracer.tracer_events import TracerEvent
 class NullTracer:
     """
     A no-op implementation of TracerSystem that silently discards all tracing operations.
-    
+
     This class follows the Null Object Pattern to eliminate conditional checks in client code.
     All record methods are overridden to do nothing, and all query methods return empty results.
     """
-    
+
     def __init__(self):
         """Initialize the NullTracer with disabled state."""
         self.enabled = False
         self.event_store = None
-        
+
     def record_event(self, event: TracerEvent) -> None:
         """
         Do nothing implementation of record_event.
-        
+
         Parameters
         ----------
         event : TracerEvent
@@ -33,16 +33,17 @@ class NullTracer:
         """
         # Do nothing
         pass
-        
+
     def record_llm_call(self, 
                       model: str, 
                       messages: List[Dict], 
                       temperature: float = 1.0,
                       tools: Optional[List[Dict]] = None,
-                      source: Any = None) -> None:
+                      source: Any = None,
+                      correlation_id: str = None) -> None:
         """
         Do nothing implementation of record_llm_call.
-        
+
         Parameters
         ----------
         model : str
@@ -55,19 +56,22 @@ class NullTracer:
             The tools available to the LLM, if any.
         source : Any, optional
             The source of the event.
+        correlation_id : str, optional
+            UUID string that is copied from cause-to-affect for tracing events.
         """
         # Do nothing
         pass
-        
+
     def record_llm_response(self, 
                          model: str,
                          content: str,
                          tool_calls: Optional[List[Dict]] = None,
                          call_duration_ms: Optional[float] = None,
-                         source: Any = None) -> None:
+                         source: Any = None,
+                         correlation_id: str = None) -> None:
         """
         Do nothing implementation of record_llm_response.
-        
+
         Parameters
         ----------
         model : str
@@ -80,19 +84,22 @@ class NullTracer:
             The duration of the LLM call in milliseconds.
         source : Any, optional
             The source of the event.
+        correlation_id : str, optional
+            UUID string that is copied from cause-to-affect for tracing events.
         """
         # Do nothing
         pass
-        
+
     def record_tool_call(self,
                        tool_name: str,
                        arguments: Dict[str, Any],
                        result: Any,
                        caller: Optional[str] = None,
-                       source: Any = None) -> None:
+                       source: Any = None,
+                       correlation_id: str = None) -> None:
         """
         Do nothing implementation of record_tool_call.
-        
+
         Parameters
         ----------
         tool_name : str
@@ -105,19 +112,22 @@ class NullTracer:
             The name of the agent or component calling the tool.
         source : Any, optional
             The source of the event.
+        correlation_id : str, optional
+            UUID string that is copied from cause-to-affect for tracing events.
         """
         # Do nothing
         pass
-        
+
     def record_agent_interaction(self,
                                from_agent: str,
                                to_agent: str,
                                event_type: str,
                                event_id: Optional[str] = None,
-                               source: Any = None) -> None:
+                               source: Any = None,
+                               correlation_id: str = None) -> None:
         """
         Do nothing implementation of record_agent_interaction.
-        
+
         Parameters
         ----------
         from_agent : str
@@ -130,10 +140,12 @@ class NullTracer:
             A unique identifier for the event.
         source : Any, optional
             The source of the event.
+        correlation_id : str, optional
+            UUID string that is copied from cause-to-affect for tracing events.
         """
         # Do nothing
         pass
-        
+
     def get_events(self, 
                   event_type: Optional[Type[TracerEvent]] = None, 
                   start_time: Optional[float] = None,
@@ -141,7 +153,7 @@ class NullTracer:
                   filter_func: Optional[Callable[[TracerEvent], bool]] = None) -> List[TracerEvent]:
         """
         Return an empty list for any get_events request.
-        
+
         Parameters
         ----------
         event_type : Type[TracerEvent], optional
@@ -152,40 +164,40 @@ class NullTracer:
             Include events with timestamp <= end_time.
         filter_func : Callable[[TracerEvent], bool], optional
             Custom filter function to apply to events.
-            
+
         Returns
         -------
         List[TracerEvent]
             An empty list.
         """
         return []
-    
+
     def get_last_n_tracer_events(self, n: int, event_type: Optional[Type[TracerEvent]] = None) -> List[TracerEvent]:
         """
         Return an empty list for any get_last_n_tracer_events request.
-        
+
         Parameters
         ----------
         n : int
             Number of events to return.
         event_type : Type[TracerEvent], optional
             Filter events by this specific tracer event type.
-            
+
         Returns
         -------
         List[TracerEvent]
             An empty list.
         """
         return []
-    
+
     def clear(self) -> None:
         """Do nothing implementation of clear method."""
         pass
-    
+
     def enable(self) -> None:
         """No-op method for interface compatibility."""
         pass
-        
+
     def disable(self) -> None:
         """No-op method for interface compatibility."""
         pass

@@ -80,34 +80,36 @@ asyncio.run(solve_problem())
 import asyncio
 from mojentic.agents import SimpleRecursiveAgent
 from mojentic.llm import LLMBroker
-from mojentic.agents.simple_recursive_agent import ProblemSolvedEvent, IterationCompletedEvent
+from mojentic.agents.simple_recursive_agent import GoalAchievedEvent, IterationCompletedEvent
+
 
 async def solve_with_events():
     # Initialize an LLM broker
     llm = LLMBroker(model="your-preferred-model")
-    
+
     # Create the agent
     agent = SimpleRecursiveAgent(llm=llm, max_iterations=5)
-    
+
     # Define event handlers
     def on_iteration_completed(event):
         print(f"Iteration {event.state.iteration} completed")
-    
+
     def on_problem_solved(event):
         print(f"Problem solved after {event.state.iteration} iterations")
-    
+
     # Subscribe to events
     unsubscribe_iteration = agent.emitter.subscribe(IterationCompletedEvent, on_iteration_completed)
-    unsubscribe_solved = agent.emitter.subscribe(ProblemSolvedEvent, on_problem_solved)
-    
+    unsubscribe_solved = agent.emitter.subscribe(GoalAchievedEvent, on_problem_solved)
+
     # Solve the problem
     problem = "What are the three primary colors?"
     solution = await agent.solve(problem)
     print(f"Solution: {solution}")
-    
+
     # Unsubscribe from events
     unsubscribe_iteration()
     unsubscribe_solved()
+
 
 # Run the async function
 asyncio.run(solve_with_events())

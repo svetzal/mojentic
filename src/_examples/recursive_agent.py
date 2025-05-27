@@ -42,7 +42,7 @@ async def demonstrate_async():
     print(f"\nProblem (With Event Handling): {problem2}")
 
     # Set up event handlers for monitoring the solution process
-    from mojentic.agents.simple_recursive_agent import ProblemSolvedEvent, IterationCompletedEvent
+    from mojentic.agents.simple_recursive_agent import GoalAchievedEvent, IterationCompletedEvent
 
     # Define event handlers
     def on_iteration_completed(event):
@@ -53,7 +53,7 @@ async def demonstrate_async():
 
     # Subscribe to events
     unsubscribe_iteration = agent.emitter.subscribe(IterationCompletedEvent, on_iteration_completed)
-    unsubscribe_solved = agent.emitter.subscribe(ProblemSolvedEvent, on_problem_solved)
+    unsubscribe_solved = agent.emitter.subscribe(GoalAchievedEvent, on_problem_solved)
 
     # Solve the problem
     solution2 = await agent.solve(problem2)
