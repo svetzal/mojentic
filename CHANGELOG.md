@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2025-05-16
+
+### Added
+
+- Added correlation_id to tracer events for tracking cause and effect
+- Added printable_summary method to tracer events for better object-oriented formatting
+- Made the tracer event store observable
+
+### Changed
+
+- Renamed terminology from "Problem" to "Goal" to make things feel more universal
+- Renamed instance properties to 'tracer' and removed setter methods
+- Updated tracer_demo.py to use real ChatSession instead of synthetic events
+- Implemented NullTracer pattern and improved tracer_demo example
+
 ## [0.6.0] - 2025-05-14
 
 ### Added
