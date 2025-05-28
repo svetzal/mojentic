@@ -7,10 +7,12 @@ import logging
 
 import structlog
 
+# Core components
 from .dispatcher import Dispatcher
 from .event import Event
 from .router import Router
 
+# Initialize logging
 logging.basicConfig(level=logging.INFO)
 structlog.configure(logger_factory=structlog.stdlib.LoggerFactory(), processors=[
     structlog.stdlib.filter_by_level,
@@ -21,13 +23,6 @@ structlog.configure(logger_factory=structlog.stdlib.LoggerFactory(), processors=
 ])
 logger = structlog.get_logger()
 logger.info("Starting logger")
-
-# logger = logging.getLogger("mojentic")
-# path = Path().cwd()
-# log_filename = path / 'output.log'
-# print(f"Logging to {log_filename}")
-# logging.basicConfig(filename=log_filename, level=logging.DEBUG)
-# logger.info("Starting logger")
 
 
 __version__: str
