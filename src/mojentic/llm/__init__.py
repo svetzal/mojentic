@@ -12,6 +12,5 @@ from .registry.llm_registry import LLMRegistry
 from .gateways.models import (
     LLMMessage,
     LLMGatewayResponse,
-    LLMToolCall,
     MessageRole
 )
