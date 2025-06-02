@@ -24,8 +24,8 @@ class OpenAIGateway(LLMGateway):
         The OpenAI API key to use.
     """
 
-    def __init__(self, api_key: str):
-        self.client = OpenAI(api_key=api_key)
+    def __init__(self, api_key: str, base_url: str = None):
+        self.client = OpenAI(api_key=api_key, base_url=base_url)
 
     def complete(self, **args) -> LLMGatewayResponse:
         """

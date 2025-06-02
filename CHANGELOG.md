@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.2] - 2025-05-17
+
+### Added
+
+- Added optional base_url parameter to OpenAIGateway to support custom API endpoints
+
 ## [0.6.1] - 2025-05-16
 
 ### Added
