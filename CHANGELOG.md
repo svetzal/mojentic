@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2025-05-20
+
+### Added
+
+- Added asynchronous capabilities with AsyncDispatcher for event processing
+- Added BaseAsyncAgent class for creating asynchronous agents
+- Added AsyncAggregatorAgent for combining events from multiple sources asynchronously
+- Added BaseAsyncLLMAgent and BaseAsyncLLMAgentWithMemory for asynchronous LLM interactions
+- Added async_dispatcher_example.py and async_llm_example.py to demonstrate async functionality
+- Added documentation for async capabilities
+
+### Changed
+
+- Updated API documentation to include async functionality
+- Improved event handling with correlation_id tracking across async operations
+
 ## [0.6.2] - 2025-05-17
 
 ### Added
