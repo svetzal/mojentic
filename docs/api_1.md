@@ -117,6 +117,12 @@ print(result)
         merge_init_into_class: false
         group_by_category: false
 
+::: mojentic.async_dispatcher.AsyncDispatcher
+    options:
+        show_root_heading: true
+        merge_init_into_class: false
+        group_by_category: false
+
 ::: mojentic.llm.LLMBroker
     options:
         show_root_heading: true

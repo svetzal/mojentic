@@ -29,6 +29,8 @@ like commands, think tell-don't-ask in the extreme.
 
 > The key purpose of events will be to support traceability and debugging of agentic flows.
 
+Mojentic provides both synchronous and asynchronous event processing capabilities. The [AsyncDispatcher](async_capabilities.md) enables concurrent event processing, allowing multiple agents to work simultaneously for improved performance and responsiveness. This is particularly valuable for complex workflows involving multiple LLM calls or other high-latency operations.
+
 Events are the only way agents communicate with each other. Events are simple data classes that are passed around the
 system. Events are immutable.
 
