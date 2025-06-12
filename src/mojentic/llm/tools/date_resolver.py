@@ -1,10 +1,13 @@
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from parsedatetime import Calendar, VERSION_CONTEXT_STYLE
 from pytz import timezone
 
-from mojentic.llm import LLMBroker
 from mojentic.llm.tools.llm_tool import LLMTool
+
+# Avoid circular imports with TYPE_CHECKING
+if TYPE_CHECKING:
+    from mojentic.llm.llm_broker import LLMBroker
 
 
 class ResolveDateTool(LLMTool):
