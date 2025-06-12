@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1] - 2025-05-21
+
+### Fixed
+
+- Fixed image type handling in OpenAI adapter to ensure 'jpg' is properly converted to 'jpeg' when sending to OpenAI API
+
 ## [0.7.0] - 2025-05-20
 
 ### Added

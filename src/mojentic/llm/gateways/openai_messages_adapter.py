@@ -48,13 +48,17 @@ def get_image_type(file_path: str) -> str:
         file_path: Path to the image file
 
     Returns:
-        Image type (e.g., 'jpg', 'png')
+        Image type (e.g., 'jpeg', 'png')
     """
     _, ext = os.path.splitext(file_path)
     image_type = ext.lstrip('.').lower()
-    if image_type not in ['jpeg', 'jpg', 'png', 'gif', 'webp']:
-        image_type = 'jpeg'  # Default to jpeg if unknown extension
-    return image_type
+
+    # Convert 'jpg' to 'jpeg'
+    if image_type == 'jpg':
+        return 'jpeg'
+
+    # Use 'jpeg' for unknown extensions, otherwise use the detected type
+    return image_type if image_type in ['jpeg', 'png', 'gif', 'webp'] else 'jpeg'
 
 
 def adapt_messages_to_openai(messages: List[LLMMessage]):
