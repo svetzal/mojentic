@@ -300,7 +300,7 @@ await dispatcher.start()
 
 ### AsyncDispatcher
 
-:::: mojentic.async_dispatcher.AsyncDispatcher
+::: mojentic.async_dispatcher.AsyncDispatcher
     options:
         show_root_heading: true
         merge_init_into_class: false
@@ -308,7 +308,7 @@ await dispatcher.start()
 
 ### BaseAsyncAgent
 
-:::: mojentic.agents.base_async_agent.BaseAsyncAgent
+::: mojentic.agents.base_async_agent.BaseAsyncAgent
     options:
         show_root_heading: true
         merge_init_into_class: false
@@ -316,7 +316,7 @@ await dispatcher.start()
 
 ### AsyncAggregatorAgent
 
-:::: mojentic.agents.async_aggregator_agent.AsyncAggregatorAgent
+::: mojentic.agents.async_aggregator_agent.AsyncAggregatorAgent
     options:
         show_root_heading: true
         merge_init_into_class: false

@@ -146,7 +146,11 @@ Always use the same `show_root_heading`, `merge_init_into_class`, and `group_by_
 
 ## Release Process
 
-1. Update CHANGELOG.md:
+1. Ensure all tests pass without errors or warnings (via `pytest`)
+
+2. Ensure the docs build without errors or warnings (via `mkdocs build`)
+
+3. Update CHANGELOG.md:
    - All notable changes should be documented under the [Unreleased] section
    - Group changes into categories:
      - Added: New features
@@ -158,7 +162,7 @@ Always use the same `show_root_heading`, `merge_init_into_class`, and `group_by_
    - Each entry should be clear and understandable to end-users
    - Reference relevant issue/PR numbers where applicable
 
-2. Creating a Release:
+4. Creating a Release:
    - Ensure `pyproject.toml` has the next release version
    - Ensure all changes are documented in CHANGELOG.md
      - Move [Unreleased] changes to the new version section (e.g., [1.0.0])
@@ -167,7 +171,7 @@ Always use the same `show_root_heading`, `merge_init_into_class`, and `group_by_
      - MINOR version for backward-compatible new functionality
      - PATCH version for backward-compatible bug fixes
 
-3. Best Practices:
+5. Best Practices:
    - Keep entries concise but descriptive
    - Write from the user's perspective
    - Include migration instructions for breaking changes

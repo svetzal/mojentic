@@ -31,8 +31,8 @@ class OpenAIGateway(LLMGateway):
         """
         Complete the LLM request by delegating to the OpenAI service.
 
-        Parameters
-        ----------
+        Keyword Arguments
+        ----------------
         model : str
             The name of the model to use, as appears in `ollama list`.
         messages : List[LLMMessage]

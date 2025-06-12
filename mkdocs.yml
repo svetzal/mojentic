@@ -12,7 +12,6 @@ theme:
   favicon: assets/mojility_favicon.png
 plugins:
   - search
-  - autorefs
   - mkdocstrings:
       handlers:
         python:
@@ -28,6 +27,7 @@ plugins:
             extensions:
               - griffe_fieldz
       enable_inventory: true
+  - autorefs
 
 markdown_extensions:
   - pymdownx.highlight:
@@ -44,6 +44,7 @@ markdown_extensions:
 
 nav:
   - Home: index.md
+  - Getting Started: get_started.md
   - Using LLMs: broker.md
   - Layer 1 - Core:
     - Getting Started with Layer 1:
@@ -68,7 +69,8 @@ nav:
       - Layer 1: api_1.md
       - Layer 2: api_2.md
   - Contributing:
-      - testing.md
+      - Testing: testing.md
+      - User Personas: personas.md
 
 repo_name: svetzal/mojentic
 repo_url: https://github.com/svetzal/mojentic
