@@ -46,15 +46,16 @@ def register_llms_from_ollama(url: str, registry: LLMRegistry):
         registry.register(entry)
 
 
-# Example usage
-ollama_url = "http://localhost:11434/api/tags"
-registry = LLMRegistry()
-register_llms_from_ollama(ollama_url, registry)
+if __name__ == "__main__":
+    # Example usage
+    ollama_url = "http://localhost:11434/api/tags"
+    registry = LLMRegistry()
+    register_llms_from_ollama(ollama_url, registry)
 
-# print(f"Tool using: {registry.find_first(tools=True, structured_output=True).name}")
-print(f"Fastest model: {registry.find_fastest().name}")
-print(f"Fastest model with tools: {registry.find_fastest(tools=True).name}")
-print(f"Fastest model with structured output: {registry.find_fastest(structured_output=True).name}")
-print(f"Smartest model: {registry.find_smartest().name}")
-print(f"Smartest model with tools: {registry.find_smartest(tools=True).name}")
-print(f"Smartest model with structured output: {registry.find_smartest(structured_output=True).name}")
+    # print(f"Tool using: {registry.find_first(tools=True, structured_output=True).name}")
+    print(f"Fastest model: {registry.find_fastest().name}")
+    print(f"Fastest model with tools: {registry.find_fastest(tools=True).name}")
+    print(f"Fastest model with structured output: {registry.find_fastest(structured_output=True).name}")
+    print(f"Smartest model: {registry.find_smartest().name}")
+    print(f"Smartest model with tools: {registry.find_smartest(tools=True).name}")
+    print(f"Smartest model with structured output: {registry.find_smartest(structured_output=True).name}")
