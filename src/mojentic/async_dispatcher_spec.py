@@ -9,22 +9,22 @@ from mojentic.agents.base_async_agent import BaseAsyncAgent
 from mojentic.router import Router
 
 
-class TestEvent(Event):
+class SampleEvent(Event):
     """A simple event for testing."""
     message: str
 
 
-class TestResponseEvent(Event):
+class SampleResponseEvent(Event):
     """A response event for testing."""
     response: str
 
 
 class AsyncTestAgent(BaseAsyncAgent):
-    """A test async agent that returns a TestResponseEvent."""
+    """A test async agent that returns a SampleResponseEvent."""
 
     async def receive_event_async(self, event):
-        if isinstance(event, TestEvent):
-            return [TestResponseEvent(
+        if isinstance(event, SampleEvent):
+            return [SampleResponseEvent(
                 source=type(self),
                 correlation_id=event.correlation_id,
                 response=f"Processed: {event.message}"
@@ -33,7 +33,7 @@ class AsyncTestAgent(BaseAsyncAgent):
 
 
 class SyncTestAgent:
-    """A test sync agent that returns a TestResponseEvent."""
+    """A test sync agent that returns a SampleResponseEvent."""
 
     def __init__(self):
         # Create a mock for tracking calls
@@ -43,8 +43,8 @@ class SyncTestAgent:
         # Track the call
         self._mock(event)
 
-        if isinstance(event, TestEvent):
-            return [TestResponseEvent(
+        if isinstance(event, SampleEvent):
+            return [SampleResponseEvent(
                 source=type(self),
                 correlation_id=event.correlation_id,
                 response=f"Processed sync: {event.message}"
@@ -113,10 +113,10 @@ async def test_async_dispatcher_start_stop(router):
 async def test_async_dispatcher_dispatch(dispatcher, router, async_agent):
     """Test that the AsyncDispatcher dispatches events correctly."""
     # Register the agent
-    router.add_route(TestEvent, async_agent)
+    router.add_route(SampleEvent, async_agent)
 
     # Create and dispatch an event
-    event = TestEvent(source=str, message="Hello")
+    event = SampleEvent(source=str, message="Hello")
     dispatcher.dispatch(event)
 
     # Wait for the event to be processed
@@ -130,10 +130,10 @@ async def test_async_dispatcher_dispatch(dispatcher, router, async_agent):
 async def test_async_dispatcher_with_async_agent(dispatcher, router, async_agent):
     """Test that the AsyncDispatcher works with async agents."""
     # Register the agent
-    router.add_route(TestEvent, async_agent)
+    router.add_route(SampleEvent, async_agent)
 
     # Create and dispatch an event
-    event = TestEvent(source=str, message="Hello")
+    event = SampleEvent(source=str, message="Hello")
     dispatcher.dispatch(event)
 
     # Wait for the event to be processed
@@ -147,10 +147,10 @@ async def test_async_dispatcher_with_async_agent(dispatcher, router, async_agent
 async def test_async_dispatcher_with_sync_agent(dispatcher, router, sync_agent):
     """Test that the AsyncDispatcher works with sync agents."""
     # Register the agent
-    router.add_route(TestEvent, sync_agent)
+    router.add_route(SampleEvent, sync_agent)
 
     # Create and dispatch an event
-    event = TestEvent(source=str, message="Hello")
+    event = SampleEvent(source=str, message="Hello")
     dispatcher.dispatch(event)
 
     # Wait for the event to be processed
@@ -174,10 +174,10 @@ async def test_async_dispatcher_terminate_event(dispatcher, router):
     terminate_agent = TerminateAgent()
 
     # Register the agent
-    router.add_route(TestEvent, terminate_agent)
+    router.add_route(SampleEvent, terminate_agent)
 
     # Create and dispatch an event
-    event = TestEvent(source=str, message="Hello")
+    event = SampleEvent(source=str, message="Hello")
     dispatcher.dispatch(event)
 
     # Wait a moment for the event to be processed
@@ -195,7 +195,7 @@ async def test_async_dispatcher_wait_for_empty_queue(dispatcher):
 
     # Add multiple events to the queue to test batch processing
     for i in range(10):
-        event = TestEvent(source=str, message=f"Event {i}")
+        event = SampleEvent(source=str, message=f"Event {i}")
         dispatcher.dispatch(event)
 
     # Queue is not empty
@@ -213,14 +213,14 @@ async def test_async_dispatcher_wait_for_empty_queue(dispatcher):
 async def test_async_dispatcher_batch_processing(dispatcher, router, async_agent):
     """Test that the AsyncDispatcher processes events in batches."""
     # Register the agent
-    router.add_route(TestEvent, async_agent)
+    router.add_route(SampleEvent, async_agent)
 
     # Set a small batch size
     dispatcher.batch_size = 2
 
     # Create and dispatch multiple events
     for i in range(5):
-        event = TestEvent(source=str, message=f"Event {i}")
+        event = SampleEvent(source=str, message=f"Event {i}")
         dispatcher.dispatch(event)
 
     # Wait for all events to be processed
@@ -234,7 +234,7 @@ async def test_async_dispatcher_batch_processing(dispatcher, router, async_agent
 async def test_async_dispatcher_correlation_id(dispatcher):
     """Test that the AsyncDispatcher assigns correlation_id if not provided."""
     # Create an event without a correlation_id
-    event = TestEvent(source=str, message="Hello")
+    event = SampleEvent(source=str, message="Hello")
     assert event.correlation_id is None
 
     # Dispatch the event
