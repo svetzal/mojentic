@@ -46,7 +46,7 @@ class LLMToolCall(BaseModel):
     """
     A tool call to be made available to the LLM.
 
-    Parameters
+    Attributes
     ----------
     id : Optional[str]
         The identifier of the tool call.
@@ -64,7 +64,7 @@ class LLMMessage(BaseModel):
     """
     A message to be sent to the LLM. These would accumulate during a chat session with an LLM.
 
-    Parameters
+    Attributes
     ----------
     role : MessageRole
         The role of the message in the conversation.
@@ -89,7 +89,7 @@ class LLMGatewayResponse(BaseModel):
     """
     The response from the LLM gateway, abstracting you from the quirks of a specific LLM.
 
-    Parameters
+    Attributes
     ----------
     content : Optional[Union[str, dict[str, str]]]
         The content of the response.

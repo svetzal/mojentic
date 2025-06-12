@@ -88,7 +88,7 @@ class LLMBroker():
         logger.info(f"Requesting llm response with approx {approximate_tokens} tokens")
 
         # Convert messages to serializable dict for audit
-        messages_for_tracer = [m.dict() for m in messages]
+        messages_for_tracer = [m.model_dump() for m in messages]
 
         # Record LLM call in tracer
         tools_for_tracer = [{"name": t.name, "description": t.description} for t in tools] if tools else None
@@ -115,7 +115,7 @@ class LLMBroker():
         call_duration_ms = (time.time() - start_time) * 1000
 
         # Record LLM response in tracer
-        tool_calls_for_tracer = [tc.dict() for tc in result.tool_calls] if result.tool_calls else None
+        tool_calls_for_tracer = [tc.model_dump() for tc in result.tool_calls] if result.tool_calls else None
         self.tracer.record_llm_response(
             self.model,
             result.content,
@@ -199,7 +199,7 @@ class LLMBroker():
         logger.info(f"Requesting llm response with approx {approximate_tokens} tokens")
 
         # Convert messages to serializable dict for audit
-        messages_for_tracer = [m.dict() for m in messages]
+        messages_for_tracer = [m.model_dump() for m in messages]
 
         # Record LLM call in tracer
         self.tracer.record_llm_call(
@@ -221,7 +221,7 @@ class LLMBroker():
 
         # Record LLM response in tracer with object representation
         # Convert object to string for tracer
-        object_str = str(result.object.dict()) if hasattr(result.object, "dict") else str(result.object)
+        object_str = str(result.object.model_dump()) if hasattr(result.object, "model_dump") else str(result.object)
         self.tracer.record_llm_response(
             self.model,
             f"Structured response: {object_str}",

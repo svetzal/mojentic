@@ -1,6 +1,6 @@
 [project]
 name = "mojentic"
-version = "0.6.2"
+version = "0.7.1"
 authors = [
     { name = "Stacey Vetzal", email = "stacey@vetzal.com" },
 ]
@@ -30,6 +30,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0.0",
+    "pytest-asyncio",
     "pytest-spec",
     "pytest-cov",
     "pytest-mock>=3.10.0",
