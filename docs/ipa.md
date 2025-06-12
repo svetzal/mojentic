@@ -28,7 +28,7 @@ At each step, the agent attempts to make progress on the user's request using th
 #### Basic Usage
 
 ```python { linenums=1 }
-from mojentic.agents.iterative_problem_solver import IterativeProblemSolver
+from mojentic.agents import IterativeProblemSolver
 from mojentic.llm import LLMBroker
 from mojentic.llm.tools.date_resolver import ResolveDateTool
 

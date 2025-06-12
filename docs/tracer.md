@@ -98,8 +98,8 @@ failed_calls = tracer_system.get_events(
 See the full example in `src/_examples/tracer_demo.py` for a demonstration of setting up and using the tracer system.
 
 ```python
-from mojentic.tracer.tracer_system import TracerSystem
-from mojentic.llm.llm_broker import LLMBroker
+from mojentic.tracer import TracerSystem
+from mojentic.llm import LLMBroker
 
 # Create tracer system
 tracer_system = TracerSystem()

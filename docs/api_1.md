@@ -76,7 +76,7 @@ Mojentic supports sending images to LLMs using the `MessageBuilder` class. This 
 
 ```python
 from mojentic.llm import LLMBroker
-from mojentic.llm.message_composers import MessageBuilder
+from mojentic.llm import MessageBuilder
 from pathlib import Path
 
 # Initialize the LLM broker

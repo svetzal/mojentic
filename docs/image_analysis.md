@@ -33,8 +33,7 @@ Here's a simple example of analyzing an image with an LLM:
 
 ```python
 from pathlib import Path
-from mojentic.llm.message_composers import MessageBuilder
-from mojentic.llm.llm_broker import LLMBroker
+from mojentic.llm import MessageBuilder, LLMBroker
 
 # Create an LLM broker with a multimodal model
 # Note: For OpenAI, use "gpt-4o" or another vision-capable model
@@ -61,8 +60,7 @@ Let's break down how this example works:
 
 ```python
 from pathlib import Path
-from mojentic.llm.message_composers import MessageBuilder
-from mojentic.llm.llm_broker import LLMBroker
+from mojentic.llm import MessageBuilder, LLMBroker
 ```
 
 These imports provide:
@@ -153,7 +151,7 @@ Just like with previous examples, you can use different LLM providers:
 ```python
 import os
 from mojentic.llm.gateways.openai import OpenAIGateway
-from mojentic.llm.message_composers import MessageBuilder
+from mojentic.llm import MessageBuilder
 
 # Set up OpenAI with a vision-capable model
 api_key = os.getenv("OPENAI_API_KEY")
