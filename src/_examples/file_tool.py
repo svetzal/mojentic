@@ -5,7 +5,7 @@ from mojentic.agents.output_agent import OutputAgent
 from mojentic.dispatcher import Dispatcher
 from mojentic.event import Event
 from mojentic.llm.llm_broker import LLMBroker
-from mojentic.llm.tools.file_manager import ReadFileTool, WriteFileTool
+from mojentic.llm.tools.file_manager import ReadFileTool, WriteFileTool, FilesystemGateway
 from mojentic.router import Router
 
 
@@ -25,8 +25,10 @@ class RequestAgent(BaseLLMAgent):
     def __init__(self, llm: LLMBroker):
         super().__init__(llm,
                          "You are a helpful assistant.")
-        self.add_tool(ReadFileTool("/tmp"))
-        self.add_tool(WriteFileTool("/tmp"))
+        # Create a filesystem gateway for the /tmp directory
+        fs = FilesystemGateway(base_path="/tmp")
+        self.add_tool(ReadFileTool(fs))
+        self.add_tool(WriteFileTool(fs))
 
     def receive_event(self, event):
         response = self.generate_response(event.text)

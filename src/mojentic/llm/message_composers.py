@@ -216,7 +216,7 @@ class MessageBuilder():
 
         return self
 
-    def add_files(self, *file_paths: Union[str, Path]) -> "MessageBuilder":
+    def add_files(self, *file_paths: List[Union[str, Path]]) -> "MessageBuilder":
         """
         Add multiple text files to the message, ignoring binary files.
 
