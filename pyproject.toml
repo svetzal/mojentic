@@ -36,9 +36,10 @@ dev = [
     "pytest-mock>=3.10.0",
     "flake8>=6.0.0",
     "mkdocs",
+    "mkdocs-material",
+    "mkdocs-llmstxt",
     "mkdocstrings[python]",
     "griffe-fieldz",
-    "mkdocs-material",
     "pymdown-extensions",
 ]
 
