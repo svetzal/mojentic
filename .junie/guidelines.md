@@ -220,8 +220,8 @@ When preparing a release, follow these steps:
    - Ensure installation instructions and examples are up to date
 
 4. **Final Verification**:
-   - Run all tests to ensure they pass
-   - Verify that the application works as expected with the updated version
+   - Run flake8 to ensure we have clean code (`flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics`)
+   - Run all tests to ensure they pass (`pytest`)
    - Check that all documentation accurately reflects the current state of the project
 
 ### Release Types

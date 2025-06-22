@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.2] - 2025-06-22
+
+### Added
+
+- Added llms.txt support for easier LLM configuration
+- Added extensive tests for `FilesystemGateway`, `FileManager`, and tools in `file_manager_spec.py`
+- Introduced `IterativeProblemSolverTool` example to illustrate multi-level problem solving
+
+### Changed
+
+- Merged CI/CD pipeline to a single multistage workflow
+- Refactored: Renamed `TestEvent` and `TestResponseEvent` to `SampleEvent` and `SampleResponseEvent`
+- Replaced deprecated `dict()` with `model_dump()` in tracer-related methods for better compatibility
+- Updated pytest configuration to streamline test discovery
+
+### Fixed
+
+- Fixed test failures by preventing module-level Ollama connection
+- Removed circular import issues
+- Removed unnecessary backward compatibility imports from tools __init__.py
+- Maintained backward compatibility for bundled tools
+
 ## [0.7.1] - 2025-05-21
 
 ### Fixed
