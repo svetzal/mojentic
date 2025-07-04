@@ -35,6 +35,8 @@ class OllamaGateway(LLMGateway):
         )
         if args.get('num_predict', 0) > 0:
             options.num_predict = args['num_predict']
+        if 'max_tokens' in args:
+            options.num_predict = args['max_tokens']
         return options
 
     def complete(self, **args) -> LLMGatewayResponse:
@@ -56,6 +58,8 @@ class OllamaGateway(LLMGateway):
             The temperature to use for the response. Defaults to 1.0.
         num_ctx : int, optional
             The number of context tokens to use. Defaults to 32768.
+        max_tokens : int, optional
+            The maximum number of tokens to generate. Defaults to 16384.
         num_predict : int, optional
             The number of tokens to predict. Defaults to no limit.
 
@@ -120,6 +124,8 @@ class OllamaGateway(LLMGateway):
             The temperature to use for the response. Defaults to 1.0.
         num_ctx : int, optional
             The number of context tokens to use. Defaults to 32768.
+        max_tokens : int, optional
+            The maximum number of tokens to generate. Defaults to 16384.
         num_predict : int, optional
             The number of tokens to predict. Defaults to no limit.
 

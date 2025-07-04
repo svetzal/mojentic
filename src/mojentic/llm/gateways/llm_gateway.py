@@ -19,7 +19,7 @@ class LLMGateway:
                  object_model: Optional[Type[BaseModel]] = None,
                  tools: Optional[List[LLMTool]] = None,
                  temperature: float = 1.0,
-                 num_ctx: int = 32768,
+                 num_ctx: int = 32768, max_tokens: int = 16384,
                  num_predict: int = -1) -> LLMGatewayResponse:
         """
         Complete the LLM request.
@@ -39,6 +39,8 @@ class LLMGateway:
             The temperature to use for the response. Defaults to 1.0.
         num_ctx : int
             The number of context tokens to use. Defaults to 32768.
+        max_tokens : int
+            The maximum number of tokens to generate. Defaults to 16384.
         num_predict : int
             The number of tokens to predict. Defaults to no limit.
 

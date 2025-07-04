@@ -5,18 +5,19 @@ from typing import List, Optional, Type
 import structlog
 from pydantic import BaseModel
 
-from mojentic.tracer.tracer_system import TracerSystem
 from mojentic.llm.gateways.llm_gateway import LLMGateway
 from mojentic.llm.gateways.models import MessageRole, LLMMessage, LLMGatewayResponse
 from mojentic.llm.gateways.ollama import OllamaGateway
 from mojentic.llm.gateways.tokenizer_gateway import TokenizerGateway
+from mojentic.tracer.tracer_system import TracerSystem
 
 logger = structlog.get_logger()
 
 
 class LLMBroker():
     """
-    This class is responsible for managing interaction with a Large Language Model. It abstracts the user
+    This class is responsible for managing interaction with a Large Language Model. It abstracts
+    the user
     from the specific mechanics of the LLM and provides a common interface for generating responses.
     """
 
@@ -25,7 +26,8 @@ class LLMBroker():
     model: str
     tracer: Optional[TracerSystem]
 
-    def __init__(self, model: str, gateway: Optional[LLMGateway] = None, tokenizer: Optional[TokenizerGateway] = None,
+    def __init__(self, model: str, gateway: Optional[LLMGateway] = None,
+                 tokenizer: Optional[TokenizerGateway] = None,
                  tracer: Optional[TracerSystem] = None):
         """
         Create an instance of the LLMBroker.
@@ -35,10 +37,12 @@ class LLMBroker():
         model
             The name of the model to use.
         gateway
-            The gateway to use for communication with the LLM. If None, a gateway is created that will utilize a local
+            The gateway to use for communication with the LLM. If None, a gateway is created that
+            will utilize a local
             Ollama server.
         tokenizer
-            The gateway to use for tokenization. This is used to log approximate token counts for the LLM calls. If
+            The gateway to use for tokenization. This is used to log approximate token counts for
+            the LLM calls. If
             None, `mxbai-embed-large` is used on a local Ollama server.
         tracer
             Optional tracer system to record LLM calls and responses.
@@ -58,8 +62,9 @@ class LLMBroker():
         else:
             self.adapter = gateway
 
-    def generate(self, messages: List[LLMMessage], tools=None, temperature=1.0, num_ctx=32768, num_predict=-1, 
-              correlation_id: str = None) -> str:
+    def generate(self, messages: List[LLMMessage], tools=None, temperature=1.0, num_ctx=32768,
+                 num_predict=-1, max_tokens=16384,
+                 correlation_id: str = None) -> str:
         """
         Generate a text response from the LLM.
 
@@ -68,7 +73,8 @@ class LLMBroker():
         messages : LLMMessage
             A list of messages to send to the LLM.
         tools : List[Tool]
-            A list of tools to use with the LLM. If a tool call is requested, the tool will be called and the output
+            A list of tools to use with the LLM. If a tool call is requested, the tool will be
+            called and the output
             will be included in the response.
         temperature : float
             The temperature to use for the response. Defaults to 1.0
@@ -91,10 +97,11 @@ class LLMBroker():
         messages_for_tracer = [m.model_dump() for m in messages]
 
         # Record LLM call in tracer
-        tools_for_tracer = [{"name": t.name, "description": t.description} for t in tools] if tools else None
+        tools_for_tracer = [{"name": t.name, "description": t.description} for t in
+                            tools] if tools else None
         self.tracer.record_llm_call(
-            self.model, 
-            messages_for_tracer, 
+            self.model,
+            messages_for_tracer,
             temperature,
             tools=tools_for_tracer,
             source=type(self),
@@ -110,12 +117,14 @@ class LLMBroker():
             tools=tools,
             temperature=temperature,
             num_ctx=num_ctx,
-            num_predict=num_predict)
+            num_predict=num_predict,
+            max_tokens=max_tokens)
 
         call_duration_ms = (time.time() - start_time) * 1000
 
         # Record LLM response in tracer
-        tool_calls_for_tracer = [tc.model_dump() for tc in result.tool_calls] if result.tool_calls else None
+        tool_calls_for_tracer = [tc.model_dump() for tc in
+                                 result.tool_calls] if result.tool_calls else None
         self.tracer.record_llm_response(
             self.model,
             result.content,
@@ -153,13 +162,17 @@ class LLMBroker():
                     logger.info('Function output', output=output)
                     messages.append(LLMMessage(role=MessageRole.Assistant, tool_calls=[tool_call]))
                     messages.append(
-                        LLMMessage(role=MessageRole.Tool, content=json.dumps(output), tool_calls=[tool_call]))
-                    # {'role': 'tool', 'content': str(output), 'name': tool_call.name, 'tool_call_id': tool_call.id})
-                    return self.generate(messages, tools, temperature, num_ctx, num_predict, correlation_id=correlation_id)
+                        LLMMessage(role=MessageRole.Tool, content=json.dumps(output),
+                                   tool_calls=[tool_call]))
+                    # {'role': 'tool', 'content': str(output), 'name': tool_call.name,
+                    # 'tool_call_id': tool_call.id})
+                    return self.generate(messages, tools, temperature, num_ctx, num_predict,
+                                         correlation_id=correlation_id)
                 else:
                     logger.warn('Function not found', function=tool_call.name)
                     logger.info('Expected usage of missing function', expected_usage=tool_call)
-                    # raise Exception('Unknown tool function requested:', requested_tool.function.name)
+                    # raise Exception('Unknown tool function requested:',
+                    # requested_tool.function.name)
 
         return result.content
 
@@ -170,8 +183,9 @@ class LLMBroker():
                 content += message.content
         return content
 
-    def generate_object(self, messages: List[LLMMessage], object_model: Type[BaseModel], temperature=1.0, num_ctx=32768,
-                        num_predict=-1, correlation_id: str = None) -> BaseModel:
+    def generate_object(self, messages: List[LLMMessage], object_model: Type[BaseModel],
+                        temperature=1.0, num_ctx=32768, num_predict=-1, max_tokens=16384,
+                        correlation_id: str = None) -> BaseModel:
         """
         Generate a structured response from the LLM and return it as an object.
 
@@ -203,8 +217,8 @@ class LLMBroker():
 
         # Record LLM call in tracer
         self.tracer.record_llm_call(
-            self.model, 
-            messages_for_tracer, 
+            self.model,
+            messages_for_tracer,
             temperature,
             tools=None,
             source=type(self),
@@ -214,14 +228,18 @@ class LLMBroker():
         # Measure call duration for audit
         start_time = time.time()
 
-        result = self.adapter.complete(model=self.model, messages=messages, object_model=object_model,
-                                       temperature=temperature, num_ctx=num_ctx, num_predict=num_predict)
+        result = self.adapter.complete(model=self.model, messages=messages,
+                                       object_model=object_model,
+                                       temperature=temperature, num_ctx=num_ctx,
+                                       num_predict=num_predict, max_tokens=max_tokens)
 
         call_duration_ms = (time.time() - start_time) * 1000
 
         # Record LLM response in tracer with object representation
         # Convert object to string for tracer
-        object_str = str(result.object.model_dump()) if hasattr(result.object, "model_dump") else str(result.object)
+        object_str = str(result.object.model_dump()) if hasattr(result.object,
+                                                                "model_dump") else str(
+            result.object)
         self.tracer.record_llm_response(
             self.model,
             f"Structured response: {object_str}",

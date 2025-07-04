@@ -46,6 +46,8 @@ class OpenAIGateway(LLMGateway):
             The temperature to use for the response. Defaults to 1.0.
         num_ctx : int, optional
             The number of context tokens to use. Defaults to 32768.
+        max_tokens : int, optional
+            The maximum number of tokens to generate. Defaults to 16384.
         num_predict : int, optional
             The number of tokens to predict. Defaults to no limit.
 
@@ -67,6 +69,9 @@ class OpenAIGateway(LLMGateway):
 
         if 'tools' in args and args['tools'] is not None:
             openai_args['tools'] = [t.descriptor for t in args['tools']]
+
+        if 'max_tokens' in args:
+            openai_args['max_tokens'] = args['max_tokens']
 
         response = completion(**openai_args)
 

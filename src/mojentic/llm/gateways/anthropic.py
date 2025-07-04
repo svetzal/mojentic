@@ -29,7 +29,7 @@ class AnthropicGateway(LLMGateway):
         response = self.client.messages.create(
             **anthropic_args,
             temperature=args.get('temperature', 1.0),
-            max_tokens=args.get('num_predict', 2000),
+            max_tokens=args.get('max_tokens', args.get('num_predict', 2000)),
             # thinking={
             #     "type": "enabled",
             #     "budget_tokens": 32768,
