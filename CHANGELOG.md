@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.4] - 2024-12-20
+
+### Added
+
+- Added model characterization functionality to OpenAI gateway to distinguish between reasoning models (o1-mini, o1-preview, etc.) and chat models (gpt-4o, gpt-4o-mini, etc.)
+- Added automatic parameter adaptation for reasoning models, converting `max_tokens` to `max_completion_tokens` as required by OpenAI's reasoning models
+
+### Fixed
+
+- Fixed parameter compatibility issues with OpenAI reasoning models by automatically adapting token limit parameters based on model type
+
 ## [0.7.3] - 2025-06-25
 
 ### Added

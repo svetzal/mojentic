@@ -27,6 +27,58 @@ class OpenAIGateway(LLMGateway):
     def __init__(self, api_key: str, base_url: str = None):
         self.client = OpenAI(api_key=api_key, base_url=base_url)
 
+    def _is_reasoning_model(self, model: str) -> bool:
+        """
+        Determine if a model is a reasoning model that requires max_completion_tokens.
+
+        Parameters
+        ----------
+        model : str
+            The model name to classify.
+
+        Returns
+        -------
+        bool
+            True if the model is a reasoning model, False if it's a chat model.
+        """
+        # OpenAI reasoning models typically start with "o1" or contain "o4"
+        reasoning_model_patterns = [
+            "o1-",
+            "o3-",
+            "o4-",
+            "o1",
+            "o3"
+        ]
+
+        model_lower = model.lower()
+        return any(pattern in model_lower for pattern in reasoning_model_patterns)
+
+    def _adapt_parameters_for_model(self, model: str, args: dict) -> dict:
+        """
+        Adapt parameters based on the model type.
+
+        Parameters
+        ----------
+        model : str
+            The model name.
+        args : dict
+            The original arguments.
+
+        Returns
+        -------
+        dict
+            The adapted arguments with correct parameter names for the model type.
+        """
+        adapted_args = args.copy()
+
+        if self._is_reasoning_model(model) and 'max_tokens' in adapted_args:
+            # For reasoning models, use max_completion_tokens instead of max_tokens
+            adapted_args['max_completion_tokens'] = adapted_args.pop('max_tokens')
+            logger.debug("Adapted max_tokens to max_completion_tokens for reasoning model", 
+                        model=model, max_completion_tokens=adapted_args['max_completion_tokens'])
+
+        return adapted_args
+
     def complete(self, **args) -> LLMGatewayResponse:
         """
         Complete the LLM request by delegating to the OpenAI service.
@@ -56,22 +108,28 @@ class OpenAIGateway(LLMGateway):
         LLMGatewayResponse
             The response from the OpenAI service.
         """
+        # Adapt parameters based on model type
+        adapted_args = self._adapt_parameters_for_model(args['model'], args)
+
         openai_args = {
-            'model': args['model'],
-            'messages': adapt_messages_to_openai(args['messages']),
+            'model': adapted_args['model'],
+            'messages': adapt_messages_to_openai(adapted_args['messages']),
         }
 
         completion = self.client.chat.completions.create
 
-        if 'object_model' in args and args['object_model'] is not None:
+        if 'object_model' in adapted_args and adapted_args['object_model'] is not None:
             completion = self.client.beta.chat.completions.parse
-            openai_args['response_format'] = args['object_model']
+            openai_args['response_format'] = adapted_args['object_model']
 
-        if 'tools' in args and args['tools'] is not None:
-            openai_args['tools'] = [t.descriptor for t in args['tools']]
+        if 'tools' in adapted_args and adapted_args['tools'] is not None:
+            openai_args['tools'] = [t.descriptor for t in adapted_args['tools']]
 
-        if 'max_tokens' in args:
-            openai_args['max_tokens'] = args['max_tokens']
+        # Handle both max_tokens (for chat models) and max_completion_tokens (for reasoning models)
+        if 'max_tokens' in adapted_args:
+            openai_args['max_tokens'] = adapted_args['max_tokens']
+        elif 'max_completion_tokens' in adapted_args:
+            openai_args['max_completion_tokens'] = adapted_args['max_completion_tokens']
 
         response = completion(**openai_args)
 

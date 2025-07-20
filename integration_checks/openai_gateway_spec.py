@@ -168,3 +168,78 @@ class DescribeOpenAIGatewayIntegration:
             with pytest.raises(Exception):
                 openai_gateway.complete(model="non-existent-model", messages=messages)
 
+    class DescribeModelCharacterization:
+        """
+        Tests for model characterization and parameter adaptation
+        """
+
+        def should_identify_reasoning_models(self, openai_gateway):
+            """
+            Given various model names
+            When checking if they are reasoning models
+            Then it should correctly classify them
+            """
+            # Test reasoning models
+            assert openai_gateway._is_reasoning_model("o1-preview") is True
+            assert openai_gateway._is_reasoning_model("o1-mini") is True
+            assert openai_gateway._is_reasoning_model("o4-mini") is True
+            assert openai_gateway._is_reasoning_model("o1") is True
+            assert openai_gateway._is_reasoning_model("o4") is True
+
+            # Test chat models
+            assert openai_gateway._is_reasoning_model("gpt-4o") is False
+            assert openai_gateway._is_reasoning_model("gpt-4o-mini") is False
+            assert openai_gateway._is_reasoning_model("gpt-3.5-turbo") is False
+            assert openai_gateway._is_reasoning_model("gpt-4") is False
+
+        def should_adapt_parameters_for_reasoning_models(self, openai_gateway):
+            """
+            Given a reasoning model and max_tokens parameter
+            When adapting parameters
+            Then it should convert max_tokens to max_completion_tokens
+            """
+            original_args = {
+                'model': 'o1-mini',
+                'messages': [LLMMessage(role=MessageRole.User, content="Hello")],
+                'max_tokens': 1000
+            }
+
+            adapted_args = openai_gateway._adapt_parameters_for_model('o1-mini', original_args)
+
+            assert 'max_tokens' not in adapted_args
+            assert 'max_completion_tokens' in adapted_args
+            assert adapted_args['max_completion_tokens'] == 1000
+
+        def should_keep_parameters_for_chat_models(self, openai_gateway):
+            """
+            Given a chat model and max_tokens parameter
+            When adapting parameters
+            Then it should keep max_tokens unchanged
+            """
+            original_args = {
+                'model': 'gpt-4o',
+                'messages': [LLMMessage(role=MessageRole.User, content="Hello")],
+                'max_tokens': 1000
+            }
+
+            adapted_args = openai_gateway._adapt_parameters_for_model('gpt-4o', original_args)
+
+            assert 'max_tokens' in adapted_args
+            assert 'max_completion_tokens' not in adapted_args
+            assert adapted_args['max_tokens'] == 1000
+
+        def should_handle_missing_max_tokens_parameter(self, openai_gateway):
+            """
+            Given arguments without max_tokens parameter
+            When adapting parameters
+            Then it should not add any token limit parameters
+            """
+            original_args = {
+                'model': 'o1-mini',
+                'messages': [LLMMessage(role=MessageRole.User, content="Hello")]
+            }
+
+            adapted_args = openai_gateway._adapt_parameters_for_model('o1-mini', original_args)
+
+            assert 'max_tokens' not in adapted_args
+            assert 'max_completion_tokens' not in adapted_args
