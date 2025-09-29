@@ -73,7 +73,7 @@ class ChatSession:
             The response from the LLM.
         """
         self.insert_message(LLMMessage(role=MessageRole.User, content=query))
-        response = self.llm.generate(self.messages, tools=self.tools, temperature=0.1)
+        response = self.llm.generate(self.messages, tools=self.tools, temperature=self.temperature)
         self._ensure_all_messages_are_sized()
         self.insert_message(LLMMessage(role=MessageRole.Assistant, content=response))
         return response
