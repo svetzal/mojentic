@@ -94,7 +94,7 @@ class OpenAIGateway(LLMGateway):
         # Handle temperature restrictions for specific models
         if 'temperature' in adapted_args:
             temperature = adapted_args['temperature']
-            
+
             # Check if model supports temperature parameter at all
             if capabilities.supported_temperatures == []:
                 # Model doesn't support temperature parameter at all - remove it

@@ -113,7 +113,7 @@ class OpenAIModelRegistry:
             else:
                 # Other reasoning models support all temperatures
                 supported_temps = None
-            
+
             self._models[model] = ModelCapabilities(
                 model_type=ModelType.REASONING,
                 supports_tools=supports_tools,
