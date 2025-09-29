@@ -14,7 +14,7 @@ from mojentic.llm.gateways.models import LLMMessage
 from mojentic.llm.tools.date_resolver import ResolveDateTool
 
 
-def openai_llm(model="gpt-4o"):
+def openai_llm(model="gpt-5"):
     api_key = os.getenv("OPENAI_API_KEY")
     gateway = OpenAIGateway(api_key)
     llm = LLMBroker(model=model, gateway=gateway)
@@ -60,7 +60,26 @@ check_structured_output(openai_llm(model="o4-mini"))
 check_tool_use(openai_llm(model="o4-mini"))
 check_image_analysis(openai_llm(model="gpt-4o"))
 
-check_simple_textgen(ollama_llm())
-check_structured_output(ollama_llm())
+# check_simple_textgen(ollama_llm())
+# check_structured_output(ollama_llm())
 check_tool_use(ollama_llm(model="qwen3:32b"))
 check_image_analysis(ollama_llm(model="gemma3:27b"))
+
+# Test all GPT-5 model variants to confirm they're all reasoning models
+print("\n=== Testing GPT-5 Model Variants ===")
+gpt5_models = [
+    "gpt-5",
+    "gpt-5-2025-08-07",
+    "gpt-5-chat-latest",
+    "gpt-5-mini",
+    "gpt-5-mini-2025-08-07",
+    "gpt-5-nano",
+    "gpt-5-nano-2025-08-07"
+]
+
+for model in gpt5_models:
+    print(f"\n--- Testing {model} ---")
+    try:
+        check_simple_textgen(openai_llm(model=model))
+    except Exception as e:
+        print(f"Error with {model}: {e}")

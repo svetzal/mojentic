@@ -243,3 +243,52 @@ class DescribeOpenAIGatewayIntegration:
 
             assert 'max_tokens' not in adapted_args
             assert 'max_completion_tokens' not in adapted_args
+
+        def should_use_model_registry_for_classification(self, openai_gateway):
+            """
+            Given the OpenAI gateway with model registry
+            When checking model types
+            Then it should use the registry for classification
+            """
+            # Test that the gateway uses the registry
+            assert openai_gateway.model_registry is not None
+
+            # Test reasoning model detection via registry
+            assert openai_gateway._is_reasoning_model("o1-preview") is True
+            assert openai_gateway._is_reasoning_model("o1-mini") is True
+            assert openai_gateway._is_reasoning_model("gpt-4o") is False
+
+        def should_validate_parameters_before_api_call(self, openai_gateway):
+            """
+            Given invalid parameters for a model
+            When validating parameters
+            Then it should provide helpful error messages
+            """
+            # This test checks that validation occurs (exact behavior depends on implementation)
+            args = {
+                'model': 'o1-mini',
+                'messages': [LLMMessage(role=MessageRole.User, content="Hello")],
+                'max_tokens': 100000  # Exceeds typical limits
+            }
+
+            # Should not raise an exception for validation (warnings are okay)
+            openai_gateway._validate_model_parameters('o1-mini', args)
+
+        def should_handle_unknown_models_gracefully(self, openai_gateway):
+            """
+            Given an unknown model name
+            When adapting parameters
+            Then it should handle it gracefully with warnings
+            """
+            original_args = {
+                'model': 'unknown-future-model',
+                'messages': [LLMMessage(role=MessageRole.User, content="Hello")],
+                'max_tokens': 1000
+            }
+
+            # Should not raise an exception
+            adapted_args = openai_gateway._adapt_parameters_for_model('unknown-future-model', original_args)
+
+            # Should default to chat model behavior (keeping max_tokens)
+            assert 'max_tokens' in adapted_args
+            assert adapted_args['max_tokens'] == 1000

@@ -1,6 +1,6 @@
 # Mojentic
 
-Mojentic is a framework that provides a simple and flexible way to interact with Large Language Models (LLMs). It offers integration with various LLM providers and includes tools for structured output generation, task automation, and more. The future direction is to facilitate a team of agents, but the current focus is on robust LLM interaction capabilities.
+Mojentic is a framework that provides a simple and flexible way to interact with Large Language Models (LLMs). It offers integration with various LLM providers and includes tools for structured output generation, task automation, and more. With comprehensive support for all OpenAI models including GPT-5 and automatic parameter adaptation, Mojentic handles the complexities of different model types seamlessly. The future direction is to facilitate a team of agents, but the current focus is on robust LLM interaction capabilities.
 
 [![GitHub](https://img.shields.io/github/license/svetzal/mojentic)](LICENSE.md)
 [![Python Version](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/downloads/)
@@ -9,6 +9,8 @@ Mojentic is a framework that provides a simple and flexible way to interact with
 ## 🚀 Features
 
 - **LLM Integration**: Support for multiple LLM providers (OpenAI, Ollama)
+- **Latest OpenAI Models**: Full support for GPT-5, GPT-4.1, and all reasoning models (o1, o3, o4 series)
+- **Automatic Model Adaptation**: Seamless parameter handling across different OpenAI model types
 - **Structured Output**: Generate structured data from LLM responses using Pydantic models
 - **Tools Integration**: Utilities for date resolution, image analysis, and more
 - **Multi-modal Capabilities**: Process and analyze images alongside text
@@ -45,8 +47,9 @@ from mojentic.llm.gateways.models import LLMMessage
 from mojentic.llm.tools.date_resolver import ResolveDateTool
 from pydantic import BaseModel, Field
 
-# Initialize with OpenAI
-openai_llm = LLMBroker(model="gpt-4o", gateway=OpenAIGateway(api_key="your_api_key"))
+# Initialize with OpenAI (supports all models including GPT-5, GPT-4.1, reasoning models)
+openai_llm = LLMBroker(model="gpt-5", gateway=OpenAIGateway(api_key="your_api_key"))
+# Or use other models: "gpt-4o", "gpt-4.1", "o1-mini", "o3-mini", etc.
 
 # Or use Ollama for local LLMs
 ollama_llm = LLMBroker(model="llama3")
@@ -60,7 +63,7 @@ class Sentiment(BaseModel):
     label: str = Field(..., description="Label for the sentiment")
 
 sentiment = openai_llm.generate_object(
-    messages=[LLMMessage(content="Hello, how are you?")], 
+    messages=[LLMMessage(content="Hello, how are you?")],
     object_model=Sentiment
 )
 print(sentiment.label)
@@ -78,6 +81,10 @@ result = openai_llm.generate(messages=[
 ])
 print(result)
 ```
+
+## 🤖 OpenAI Model Support
+
+The framework automatically handles parameter differences between model types, so you can switch between any models without code changes.
 
 ## 🏗️ Project Structure
 

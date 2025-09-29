@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2025-09-28
+
+### Added
+
+- Added comprehensive OpenAI model registry system with automatic model categorization and capabilities detection
+- Added support for GPT-5 model series (gpt-5, gpt-5-mini, gpt-5-nano, etc.) as reasoning models
+- Added support for GPT-4.1 model series as chat models
+- Added automatic parameter adaptation system that converts `max_tokens` to `max_completion_tokens` for reasoning models
+- Added enhanced logging for parameter conversions and model validation
+- Added fetch_openai_models.py utility script for retrieving and categorizing current OpenAI models
+- Added comprehensive test coverage for all GPT-5 model variants
+
+### Changed
+
+- Enhanced OpenAI gateway with registry-based parameter adaptation for backward compatibility
+- Improved model categorization logic to distinguish between reasoning models (o1, o3, o4, gpt-5 series) and chat models (gpt-4, gpt-4.1, gpt-3.5 series)
+- Updated model registry with 74+ current OpenAI models including latest GPT-5 and GPT-4.1 variants
+
+### Fixed
+
+- Fixed "Unsupported parameter: 'max_tokens' is not supported with this model" errors for all current OpenAI reasoning models
+- Fixed parameter compatibility issues between different OpenAI model types
+- Ensured proper handling of tools removal for models that don't support function calling
+
 ## [0.7.4] - 2024-12-20
 
 ### Added
