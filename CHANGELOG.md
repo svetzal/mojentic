@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed temperature parameter restrictions for OpenAI reasoning models that only support specific temperature values
 - Fixed GPT-5 series models to automatically adjust unsupported temperature values (e.g., 0.1) to default (1.0) with warning
-- Fixed o1 and o4 series models to automatically adjust unsupported temperature values to default (1.0) with warning  
+- Fixed o1 and o4 series models to automatically adjust unsupported temperature values to default (1.0) with warning
 - Fixed o3 series models to automatically remove temperature parameter entirely (not supported) with warning
 - Enhanced OpenAI model registry with comprehensive temperature restriction support for all reasoning model series
 - Added automatic parameter adaptation that prevents BadRequestError exceptions for temperature restrictions
