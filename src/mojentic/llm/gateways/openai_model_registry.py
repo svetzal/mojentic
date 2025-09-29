@@ -34,12 +34,21 @@ class ModelCapabilities:
     supports_vision: bool = False
     max_context_tokens: Optional[int] = None
     max_output_tokens: Optional[int] = None
+    supported_temperatures: Optional[List[float]] = None  # None means all temperatures supported
 
     def get_token_limit_param(self) -> str:
         """Get the correct parameter name for token limits based on model type."""
         if self.model_type == ModelType.REASONING:
             return "max_completion_tokens"
         return "max_tokens"
+
+    def supports_temperature(self, temperature: float) -> bool:
+        """Check if the model supports a specific temperature value."""
+        if self.supported_temperatures is None:
+            return True  # All temperatures supported if not restricted
+        if self.supported_temperatures == []:
+            return False  # No temperature values supported (parameter not allowed)
+        return temperature in self.supported_temperatures
 
 
 class OpenAIModelRegistry:
@@ -74,6 +83,9 @@ class OpenAIModelRegistry:
             # Deep research models and GPT-5 might have different capabilities
             is_deep_research = "deep-research" in model
             is_gpt5 = "gpt-5" in model
+            is_o1_series = model.startswith("o1")
+            is_o3_series = model.startswith("o3")
+            is_o4_series = model.startswith("o4")
             is_mini_or_nano = ("mini" in model or "nano" in model)
 
             # GPT-5 models may support more features than o1/o3/o4
@@ -91,13 +103,25 @@ class OpenAIModelRegistry:
                 context_tokens = 128000
                 output_tokens = 32768
 
+            # Temperature restrictions based on model series
+            if is_gpt5 or is_o1_series or is_o4_series:
+                # GPT-5, o1, and o4 series only support temperature=1.0
+                supported_temps = [1.0]
+            elif is_o3_series:
+                # o3 series doesn't support temperature parameter at all
+                supported_temps = []
+            else:
+                # Other reasoning models support all temperatures
+                supported_temps = None
+            
             self._models[model] = ModelCapabilities(
                 model_type=ModelType.REASONING,
                 supports_tools=supports_tools,
                 supports_streaming=supports_streaming,
                 supports_vision=False,  # Vision support would need to be confirmed for GPT-5
                 max_context_tokens=context_tokens,
-                max_output_tokens=output_tokens
+                max_output_tokens=output_tokens,
+                supported_temperatures=supported_temps
             )
 
         # Chat Models (GPT-4 and GPT-4.1 series) - Updated 2025-09-28

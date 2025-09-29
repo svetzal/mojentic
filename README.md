@@ -86,6 +86,17 @@ print(result)
 
 The framework automatically handles parameter differences between model types, so you can switch between any models without code changes.
 
+### Model-Specific Limitations
+
+Some models have specific parameter restrictions that are automatically handled:
+
+- **GPT-5 Series**: Only supports `temperature=1.0` (default). Other temperature values are automatically adjusted with a warning.
+- **o1 & o4 Series**: Only supports `temperature=1.0` (default). Other temperature values are automatically adjusted with a warning.
+- **o3 Series**: Does not support the `temperature` parameter at all. The parameter is automatically removed with a warning.
+- **All Reasoning Models** (o1, o3, o4, GPT-5): Use `max_completion_tokens` instead of `max_tokens`, and have limited tool support.
+
+The framework will automatically adapt parameters and log warnings when unsupported values are provided.
+
 ## 🏗️ Project Structure
 
 ```

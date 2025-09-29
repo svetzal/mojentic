@@ -91,6 +91,27 @@ class OpenAIGateway(LLMGateway):
                           num_tools=len(adapted_args['tools']))
             adapted_args['tools'] = None  # Set to None instead of removing the key
 
+        # Handle temperature restrictions for specific models
+        if 'temperature' in adapted_args:
+            temperature = adapted_args['temperature']
+            
+            # Check if model supports temperature parameter at all
+            if capabilities.supported_temperatures == []:
+                # Model doesn't support temperature parameter at all - remove it
+                logger.warning("Model does not support temperature parameter, removing it",
+                              model=model,
+                              requested_temperature=temperature)
+                adapted_args.pop('temperature', None)
+            elif not capabilities.supports_temperature(temperature):
+                # Model supports temperature but not this specific value - use default
+                default_temp = 1.0
+                logger.warning("Model does not support requested temperature, using default",
+                              model=model,
+                              requested_temperature=temperature,
+                              default_temperature=default_temp,
+                              supported_temperatures=capabilities.supported_temperatures)
+                adapted_args['temperature'] = default_temp
+
         return adapted_args
 
     def _validate_model_parameters(self, model: str, args: dict) -> None:
