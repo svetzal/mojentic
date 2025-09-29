@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.2] - 2025-01-25
+
+### Fixed
+
+- Changed ChatSession default temperature from 0.7 to 1.0 to ensure consistent behavior with OpenAI reasoning models that require temperature of 1.0
+
 ## [0.8.1] - 2025-09-28
 
 ### Fixed
