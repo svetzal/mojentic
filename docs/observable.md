@@ -12,7 +12,6 @@ This document provides a comprehensive overview of the observability features an
 - [Integration Points](#integration-points)
 - [Correlation ID](#correlation-id)
 - [Structured Logging](#structured-logging)
-- [Event Subscription Patterns](#event-subscription-patterns)
 - [Query and Filtering Capabilities](#query-and-filtering-capabilities)
 - [Best Practices](#best-practices)
 - [Future Enhancement Opportunities](#future-enhancement-opportunities)
@@ -23,8 +22,7 @@ Mojentic provides multiple layers of observability to help you understand what's
 
 1. **Tracer System**: High-level tracking of LLM calls, tool usage, and agent interactions
 2. **Structured Logging**: Low-level technical diagnostics using structlog
-3. **Event Subscription**: Reactive patterns for agent-to-agent communication
-4. **Event Store Callbacks**: Real-time notifications when events are recorded
+3. **Event Store Callbacks**: Real-time notifications when events are recorded
 
 These features work together to provide both real-time monitoring and post-hoc analysis capabilities.
 
@@ -381,44 +379,6 @@ logger.warn("Function not found", function=tool_call.name)
 - Use ERROR for user-visible problems
 - Never use `print()` for diagnostics (reserved for user-facing CLI output)
 
-## Event Subscription Patterns
-
-The `SimpleRecursiveAgent` demonstrates an event subscription pattern for reactive programming.
-
-**Location**: `src/mojentic/agents/simple_recursive_agent.py`
-
-**Pattern**:
-```python
-class EventEmitter:
-    def __init__(self):
-        self.subscribers = {}
-    
-    def subscribe(self, event_type, callback):
-        """Subscribe to an event type"""
-        if event_type not in self.subscribers:
-            self.subscribers[event_type] = []
-        self.subscribers[event_type].append(callback)
-        return lambda: self.subscribers[event_type].remove(callback)
-    
-    def emit(self, event):
-        """Emit an event to all subscribers"""
-        event_type = type(event)
-        if event_type in self.subscribers:
-            for callback in self.subscribers[event_type]:
-                result = callback(event)
-                # Handle async callbacks
-                if asyncio.iscoroutine(result):
-                    asyncio.create_task(result)
-```
-
-**Use Cases**:
-- Building reactive agents
-- Implementing observer patterns
-- Decoupling event producers and consumers
-- Supporting async workflows
-
-**Future Enhancement**: This pattern could be standardized and integrated with the tracer system for more comprehensive observability.
-
 ## Query and Filtering Capabilities
 
 The TracerSystem provides powerful querying capabilities:
@@ -586,16 +546,7 @@ tracer.enable()   # When debugging
 
 Based on the current observability infrastructure, here are potential areas for enhancement:
 
-### 1. Standardized Event Subscription System
-
-**Current State**: `SimpleRecursiveAgent` has its own event emitter pattern
-
-**Enhancement**: Create a standardized `EventEmitter` base class that integrates with TracerSystem:
-- Unify subscription patterns across all agents
-- Add tracer recording when events are emitted/received
-- Support filtering and querying of subscriptions
-
-### 2. Tracing for Async Operations
+### 1. Tracing for Async Operations
 
 **Current State**: AsyncDispatcher exists but tracer integration could be enhanced
 
@@ -604,7 +555,7 @@ Based on the current observability infrastructure, here are potential areas for 
 - Track concurrent operation patterns
 - Measure async performance characteristics
 
-### 3. Metrics and Aggregation
+### 2. Metrics and Aggregation
 
 **Current State**: Raw events are stored, aggregation done manually
 
@@ -614,7 +565,7 @@ Based on the current observability infrastructure, here are potential areas for 
 - Agent interaction graph visualization data
 - Cost estimation based on token counts
 
-### 4. Event Export and Integration
+### 3. Event Export and Integration
 
 **Current State**: Events are stored in-memory only
 
@@ -624,7 +575,7 @@ Based on the current observability infrastructure, here are potential areas for 
 - Database persistence options
 - Integration with APM tools
 
-### 5. Visual Tracing Tools
+### 4. Visual Tracing Tools
 
 **Current State**: Text-based event inspection via `printable_summary()`
 
@@ -634,7 +585,7 @@ Based on the current observability infrastructure, here are potential areas for 
 - Agent interaction graph
 - Performance flamegraphs
 
-### 6. Query DSL
+### 5. Query DSL
 
 **Current State**: Python lambda functions for filtering
 
@@ -643,7 +594,7 @@ Based on the current observability infrastructure, here are potential areas for 
 tracer.query("event_type=ToolCall AND tool_name='date_resolver' AND duration>1000")
 ```
 
-### 7. Event Versioning and Schema Evolution
+### 6. Event Versioning and Schema Evolution
 
 **Current State**: Tracer events are Pydantic models
 
@@ -652,7 +603,7 @@ tracer.query("event_type=ToolCall AND tool_name='date_resolver' AND duration>100
 - Support schema migration
 - Backward compatibility guarantees
 
-### 8. Performance Profiling Integration
+### 7. Performance Profiling Integration
 
 **Current State**: Call duration is recorded for LLM responses
 
@@ -661,7 +612,7 @@ tracer.query("event_type=ToolCall AND tool_name='date_resolver' AND duration>100
 - CPU profiling hooks
 - Automatic performance regression detection
 
-### 9. Audit Trail and Compliance
+### 8. Audit Trail and Compliance
 
 **Current State**: Basic event recording
 
@@ -671,7 +622,7 @@ tracer.query("event_type=ToolCall AND tool_name='date_resolver' AND duration>100
 - Compliance report generation
 - Data retention policies
 
-### 10. Context Managers for Tracing Scopes
+### 9. Context Managers for Tracing Scopes
 
 **Current State**: Manual correlation_id management
 
@@ -682,7 +633,7 @@ with tracer.trace_scope() as scope:
     response = llm.generate(messages)
 ```
 
-### 11. Sampling and Rate Limiting
+### 10. Sampling and Rate Limiting
 
 **Current State**: All events are recorded when enabled
 
@@ -692,7 +643,7 @@ with tracer.trace_scope() as scope:
 - Rate limit high-frequency events
 - Adaptive sampling based on system load
 
-### 12. Event Retention Policies
+### 11. Event Retention Policies
 
 **Current State**: Events accumulate indefinitely until cleared
 
