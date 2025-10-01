@@ -26,6 +26,50 @@ Mojentic provides multiple layers of observability to help you understand what's
 
 These features work together to provide both real-time monitoring and post-hoc analysis capabilities.
 
+```mermaid
+graph TB
+    subgraph "Your Application"
+        App[Your Code]
+        LLM[LLMBroker]
+        Tools[LLM Tools]
+        Dispatcher[Dispatcher]
+    end
+    
+    subgraph "Observability Layer"
+        Tracer[TracerSystem]
+        EventStore[EventStore]
+        StructLog[Structlog]
+    end
+    
+    subgraph "Analysis & Monitoring"
+        Query[Query Events]
+        Callback[Real-time Callbacks]
+        Logs[Log Analysis]
+    end
+    
+    App -->|uses| LLM
+    App -->|uses| Tools
+    App -->|uses| Dispatcher
+    
+    LLM -->|records| Tracer
+    Tools -->|records| Tracer
+    Dispatcher -->|records| Tracer
+    
+    LLM -->|logs| StructLog
+    Tools -->|logs| StructLog
+    Dispatcher -->|logs| StructLog
+    
+    Tracer -->|stores| EventStore
+    EventStore -->|triggers| Callback
+    EventStore -->|query| Query
+    
+    StructLog -->|output| Logs
+    
+    style Tracer fill:#6bb660
+    style EventStore fill:#6bb660
+    style StructLog fill:#6bb660
+```
+
 ## Core Components
 
 ### TracerSystem
@@ -137,11 +181,121 @@ tracer = TracerSystem(event_store=event_store)
 - Performance metrics collection
 - Debugging and troubleshooting
 
+```mermaid
+graph LR
+    subgraph "Mojentic Application"
+        LLM[LLMBroker]
+        Tools[Tools]
+        Agents[Agents]
+    end
+    
+    subgraph "Observability Core"
+        Tracer[TracerSystem]
+        EventStore[EventStore<br/>with Callbacks]
+    end
+    
+    subgraph "External Tools & Extensions"
+        Dashboard[Real-time<br/>Dashboard]
+        Metrics[Metrics<br/>Collector]
+        Logger[External<br/>Logger]
+        Alert[Alert<br/>System]
+        Viz[Visualization<br/>Tool]
+    end
+    
+    LLM -->|record events| Tracer
+    Tools -->|record events| Tracer
+    Agents -->|record events| Tracer
+    
+    Tracer -->|store| EventStore
+    
+    EventStore -->|callback| Dashboard
+    EventStore -->|callback| Metrics
+    EventStore -->|callback| Logger
+    EventStore -->|callback| Alert
+    
+    EventStore -->|query| Viz
+    
+    Dashboard -->|displays| User[End User]
+    Alert -->|notifies| User
+    Viz -->|shows| User
+    
+    style EventStore fill:#6bb660
+    style Tracer fill:#6bb660
+```
+
+**Building External Tools**:
+
+External tools can leverage Mojentic's observability through two mechanisms:
+
+1. **Real-time Callbacks**: React immediately to events as they occur
+   ```python
+   def send_to_dashboard(event):
+       dashboard_client.send(event.model_dump())
+   
+   event_store = EventStore(on_store_callback=send_to_dashboard)
+   tracer = TracerSystem(event_store=event_store)
+   ```
+
+2. **Post-hoc Queries**: Analyze events after they've been collected
+   ```python
+   # Query for visualization
+   events = tracer.get_events(event_type=LLMCallTracerEvent)
+   create_visualization(events)
+   ```
+
 ## Tracer Events
 
 All tracer events inherit from `TracerEvent`, which extends the core `Event` class.
 
 **Location**: `src/mojentic/tracer/tracer_events.py`
+
+```mermaid
+classDiagram
+    class TracerEvent {
+        +float timestamp
+        +str correlation_id
+        +Any source
+        +printable_summary() str
+    }
+    
+    class LLMCallTracerEvent {
+        +str model
+        +List~dict~ messages
+        +float temperature
+        +List~Dict~ tools
+    }
+    
+    class LLMResponseTracerEvent {
+        +str model
+        +str content
+        +List~Dict~ tool_calls
+        +float call_duration_ms
+    }
+    
+    class ToolCallTracerEvent {
+        +str tool_name
+        +Dict arguments
+        +Any result
+        +str caller
+    }
+    
+    class AgentInteractionTracerEvent {
+        +str from_agent
+        +str to_agent
+        +str event_type
+        +str event_id
+    }
+    
+    TracerEvent <|-- LLMCallTracerEvent
+    TracerEvent <|-- LLMResponseTracerEvent
+    TracerEvent <|-- ToolCallTracerEvent
+    TracerEvent <|-- AgentInteractionTracerEvent
+    
+    note for LLMCallTracerEvent "Records LLM invocations<br/>with parameters"
+    note for LLMResponseTracerEvent "Records LLM responses<br/>with duration metrics"
+    note for ToolCallTracerEvent "Records tool execution<br/>with results"
+    note for AgentInteractionTracerEvent "Records agent-to-agent<br/>communication"
+```
 
 ### Base TracerEvent
 
@@ -304,6 +458,45 @@ The `correlation_id` is a critical feature for tracing related events across the
 - Facilitates debugging complex workflows
 - Creates audit trails
 
+```mermaid
+sequenceDiagram
+    participant App as Your Application
+    participant LLM as LLMBroker
+    participant Tool as LLM Tool
+    participant Tracer as TracerSystem
+    participant Store as EventStore
+    
+    App->>App: Generate correlation_id
+    App->>LLM: generate(messages, correlation_id)
+    
+    LLM->>Tracer: record_llm_call(correlation_id)
+    Tracer->>Store: store(LLMCallTracerEvent)
+    
+    LLM->>LLM: Call LLM Gateway
+    
+    LLM->>Tracer: record_llm_response(correlation_id)
+    Tracer->>Store: store(LLMResponseTracerEvent)
+    
+    Note over LLM: LLM requests tool call
+    
+    LLM->>Tool: run(**args)
+    Tool->>Tracer: record_tool_call(correlation_id)
+    Tracer->>Store: store(ToolCallTracerEvent)
+    
+    Tool-->>LLM: tool result
+    
+    LLM->>LLM: Recursive generate() with same correlation_id
+    LLM->>Tracer: record_llm_call(correlation_id)
+    Tracer->>Store: store(LLMCallTracerEvent)
+    
+    LLM-->>App: final response
+    
+    App->>Store: get_events(correlation_id)
+    Store-->>App: All related events
+    
+    Note over App,Store: Complete trace of request flow
+```
+
 **How It Works**:
 1. Generate a unique correlation_id at the start of a request
 2. Pass it through all method calls
@@ -452,6 +645,37 @@ request_events = tracer.get_events(
 ```
 
 ## Best Practices
+
+### When to Use Which Feature
+
+Understanding when to use tracer events versus structured logging is key to effective observability:
+
+```mermaid
+graph TD
+    Start{What do you need?}
+    
+    Start -->|Track user-facing behavior| Tracer
+    Start -->|Debug technical issues| Logging
+    Start -->|Real-time alerts| Callbacks
+    Start -->|Performance metrics| Both[Both Tracer + Logging]
+    
+    Tracer[Use TracerSystem]
+    Logging[Use Structlog]
+    Callbacks[EventStore Callbacks]
+    
+    Tracer --> TracerUse["• LLM call patterns<br/>• Tool usage analytics<br/>• Agent interactions<br/>• End-to-end request traces<br/>• Post-hoc analysis"]
+    
+    Logging --> LoggingUse["• Technical diagnostics<br/>• Error stack traces<br/>• Internal state changes<br/>• Performance bottlenecks<br/>• Development debugging"]
+    
+    Callbacks --> CallbackUse["• Real-time dashboards<br/>• Live monitoring<br/>• Alerting systems<br/>• Event streaming<br/>• Immediate responses"]
+    
+    Both --> BothUse["• Call duration analysis<br/>• Resource usage tracking<br/>• Comprehensive monitoring<br/>• Production debugging"]
+    
+    style Tracer fill:#6bb660
+    style Logging fill:#6bb660
+    style Callbacks fill:#6bb660
+    style Both fill:#6bb660
+```
 
 ### 1. Use Tracer for High-Level Observability
 
