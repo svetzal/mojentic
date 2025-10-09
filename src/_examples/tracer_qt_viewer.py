@@ -307,7 +307,7 @@ class TracerViewer(QMainWindow):
             
             # Create a test query
             messages = [
-                LLMMessage(role=MessageRole.User, content="What day of the week is Christmas this year?")
+                LLMMessage(role=MessageRole.User, content="What is the date next Friday?")
             ]
             
             # Execute the query (this will generate tracer events)
