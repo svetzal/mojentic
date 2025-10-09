@@ -297,10 +297,10 @@ class TracerViewer(QMainWindow):
         """Execute a test query with the LLM."""
         try:
             # Create LLM broker with our tracer
-            llm_broker = LLMBroker(model="qwen2.5:7b", tracer=self.tracer)
+            llm_broker = LLMBroker(model="qwen3:32b", tracer=self.tracer)
             
             # Create a date resolver tool
-            date_tool = ResolveDateTool(llm_broker=llm_broker, tracer=self.tracer)
+            date_tool = ResolveDateTool(tracer=self.tracer)
             
             # Generate a correlation ID for this request
             correlation_id = str(uuid.uuid4())
