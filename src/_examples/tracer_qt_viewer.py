@@ -22,7 +22,7 @@ try:
         QTableWidget, QTableWidgetItem, QTextEdit, QPushButton, QLabel,
         QHeaderView, QSplitter
     )
-    from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QObject
+    from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QObject, QThread
     from PyQt6.QtGui import QColor, QFont
 except ImportError:
     print("Error: PyQt6 is required for this example.")
@@ -44,6 +44,46 @@ class EventSignaler(QObject):
     event_occurred = pyqtSignal(object)
 
 
+class LLMWorker(QThread):
+    """Worker thread for running LLM queries without blocking the UI."""
+
+    finished = pyqtSignal(str)  # Emits response when complete
+    error = pyqtSignal(str)  # Emits error message if something goes wrong
+
+    def __init__(self, tracer: TracerSystem):
+        super().__init__()
+        self.tracer = tracer
+
+    def run(self):
+        """Execute the LLM query in a background thread."""
+        try:
+            # Create LLM broker with our tracer
+            llm_broker = LLMBroker(model="qwen3:32b", tracer=self.tracer)
+
+            # Create a date resolver tool
+            date_tool = ResolveDateTool(tracer=self.tracer)
+
+            # Generate a correlation ID for this request
+            correlation_id = str(uuid.uuid4())
+
+            # Create a test query
+            messages = [
+                LLMMessage(role=MessageRole.User, content="What is the date next Friday?")
+            ]
+
+            # Execute the query (this will generate tracer events)
+            response = llm_broker.generate(
+                messages,
+                tools=[date_tool],
+                correlation_id=correlation_id
+            )
+
+            self.finished.emit(response)
+
+        except Exception as e:
+            self.error.emit(str(e))
+
+
 class TracerViewer(QMainWindow):
     """Qt window that displays tracer events in real-time."""
     
@@ -52,10 +92,11 @@ class TracerViewer(QMainWindow):
         self.events = []
         self.event_signaler = EventSignaler()
         self.event_signaler.event_occurred.connect(self.add_event_to_table)
-        
+        self.worker = None  # Track the worker thread
+
         self.setWindowTitle("Mojentic Tracer - Real-time Event Viewer")
         self.setGeometry(100, 100, 1200, 700)
-        
+
         self._setup_ui()
         self._setup_tracer()
         
@@ -104,6 +145,9 @@ class TracerViewer(QMainWindow):
         )
         self.events_table.setSelectionBehavior(
             QTableWidget.SelectionBehavior.SelectRows
+        )
+        self.events_table.setEditTriggers(
+            QTableWidget.EditTrigger.NoEditTriggers
         )
         self.events_table.itemSelectionChanged.connect(self.show_event_details)
         splitter.addWidget(self.events_table)
@@ -287,42 +331,38 @@ class TracerViewer(QMainWindow):
     
     def run_test_query(self):
         """Run a test query to demonstrate the tracer."""
-        self.statusBar().showMessage("Running test query...")
+        # Don't start a new query if one is already running
+        if self.worker and self.worker.isRunning():
+            self.statusBar().showMessage("Query already running, please wait...")
+            return
+
+        self.statusBar().showMessage("Running test query in background...")
         self.test_button.setEnabled(False)
-        
-        # Run query in a separate method to keep UI responsive
-        QTimer.singleShot(100, self._execute_test_query)
-    
-    def _execute_test_query(self):
-        """Execute a test query with the LLM."""
-        try:
-            # Create LLM broker with our tracer
-            llm_broker = LLMBroker(model="qwen3:32b", tracer=self.tracer)
-            
-            # Create a date resolver tool
-            date_tool = ResolveDateTool(tracer=self.tracer)
-            
-            # Generate a correlation ID for this request
-            correlation_id = str(uuid.uuid4())
-            
-            # Create a test query
-            messages = [
-                LLMMessage(role=MessageRole.User, content="What is the date next Friday?")
-            ]
-            
-            # Execute the query (this will generate tracer events)
-            response = llm_broker.generate(
-                messages,
-                tools=[date_tool],
-                correlation_id=correlation_id
-            )
-            
-            self.statusBar().showMessage(f"Test query completed. Response: {response[:50]}...")
-            
-        except Exception as e:
-            self.statusBar().showMessage(f"Error during test query: {str(e)}")
-        finally:
-            self.test_button.setEnabled(True)
+
+        # Create and configure worker thread
+        self.worker = LLMWorker(self.tracer)
+        self.worker.finished.connect(self._on_query_finished)
+        self.worker.error.connect(self._on_query_error)
+
+        # Start the worker thread
+        self.worker.start()
+
+    def _on_query_finished(self, response: str):
+        """Handle successful query completion."""
+        self.statusBar().showMessage(f"Test query completed. Response: {response[:50]}...")
+        self.test_button.setEnabled(True)
+
+    def _on_query_error(self, error_msg: str):
+        """Handle query error."""
+        self.statusBar().showMessage(f"Error during test query: {error_msg}")
+        self.test_button.setEnabled(True)
+
+    def closeEvent(self, event):
+        """Clean up worker thread when window closes."""
+        if self.worker and self.worker.isRunning():
+            self.worker.quit()
+            self.worker.wait()
+        event.accept()
 
 
 def main():
