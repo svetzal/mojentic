@@ -95,6 +95,7 @@ class NullTracer:
                        arguments: Dict[str, Any],
                        result: Any,
                        caller: Optional[str] = None,
+                       call_duration_ms: Optional[float] = None,
                        source: Any = None,
                        correlation_id: str = None) -> None:
         """
@@ -110,6 +111,8 @@ class NullTracer:
             The result returned by the tool.
         caller : str, optional
             The name of the agent or component calling the tool.
+        call_duration_ms : float, optional
+            The duration of the tool call in milliseconds.
         source : Any, optional
             The source of the event.
         correlation_id : str, optional

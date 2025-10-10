@@ -223,7 +223,7 @@ class TracerViewer(QMainWindow):
         
         # Duration
         duration = ""
-        if isinstance(event, LLMResponseTracerEvent) and event.call_duration_ms:
+        if isinstance(event, (LLMResponseTracerEvent, ToolCallTracerEvent)) and event.call_duration_ms:
             duration = f"{event.call_duration_ms:.0f}"
         duration_item = QTableWidgetItem(duration)
         self.events_table.setItem(row, 4, duration_item)
@@ -303,6 +303,7 @@ class TracerViewer(QMainWindow):
             details.append("=== Tool Call Details ===")
             details.append(f"Tool Name: {event.tool_name}")
             details.append(f"Caller: {event.caller or 'N/A'}")
+            details.append(f"Call Duration: {event.call_duration_ms:.2f} ms" if event.call_duration_ms else "Duration: N/A")
             details.append("")
             details.append("Arguments:")
             details.append(f"  {event.arguments}")
