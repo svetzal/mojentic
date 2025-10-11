@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.3] - 2025-10-11
+
+### Changed
+
+- Enhanced API documentation with improved structure and new mermaid diagrams
+- Added Layer 1 architecture diagram showing relationships between key classes
+- Restructured Level 2 documentation to separate Simple Agents and Event-Driven Agents
+- Improved async capabilities documentation with detailed sections on computation units and event-driven architecture
+- Updated index documentation with practical code examples and sequence diagrams for common usage patterns
+- Added mermaid diagrams illustrating simple one-shot completion, chat sessions, and asynchronous multi-agent systems
+
 ## [0.8.2] - 2025-01-25
 
 ### Fixed
