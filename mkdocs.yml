@@ -42,7 +42,6 @@ plugins:
         Layer 1 - Core:
           - starter_1.md
           - message_composers.md
-          - async_capabilities.md
           - simple_text_generation.md
           - chat_sessions.md
           - structured_output.md
@@ -51,6 +50,7 @@ plugins:
           - chat_sessions_with_tools.md
           - image_analysis.md
         Layer 2 - Agents:
+          - async_capabilities.md
           - ipa.md
           - sra.md
         Observability:
@@ -85,7 +85,6 @@ nav:
     - Getting Started with Layer 1:
       - The Basics: starter_1.md
       - Message Composers: message_composers.md
-      - Asynchronous Capabilities: async_capabilities.md
     - Examples and Tutorials (Layer 1):
       - Simple Text Generation: simple_text_generation.md
       - Building Chatbots: chat_sessions.md
@@ -95,6 +94,7 @@ nav:
       - Building Chatbots with Tools: chat_sessions_with_tools.md
       - Image Analysis: image_analysis.md
   - Layer 2 - Agents:
+      - Asynchronous Capabilities: async_capabilities.md
       - Iterative Problem Solver: ipa.md
       - Simple Recursive Agent: sra.md
   - Observability:

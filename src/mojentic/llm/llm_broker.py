@@ -43,7 +43,7 @@ class LLMBroker():
         tokenizer
             The gateway to use for tokenization. This is used to log approximate token counts for
             the LLM calls. If
-            None, `mxbai-embed-large` is used on a local Ollama server.
+            None, tiktoken's `cl100k_base` tokenizer is used.
         tracer
             Optional tracer system to record LLM calls and responses.
         """
