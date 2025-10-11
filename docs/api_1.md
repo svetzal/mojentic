@@ -22,6 +22,87 @@ At this layer we have:
 - [MessageBuilder](message_composers.md): This is a utility class for constructing messages
   with text, images, and file contents using a fluent interface.
 
+## Architecture Overview
+
+The following diagram illustrates how the key classes in Layer 1 relate to each other:
+
+```mermaid
+classDiagram
+    class LLMBroker {
+        +model: str
+        +adapter: LLMGateway
+        +tokenizer: TokenizerGateway
+        +tracer: TracerSystem
+        +generate(messages, tools, temperature) str
+        +generate_object(messages, object_model) BaseModel
+    }
+    
+    class ChatSession {
+        +broker: LLMBroker
+        +messages: List[LLMMessage]
+        +chat(message) str
+        +clear_history()
+    }
+    
+    class LLMGateway {
+        <<abstract>>
+        +complete(model, messages, tools) LLMGatewayResponse
+        +calculate_embeddings(text, model) List[float]
+    }
+    
+    class OllamaGateway {
+        +complete(model, messages, tools) LLMGatewayResponse
+        +calculate_embeddings(text, model) List[float]
+    }
+    
+    class OpenAIGateway {
+        +complete(model, messages, tools) LLMGatewayResponse
+        +calculate_embeddings(text, model) List[float]
+    }
+    
+    class TokenizerGateway {
+        +encode(text) List
+        +decode(tokens) str
+    }
+    
+    class TracerSystem {
+        <<interface>>
+        +record_llm_call()
+        +record_llm_response()
+        +record_tool_call()
+    }
+    
+    class LLMGatewayResponse {
+        +content: str
+        +tool_calls: List[LLMToolCall]
+        +object: BaseModel
+    }
+    
+    class LLMMessage {
+        +role: MessageRole
+        +content: str
+        +tool_calls: List[LLMToolCall]
+    }
+    
+    class MessageBuilder {
+        +add_text(text) MessageBuilder
+        +add_image(path) MessageBuilder
+        +add_file(path) MessageBuilder
+        +build() LLMMessage
+    }
+    
+    ChatSession --> LLMBroker : wraps
+    LLMBroker --> LLMGateway : uses via adapter
+    LLMBroker --> TokenizerGateway : uses
+    LLMBroker --> TracerSystem : uses (optional)
+    OllamaGateway --|> LLMGateway : extends
+    OpenAIGateway --|> LLMGateway : extends
+    LLMGateway --> LLMGatewayResponse : returns
+    LLMBroker --> LLMMessage : sends/receives
+    MessageBuilder --> LLMMessage : builds
+    LLMGatewayResponse --> LLMMessage : contains
+```
+
 ## Working with Embeddings
 
 Mojentic provides embeddings functionality through the `calculate_embeddings` method in both the `OllamaGateway` and `OpenAIGateway` classes. Embeddings are vector representations of text that capture semantic meaning, making them useful for similarity comparisons, clustering, and other NLP tasks.
