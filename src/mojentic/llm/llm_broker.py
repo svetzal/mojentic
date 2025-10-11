@@ -146,8 +146,13 @@ class LLMBroker():
                     # Get the arguments before calling the tool
                     tool_arguments = tool_call.arguments
 
+                    # Measure tool execution time
+                    tool_start_time = time.time()
+
                     # Call the tool
                     output = tool.run(**tool_call.arguments)
+
+                    tool_duration_ms = (time.time() - tool_start_time) * 1000
 
                     # Record tool call in tracer
                     self.tracer.record_tool_call(
@@ -155,6 +160,7 @@ class LLMBroker():
                         tool_arguments,
                         output,
                         caller="LLMBroker",
+                        call_duration_ms=tool_duration_ms,
                         source=type(self),
                         correlation_id=correlation_id
                     )

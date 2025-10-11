@@ -55,6 +55,7 @@ plugins:
           - sra.md
         Observability:
           - tracer.md
+          - observable.md
         API Documentation:
           - api_0.md
           - api_1.md
@@ -98,6 +99,7 @@ nav:
       - Simple Recursive Agent: sra.md
   - Observability:
       - Tracer System: tracer.md
+      - Comprehensive Guide: observable.md
   - API Documentation:
       - Intro: api_0.md
       - Layer 1: api_1.md

@@ -141,6 +141,7 @@ class TracerSystem:
                        arguments: Dict[str, Any],
                        result: Any,
                        caller: Optional[str] = None,
+                       call_duration_ms: Optional[float] = None,
                        source: Any = None,
                        correlation_id: str = None) -> None:
         """
@@ -156,6 +157,8 @@ class TracerSystem:
             The result returned by the tool.
         caller : str, optional
             The name of the agent or component calling the tool.
+        call_duration_ms : float, optional
+            The duration of the tool call in milliseconds.
         source : Any, optional
             The source of the event. If None, the TracerSystem class will be used.
         correlation_id : str, required
@@ -171,6 +174,7 @@ class TracerSystem:
             arguments=arguments,
             result=result,
             caller=caller,
+            call_duration_ms=call_duration_ms,
             correlation_id=correlation_id
         )
         self.event_store.store(event)

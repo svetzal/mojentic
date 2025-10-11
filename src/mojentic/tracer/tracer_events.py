@@ -97,6 +97,7 @@ class ToolCallTracerEvent(TracerEvent):
     arguments: Dict[str, Any] = Field(..., description="Arguments provided to the tool")
     result: Any = Field(..., description="Result returned by the tool")
     caller: Optional[str] = Field(None, description="Name of the agent or component that called the tool")
+    call_duration_ms: Optional[float] = Field(None, description="Duration of the tool call in milliseconds")
 
     def printable_summary(self) -> str:
         """Return a formatted summary of the tool call event."""
@@ -113,6 +114,9 @@ class ToolCallTracerEvent(TracerEvent):
 
         if self.caller:
             summary += f"\n   Caller: {self.caller}"
+
+        if self.call_duration_ms is not None:
+            summary += f"\n   Duration: {self.call_duration_ms:.2f}ms"
 
         return summary
 
