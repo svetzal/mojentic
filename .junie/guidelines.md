@@ -168,6 +168,13 @@ Always use the same `show_root_heading`, `merge_init_into_class`, and `group_by_
      - MAJOR version for incompatible API changes
      - MINOR version for backward-compatible new functionality
      - PATCH version for backward-compatible bug fixes
+   - Tag the release commit with the new version number (e.g., `git tag -a RELEASE_1_0_0 -m "Release v1.0.0"`)
+   - Push the tag to the remote repository (e.g., `git push origin RELEASE_1_0_0`)
+   - Using the gh command, create a new release on GitHub:
+     - Use the new version number as the tag version
+     - Use the same title as the tag version
+     - Use the same description as the tag version
+     - Attach the CHANGELOG.md file to the release
 
 3. Best Practices:
    - Keep entries concise but descriptive

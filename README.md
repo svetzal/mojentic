@@ -131,9 +131,9 @@ pip install -e ".[dev]"
 pytest
 ```
 
-## ⚠️ Project Status
+## ✅ Project Status
 
-While the Layer 1 API (LLMBroker, LLMGateway, tool use) has stabilized, the Layer 2 agentic capabilities are under heavy development and will likely change significantly.
+The agentic aspects of this framework are in the highest state of flux. The first layer has stabilized, as have the simpler parts of the second layer, and we're working on the stability of the asynchronous pubsub architecture. We expect Python 3.14 will be the real enabler for the async aspects of the second layer.
 
 ## 📄 License
 
