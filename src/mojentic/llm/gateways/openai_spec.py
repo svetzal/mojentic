@@ -33,6 +33,16 @@ class DescribeOpenAIGateway:
             mock_openai.assert_called_once_with(api_key=api_key, base_url=base_url)
             assert gateway.client is not None
 
+        def should_read_api_key_from_environment_variable(self, mocker):
+            api_key = "test-api-key-from-env"
+            mock_openai = mocker.patch('mojentic.llm.gateways.openai.OpenAI')
+
+            with patch.dict(os.environ, {'OPENAI_API_KEY': api_key}):
+                gateway = OpenAIGateway()
+
+            mock_openai.assert_called_once_with(api_key=api_key, base_url=None)
+            assert gateway.client is not None
+
         def should_read_base_url_from_environment_variable(self, mocker):
             api_key = "test-api-key"
             endpoint = "https://corporate.openai.com"
@@ -42,6 +52,28 @@ class DescribeOpenAIGateway:
                 gateway = OpenAIGateway(api_key=api_key)
 
             mock_openai.assert_called_once_with(api_key=api_key, base_url=endpoint)
+            assert gateway.client is not None
+
+        def should_read_both_from_environment_variables(self, mocker):
+            api_key = "test-api-key-from-env"
+            endpoint = "https://corporate.openai.com"
+            mock_openai = mocker.patch('mojentic.llm.gateways.openai.OpenAI')
+
+            with patch.dict(os.environ, {'OPENAI_API_KEY': api_key, 'OPENAI_API_ENDPOINT': endpoint}):
+                gateway = OpenAIGateway()
+
+            mock_openai.assert_called_once_with(api_key=api_key, base_url=endpoint)
+            assert gateway.client is not None
+
+        def should_prefer_explicit_api_key_over_environment_variable(self, mocker):
+            api_key_env = "test-api-key-from-env"
+            api_key_explicit = "test-api-key-explicit"
+            mock_openai = mocker.patch('mojentic.llm.gateways.openai.OpenAI')
+
+            with patch.dict(os.environ, {'OPENAI_API_KEY': api_key_env}):
+                gateway = OpenAIGateway(api_key=api_key_explicit)
+
+            mock_openai.assert_called_once_with(api_key=api_key_explicit, base_url=None)
             assert gateway.client is not None
 
         def should_prefer_explicit_base_url_over_environment_variable(self, mocker):
