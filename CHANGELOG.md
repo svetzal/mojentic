@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [0.8.4] - 2025-11-05
+
+### Changed
+
+- Adjusted OpenAIGateway to draw in OPENAI_API_KEY and OPENAI_API_ENDPOINT environment variables when no key or endpoint explicitly provided
+
 ## [0.8.3] - 2025-10-11
 
 ### Changed
