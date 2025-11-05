@@ -1,4 +1,5 @@
 import json
+import os
 from itertools import islice
 from typing import Type, List, Iterable, Optional
 
@@ -23,11 +24,19 @@ class OpenAIGateway(LLMGateway):
 
     Parameters
     ----------
-    api_key : str
-        The OpenAI API key to use.
+    api_key : str, optional
+        The OpenAI API key to use. If not provided, defaults to the value of the
+        OPENAI_API_KEY environment variable.
+    base_url : str, optional
+        The base URL for the OpenAI API. If not provided, defaults to the value of the
+        OPENAI_API_ENDPOINT environment variable, or None if not set.
     """
 
-    def __init__(self, api_key: str, base_url: Optional[str] = None):
+    def __init__(self, api_key: Optional[str] = None, base_url: Optional[str] = None):
+        if api_key is None:
+            api_key = os.getenv("OPENAI_API_KEY")
+        if base_url is None:
+            base_url = os.getenv("OPENAI_API_ENDPOINT")
         self.client = OpenAI(api_key=api_key, base_url=base_url)
         self.model_registry = get_model_registry()
 
