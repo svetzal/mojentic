@@ -110,6 +110,35 @@ llm = LLMBroker(
 )
 ```
 
+#### Environment variables and precedence
+
+OpenAIGateway supports environment-variable defaults so you don’t need to hardcode secrets:
+
+- If you omit `api_key`, it will use the `OPENAI_API_KEY` environment variable.
+- If you omit `base_url`, it will use the `OPENAI_API_ENDPOINT` environment variable (useful for custom endpoints like Azure or OpenAI-compatible proxies).
+- Precedence: values you pass explicitly to `OpenAIGateway(api_key=..., base_url=...)` always override environment variables.
+
+Examples:
+
+```py { linenums=1 }
+from mojentic.llm import LLMBroker
+from mojentic.llm.gateways import OpenAIGateway
+
+# 1) Rely on environment variables
+#    export OPENAI_API_KEY=sk-...
+#    export OPENAI_API_ENDPOINT=https://api.openai.com/v1   # optional
+llm = LLMBroker(
+    "gpt-4o-mini",
+    gateway=OpenAIGateway()  # picks up OPENAI_API_KEY/OPENAI_API_ENDPOINT automatically
+)
+
+# 2) Explicitly override one or both values
+llm = LLMBroker(
+    "gpt-4o-mini",
+    gateway=OpenAIGateway(api_key="your_key", base_url="https://api.openai.com/v1")
+)
+```
+
 ## Using llms.txt for Configuration
 
 Mojentic now supports a simple configuration file called `llms.txt` that makes it easier to manage your LLM configurations. This is especially useful when you want to switch between different models or environments without changing your code.
@@ -132,6 +161,7 @@ gpt4mini=gpt-4o-mini,openai,api_key=your_api_key_here,base_url=https://api.opena
 Then, you can use these configurations in your code:
 
 ```py { linenums=1 }
+import os
 from mojentic.llm import LLMBroker
 
 # This will load the configuration from llms.txt

@@ -16,6 +16,10 @@ At this layer we have:
   out-of-the-box adapters that will interact with models available through
   Ollama and OpenAI.
 
+  Note:
+  - `OpenAIGateway` supports environment-variable defaults. If `api_key` is not provided, it uses `OPENAI_API_KEY`. If `base_url` is not provided, it uses `OPENAI_API_ENDPOINT`.
+  - Explicit constructor arguments always take precedence over environment variables.
+
 - [LLMGateway](#mojentic.llm.gateways.LLMGateway): This is the abstract class that all LLM adapters must inherit from. It
   provides a common interface and isolation point for interacting with LLMs.
 

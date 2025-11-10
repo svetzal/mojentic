@@ -82,6 +82,35 @@ result = openai_llm.generate(messages=[
 print(result)
 ```
 
+## 🔑 OpenAI configuration
+
+OpenAIGateway now supports environment-variable defaults so you can get started without hardcoding secrets:
+
+- If you omit `api_key`, it will use the `OPENAI_API_KEY` environment variable.
+- If you omit `base_url`, it will use the `OPENAI_API_ENDPOINT` environment variable (useful for custom endpoints like Azure/OpenAI-compatible proxies).
+- Precedence: values you pass explicitly to `OpenAIGateway(api_key=..., base_url=...)` always override environment variables.
+
+Examples:
+
+```python
+from mojentic.llm import LLMBroker
+from mojentic.llm.gateways import OpenAIGateway
+
+# 1) Easiest: rely on environment variables
+#    export OPENAI_API_KEY=sk-...
+#    export OPENAI_API_ENDPOINT=https://api.openai.com/v1   # optional
+llm = LLMBroker(
+    model="gpt-4o-mini",
+    gateway=OpenAIGateway()  # picks up OPENAI_API_KEY/OPENAI_API_ENDPOINT automatically
+)
+
+# 2) Explicitly override one or both values
+llm = LLMBroker(
+    model="gpt-4o-mini",
+    gateway=OpenAIGateway(api_key="your_key", base_url="https://api.openai.com/v1")
+)
+```
+
 ## 🤖 OpenAI Model Support
 
 The framework automatically handles parameter differences between model types, so you can switch between any models without code changes.
