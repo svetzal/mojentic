@@ -14,19 +14,17 @@ you can use.
 Use `ollama list` to list the available models on your computer, and give you a handy reference to each of their names.
 
 ```
+```shell
 ❯ ollama list
-NAME                                ID              SIZE      MODIFIED     
-deepseek-r1:70b                     0c1615a8ca32    42 GB     5 days ago      
-gemma2:2b                           8ccf136fdd52    1.6 GB    2 weeks ago     
-phi4:latest                         ac896e5b8b34    9.1 GB    2 weeks ago     
-mxbai-embed-large:latest            468836162de7    669 MB    3 weeks ago     
-llama3.1-instruct-8b-32k:latest     9824a1505287    6.9 GB    3 weeks ago     
-llama3.3-instruct-70b-32k:latest    9f0ff3847e57    58 GB     3 weeks ago     
-llama3.3-70b-32k:latest             591f0115a6ff    42 GB     3 weeks ago     
-llama3.3-instruct:latest            d98d94e280ea    58 GB     6 weeks ago     
-llama3.3:latest                     a6eb4748fd29    42 GB     7 weeks ago     
-llama3.1:70b                        c0df3564cfe8    39 GB     2 months ago    
-llama3.1:8b                         42182419e950    4.7 GB    2 months ago    
+NAME                                TAG       ID              SIZE      MODIFIED        
+qwen3:32b                         latest    7fc23b05c176    20 GB     3 weeks ago
+gpt-oss:20b                       latest    a8f12e90d4c3    12 GB     2 weeks ago
+qwen3:14b                         latest    8c17a193a96d    9.0 GB    1 month ago
+phi4:14b                          latest    9b2c5a1f8e7d    8.5 GB    1 week ago
+qwen3-coder:30b                   latest    c4d8f2a1b9e6    18 GB     2 weeks ago
+gemma3:27b                        latest    e7a3c9d2f8b1    16 GB     3 weeks ago
+qwen3:8b                          latest    42182419e950    4.7 GB    2 months ago
+```    
 ```
 
 Each model has strengths and weaknesses. A good system of agents will use a variety of models to optimize for speed
@@ -45,10 +43,10 @@ results.
 
 If you're using Ollama, the simplest way to instantiate an [LLMBroker] is:
 
-```py { linenums=1 }
+```python
 from mojentic.llm import LLMBroker
 
-llm = LLMBroker("llama3.3")
+llm = LLMBroker("phi4:14b")
 ```
 
 ## Explicitly Specifying a Gateway
@@ -57,13 +55,13 @@ llm = LLMBroker("llama3.3")
 
 The [LLMBroker] can be initialized with an explicit gateway, which will be used to connect to the model.
 
-In this case connect to a local Ollama instance that has the `llama3.3` model available.
+In this case connect to a local Ollama instance that has the `phi4:14b` model available.
 
 ```py { linenums=1 }
 from mojentic.llm import LLMBroker
 from mojentic.llm.gateways import OllamaGateway
 
-llm = LLMBroker("llama3.3", gateway=OllamaGateway())
+llm = LLMBroker("qwen3:32b", gateway=OllamaGateway())
 ```
 
 If you want to connect to an Ollama instance on a different computer or server, you can specify the host and port:
@@ -73,7 +71,7 @@ from mojentic.llm import LLMBroker
 from mojentic.llm.gateways import OllamaGateway
 
 llm = LLMBroker(
-    "llama3.3",
+    "gpt-oss:20b",
     gateway=OllamaGateway(host="http://myserver.local:11434")
 )
 ```
@@ -85,7 +83,7 @@ from mojentic.llm import LLMBroker
 from mojentic.llm.gateways import OllamaGateway
 
 llm = LLMBroker(
-    "llama3.3",
+    "qwen3:14b",
     gateway=OllamaGateway(
         host="http://myserver.local:11434",
         headers={"x-some-header": "some value"}
@@ -150,8 +148,8 @@ Create a file named `llms.txt` in your project directory with the following form
 # Each line defines a model configuration in the format: name=model_name,gateway_type,param1=value1,param2=value2,...
 
 # Local Ollama models
-local_llama=llama3.3,ollama
-local_phi=phi4,ollama,host=http://localhost:11434
+local_qwen=qwen3:14b,ollama
+local_phi=phi4:14b,ollama,host=http://localhost:11434
 
 # OpenAI models
 gpt4=gpt-4o,openai,api_key=your_api_key_here

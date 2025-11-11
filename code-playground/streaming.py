@@ -16,7 +16,7 @@ def main():
     date_tool = ResolveDateTool()
     
     stream = ollama.complete_stream(
-        model="qwen2.5:7b",
+        model="qwen3:7b",
         messages=[
             LLMMessage(content="Tell me a story about a dragon. In your story, reference several dates relative to today, "
                               "like 'three days from now' or 'last week'.")

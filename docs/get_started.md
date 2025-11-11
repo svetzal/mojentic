@@ -65,7 +65,7 @@ Because we're extending the BaseLLMAgent, first we need to define the LLM that w
 a local Ollama instance, and look for the name of the model you specify when creating the `LLMBroker`.
 
 ```py { linenums=38 }
-llm = LLMBroker("llama3.1-instruct-8b-32k")
+llm = LLMBroker("qwen3:32b.1-instruct-8b-32k")
 ```
 
 We'll create our agent with a reference to the LLM we want it to use.

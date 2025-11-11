@@ -21,7 +21,7 @@ async def demonstrate_async():
     3. Running multiple problem-solving tasks concurrently
     """
     # Initialize the LLM broker with your preferred model
-    # llm = LLMBroker(model="llama3.3-70b-32k")
+    # llm = LLMBroker(model="qwen3:32b")
     llm = LLMBroker(model="qwen3:30b-a3b-q4_K_M")
 
     # Create the agent with a maximum of 3 iterations

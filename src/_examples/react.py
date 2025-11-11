@@ -6,7 +6,7 @@ from mojentic import Router, Dispatcher
 from mojentic.agents import OutputAgent
 from mojentic.llm import LLMBroker
 
-# llm = LLMBroker("llama3.3-70b-32k")
+# llm = LLMBroker("qwen3:32b")
 llm = LLMBroker("deepseek-r1:70b")
 thinking_agent = ThinkingAgent(llm)
 decisioning_agent = DecisioningAgent(llm)

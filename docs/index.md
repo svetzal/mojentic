@@ -28,7 +28,7 @@ from mojentic.llm import LLMBroker
 from mojentic.llm.gateways import OllamaGateway
 from mojentic.llm.gateways.models import LLMMessage
 
-llm = LLMBroker(model="llama3.3", gateway=OllamaGateway())
+llm = LLMBroker(model="qwen3:32b", gateway=OllamaGateway())
 response = llm.generate(messages=[LLMMessage(content="Hello, how are you?")])
 print(response)
 ```

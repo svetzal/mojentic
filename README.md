@@ -52,7 +52,7 @@ openai_llm = LLMBroker(model="gpt-5", gateway=OpenAIGateway(api_key="your_api_ke
 # Or use other models: "gpt-4o", "gpt-4.1", "o1-mini", "o3-mini", etc.
 
 # Or use Ollama for local LLMs
-ollama_llm = LLMBroker(model="llama3")
+ollama_llm = LLMBroker(model="qwen3:32b")
 
 # Simple text generation
 result = openai_llm.generate(messages=[LLMMessage(content='Hello, how are you?')])

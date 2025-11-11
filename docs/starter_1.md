@@ -37,7 +37,7 @@ from mojentic.llm.llm_broker import LLMBroker
 from mojentic.llm.gateways.models import LLMMessage
 
 # Create an LLMBroker with a default model (uses Ollama)
-llm = LLMBroker(model="llama3.3-70b-32k")
+llm = LLMBroker(model="phi4:14b")
 
 # Generate a simple text response
 response = llm.generate(messages=[LLMMessage(content="Hello, how are you?")])
@@ -77,7 +77,7 @@ class Sentiment(BaseModel):
     confidence: float = Field(..., title="Confidence", description="Confidence score between 0 and 1")
 
 # Create an LLMBroker
-llm = LLMBroker(model="llama3.3-70b-32k")
+llm = LLMBroker(model="qwen3:32b")
 
 # Generate structured output
 result = llm.generate_object(
@@ -98,7 +98,7 @@ from mojentic.llm.gateways.models import LLMMessage
 from mojentic.llm.tools.date_resolver import ResolveDateTool
 
 # Create an LLMBroker
-llm = LLMBroker(model="llama3.3-70b-32k")
+llm = LLMBroker(model="qwen3:32b")
 
 # Use a tool to resolve dates
 result = llm.generate(
@@ -117,7 +117,7 @@ For conversational applications, use the ChatSession class:
 from mojentic.llm import ChatSession, LLMBroker
 
 # Create an LLMBroker
-llm_broker = LLMBroker(model="llama3.3-70b-32k")
+llm_broker = LLMBroker(model="qwen3:32b")
 
 # Create a ChatSession
 chat_session = ChatSession(llm_broker)
@@ -141,7 +141,7 @@ from mojentic.llm import ChatSession, LLMBroker
 from mojentic.llm.tools.date_resolver import ResolveDateTool
 
 # Create an LLMBroker
-llm_broker = LLMBroker(model="llama3.3-70b-32k")
+llm_broker = LLMBroker(model="qwen3:32b")
 
 # Create a ChatSession with a tool
 chat_session = ChatSession(llm_broker, tools=[ResolveDateTool()])
@@ -204,7 +204,7 @@ class IterativeProblemSolverTool(LLMTool):
 
 
 # Create an LLMBroker
-llm = LLMBroker(model="llama3.3-70b-32k")
+llm = LLMBroker(model="qwen3:32b")
 
 # Create a ChatSession with the custom tool
 chat_session = ChatSession(

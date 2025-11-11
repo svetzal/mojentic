@@ -26,8 +26,8 @@ from mojentic.llm.tools.tell_user_tool import TellUserTool
 
 # llm = LLMBroker(model="qwen3:30b-a3b-q4_K_M")
 # llm = LLMBroker(model="qwen3:32b")
-llm = LLMBroker(model="qwen2.5:7b")
-# llm = LLMBroker(model="qwen2.5:72b")
+llm = LLMBroker(model="qwen3:7b")
+# llm = LLMBroker(model="qwen3:72b")
 # llm = LLMBroker(model="o4-mini", gateway=OpenAIGateway(os.environ["OPENAI_API_KEY"]))
 message = LLMMessage(
     content="I want you to count from 1 to 10. Break that request down into individual tasks, track them using available tools, and perform them one by one until you're finished. Interrupt me to tell the user as you complete every task.")

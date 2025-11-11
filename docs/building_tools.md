@@ -169,7 +169,7 @@ from mojentic.llm.llm_broker import LLMBroker
 from mojentic.llm.tools.current_datetime import CurrentDateTimeTool
 
 # Create an LLM broker
-llm = LLMBroker(model="llama3")
+llm = LLMBroker(model="qwen3:32b")
 
 # Create our custom tool
 datetime_tool = CurrentDateTimeTool()
@@ -251,7 +251,7 @@ class TextSummarizerTool(LLMTool):
         return {"summary": summary}
 ```
 
-Imagine you are using tools in a chat session leveraging a general-purpose LLM like `qwq`, but you want to provide a tool that can write code like `qwen2.5-coder` - this can give you the best of both worlds in your application.
+Imagine you are using tools in a chat session leveraging a general-purpose LLM like `qwq`, but you want to provide a tool that can write code like `qwen3-coder` - this can give you the best of both worlds in your application.
 
 ## Conclusion
 

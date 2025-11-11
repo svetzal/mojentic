@@ -391,7 +391,7 @@ from mojentic.tracer import TracerSystem
 from mojentic.llm import LLMBroker
 
 tracer = TracerSystem()
-llm = LLMBroker("llama3.3-70b-32k", tracer=tracer)
+llm = LLMBroker("qwen3:32b", tracer=tracer)
 
 # All LLM interactions are now traced
 response = llm.generate(messages, correlation_id="unique-id")

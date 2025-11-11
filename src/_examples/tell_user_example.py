@@ -17,7 +17,7 @@ from mojentic.llm import LLMBroker
 def main():
     # Initialize the LLM broker with your preferred model
     # Uncomment one of the following lines or modify as needed:
-    # llm = LLMBroker(model="llama3.3-70b-32k")  # Ollama model
+    # llm = LLMBroker(model="qwen3:32b")  # Ollama model
     # llm = LLMBroker(model="gpt-4o")  # OpenAI model
     llm = LLMBroker(model="qwq")  # Default model for example
 

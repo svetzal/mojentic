@@ -4,7 +4,7 @@ from mojentic.llm.tools.current_datetime import CurrentDateTimeTool
 
 # Create an LLM broker with a specified model
 # You can change the model to any supported model
-llm = LLMBroker(model="qwen2.5:7b")  # Using the same model as in simple_tool.py
+llm = LLMBroker(model="qwen3:7b")  # Using the same model as in simple_tool.py
 
 # Create our custom tool
 datetime_tool = CurrentDateTimeTool()

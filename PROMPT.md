@@ -12,7 +12,7 @@ The central component for interacting with language models:
 from mojentic.llm import LLMBroker
 
 # Create a broker with a specific model
-llm_broker = LLMBroker(model="llama3.3-70b-32k")  # Uses Ollama by default
+llm_broker = LLMBroker(model="qwen3:32b-70b-32k")  # Uses Ollama by default
 
 # For OpenAI models
 from mojentic.llm.gateways.openai import OpenAIGateway
@@ -73,7 +73,7 @@ Manages stateful conversations with automatic context management:
 ```python
 from mojentic.llm import ChatSession, LLMBroker
 
-llm_broker = LLMBroker(model="llama3.3-70b-32k")
+llm_broker = LLMBroker(model="qwen3:32b-70b-32k")
 chat_session = ChatSession(
     llm_broker,
     system_prompt="You are a helpful assistant specialized in geography.",
@@ -93,7 +93,7 @@ from mojentic.llm import ChatSession, LLMBroker
 from mojentic.llm.tools.date_resolver import ResolveDateTool
 
 # Create a chat session with a tool
-llm_broker = LLMBroker(model="llama3.3-70b-32k")
+llm_broker = LLMBroker(model="qwen3:32b-70b-32k")
 chat_session = ChatSession(llm_broker, tools=[ResolveDateTool()])
 
 # The LLM can now resolve relative dates
@@ -139,7 +139,7 @@ Create agents with different capabilities:
 from mojentic.agents import BaseLLMAgent
 from mojentic.llm import LLMBroker
 
-llm_broker = LLMBroker(model="llama3.3-70b-32k")
+llm_broker = LLMBroker(model="qwen3:32b-70b-32k")
 agent = BaseLLMAgent(
     llm_broker,
     behaviour="You are a helpful assistant specialized in geography."
@@ -191,7 +191,7 @@ from mojentic.llm.tools.date_resolver import ResolveDateTool
 tracer = TracerSystem()
 
 # Integrate with LLMBroker
-llm_broker = LLMBroker(model="llama3.3-70b-32k", tracer=tracer)
+llm_broker = LLMBroker(model="qwen3:32b-70b-32k", tracer=tracer)
 
 # Integrate with tools
 date_tool = ResolveDateTool(llm_broker=llm_broker, tracer=tracer)

@@ -13,7 +13,7 @@ def check_ollama_gateway():
         label: str = Field(..., description="The label describing the feeling.")
 
     response = gateway.complete(
-        model="llama3.2:1b",
+        model="qwen3:7b",
         messages=[LLMMessage(content="Hello, how are you?")],
         object_model=Feeling,
         temperature=1.0,
@@ -25,7 +25,7 @@ def check_ollama_gateway():
 
 def check_tools_call():
     response = chat(
-        model="llama3.3-70b-32k",
+        model="qwen3:32b",
         messages=[
             # {
             #     'role': 'user',

@@ -38,8 +38,8 @@ api_key = os.getenv("OPENAI_API_KEY")
 gateway = OpenAIGateway(api_key)
 llm = LLMBroker(model="o4-mini", gateway=gateway)
 
-# llm = LLMBroker("qwen2.5-coder:32b")
-# llm = LLMBroker("llama3.3")
+# llm = LLMBroker("qwen3-coder:30b")
+llm = LLMBroker("qwen3-coder:30b")
 # llm = LLMBroker(model="qwen3-128k:32b")
 
 # Create a filesystem gateway for the sandbox

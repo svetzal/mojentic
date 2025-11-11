@@ -32,7 +32,7 @@ class RequestAgent(BaseLLMAgent):
         return [ResponseEvent(source=type(self), correlation_id=event.correlation_id, capitol=response)]
 
 
-llm = LLMBroker("llama3.1-instruct-8b-32k")
+llm = LLMBroker("qwen3:14b")
 request_agent = RequestAgent(llm)
 output_agent = OutputAgent()
 

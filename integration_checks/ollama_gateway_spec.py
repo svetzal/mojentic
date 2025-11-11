@@ -22,7 +22,7 @@ def ollama_gateway(ollama_host):
 @pytest.fixture
 def ollama_model():
     """Return a simple, small Ollama model for testing"""
-    return "qwen2.5:3b"
+    return "qwen3:3b"
 
 
 class DescribeOllamaGatewayIntegration:

@@ -10,7 +10,7 @@ from mojentic.llm.tools.tool_wrapper import ToolWrapper
 #
 
 temporal_specialist = BaseLLMAgent(
-    llm=LLMBroker(model="qwen2.5:7b"),
+    llm=LLMBroker(model="qwen3:7b"),
     tools=[ResolveDateTool()],
     behaviour="You are a historian and sociologist who focuses on sorting out temporal events, determining what happened or will happen when."
 )
@@ -22,7 +22,7 @@ if not os.path.exists("local"):
 fs = FilesystemGateway(base_path="local")
 
 knowledge_specialist = BaseLLMAgent(
-    llm=LLMBroker(model="llama3.3-70b-32k"),
+    llm=LLMBroker(model="qwen3:32b"),
     tools=[
         ListFilesTool(fs),
         ReadFileTool(fs),
@@ -34,7 +34,7 @@ knowledge_specialist = BaseLLMAgent(
 
 
 coordinator = BaseLLMAgent(
-    llm=LLMBroker(model="llama3.3-70b-32k"),
+    llm=LLMBroker(model="qwen3:32b"),
     behaviour="You are a coordinator who can manage multiple agents and delegate tasks to them to solve problems.",
     tools=[
         ToolWrapper(temporal_specialist, "temporal_specialist", "A historian and sociologist who focuses on sorting out temporal events, figuring out dates, determining what happened or will happen when."),
