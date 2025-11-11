@@ -16,7 +16,7 @@ Use `ollama list` to list the available models on your computer, and give you a 
 ```
 ```shell
 ❯ ollama list
-NAME                                TAG       ID              SIZE      MODIFIED        
+NAME                                TAG       ID              SIZE      MODIFIED
 qwen3:32b                         latest    7fc23b05c176    20 GB     3 weeks ago
 gpt-oss:20b                       latest    a8f12e90d4c3    12 GB     2 weeks ago
 qwen3:14b                         latest    8c17a193a96d    9.0 GB    1 month ago
@@ -24,7 +24,7 @@ phi4:14b                          latest    9b2c5a1f8e7d    8.5 GB    1 week ago
 qwen3-coder:30b                   latest    c4d8f2a1b9e6    18 GB     2 weeks ago
 gemma3:27b                        latest    e7a3c9d2f8b1    16 GB     3 weeks ago
 qwen3:8b                          latest    42182419e950    4.7 GB    2 months ago
-```    
+```
 ```
 
 Each model has strengths and weaknesses. A good system of agents will use a variety of models to optimize for speed

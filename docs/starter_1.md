@@ -81,7 +81,7 @@ llm = LLMBroker(model="qwen3:32b")
 
 # Generate structured output
 result = llm.generate_object(
-    messages=[LLMMessage(content="I absolutely loved the movie!")], 
+    messages=[LLMMessage(content="I absolutely loved the movie!")],
     object_model=Sentiment
 )
 

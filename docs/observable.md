@@ -34,37 +34,37 @@ graph TB
         Tools[LLM Tools]
         Dispatcher[Dispatcher]
     end
-    
+
     subgraph "Observability Layer"
         Tracer[TracerSystem]
         EventStore[EventStore]
         StructLog[Structlog]
     end
-    
+
     subgraph "Analysis & Monitoring"
         Query[Query Events]
         Callback[Real-time Callbacks]
         Logs[Log Analysis]
     end
-    
+
     App -->|uses| LLM
     App -->|uses| Tools
     App -->|uses| Dispatcher
-    
+
     LLM -->|records| Tracer
     Tools -->|records| Tracer
     Dispatcher -->|records| Tracer
-    
+
     LLM -->|logs| StructLog
     Tools -->|logs| StructLog
     Dispatcher -->|logs| StructLog
-    
+
     Tracer -->|stores| EventStore
     EventStore -->|triggers| Callback
     EventStore -->|query| Query
-    
+
     StructLog -->|output| Logs
-    
+
     style Tracer fill:#6bb660
     style EventStore fill:#6bb660
     style StructLog fill:#6bb660
@@ -188,12 +188,12 @@ graph LR
         Tools[Tools]
         Agents[Agents]
     end
-    
+
     subgraph "Observability Core"
         Tracer[TracerSystem]
         EventStore[EventStore<br/>with Callbacks]
     end
-    
+
     subgraph "External Tools & Extensions"
         Dashboard[Real-time<br/>Dashboard]
         Metrics[Metrics<br/>Collector]
@@ -201,24 +201,24 @@ graph LR
         Alert[Alert<br/>System]
         Viz[Visualization<br/>Tool]
     end
-    
+
     LLM -->|record events| Tracer
     Tools -->|record events| Tracer
     Agents -->|record events| Tracer
-    
+
     Tracer -->|store| EventStore
-    
+
     EventStore -->|callback| Dashboard
     EventStore -->|callback| Metrics
     EventStore -->|callback| Logger
     EventStore -->|callback| Alert
-    
+
     EventStore -->|query| Viz
-    
+
     Dashboard -->|displays| User[End User]
     Alert -->|notifies| User
     Viz -->|shows| User
-    
+
     style EventStore fill:#6bb660
     style Tracer fill:#6bb660
 ```
@@ -231,7 +231,7 @@ External tools can leverage Mojentic's observability through two mechanisms:
    ```python
    def send_to_dashboard(event):
        dashboard_client.send(event.model_dump())
-   
+
    event_store = EventStore(on_store_callback=send_to_dashboard)
    tracer = TracerSystem(event_store=event_store)
    ```
@@ -257,40 +257,40 @@ classDiagram
         +Any source
         +printable_summary() str
     }
-    
+
     class LLMCallTracerEvent {
         +str model
         +List~dict~ messages
         +float temperature
         +List~Dict~ tools
     }
-    
+
     class LLMResponseTracerEvent {
         +str model
         +str content
         +List~Dict~ tool_calls
         +float call_duration_ms
     }
-    
+
     class ToolCallTracerEvent {
         +str tool_name
         +Dict arguments
         +Any result
         +str caller
     }
-    
+
     class AgentInteractionTracerEvent {
         +str from_agent
         +str to_agent
         +str event_type
         +str event_id
     }
-    
+
     TracerEvent <|-- LLMCallTracerEvent
     TracerEvent <|-- LLMResponseTracerEvent
     TracerEvent <|-- ToolCallTracerEvent
     TracerEvent <|-- AgentInteractionTracerEvent
-    
+
     note for LLMCallTracerEvent "Records LLM invocations<br/>with parameters"
     note for LLMResponseTracerEvent "Records LLM responses<br/>with duration metrics"
     note for ToolCallTracerEvent "Records tool execution<br/>with results"
@@ -430,7 +430,7 @@ from mojentic.tracer import TracerSystem
 class CustomTool(LLMTool):
     def __init__(self, tracer=None):
         super().__init__(tracer=tracer)
-    
+
     def run(self, **kwargs):
         # Tool logic
         return result
@@ -465,35 +465,35 @@ sequenceDiagram
     participant Tool as LLM Tool
     participant Tracer as TracerSystem
     participant Store as EventStore
-    
+
     App->>App: Generate correlation_id
     App->>LLM: generate(messages, correlation_id)
-    
+
     LLM->>Tracer: record_llm_call(correlation_id)
     Tracer->>Store: store(LLMCallTracerEvent)
-    
+
     LLM->>LLM: Call LLM Gateway
-    
+
     LLM->>Tracer: record_llm_response(correlation_id)
     Tracer->>Store: store(LLMResponseTracerEvent)
-    
+
     Note over LLM: LLM requests tool call
-    
+
     LLM->>Tool: run(**args)
     Tool->>Tracer: record_tool_call(correlation_id)
     Tracer->>Store: store(ToolCallTracerEvent)
-    
+
     Tool-->>LLM: tool result
-    
+
     LLM->>LLM: Recursive generate() with same correlation_id
     LLM->>Tracer: record_llm_call(correlation_id)
     Tracer->>Store: store(LLMCallTracerEvent)
-    
+
     LLM-->>App: final response
-    
+
     App->>Store: get_events(correlation_id)
     Store-->>App: All related events
-    
+
     Note over App,Store: Complete trace of request flow
 ```
 
@@ -559,7 +559,7 @@ import structlog
 logger = structlog.get_logger()
 
 # Structured logging with context
-logger.info("Requesting llm response", 
+logger.info("Requesting llm response",
             approximate_tokens=approximate_tokens)
 logger.debug("Processing event", event=event)
 logger.warn("Function not found", function=tool_call.name)
@@ -603,13 +603,13 @@ recent = tracer.get_events(
 ```python
 # Failed tool calls
 failed = tracer.get_events(
-    filter_func=lambda e: isinstance(e, ToolCallTracerEvent) 
+    filter_func=lambda e: isinstance(e, ToolCallTracerEvent)
                          and "error" in str(e.result)
 )
 
 # Slow LLM calls (> 5 seconds)
 slow = tracer.get_events(
-    filter_func=lambda e: isinstance(e, LLMResponseTracerEvent) 
+    filter_func=lambda e: isinstance(e, LLMResponseTracerEvent)
                          and e.call_duration_ms > 5000
 )
 ```
@@ -653,24 +653,24 @@ Understanding when to use tracer events versus structured logging is key to effe
 ```mermaid
 graph TD
     Start{What do you need?}
-    
+
     Start -->|Track user-facing behavior| Tracer
     Start -->|Debug technical issues| Logging
     Start -->|Real-time alerts| Callbacks
     Start -->|Performance metrics| Both[Both Tracer + Logging]
-    
+
     Tracer[Use TracerSystem]
     Logging[Use Structlog]
     Callbacks[EventStore Callbacks]
-    
+
     Tracer --> TracerUse["• LLM call patterns<br/>• Tool usage analytics<br/>• Agent interactions<br/>• End-to-end request traces<br/>• Post-hoc analysis"]
-    
+
     Logging --> LoggingUse["• Technical diagnostics<br/>• Error stack traces<br/>• Internal state changes<br/>• Performance bottlenecks<br/>• Development debugging"]
-    
+
     Callbacks --> CallbackUse["• Real-time dashboards<br/>• Live monitoring<br/>• Alerting systems<br/>• Event streaming<br/>• Immediate responses"]
-    
+
     Both --> BothUse["• Call duration analysis<br/>• Resource usage tracking<br/>• Comprehensive monitoring<br/>• Production debugging"]
-    
+
     style Tracer fill:#6bb660
     style Logging fill:#6bb660
     style Callbacks fill:#6bb660
@@ -893,7 +893,7 @@ These features work together to provide visibility into your agentic systems, en
 - **Tracer Documentation**: `docs/tracer.md`
 - **Example Script**: `src/_examples/tracer_demo.py`
 - **API Documentation**: See mkdocs site under "Observability"
-- **Source Code**: 
+- **Source Code**:
   - `src/mojentic/tracer/` - Tracer system implementation
   - `src/mojentic/__init__.py` - Structured logging configuration
   - `src/mojentic/llm/llm_broker.py` - LLM tracing integration

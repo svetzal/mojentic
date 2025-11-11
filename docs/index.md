@@ -89,7 +89,7 @@ sequenceDiagram
 
     User->>Dispatcher: dispatch(TextEvent)
     Dispatcher->>Router: Route TextEvent
-    
+
     par Concurrent Processing
         Router->>Agent1: receive_event_async(TextEvent)
         and
@@ -97,16 +97,16 @@ sequenceDiagram
         and
         Router->>Agent3: receive_event_async(TextEvent)
     end
-    
+
     Agent1-->>Dispatcher: [AnalysisEvent]
     Agent2-->>Dispatcher: [SummaryEvent]
-    
+
     Dispatcher->>Router: Route AnalysisEvent
     Router->>Agent3: receive_event_async(AnalysisEvent)
-    
+
     Dispatcher->>Router: Route SummaryEvent
     Router->>Agent3: receive_event_async(SummaryEvent)
-    
+
     Agent3->>Agent3: Aggregate all events
     Agent3-->>Dispatcher: [CombinedResultEvent]
     Dispatcher-->>User: Final result

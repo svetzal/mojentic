@@ -1,8 +1,8 @@
 """
 Example script demonstrating the tracer system with ChatSession and tools.
 
-This example shows how to use the tracer system to monitor an interactive 
-chat session with LLMBroker and tools. When the user exits the session, 
+This example shows how to use the tracer system to monitor an interactive
+chat session with LLMBroker and tools. When the user exits the session,
 the script displays a summary of all traced events.
 
 It also demonstrates how correlation_id is used to trace related events

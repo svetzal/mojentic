@@ -331,8 +331,8 @@ When building chatbots with tools, follow these best practices:
 
 Example system prompt:
 ```
-You are a helpful assistant with access to tools for date calculations, weather information, and simple math. 
-Use these tools when you need precise information that you might not have or when calculations are required. 
+You are a helpful assistant with access to tools for date calculations, weather information, and simple math.
+Use these tools when you need precise information that you might not have or when calculations are required.
 For general knowledge questions, use your training data instead of tools.
 ```
 

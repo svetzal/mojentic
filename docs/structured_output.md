@@ -43,7 +43,7 @@ llm = LLMBroker(model="qwen3:14b")
 
 # Generate structured output
 result = llm.generate_object(
-    messages=[LLMMessage(content="Hello, how are you?")], 
+    messages=[LLMMessage(content="Hello, how are you?")],
     object_model=Sentiment
 )
 
@@ -91,7 +91,7 @@ Just like in the simple text generation example, we:
 
 ```python
 result = llm.generate_object(
-    messages=[LLMMessage(content="Hello, how are you?")], 
+    messages=[LLMMessage(content="Hello, how are you?")],
     object_model=Sentiment
 )
 ```
@@ -128,7 +128,7 @@ class Shape(BaseModel):
 
 # Generate a shape description
 result = llm.generate_object(
-    messages=[LLMMessage(content="Describe a triangle with vertices at (0,0), (1,0), and (0,1)")], 
+    messages=[LLMMessage(content="Describe a triangle with vertices at (0,0), (1,0), and (0,1)")],
     object_model=Shape
 )
 
@@ -154,7 +154,7 @@ llm = LLMBroker(model="gpt-4o", gateway=gateway)
 
 # Generate structured output
 result = llm.generate_object(
-    messages=[LLMMessage(content="Hello, how are you?")], 
+    messages=[LLMMessage(content="Hello, how are you?")],
     object_model=Sentiment
 )
 ```
