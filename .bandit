@@ -15,8 +15,4 @@ exclude_dirs:
 # Tests to skip (list of test IDs)
 # Uncomment and customize as needed for your security requirements
 skips:
-  # B101: assert_used - asserts are acceptable in test code
-  # B601: paramiko_calls - not using paramiko
-  # B602: shell_injection_subprocess - validate if using subprocess
-  # B603: subprocess_without_shell_equals_true - validate usage
-  # B607: start_process_with_partial_path - validate PATH usage
+  - B101  # assert_used - asserts are acceptable in test code
