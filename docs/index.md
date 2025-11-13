@@ -50,6 +50,31 @@ sequenceDiagram
     LLMBroker-->>User: Response text
 ```
 
+### Streaming Responses
+
+Mojentic supports streaming responses for better user experience. Streaming works with both simple text generation and tool calling:
+
+```python
+from mojentic.llm import LLMBroker
+from mojentic.llm.gateways import OpenAIGateway
+from mojentic.llm.gateways.models import LLMMessage
+from mojentic.llm.tools.date_resolver import ResolveDateTool
+
+llm = LLMBroker(model="gpt-4o-mini", gateway=OpenAIGateway())
+date_tool = ResolveDateTool()
+
+# Stream content as it arrives, with seamless tool calling
+stream = llm.generate_stream(
+    messages=[LLMMessage(content="Tell me about tomorrow")],
+    tools=[date_tool]
+)
+
+for chunk in stream:
+    print(chunk, end='', flush=True)
+```
+
+See the [Streaming Responses](streaming.md) guide for detailed information.
+
 ### Chat Session
 
 This diagram shows how ChatSession wraps LLMBroker to provide a conversational interface with automatic message history management:

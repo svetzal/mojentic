@@ -43,6 +43,7 @@ plugins:
           - starter_1.md
           - message_composers.md
           - simple_text_generation.md
+          - streaming.md
           - chat_sessions.md
           - structured_output.md
           - building_tools.md
@@ -87,6 +88,7 @@ nav:
       - Message Composers: message_composers.md
     - Examples and Tutorials (Layer 1):
       - Simple Text Generation: simple_text_generation.md
+      - Streaming Responses: streaming.md
       - Building Chatbots: chat_sessions.md
       - Structured Output: structured_output.md
       - Building Tools: building_tools.md

@@ -8,6 +8,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [0.9.0] - 2025-11-13
+
+### Added
+
+- Added `LLMBroker.generate_stream()` method for streaming responses with full tool calling support
+- Added `OpenAIGateway.complete_stream()` with intelligent tool argument accumulation and parsing
+- Added streaming support for both Ollama and OpenAI gateways with recursive tool execution
+- Added comprehensive streaming documentation at `docs/streaming.md`
+- Added streaming example in main documentation (`docs/index.md`)
+- Added security scanning with bandit (>=1.7.0) and pip-audit (>=2.0.0) to CI/CD pipeline
+- Added JSON artifact generation for security scan results (bandit-report.json, pip-audit-report.json)
+
+### Changed
+
+- Enhanced `OllamaGateway.complete_stream()` to enable tool support (previously disabled)
+- Updated `StreamingResponse` model to support both content chunks and tool calls
+- Improved tool call ID preservation for proper message formatting in recursive calls
+- Updated PARITY.md with comprehensive streaming capability documentation
+- Enhanced CI/CD pipeline documentation with security scanning details
+
+### Fixed
+
+- Fixed streaming to properly yield content before tool calls (when LLM generates it)
+- Fixed tool call ID propagation in streaming mode for OpenAI compatibility
+- Fixed incremental tool argument streaming for OpenAI (arguments arrive in chunks)
+
 ## [0.8.4] - 2025-11-05
 
 ### Changed

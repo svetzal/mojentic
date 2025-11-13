@@ -1,7 +1,7 @@
 import json
 import os
 from itertools import islice
-from typing import Type, List, Iterable, Optional
+from typing import Type, List, Iterable, Optional, Iterator, Dict
 
 import numpy as np
 import structlog
@@ -14,6 +14,7 @@ from mojentic.llm.gateways.openai_messages_adapter import adapt_messages_to_open
 from mojentic.llm.gateways.openai_model_registry import get_model_registry, ModelType
 from mojentic.llm.gateways.tokenizer_gateway import TokenizerGateway
 from mojentic.llm.tools.llm_tool import LLMTool
+from mojentic.llm.gateways.ollama import StreamingResponse
 
 logger = structlog.get_logger()
 
@@ -300,6 +301,200 @@ class OpenAIGateway(LLMGateway):
             object=object,
             tool_calls=tool_calls,
         )
+
+    def complete_stream(self, **kwargs) -> Iterator[StreamingResponse]:
+        """
+        Stream the LLM response from OpenAI service.
+
+        OpenAI streams tool call arguments incrementally, so we need to accumulate them
+        and yield complete tool calls only when the stream finishes.
+
+        Keyword Arguments
+        ----------------
+        model : str
+            The name of the model to use.
+        messages : List[LLMMessage]
+            A list of messages to send to the LLM.
+        tools : Optional[List[LLMTool]]
+            A list of tools to use with the LLM. Tool calls will be accumulated and yielded when complete.
+        temperature : float, optional
+            The temperature to use for the response. Defaults to 1.0.
+        num_ctx : int, optional
+            The number of context tokens to use. Defaults to 32768.
+        max_tokens : int, optional
+            The maximum number of tokens to generate. Defaults to 16384.
+        num_predict : int, optional
+            The number of tokens to predict. Defaults to no limit.
+
+        Returns
+        -------
+        Iterator[StreamingResponse]
+            An iterator of StreamingResponse objects containing response chunks.
+        """
+        # Extract parameters from kwargs with defaults
+        model = kwargs.get('model')
+        messages = kwargs.get('messages')
+        object_model = kwargs.get('object_model', None)
+        tools = kwargs.get('tools', None)
+        temperature = kwargs.get('temperature', 1.0)
+        num_ctx = kwargs.get('num_ctx', 32768)
+        max_tokens = kwargs.get('max_tokens', 16384)
+        num_predict = kwargs.get('num_predict', -1)
+
+        if not model:
+            raise ValueError("'model' parameter is required")
+        if not messages:
+            raise ValueError("'messages' parameter is required")
+
+        # Convert parameters to dict for processing
+        args = {
+            'model': model,
+            'messages': messages,
+            'object_model': object_model,
+            'tools': tools,
+            'temperature': temperature,
+            'num_ctx': num_ctx,
+            'max_tokens': max_tokens,
+            'num_predict': num_predict
+        }
+
+        # Adapt parameters based on model type
+        try:
+            adapted_args = self._adapt_parameters_for_model(model, args)
+        except Exception as e:
+            logger.error("Failed to adapt parameters for model",
+                        model=model,
+                        error=str(e))
+            raise
+
+        # Validate parameters after adaptation
+        self._validate_model_parameters(model, adapted_args)
+
+        # Check if model supports streaming
+        capabilities = self.model_registry.get_model_capabilities(model)
+        if not capabilities.supports_streaming:
+            raise NotImplementedError(f"Model {model} does not support streaming")
+
+        # Structured output doesn't work with streaming
+        if adapted_args['object_model'] is not None:
+            raise NotImplementedError("Streaming with structured output (object_model) is not supported")
+
+        openai_args = {
+            'model': adapted_args['model'],
+            'messages': adapt_messages_to_openai(adapted_args['messages']),
+            'stream': True,
+        }
+
+        # Add temperature if specified
+        if 'temperature' in adapted_args:
+            openai_args['temperature'] = adapted_args['temperature']
+
+        if adapted_args.get('tools') is not None:
+            openai_args['tools'] = [t.descriptor for t in adapted_args['tools']]
+
+        # Handle both max_tokens (for chat models) and max_completion_tokens (for reasoning models)
+        if 'max_tokens' in adapted_args:
+            openai_args['max_tokens'] = adapted_args['max_tokens']
+        elif 'max_completion_tokens' in adapted_args:
+            openai_args['max_completion_tokens'] = adapted_args['max_completion_tokens']
+
+        logger.debug("Making OpenAI streaming API call",
+                    model=openai_args['model'],
+                    has_tools='tools' in openai_args,
+                    token_param='max_completion_tokens' if 'max_completion_tokens' in openai_args else 'max_tokens')
+
+        try:
+            stream = self.client.chat.completions.create(**openai_args)
+        except BadRequestError as e:
+            if "max_tokens" in str(e) and "max_completion_tokens" in str(e):
+                logger.error("Parameter error detected - model may require different token parameter",
+                            model=model,
+                            error=str(e),
+                            suggestion="This model may be a reasoning model requiring max_completion_tokens")
+            raise e
+        except Exception as e:
+            logger.error("OpenAI streaming API call failed",
+                        model=model,
+                        error=str(e))
+            raise e
+
+        # Accumulate tool calls as they stream in
+        # OpenAI streams tool arguments incrementally, indexed by tool call index
+        tool_calls_accumulator: Dict[int, Dict] = {}
+
+        for chunk in stream:
+            if not chunk.choices:
+                continue
+
+            delta = chunk.choices[0].delta
+            finish_reason = chunk.choices[0].finish_reason
+
+            # Yield content chunks as they arrive
+            if delta.content:
+                yield StreamingResponse(content=delta.content)
+
+            # Accumulate tool call chunks
+            if delta.tool_calls:
+                for tool_call_delta in delta.tool_calls:
+                    index = tool_call_delta.index
+
+                    # Initialize accumulator for this tool call if needed
+                    if index not in tool_calls_accumulator:
+                        tool_calls_accumulator[index] = {
+                            'id': None,
+                            'name': None,
+                            'arguments': ''
+                        }
+
+                    # First chunk has id and name
+                    if tool_call_delta.id:
+                        tool_calls_accumulator[index]['id'] = tool_call_delta.id
+
+                    if tool_call_delta.function.name:
+                        tool_calls_accumulator[index]['name'] = tool_call_delta.function.name
+
+                    # All chunks may have argument fragments
+                    if tool_call_delta.function.arguments:
+                        tool_calls_accumulator[index]['arguments'] += tool_call_delta.function.arguments
+
+            # When stream is complete, yield accumulated tool calls
+            if finish_reason == 'tool_calls' and tool_calls_accumulator:
+                # Parse and yield complete tool calls
+                complete_tool_calls = []
+                for index in sorted(tool_calls_accumulator.keys()):
+                    tc = tool_calls_accumulator[index]
+                    try:
+                        # Parse the accumulated JSON arguments
+                        args_dict = json.loads(tc['arguments'])
+                        # Convert to string values as per LLMToolCall format
+                        arguments = {str(k): str(v) for k, v in args_dict.items()}
+
+                        tool_call = LLMToolCall(
+                            id=tc['id'],
+                            name=tc['name'],
+                            arguments=arguments
+                        )
+                        complete_tool_calls.append(tool_call)
+                    except json.JSONDecodeError as e:
+                        logger.error("Failed to parse tool call arguments",
+                                   tool_name=tc['name'],
+                                   arguments=tc['arguments'],
+                                   error=str(e))
+
+                if complete_tool_calls:
+                    # Convert to the format expected by ollama's tool calls for compatibility
+                    # We need to create mock objects that match ollama's structure
+                    from types import SimpleNamespace
+                    ollama_format_calls = []
+                    for tc in complete_tool_calls:
+                        ollama_format_calls.append(SimpleNamespace(
+                            id=tc.id,  # Include ID for proper OpenAI message formatting
+                            function=SimpleNamespace(
+                                name=tc.name,
+                                arguments=tc.arguments
+                            )
+                        ))
+                    yield StreamingResponse(tool_calls=ollama_format_calls)
 
     def get_available_models(self) -> list[str]:
         """
