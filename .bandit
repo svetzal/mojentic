@@ -1,40 +1,22 @@
-[bandit]
 # Bandit security linter configuration for Mojentic
+# https://bandit.readthedocs.io/en/latest/config.html
 
-# Target paths to scan
-targets = src
+exclude_dirs:
+  - /test
+  - /tests
+  - /.venv
+  - /venv
+  - /build
+  - /dist
+  - /.tox
+  - /site
+  - /_examples
 
-# Severity level to report (low, medium, high)
-level = low
-
-# Confidence level to report (low, medium, high)
-confidence = low
-
-# Excluded paths
-exclude_dirs =
-    /test,
-    /tests,
-    /.venv,
-    /venv,
-    /build,
-    /dist,
-    /.tox,
-    /site
-
-# Tests to skip (comma-separated list of test IDs)
+# Tests to skip (list of test IDs)
 # Uncomment and customize as needed for your security requirements
-skips =
-    # B101: assert_used - asserts are acceptable in test code
-    # B601: paramiko_calls - not using paramiko
-    # B602: shell_injection_subprocess - validate if using subprocess
-    # B603: subprocess_without_shell_equals_true - validate usage
-    # B607: start_process_with_partial_path - validate PATH usage
-
-# Tests to run (leave empty to run all)
-tests =
-
-# Output format: csv, json, txt, xml, yaml
-format = txt
-
-# Output file (leave empty for stdout)
-output =
+skips:
+  # B101: assert_used - asserts are acceptable in test code
+  # B601: paramiko_calls - not using paramiko
+  # B602: shell_injection_subprocess - validate if using subprocess
+  # B603: subprocess_without_shell_equals_true - validate usage
+  # B607: start_process_with_partial_path - validate PATH usage
