@@ -30,7 +30,7 @@ from mojentic.llm.tools.file_manager import (
     EditFileWithDiffTool, CreateDirectoryTool, FilesystemGateway
 )
 
-base_dir = Path(__file__).parent.parent.parent.parent / "code-playground2"
+base_dir = Path(__file__).parent.parent.parent.parent / "code-playground3"
 
 # Initialize the LLM broker
 
@@ -38,9 +38,7 @@ api_key = os.getenv("OPENAI_API_KEY")
 gateway = OpenAIGateway(api_key)
 llm = LLMBroker(model="o4-mini", gateway=gateway)
 
-# llm = LLMBroker("qwen3-coder:30b")
 llm = LLMBroker("qwen3-coder:30b")
-# llm = LLMBroker(model="qwen3-128k:32b")
 
 # Create a filesystem gateway for the sandbox
 fs = FilesystemGateway(base_path=str(base_dir))
