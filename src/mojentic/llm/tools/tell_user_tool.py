@@ -12,7 +12,11 @@ class TellUserTool(LLMTool):
             "type": "function",
             "function": {
                 "name": "tell_user",
-                "description": "Display a message to the user without expecting a response. Use this to send important intermediate information to the user as you work on completing their request.",
+                "description": (
+                    "Display a message to the user without expecting a response. Use this to send "
+                    "important intermediate information to the user as you work on completing their "
+                    "request."
+                ),
                 "parameters": {
                     "type": "object",
                     "properties": {

@@ -1,6 +1,4 @@
-from typing import Any, Callable, Dict, List, Optional, Type, Union
-import time
-from datetime import datetime
+from typing import Callable, List, Optional, Type
 
 from mojentic.event import Event
 from mojentic.tracer.tracer_events import TracerEvent
@@ -38,11 +36,12 @@ class EventStore:
         if self.on_store_callback is not None:
             self.on_store_callback(event)
 
-    def get_events(self, 
-                  event_type: Optional[Type[Event]] = None, 
-                  start_time: Optional[float] = None,
-                  end_time: Optional[float] = None,
-                  filter_func: Optional[Callable[[Event], bool]] = None) -> List[Event]:
+    def get_events(
+            self,
+            event_type: Optional[Type[Event]] = None,
+            start_time: Optional[float] = None,
+            end_time: Optional[float] = None,
+            filter_func: Optional[Callable[[Event], bool]] = None) -> List[Event]:
         """
         Get events from the store, optionally filtered by type, time range, and custom filter function.
 

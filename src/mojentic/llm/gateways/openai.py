@@ -1,19 +1,17 @@
 import json
 import os
 from itertools import islice
-from typing import Type, List, Iterable, Optional, Iterator, Dict
+from typing import List, Iterable, Optional, Iterator, Dict
 
 import numpy as np
 import structlog
 from openai import OpenAI, BadRequestError
-from pydantic import BaseModel
 
 from mojentic.llm.gateways.llm_gateway import LLMGateway
-from mojentic.llm.gateways.models import LLMToolCall, LLMGatewayResponse, LLMMessage
+from mojentic.llm.gateways.models import LLMToolCall, LLMGatewayResponse
 from mojentic.llm.gateways.openai_messages_adapter import adapt_messages_to_openai
 from mojentic.llm.gateways.openai_model_registry import get_model_registry, ModelType
 from mojentic.llm.gateways.tokenizer_gateway import TokenizerGateway
-from mojentic.llm.tools.llm_tool import LLMTool
 from mojentic.llm.gateways.ollama import StreamingResponse
 
 logger = structlog.get_logger()
@@ -77,10 +75,10 @@ class OpenAIGateway(LLMGateway):
         capabilities = self.model_registry.get_model_capabilities(model)
 
         logger.debug("Adapting parameters for model",
-                    model=model,
-                    model_type=capabilities.model_type.value,
-                    supports_tools=capabilities.supports_tools,
-                    supports_streaming=capabilities.supports_streaming)
+                     model=model,
+                     model_type=capabilities.model_type.value,
+                     supports_tools=capabilities.supports_tools,
+                     supports_streaming=capabilities.supports_streaming)
 
         # Handle token limit parameter conversion
         if 'max_tokens' in adapted_args:
@@ -89,16 +87,16 @@ class OpenAIGateway(LLMGateway):
                 # Convert max_tokens to max_completion_tokens for reasoning models
                 adapted_args[token_param] = adapted_args.pop('max_tokens')
                 logger.info("Converted token limit parameter for model",
-                           model=model,
-                           from_param='max_tokens',
-                           to_param=token_param,
-                           value=adapted_args[token_param])
+                            model=model,
+                            from_param='max_tokens',
+                            to_param=token_param,
+                            value=adapted_args[token_param])
 
         # Validate tool usage for models that don't support tools
         if 'tools' in adapted_args and adapted_args['tools'] and not capabilities.supports_tools:
             logger.warning("Model does not support tools, removing tool configuration",
-                          model=model,
-                          num_tools=len(adapted_args['tools']))
+                           model=model,
+                           num_tools=len(adapted_args['tools']))
             adapted_args['tools'] = None  # Set to None instead of removing the key
 
         # Handle temperature restrictions for specific models
@@ -108,18 +106,19 @@ class OpenAIGateway(LLMGateway):
             # Check if model supports temperature parameter at all
             if capabilities.supported_temperatures == []:
                 # Model doesn't support temperature parameter at all - remove it
-                logger.warning("Model does not support temperature parameter, removing it",
-                              model=model,
-                              requested_temperature=temperature)
+                logger.warning("Model does not support temperature parameter at all",
+                               model=model,
+                               requested_temperature=temperature)
                 adapted_args.pop('temperature', None)
             elif not capabilities.supports_temperature(temperature):
                 # Model supports temperature but not this specific value - use default
                 default_temp = 1.0
-                logger.warning("Model does not support requested temperature, using default",
-                              model=model,
-                              requested_temperature=temperature,
-                              default_temperature=default_temp,
-                              supported_temperatures=capabilities.supported_temperatures)
+                logger.warning(
+                    "Model does not support requested temperature, using default",
+                    model=model,
+                    requested_temperature=temperature,
+                    default_temperature=default_temp,
+                    supported_temperatures=capabilities.supported_temperatures)
                 adapted_args['temperature'] = default_temp
 
         return adapted_args
@@ -139,13 +138,12 @@ class OpenAIGateway(LLMGateway):
 
         # Warning for tools on reasoning models that don't support them
         if (capabilities.model_type == ModelType.REASONING and
-            not capabilities.supports_tools and
-            'tools' in args and args['tools']):
+                not capabilities.supports_tools and
+                'tools' in args and args['tools']):
             logger.warning(
                 "Reasoning model may not support tools",
                 model=model,
-                num_tools=len(args['tools'])
-            )
+                num_tools=len(args['tools']))
 
         # Validate token limits (check both possible parameter names)
         token_value = args.get('max_tokens') or args.get('max_completion_tokens')
@@ -155,8 +153,7 @@ class OpenAIGateway(LLMGateway):
                     "Requested token limit exceeds model maximum",
                     model=model,
                     requested=token_value,
-                    max_allowed=capabilities.max_output_tokens
-                )
+                    max_allowed=capabilities.max_output_tokens)
 
     def complete(self, **kwargs) -> LLMGatewayResponse:
         """
@@ -219,8 +216,8 @@ class OpenAIGateway(LLMGateway):
             adapted_args = self._adapt_parameters_for_model(model, args)
         except Exception as e:
             logger.error("Failed to adapt parameters for model",
-                        model=model,
-                        error=str(e))
+                         model=model,
+                         error=str(e))
             raise
 
         # Validate parameters after adaptation
@@ -251,25 +248,26 @@ class OpenAIGateway(LLMGateway):
             openai_args['max_completion_tokens'] = adapted_args['max_completion_tokens']
 
         logger.debug("Making OpenAI API call",
-                    model=openai_args['model'],
-                    has_tools='tools' in openai_args,
-                    has_object_model='response_format' in openai_args,
-                    token_param='max_completion_tokens' if 'max_completion_tokens' in openai_args else 'max_tokens')
+                     model=openai_args['model'],
+                     has_tools='tools' in openai_args,
+                     has_object_model='response_format' in openai_args,
+                     token_param='max_completion_tokens' if 'max_completion_tokens' in openai_args else 'max_tokens')
 
         try:
             response = completion(**openai_args)
         except BadRequestError as e:
             # Enhanced error handling for parameter issues
             if "max_tokens" in str(e) and "max_completion_tokens" in str(e):
-                logger.error("Parameter error detected - model may require different token parameter",
-                            model=model,
-                            error=str(e),
-                            suggestion="This model may be a reasoning model requiring max_completion_tokens")
+                logger.error(
+                    "Parameter error detected - model may require different token parameter",
+                    model=model,
+                    error=str(e),
+                    suggestion="This model may be a reasoning model requiring max_completion_tokens")
             raise e
         except Exception as e:
             logger.error("OpenAI API call failed",
-                        model=model,
-                        error=str(e))
+                         model=model,
+                         error=str(e))
             raise e
 
         object = None
@@ -281,11 +279,16 @@ class OpenAIGateway(LLMGateway):
                 if response_content is not None:
                     object = adapted_args['object_model'].model_validate_json(response_content)
                 else:
-                    logger.error("No response content available for object validation", object_model=adapted_args['object_model'])
+                    logger.error(
+                        "No response content available for object validation",
+                        object_model=adapted_args['object_model'])
             except Exception as e:
-                response_content = response.choices[0].message.content if response.choices else "No response content"
-                logger.error("Failed to validate model", error=str(e), response=response_content,
-                           object_model=adapted_args['object_model'])
+                response_content = (response.choices[0].message.content
+                                    if response.choices else "No response content")
+                logger.error("Failed to validate model",
+                             error=str(e),
+                             response=response_content,
+                             object_model=adapted_args['object_model'])
 
         if response.choices[0].message.tool_calls is not None:
             for t in response.choices[0].message.tool_calls:
@@ -363,8 +366,8 @@ class OpenAIGateway(LLMGateway):
             adapted_args = self._adapt_parameters_for_model(model, args)
         except Exception as e:
             logger.error("Failed to adapt parameters for model",
-                        model=model,
-                        error=str(e))
+                         model=model,
+                         error=str(e))
             raise
 
         # Validate parameters after adaptation
@@ -399,23 +402,24 @@ class OpenAIGateway(LLMGateway):
             openai_args['max_completion_tokens'] = adapted_args['max_completion_tokens']
 
         logger.debug("Making OpenAI streaming API call",
-                    model=openai_args['model'],
-                    has_tools='tools' in openai_args,
-                    token_param='max_completion_tokens' if 'max_completion_tokens' in openai_args else 'max_tokens')
+                     model=openai_args['model'],
+                     has_tools='tools' in openai_args,
+                     token_param='max_completion_tokens' if 'max_completion_tokens' in openai_args else 'max_tokens')
 
         try:
             stream = self.client.chat.completions.create(**openai_args)
         except BadRequestError as e:
             if "max_tokens" in str(e) and "max_completion_tokens" in str(e):
-                logger.error("Parameter error detected - model may require different token parameter",
-                            model=model,
-                            error=str(e),
-                            suggestion="This model may be a reasoning model requiring max_completion_tokens")
+                logger.error(
+                    "Parameter error detected - model may require different token parameter",
+                    model=model,
+                    error=str(e),
+                    suggestion="This model may be a reasoning model requiring max_completion_tokens")
             raise e
         except Exception as e:
             logger.error("OpenAI streaming API call failed",
-                        model=model,
-                        error=str(e))
+                         model=model,
+                         error=str(e))
             raise e
 
         # Accumulate tool calls as they stream in
@@ -477,9 +481,9 @@ class OpenAIGateway(LLMGateway):
                         complete_tool_calls.append(tool_call)
                     except json.JSONDecodeError as e:
                         logger.error("Failed to parse tool call arguments",
-                                   tool_name=tc['name'],
-                                   arguments=tc['arguments'],
-                                   error=str(e))
+                                     tool_name=tc['name'],
+                                     arguments=tc['arguments'],
+                                     error=str(e))
 
                 if complete_tool_calls:
                     # Convert to the format expected by ollama's tool calls for compatibility

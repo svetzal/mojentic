@@ -4,10 +4,9 @@ from typing import List
 from mojentic.agents import IterativeProblemSolver
 from mojentic.llm.tools.date_resolver import ResolveDateTool
 from mojentic.llm.tools.llm_tool import LLMTool
+from mojentic.llm import LLMBroker, ChatSession
 
 logging.basicConfig(level=logging.WARN)
-
-from mojentic.llm import LLMBroker, ChatSession
 
 
 class IterativeProblemSolverTool(LLMTool):
@@ -49,11 +48,6 @@ def main():
     llm = LLMBroker(model="qwq")
     # llm = LLMBroker(model="qwq:32b-fp16")
     # llm = LLMBroker(model="qwen3:32b")
-
-    tools = [
-        ResolveDateTool(),
-        IterativeProblemSolverTool(llm=llm, tools=[ResolveDateTool()])
-    ]
 
     chat_session = ChatSession(llm, tools=[IterativeProblemSolverTool(llm=llm, tools=[ResolveDateTool()])])
 

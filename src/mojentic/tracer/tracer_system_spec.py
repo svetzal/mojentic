@@ -1,10 +1,7 @@
 import time
-from typing import Dict, List, Optional, Type, Union
 
-import pytest
 
 from mojentic.tracer.tracer_events import (
-    TracerEvent,
     LLMCallTracerEvent,
     LLMResponseTracerEvent,
     ToolCallTracerEvent,
@@ -185,13 +182,31 @@ class DescribeTracerSystem:
         now = time.time()
         correlation_id = "test-correlation-id"
         tracer_system.event_store.store(
-            LLMCallTracerEvent(source=DescribeTracerSystem, timestamp=now - 100, model="model1", messages=[], correlation_id=correlation_id)
+            LLMCallTracerEvent(
+                source=DescribeTracerSystem,
+                timestamp=now - 100,
+                model="model1",
+                messages=[],
+                correlation_id=correlation_id
+            )
         )
         tracer_system.event_store.store(
-            LLMCallTracerEvent(source=DescribeTracerSystem, timestamp=now - 50, model="model2", messages=[], correlation_id=correlation_id)
+            LLMCallTracerEvent(
+                source=DescribeTracerSystem,
+                timestamp=now - 50,
+                model="model2",
+                messages=[],
+                correlation_id=correlation_id
+            )
         )
         tracer_system.event_store.store(
-            LLMCallTracerEvent(source=DescribeTracerSystem, timestamp=now, model="model3", messages=[], correlation_id=correlation_id)
+            LLMCallTracerEvent(
+                source=DescribeTracerSystem,
+                timestamp=now,
+                model="model3",
+                messages=[],
+                correlation_id=correlation_id
+            )
         )
 
         # When

@@ -62,7 +62,11 @@ class TextAnalyzerAgent(BaseAsyncLLMAgent):
     def __init__(self, llm: LLMBroker):
         super().__init__(
             llm=llm,
-            behaviour="You are a text analysis assistant. Your job is to provide a detailed analysis of the given text, including key themes, structure, and notable elements.",
+            behaviour=(
+                "You are a text analysis assistant. "
+                "Your job is to provide a detailed analysis of the given text, "
+                "including key themes, structure, and notable elements."
+            ),
             response_model=AnalysisResponse
         )
 
@@ -93,7 +97,11 @@ class TextSummarizerAgent(BaseAsyncLLMAgent):
     def __init__(self, llm: LLMBroker):
         super().__init__(
             llm=llm,
-            behaviour="You are a text summarization assistant. Your job is to provide concise, accurate summaries of texts while preserving the key information and main points.",
+            behaviour=(
+                "You are a text summarization assistant. "
+                "Your job is to provide concise, accurate summaries of texts "
+                "while preserving the key information and main points."
+            ),
             response_model=SummaryResponse
         )
 
@@ -143,8 +151,8 @@ Analysis: {analysis_event.analysis}
 
 Summary: {summary_event.summary}
 
-Please create a well-structured, insightful report that integrates the analysis and summary, 
-highlighting the most important aspects of the text. The report should provide a comprehensive 
+Please create a well-structured, insightful report that integrates the analysis and summary,
+highlighting the most important aspects of the text. The report should provide a comprehensive
 understanding of the text's content, structure, and significance.
 """
             # Create a temporary LLM agent to generate the response

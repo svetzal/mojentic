@@ -5,6 +5,7 @@ Script to fetch current OpenAI models and update the registry with up-to-date mo
 import os
 from mojentic.llm.gateways.openai import OpenAIGateway
 
+
 def fetch_current_openai_models():
     """Fetch the current list of OpenAI models."""
     api_key = os.getenv("OPENAI_API_KEY")
@@ -20,6 +21,7 @@ def fetch_current_openai_models():
         print(f"ERROR: Failed to fetch models from OpenAI API: {e}")
         return None
 
+
 def categorize_models(models):
     """Categorize models by type based on naming patterns."""
     reasoning_models = []
@@ -32,7 +34,7 @@ def categorize_models(models):
 
         # Reasoning models: o1, o3, o4, and gpt-5 series
         if (any(pattern in model_lower for pattern in ['o1-', 'o3-', 'o4-', 'gpt-5']) or
-            model_lower in ['o1', 'o3', 'o4', 'gpt-5']):
+                model_lower in ['o1', 'o3', 'o4', 'gpt-5']):
             reasoning_models.append(model)
         elif 'embedding' in model_lower:
             embedding_models.append(model)
@@ -47,6 +49,7 @@ def categorize_models(models):
         'embedding': sorted(embedding_models),
         'other': sorted(other_models)
     }
+
 
 def print_model_lists(categorized_models):
     """Print the categorized models in a format ready for the registry."""
@@ -84,6 +87,7 @@ def print_model_lists(categorized_models):
         print(f'#     "{model}",')
     print("# ]\n")
 
+
 if __name__ == "__main__":
     print("Fetching current OpenAI models...")
     models = fetch_current_openai_models()
@@ -99,6 +103,9 @@ if __name__ == "__main__":
         print(f"Embedding models: {len(categorized['embedding'])}")
         print(f"Other models: {len(categorized['other'])}")
 
-        print("\nCopy the model lists above and update the _initialize_default_models() method in openai_model_registry.py")
+        print(
+            "\nCopy the model lists above and update the "
+            "_initialize_default_models() method in openai_model_registry.py"
+        )
     else:
         print("Failed to fetch models. Please check your API key and try again.")

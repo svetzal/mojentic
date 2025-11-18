@@ -1,7 +1,7 @@
 from ollama import chat
 from pydantic import BaseModel, Field
 
-from mojentic.llm.gateways.models import LLMMessage, MessageRole
+from mojentic.llm.gateways.models import LLMMessage
 from mojentic.llm.gateways.ollama import OllamaGateway
 from mojentic.llm.tools.date_resolver import ResolveDateTool
 

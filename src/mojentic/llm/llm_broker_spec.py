@@ -1,4 +1,3 @@
-from unittest.mock import MagicMock
 
 import pytest
 from pydantic import BaseModel
@@ -11,9 +10,11 @@ class SimpleModel(BaseModel):
     text: str
     number: int
 
+
 class NestedModel(BaseModel):
     title: str
     details: SimpleModel
+
 
 class ComplexModel(BaseModel):
     name: str
@@ -120,7 +121,11 @@ class DescribeLLMBroker:
                 metadata={"key1": "value1", "key2": "value2"}
             )
             mock_gateway.complete.return_value = LLMGatewayResponse(
-                content='{"name": "test", "items": [{"text": "item1", "number": 1}, {"text": "item2", "number": 2}], "metadata": {"key1": "value1", "key2": "value2"}}',
+                content=(
+                    '{"name": "test", "items": [{"text": "item1", "number": 1}, '
+                    '{"text": "item2", "number": 2}], '
+                    '"metadata": {"key1": "value1", "key2": "value2"}}'
+                ),
                 object=mock_object,
                 tool_calls=[]
             )

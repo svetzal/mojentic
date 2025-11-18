@@ -2,6 +2,7 @@ import os
 from mojentic.llm.gateways.openai import OpenAIGateway
 from mojentic.llm.gateways.models import LLMMessage, MessageRole
 
+
 def check_model_characterization():
     """
     Test the model characterization functionality with different OpenAI models.
@@ -68,6 +69,7 @@ def check_model_characterization():
 
     print("\n" + "=" * 60)
     print("Model characterization test completed!")
+
 
 if __name__ == "__main__":
     check_model_characterization()

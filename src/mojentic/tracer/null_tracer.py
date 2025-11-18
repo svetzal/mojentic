@@ -32,15 +32,14 @@ class NullTracer:
             The tracer event to record (will be ignored).
         """
         # Do nothing
-        pass
 
-    def record_llm_call(self, 
-                      model: str, 
-                      messages: List[Dict], 
-                      temperature: float = 1.0,
-                      tools: Optional[List[Dict]] = None,
-                      source: Any = None,
-                      correlation_id: str = None) -> None:
+    def record_llm_call(self,
+                        model: str,
+                        messages: List[Dict],
+                        temperature: float = 1.0,
+                        tools: Optional[List[Dict]] = None,
+                        source: Any = None,
+                        correlation_id: str = None) -> None:
         """
         Do nothing implementation of record_llm_call.
 
@@ -60,15 +59,14 @@ class NullTracer:
             UUID string that is copied from cause-to-affect for tracing events.
         """
         # Do nothing
-        pass
 
-    def record_llm_response(self, 
-                         model: str,
-                         content: str,
-                         tool_calls: Optional[List[Dict]] = None,
-                         call_duration_ms: Optional[float] = None,
-                         source: Any = None,
-                         correlation_id: str = None) -> None:
+    def record_llm_response(self,
+                            model: str,
+                            content: str,
+                            tool_calls: Optional[List[Dict]] = None,
+                            call_duration_ms: Optional[float] = None,
+                            source: Any = None,
+                            correlation_id: str = None) -> None:
         """
         Do nothing implementation of record_llm_response.
 
@@ -88,16 +86,15 @@ class NullTracer:
             UUID string that is copied from cause-to-affect for tracing events.
         """
         # Do nothing
-        pass
 
     def record_tool_call(self,
-                       tool_name: str,
-                       arguments: Dict[str, Any],
-                       result: Any,
-                       caller: Optional[str] = None,
-                       call_duration_ms: Optional[float] = None,
-                       source: Any = None,
-                       correlation_id: str = None) -> None:
+                         tool_name: str,
+                         arguments: Dict[str, Any],
+                         result: Any,
+                         caller: Optional[str] = None,
+                         call_duration_ms: Optional[float] = None,
+                         source: Any = None,
+                         correlation_id: str = None) -> None:
         """
         Do nothing implementation of record_tool_call.
 
@@ -119,15 +116,15 @@ class NullTracer:
             UUID string that is copied from cause-to-affect for tracing events.
         """
         # Do nothing
-        pass
 
-    def record_agent_interaction(self,
-                               from_agent: str,
-                               to_agent: str,
-                               event_type: str,
-                               event_id: Optional[str] = None,
-                               source: Any = None,
-                               correlation_id: str = None) -> None:
+    def record_agent_interaction(
+            self,
+            from_agent: str,
+            to_agent: str,
+            event_type: str,
+            event_id: Optional[str] = None,
+            source: Any = None,
+            correlation_id: str = None) -> None:
         """
         Do nothing implementation of record_agent_interaction.
 
@@ -147,13 +144,13 @@ class NullTracer:
             UUID string that is copied from cause-to-affect for tracing events.
         """
         # Do nothing
-        pass
 
-    def get_events(self, 
-                  event_type: Optional[Type[TracerEvent]] = None, 
-                  start_time: Optional[float] = None,
-                  end_time: Optional[float] = None,
-                  filter_func: Optional[Callable[[TracerEvent], bool]] = None) -> List[TracerEvent]:
+    def get_events(
+            self,
+            event_type: Optional[Type[TracerEvent]] = None,
+            start_time: Optional[float] = None,
+            end_time: Optional[float] = None,
+            filter_func: Optional[Callable[[TracerEvent], bool]] = None) -> List[TracerEvent]:
         """
         Return an empty list for any get_events request.
 
@@ -195,12 +192,9 @@ class NullTracer:
 
     def clear(self) -> None:
         """Do nothing implementation of clear method."""
-        pass
 
     def enable(self) -> None:
         """No-op method for interface compatibility."""
-        pass
 
     def disable(self) -> None:
         """No-op method for interface compatibility."""
-        pass

@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from mojentic.llm.gateways.llm_gateway import LLMGateway
 from mojentic.llm.gateways.models import MessageRole, LLMMessage, LLMGatewayResponse, LLMToolCall
-from mojentic.llm.gateways.ollama import OllamaGateway, StreamingResponse
+from mojentic.llm.gateways.ollama import OllamaGateway
 from mojentic.llm.gateways.tokenizer_gateway import TokenizerGateway
 from mojentic.tracer.tracer_system import TracerSystem
 
@@ -183,8 +183,8 @@ class LLMBroker():
         return result.content
 
     def generate_stream(self, messages: List[LLMMessage], tools=None, temperature=1.0, num_ctx=32768,
-                       num_predict=-1, max_tokens=16384,
-                       correlation_id: str = None) -> Iterator[str]:
+                        num_predict=-1, max_tokens=16384,
+                        correlation_id: str = None) -> Iterator[str]:
         """
         Generate a streaming text response from the LLM.
 
@@ -334,8 +334,10 @@ class LLMBroker():
                                    tool_calls=[tool_call]))
 
                     # Recursively stream the response after tool execution
-                    yield from self.generate_stream(messages, tools, temperature, num_ctx, num_predict,
-                                                   max_tokens, correlation_id=correlation_id)
+                    yield from self.generate_stream(
+                        messages, tools, temperature, num_ctx, num_predict,
+                        max_tokens, correlation_id=correlation_id
+                    )
                     return  # Exit after recursive call
                 else:
                     logger.warn('Function not found', function=tool_name)

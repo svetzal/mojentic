@@ -1,7 +1,6 @@
 import os
 import re
 import glob
-import difflib
 
 from mojentic.llm.tools.llm_tool import LLMTool
 
@@ -93,7 +92,6 @@ class FilesystemGateway:
 
         return matching_lines
 
-
     def edit_file_with_diff(self, path: str, file_name: str, diff: str) -> str:
         """Edit a file by applying a diff to it."""
         resolved_path = self._resolve_path(path)
@@ -150,14 +148,14 @@ class FilesystemGateway:
                     match = re.match(r'@@ -(\d+) \+(\d+) @@', line)
                     if match:
                         start_line = int(match.group(1))
-                        start_line_new = int(match.group(2))
+                        int(match.group(2))
                     else:
                         # Skip invalid hunk header
                         i += 1
                         continue
                 else:
                     start_line = int(match.group(1))
-                    start_line_new = int(match.group(3))
+                    int(match.group(3))
 
                 # Line numbers in diff are 1-based, but our array is 0-based
                 start_line -= 1
@@ -308,17 +306,29 @@ class ListFilesTool(LLMTool):
             "type": "function",
             "function": {
                 "name": "list_files",
-                "description": "List files in the specified directory (non-recursive), optionally filtered by extension. Use this when you need to see what files are available in a specific directory without including subdirectories.",
+                "description": (
+                    "List files in the specified directory (non-recursive), optionally filtered by extension. "
+                    "Use this when you need to see what files are available in a specific directory without "
+                    "including subdirectories."
+                ),
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "path": {
                             "type": "string",
-                            "description": "The path relative to the sandbox root to list files from. For example, '.' for the root directory, 'src' for the src directory, or 'docs/images' for a nested directory."
+                            "description": (
+                                "The path relative to the sandbox root to list files from. For example, '.' for "
+                                "the root directory, 'src' for the src directory, or 'docs/images' for a nested "
+                                "directory."
+                            )
                         },
                         "extension": {
                             "type": "string",
-                            "description": "The file extension to filter by (e.g., '.py', '.txt', '.md'). If not provided, all files will be listed. For example, using '.py' will only list Python files in the directory."
+                            "description": (
+                                "The file extension to filter by (e.g., '.py', '.txt', '.md'). If not provided, "
+                                "all files will be listed. For example, using '.py' will only list Python files "
+                                "in the directory."
+                            )
                         }
                     },
                     "additionalProperties": False,
@@ -356,13 +366,20 @@ class ReadFileTool(LLMTool):
             "type": "function",
             "function": {
                 "name": "read_file",
-                "description": "Read the entire content of a file as a string. Use this when you need to access or analyze the complete contents of a file.",
+                "description": (
+                    "Read the entire content of a file as a string. Use this when you need to access or "
+                    "analyze the complete contents of a file."
+                ),
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "path": {
                             "type": "string",
-                            "description": "The full relative path including the filename of the file to read. For example, 'README.md' for a file in the root directory, 'src/main.py' for a file in the src directory, or 'docs/images/diagram.png' for a file in a nested directory."
+                            "description": (
+                                "The full relative path including the filename of the file to read. For example, "
+                                "'README.md' for a file in the root directory, 'src/main.py' for a file in the "
+                                "src directory, or 'docs/images/diagram.png' for a file in a nested directory."
+                            )
                         }
                     },
                     "additionalProperties": False,
@@ -399,17 +416,29 @@ class WriteFileTool(LLMTool):
             "type": "function",
             "function": {
                 "name": "write_file",
-                "description": "Write content to a file, completely overwriting any existing content. Use this when you want to replace the entire contents of a file with new content.",
+                "description": (
+                    "Write content to a file, completely overwriting any existing content. Use this when you "
+                    "want to replace the entire contents of a file with new content."
+                ),
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "path": {
                             "type": "string",
-                            "description": "The full relative path including the filename where the file should be written. For example, 'output.txt' for a file in the root directory, 'src/main.py' for a file in the src directory, or 'docs/images/diagram.png' for a file in a nested directory."
+                            "description": (
+                                "The full relative path including the filename where the file should be written. "
+                                "For example, 'output.txt' for a file in the root directory, 'src/main.py' for "
+                                "a file in the src directory, or 'docs/images/diagram.png' for a file in a "
+                                "nested directory."
+                            )
                         },
                         "content": {
                             "type": "string",
-                            "description": "The content to write to the file. This will completely replace any existing content in the file. For example, 'Hello, world!' for a simple text file, or a JSON string for a configuration file."
+                            "description": (
+                                "The content to write to the file. This will completely replace any existing "
+                                "content in the file. For example, 'Hello, world!' for a simple text file, or a "
+                                "JSON string for a configuration file."
+                            )
                         }
                     },
                     "additionalProperties": False,
@@ -441,13 +470,22 @@ class ListAllFilesTool(LLMTool):
             "type": "function",
             "function": {
                 "name": "list_all_files",
-                "description": "List all files recursively in the specified directory, including files in subdirectories. Use this when you need a complete inventory of all files in a directory and its subdirectories.",
+                "description": (
+                    "List all files recursively in the specified directory, including files in "
+                    "subdirectories. Use this when you need a complete inventory of all files in a "
+                    "directory and its subdirectories."
+                ),
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "path": {
                             "type": "string",
-                            "description": "The path relative to the sandbox root to list files from recursively. For example, '.' for the root directory and all subdirectories, 'src' for the src directory and all its subdirectories, or 'docs/images' for a nested directory and its subdirectories."
+                            "description": (
+                                "The path relative to the sandbox root to list files from recursively. For "
+                                "example, '.' for the root directory and all subdirectories, 'src' for the src "
+                                "directory and all its subdirectories, or 'docs/images' for a nested directory "
+                                "and its subdirectories."
+                            )
                         }
                     },
                     "additionalProperties": False,
@@ -479,17 +517,30 @@ class FindFilesByGlobTool(LLMTool):
             "type": "function",
             "function": {
                 "name": "find_files_by_glob",
-                "description": "Find files matching a glob pattern in the specified directory. Use this when you need to locate files with specific patterns in their names or paths (e.g., all Python files with '*.py' or all text files in any subdirectory with '**/*.txt').",
+                "description": (
+                    "Find files matching a glob pattern in the specified directory. Use this when you need to "
+                    "locate files with specific patterns in their names or paths (e.g., all Python files with "
+                    "'*.py' or all text files in any subdirectory with '**/*.txt')."
+                ),
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "path": {
                             "type": "string",
-                            "description": "The path relative to the sandbox root to search in. For example, '.' for the root directory, 'src' for the src directory, or 'docs/images' for a nested directory."
+                            "description": (
+                                "The path relative to the sandbox root to search for files from. For example, "
+                                "'.' for the root directory, 'src' for the src directory, or 'docs/images' for a "
+                                "nested directory."
+                            )
                         },
                         "pattern": {
                             "type": "string",
-                            "description": "The glob pattern to match files against. Examples: '*.py' for all Python files in the specified directory, '**/*.txt' for all text files in the specified directory and any subdirectory, or '**/*test*.py' for all Python files with 'test' in their name in the specified directory and any subdirectory."
+                            "description": (
+                                "The glob pattern to match files against. Examples: '*.py' for all Python files in "
+                                "the specified directory, '**/*.txt' for all text files in the specified directory "
+                                "and any subdirectory, or '**/*test*.py' for all Python files with 'test' in "
+                                "their name in the specified directory and any subdirectory."
+                            )
                         }
                     },
                     "additionalProperties": False,
@@ -523,17 +574,30 @@ class FindFilesContainingTool(LLMTool):
             "type": "function",
             "function": {
                 "name": "find_files_containing",
-                "description": "Find files containing text matching a regex pattern in the specified directory. Use this when you need to search for specific content across multiple files, such as finding all files that contain a particular function name or text string.",
+                "description": (
+                    "Find files containing text matching a regex pattern in the specified directory. Use "
+                    "this when you need to search for specific content across multiple files, such as "
+                    "finding all files that contain a particular function name or text string."
+                ),
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "path": {
                             "type": "string",
-                            "description": "The path relative to the sandbox root to search in. For example, '.' for the root directory, 'src' for the src directory, or 'docs/images' for a nested directory."
+                            "description": (
+                                "The path relative to the sandbox root to search in. For example, '.' for the "
+                                "root directory, 'src' for the src directory, or 'docs/images' for a nested "
+                                "directory."
+                            )
                         },
                         "pattern": {
                             "type": "string",
-                            "description": "The regex pattern to search for in files. Examples: 'function\\s+main' to find files containing a main function, 'import\\s+os' to find files importing the os module, or 'TODO|FIXME' to find files containing TODO or FIXME comments. The pattern uses Python's re module syntax."
+                            "description": (
+                                "The regex pattern to search for in files. Examples: 'function\\s+main' to find "
+                                "files containing a main function, 'import\\s+os' to find files importing the os "
+                                "module, or 'TODO|FIXME' to find files containing TODO or FIXME comments. The "
+                                "pattern uses Python's re module syntax."
+                            )
                         }
                     },
                     "additionalProperties": False,
@@ -573,17 +637,31 @@ class FindLinesMatchingTool(LLMTool):
             "type": "function",
             "function": {
                 "name": "find_lines_matching",
-                "description": "Find all lines in a file matching a regex pattern, returning both line numbers and content. Use this when you need to locate specific patterns within a single file and need to know exactly where they appear.",
+                "description": (
+                    "Find all lines in a file matching a regex pattern, returning both line numbers and "
+                    "content. Use this when you need to locate specific patterns within a single file and "
+                    "need to know exactly where they appear."
+                ),
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "path": {
                             "type": "string",
-                            "description": "The full relative path including the filename of the file to search in. For example, 'README.md' for a file in the root directory, 'src/main.py' for a file in the src directory, or 'docs/images/diagram.png' for a file in a nested directory."
+                            "description": (
+                                "The full relative path including the filename of the file to search. For "
+                                "example, 'README.md' for a file in the root directory, 'src/main.py' for a file "
+                                "in the src directory, or 'docs/images/diagram.png' for a file in a nested "
+                                "directory."
+                            )
                         },
                         "pattern": {
                             "type": "string",
-                            "description": "The regex pattern to match lines against. Examples: 'def\\s+\\w+' to find all function definitions, 'class\\s+\\w+' to find all class definitions, or 'TODO|FIXME' to find all TODO or FIXME comments. The pattern uses Python's re module syntax."
+                            "description": (
+                                "The regex pattern to match lines against. Examples: 'def\\s+\\w+' to find all "
+                                "function definitions, 'class\\s+\\w+' to find all class definitions, or "
+                                "'TODO|FIXME' to find all TODO or FIXME comments. The pattern uses Python's re "
+                                "module syntax."
+                            )
                         }
                     },
                     "additionalProperties": False,
@@ -621,17 +699,33 @@ class EditFileWithDiffTool(LLMTool):
             "type": "function",
             "function": {
                 "name": "edit_file_with_diff",
-                "description": "Edit a file by applying a diff to it. Use this for making selective changes to parts of a file while preserving the rest of the content, unlike write_file which completely replaces the file. The diff should be in a unified diff format with lines prefixed by '+' (add), '-' (remove), or ' ' (context).",
+                "description": (
+                    "Edit a file by applying a diff to it. Use this for making selective changes to parts "
+                    "of a file while preserving the rest of the content, unlike write_file which completely "
+                    "replaces the file. The diff should be in a unified diff format with lines prefixed by "
+                    "'+' (add), '-' (remove), or ' ' (context)."
+                ),
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "path": {
                             "type": "string",
-                            "description": "The full relative path including the filename of the file to edit. For example, 'README.md' for a file in the root directory, 'src/main.py' for a file in the src directory, or 'docs/images/diagram.png' for a file in a nested directory."
+                            "description": (
+                                "The full relative path including the filename of the file to edit. For example, "
+                                "'README.md' for a file in the root directory, 'src/main.py' for a file in the "
+                                "src directory, or 'docs/images/diagram.png' for a file in a nested directory."
+                            )
                         },
                         "diff": {
                             "type": "string",
-                            "description": "The diff to apply to the file in unified diff format. Lines to add should be prefixed with '+', lines to remove with '-', and context lines with ' ' (space). Example:\n\n```\n This is a context line (unchanged)\n-This line will be removed\n+This line will be added\n This is another context line\n```\n\nThe diff should include enough context lines to uniquely identify the section of the file to modify."
+                            "description": (
+                                "The diff to apply to the file in unified diff format. Lines to add should be "
+                                "prefixed with '+', lines to remove with '-', and context lines with ' ' (space). "
+                                "Example:\n\n```\n This is a context line (unchanged)\n-This line will be "
+                                "removed\n+This line will be added\n This is another context line\n```\n\n"
+                                "The diff should include enough context lines to uniquely identify the section "
+                                "of the file to modify."
+                            )
                         }
                     },
                     "additionalProperties": False,
@@ -669,13 +763,22 @@ class CreateDirectoryTool(LLMTool):
             "type": "function",
             "function": {
                 "name": "create_directory",
-                "description": "Create a new directory at the specified path. If the directory already exists, this operation will succeed without error. Use this when you need to create a directory structure before writing files to it.",
+                "description": (
+                    "Create a new directory at the specified path. If the directory already exists, this "
+                    "operation will succeed without error. Use this when you need to create a directory "
+                    "structure before writing files to it."
+                ),
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "path": {
                             "type": "string",
-                            "description": "The relative path where the directory should be created. For example, 'new_folder' for a directory in the root, 'src/new_folder' for a directory in the src directory, or 'docs/images/new_folder' for a nested directory. Parent directories will be created automatically if they don't exist."
+                            "description": (
+                                "The relative path where the directory should be created. For example, "
+                                "'new_folder' for a directory in the root, 'src/new_folder' for a directory in "
+                                "the src directory, or 'docs/images/new_folder' for a nested directory. Parent "
+                                "directories will be created automatically if they don't exist."
+                            )
                         }
                     },
                     "additionalProperties": False,

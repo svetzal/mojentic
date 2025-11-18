@@ -1,17 +1,15 @@
 import logging
 import os
-
-from mojentic.llm import LLMBroker
-from mojentic.llm.gateways import OpenAIGateway
-
-logging.basicConfig(level=logging.WARN)
-
 from pathlib import Path
 
 from pydantic import BaseModel, Field
 
+from mojentic.llm import LLMBroker
+from mojentic.llm.gateways import OpenAIGateway
 from mojentic.llm.gateways.models import LLMMessage
 from mojentic.llm.tools.date_resolver import ResolveDateTool
+
+logging.basicConfig(level=logging.WARN)
 
 
 def openai_llm(model="gpt-5"):

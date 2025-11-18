@@ -21,8 +21,10 @@ class OrganicWebSearchTool(LLMTool):
             "type": "function",
             "function": {
                 "name": "organic_web_search",
-                "description":
-                    "Search the Internet for information matching the given query and return the organic search results.",
+                "description": (
+                    "Search the Internet for information matching the given query "
+                    "and return the organic search results."
+                ),
                 "parameters": {
                     "type": "object",
                     "properties": {

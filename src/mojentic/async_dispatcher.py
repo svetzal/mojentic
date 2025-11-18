@@ -1,7 +1,6 @@
 import asyncio
 import logging
 from collections import deque
-from typing import Optional, Type
 from uuid import uuid4
 
 import structlog

@@ -6,10 +6,10 @@ for reasoning models vs chat models, provides detailed logging, and offers bette
 error handling.
 """
 
-import os
 from mojentic.llm.gateways.openai import OpenAIGateway
 from mojentic.llm.gateways.openai_model_registry import get_model_registry
 from mojentic.llm.gateways.models import LLMMessage, MessageRole
+
 
 def demonstrate_model_registry():
     """Demonstrate the model registry capabilities."""
@@ -38,6 +38,7 @@ def demonstrate_model_registry():
     token_param = capabilities.get_token_limit_param()
     print(f"   → Defaulted to: type={capabilities.model_type.value}, token_param={token_param}")
 
+
 def demonstrate_parameter_adaptation():
     """Demonstrate parameter adaptation for different model types."""
     print("\n=== Parameter Adaptation Demonstration ===")
@@ -54,8 +55,14 @@ def demonstrate_parameter_adaptation():
     }
 
     adapted_args = gateway._adapt_parameters_for_model('o1-mini', original_args)
-    print(f"   Original: max_tokens={original_args.get('max_tokens')}, has_tools={'tools' in original_args}")
-    print(f"   Adapted: max_completion_tokens={adapted_args.get('max_completion_tokens')}, has_tools={'tools' in adapted_args}")
+    print(
+        f"   Original: max_tokens={original_args.get('max_tokens')}, "
+        f"has_tools={'tools' in original_args}"
+    )
+    print(
+        f"   Adapted: max_completion_tokens={adapted_args.get('max_completion_tokens')}, "
+        f"has_tools={'tools' in adapted_args}"
+    )
 
     print("\n2. Chat model parameter adaptation (gpt-4o):")
     original_args = {
@@ -68,6 +75,7 @@ def demonstrate_parameter_adaptation():
     adapted_args = gateway._adapt_parameters_for_model('gpt-4o', original_args)
     print(f"   Original: max_tokens={original_args.get('max_tokens')}, has_tools={'tools' in original_args}")
     print(f"   Adapted: max_tokens={adapted_args.get('max_tokens')}, has_tools={'tools' in adapted_args}")
+
 
 def demonstrate_model_validation():
     """Demonstrate model parameter validation."""
@@ -89,6 +97,7 @@ def demonstrate_model_validation():
     except Exception as e:
         print(f"   Validation error: {e}")
 
+
 def demonstrate_registry_extensibility():
     """Demonstrate how to extend the registry with new models."""
     print("\n=== Registry Extensibility Demonstration ===")
@@ -106,7 +115,7 @@ def demonstrate_registry_extensibility():
     )
 
     registry.register_model("o5-preview", new_capabilities)
-    print(f"   Registered o5-preview as reasoning model")
+    print("   Registered o5-preview as reasoning model")
 
     # Test the new model
     capabilities = registry.get_model_capabilities("o5-preview")
@@ -119,6 +128,7 @@ def demonstrate_registry_extensibility():
     # Test pattern matching
     capabilities = registry.get_model_capabilities("claude-3-opus")
     print(f"   claude-3-opus (inferred): type={capabilities.model_type.value}")
+
 
 if __name__ == "__main__":
     print("OpenAI Gateway Enhanced Infrastructure Demo")

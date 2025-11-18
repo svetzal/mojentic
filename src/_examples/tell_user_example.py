@@ -7,11 +7,11 @@ to display messages to the user without expecting a response.
 
 import logging
 
-logging.basicConfig(level=logging.WARN)
-
 from mojentic.agents.iterative_problem_solver import IterativeProblemSolver
 from mojentic.llm.tools.tell_user_tool import TellUserTool
 from mojentic.llm import LLMBroker
+
+logging.basicConfig(level=logging.WARN)
 
 
 def main():

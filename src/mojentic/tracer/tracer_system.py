@@ -4,19 +4,18 @@ TracerSystem module for coordinating tracer events.
 This provides a central system for recording, filtering, and querying tracer events.
 """
 import time
-from typing import Any, Callable, Dict, List, Optional, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Type
 
 import structlog
 
 from mojentic.tracer.tracer_events import (
-    TracerEvent, 
+    TracerEvent,
     LLMCallTracerEvent,
     LLMResponseTracerEvent,
     ToolCallTracerEvent,
     AgentInteractionTracerEvent
 )
 from mojentic.tracer.event_store import EventStore
-from mojentic.event import Event
 
 logger = structlog.get_logger()
 
@@ -58,13 +57,13 @@ class TracerSystem:
 
         self.event_store.store(event)
 
-    def record_llm_call(self, 
-                      model: str, 
-                      messages: List[Dict], 
-                      temperature: float = 1.0,
-                      tools: Optional[List[Dict]] = None,
-                      source: Any = None,
-                      correlation_id: str = None) -> None:
+    def record_llm_call(self,
+                        model: str,
+                        messages: List[Dict],
+                        temperature: float = 1.0,
+                        tools: Optional[List[Dict]] = None,
+                        source: Any = None,
+                        correlation_id: str = None) -> None:
         """
         Record an LLM call event.
 
@@ -97,13 +96,13 @@ class TracerSystem:
         )
         self.event_store.store(event)
 
-    def record_llm_response(self, 
-                         model: str,
-                         content: str,
-                         tool_calls: Optional[List[Dict]] = None,
-                         call_duration_ms: Optional[float] = None,
-                         source: Any = None,
-                         correlation_id: str = None) -> None:
+    def record_llm_response(self,
+                            model: str,
+                            content: str,
+                            tool_calls: Optional[List[Dict]] = None,
+                            call_duration_ms: Optional[float] = None,
+                            source: Any = None,
+                            correlation_id: str = None) -> None:
         """
         Record an LLM response event.
 
@@ -137,13 +136,13 @@ class TracerSystem:
         self.event_store.store(event)
 
     def record_tool_call(self,
-                       tool_name: str,
-                       arguments: Dict[str, Any],
-                       result: Any,
-                       caller: Optional[str] = None,
-                       call_duration_ms: Optional[float] = None,
-                       source: Any = None,
-                       correlation_id: str = None) -> None:
+                         tool_name: str,
+                         arguments: Dict[str, Any],
+                         result: Any,
+                         caller: Optional[str] = None,
+                         call_duration_ms: Optional[float] = None,
+                         source: Any = None,
+                         correlation_id: str = None) -> None:
         """
         Record a tool call event.
 
@@ -179,13 +178,14 @@ class TracerSystem:
         )
         self.event_store.store(event)
 
-    def record_agent_interaction(self,
-                               from_agent: str,
-                               to_agent: str,
-                               event_type: str,
-                               event_id: Optional[str] = None,
-                               source: Any = None,
-                               correlation_id: str = None) -> None:
+    def record_agent_interaction(
+            self,
+            from_agent: str,
+            to_agent: str,
+            event_type: str,
+            event_id: Optional[str] = None,
+            source: Any = None,
+            correlation_id: str = None) -> None:
         """
         Record an agent interaction event.
 
@@ -218,11 +218,12 @@ class TracerSystem:
         )
         self.event_store.store(event)
 
-    def get_events(self, 
-                  event_type: Optional[Type[TracerEvent]] = None, 
-                  start_time: Optional[float] = None,
-                  end_time: Optional[float] = None,
-                  filter_func: Optional[Callable[[TracerEvent], bool]] = None) -> List[TracerEvent]:
+    def get_events(
+            self,
+            event_type: Optional[Type[TracerEvent]] = None,
+            start_time: Optional[float] = None,
+            end_time: Optional[float] = None,
+            filter_func: Optional[Callable[[TracerEvent], bool]] = None) -> List[TracerEvent]:
         """
         Get tracer events from the store, optionally filtered.
 

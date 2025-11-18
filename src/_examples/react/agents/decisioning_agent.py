@@ -8,8 +8,12 @@ from mojentic.llm.tools.date_resolver import ResolveDateTool
 
 class DecisioningAgent(BaseLLMAgent):
     def __init__(self, llm: LLMBroker):
-        super().__init__(llm,
-                         "You are a careful decision maker, weighing the situation and making the best choice based on the information available.")
+        super().__init__(
+            llm,
+            ("You are a careful decision maker, "
+             "weighing the situation and making the best choice "
+             "based on the information available.")
+        )
         self.tools = [ResolveDateTool()]
 
         def receive_event(self, event: InvokeDecisioning):
@@ -26,7 +30,7 @@ You are to solve a problem by reasoning and acting on the information you have. 
 {format_available_tools(self.tools)}
 
 Your Instructions:
-Given our context and what we've done so far, and the tools available, create a step-by-step plan to answer the query. 
+Given our context and what we've done so far, and the tools available, create a step-by-step plan to answer the query.
             """.strip()
 
             return prompt

@@ -8,6 +8,7 @@ from colorama import init, Fore, Style
 # Initialize colorama
 init()
 
+
 def format_block(content: str, separator: str = "#" * 39) -> str:
     """Format a block of text with separator lines for clear console output.
 

@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 from mojentic.llm.gateways.openai import OpenAIGateway
 from mojentic.llm.gateways.openai_model_registry import get_model_registry
-from mojentic.llm.gateways.models import LLMMessage, MessageRole, LLMGatewayResponse
+from mojentic.llm.gateways.models import LLMMessage, MessageRole
 
 
 @pytest.fixture

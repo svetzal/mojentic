@@ -20,7 +20,6 @@ class DescribeResolveDateTool:
         assert result["relative_date"] == "next Friday"
         assert "resolved_date" in result
 
-
     def should_resolve_date_with_reference(self, date_resolver):
         """
         Given a date resolver

@@ -5,14 +5,13 @@ This script shows how to create and use asynchronous LLM agents with the AsyncDi
 """
 
 import asyncio
-from typing import List, Optional
+from typing import List
 
 from pydantic import BaseModel, Field
 
 from mojentic.agents.async_aggregator_agent import AsyncAggregatorAgent
 from mojentic.agents.async_llm_agent import BaseAsyncLLMAgent
 from mojentic.async_dispatcher import AsyncDispatcher
-from mojentic.context.shared_working_memory import SharedWorkingMemory
 from mojentic.event import Event
 from mojentic.llm import LLMBroker
 from mojentic.router import Router

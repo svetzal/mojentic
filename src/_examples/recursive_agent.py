@@ -78,7 +78,7 @@ async def demonstrate_async():
 
     # Create tasks for all problems and run them concurrently
     tasks = [solve_and_print(problem) for problem in problems]
-    solutions = await asyncio.gather(*tasks)
+    await asyncio.gather(*tasks)
 
     print("\nAll concurrent problems have been solved!")
 

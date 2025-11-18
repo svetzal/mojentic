@@ -20,6 +20,7 @@ def format_current_context(context: CurrentContext):
 
     return f"Current Context:\n{user_query}{plan}{history}\n"
 
+
 def format_available_tools(tools):
     output = ""
     if tools:

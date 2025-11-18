@@ -17,13 +17,15 @@ class ThoughtActionObservation(BaseModel):
 
 
 class Plan(BaseModel):
-    steps: List[str] = Field([],
-                            description="How to answer the query, step by step, each step outlining an action to take.")
+    steps: List[str] = Field(
+        [],
+        description="How to answer the query, step by step, each step outlining an action to take.")
 
 
 class CurrentContext(BaseModel):
     user_query: str = Field(..., description="The user query to which we are responding.")
     plan: Plan = Field(Plan(steps=[]), description="The current plan of action for the current context.")
-    history: List[ThoughtActionObservation] = Field([],
-                                                   description="The history of actions taken and observations made in the current context.")
+    history: List[ThoughtActionObservation] = Field(
+        [],
+        description="The history of actions taken and observations made in the current context.")
     iteration: int = Field(0, description="The number of iterations taken in the current context.")

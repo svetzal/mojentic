@@ -5,7 +5,7 @@ This module provides a class for managing a list of tasks with state transitions
 """
 
 from enum import Enum
-from typing import List, Optional
+from typing import List
 from pydantic import BaseModel
 
 

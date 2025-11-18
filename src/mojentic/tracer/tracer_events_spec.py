@@ -1,5 +1,4 @@
 import time
-from typing import Dict, List
 
 from mojentic.tracer.tracer_events import (
     TracerEvent,
@@ -24,7 +23,7 @@ class DescribeTracerEvents:
             source=DescribeTracerEvents,
             timestamp=time.time()
         )
-        
+
         # Then
         assert isinstance(event, TracerEvent)
         assert isinstance(event.timestamp, float)
@@ -44,7 +43,7 @@ class DescribeTracerEvents:
             temperature=0.7,
             tools=None
         )
-        
+
         # Then
         assert isinstance(event, LLMCallTracerEvent)
         assert event.model == "test-model"
@@ -64,7 +63,7 @@ class DescribeTracerEvents:
             content="This is a test response",
             call_duration_ms=150.5
         )
-        
+
         # Then
         assert isinstance(event, LLMResponseTracerEvent)
         assert event.model == "test-model"
@@ -86,7 +85,7 @@ class DescribeTracerEvents:
             result="test result",
             caller="TestAgent"
         )
-        
+
         # Then
         assert isinstance(event, ToolCallTracerEvent)
         assert event.tool_name == "test-tool"
@@ -107,7 +106,7 @@ class DescribeTracerEvents:
             event_type="RequestEvent",
             event_id="12345"
         )
-        
+
         # Then
         assert isinstance(event, AgentInteractionTracerEvent)
         assert event.from_agent == "AgentA"

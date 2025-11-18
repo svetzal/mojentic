@@ -2,13 +2,6 @@
 Example script demonstrating the usage of the ephemeral task manager tools.
 """
 import logging
-import os
-
-from mojentic.llm.gateways import OpenAIGateway
-
-logging.basicConfig(
-    level=logging.WARN
-)
 
 from mojentic.llm import LLMBroker
 from mojentic.llm.gateways.models import LLMMessage
@@ -24,13 +17,24 @@ from mojentic.llm.tools.ephemeral_task_manager import (
 )
 from mojentic.llm.tools.tell_user_tool import TellUserTool
 
+logging.basicConfig(
+    level=logging.WARN
+)
+
 # llm = LLMBroker(model="qwen3:30b-a3b-q4_K_M")
 # llm = LLMBroker(model="qwen3:32b")
 llm = LLMBroker(model="qwen3:7b")
 # llm = LLMBroker(model="qwen3:72b")
 # llm = LLMBroker(model="o4-mini", gateway=OpenAIGateway(os.environ["OPENAI_API_KEY"]))
 message = LLMMessage(
-    content="I want you to count from 1 to 10. Break that request down into individual tasks, track them using available tools, and perform them one by one until you're finished. Interrupt me to tell the user as you complete every task.")
+    content=(
+        "I want you to count from 1 to 10. "
+        "Break that request down into individual tasks, "
+        "track them using available tools, "
+        "and perform them one by one until you're finished. "
+        "Interrupt me to tell the user as you complete every task."
+    )
+)
 task_list = EphemeralTaskList()
 tools = [
     AppendTaskTool(task_list),

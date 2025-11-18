@@ -1,8 +1,6 @@
-import os
 from mojentic.llm.llm_broker import LLMBroker
 from mojentic.llm.gateways.models import LLMMessage
 from mojentic.llm.gateways.ollama import OllamaGateway
-from mojentic.llm.gateways.openai import OpenAIGateway
 from mojentic.llm.tools.date_resolver import ResolveDateTool
 
 
@@ -30,8 +28,13 @@ def main():
 
     stream = broker.generate_stream(
         messages=[
-            LLMMessage(content="Tell me a short story about a dragon. In your story, reference several dates relative to today, "
-                              "like 'three days from now' or 'last week'.")
+            LLMMessage(
+                content=(
+                    "Tell me a short story about a dragon. "
+                    "In your story, reference several dates relative to today, "
+                    "like 'three days from now' or 'last week'."
+                )
+            )
         ],
         tools=[date_tool],
         temperature=0.7,

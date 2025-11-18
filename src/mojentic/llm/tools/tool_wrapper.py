@@ -1,10 +1,10 @@
 """
 Not sure about this module right now. There are a couple ways to do this.
 """
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from mojentic.llm.tools.llm_tool import LLMTool
-from mojentic.llm.gateways.models import LLMMessage, MessageRole
+from mojentic.llm.gateways.models import LLMMessage
 
 # Use TYPE_CHECKING to avoid circular imports
 if TYPE_CHECKING:

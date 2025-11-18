@@ -9,6 +9,7 @@ from mojentic.llm.gateways.ollama_messages_adapter import adapt_messages_to_olla
 
 logger = structlog.get_logger()
 
+
 class StreamingResponse(BaseModel):
     """
     Wrapper for streaming response chunks.
@@ -22,6 +23,7 @@ class StreamingResponse(BaseModel):
     """
     content: Optional[str] = None
     tool_calls: Optional[List] = None
+
 
 class OllamaGateway(LLMGateway):
     """

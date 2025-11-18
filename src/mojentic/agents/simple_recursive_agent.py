@@ -35,7 +35,6 @@ class GoalSubmittedEvent(SolverEvent):
     """
     Event triggered when a problem is submitted for solving.
     """
-    pass
 
 
 class IterationCompletedEvent(SolverEvent):
@@ -49,21 +48,18 @@ class GoalAchievedEvent(SolverEvent):
     """
     Event triggered when a problem is solved.
     """
-    pass
 
 
 class GoalFailedEvent(SolverEvent):
     """
     Event triggered when a problem cannot be solved.
     """
-    pass
 
 
 class TimeoutEvent(SolverEvent):
     """
     Event triggered when the problem-solving process times out.
     """
-    pass
 
 
 class EventEmitter:
@@ -139,7 +135,8 @@ class SimpleRecursiveAgent:
     emitter: EventEmitter
     chat: ChatSession
 
-    def __init__(self, llm: LLMBroker, available_tools: Optional[List[LLMTool]] = None, max_iterations: int = 5, system_prompt: Optional[str] = None):
+    def __init__(self, llm: LLMBroker, available_tools: Optional[List[LLMTool]] = None,
+                 max_iterations: int = 5, system_prompt: Optional[str] = None):
         """
         Initialize the SimpleRecursiveAgent.
 
@@ -160,9 +157,12 @@ class SimpleRecursiveAgent:
         # Initialize the chat session
         self.chat = ChatSession(
             llm=llm,
-            system_prompt=system_prompt or "You are a problem-solving assistant that can solve complex problems step by step. "
-                         "You analyze problems, break them down into smaller parts, and solve them systematically. "
-                         "If you cannot solve a problem completely in one step, you make progress and identify what to do next.",
+            system_prompt=(
+                system_prompt or
+                "You are a problem-solving assistant that can solve complex problems step by step. "
+                "You analyze problems, break them down into smaller parts, and solve them systematically. "
+                "If you cannot solve a problem completely in one step, you make progress and identify what to do next."
+            ),
             tools=self.available_tools
         )
 
@@ -207,7 +207,7 @@ class SimpleRecursiveAgent:
         try:
             return await asyncio.wait_for(solution_future, timeout=300)  # 5 minutes timeout
         except asyncio.TimeoutError:
-            timeout_message = f"Timeout: Could not solve the problem within 300 seconds."
+            timeout_message = "Timeout: Could not solve the problem within 300 seconds."
             if not solution_future.done():
                 state.solution = timeout_message
                 state.is_complete = True
@@ -277,7 +277,8 @@ class SimpleRecursiveAgent:
 Given the user request:
 {state.goal}
 
-Use the tools at your disposal to act on their request. You may wish to create a step-by-step plan for more complicated requests.
+Use the tools at your disposal to act on their request.
+You may wish to create a step-by-step plan for more complicated requests.
 
 If you cannot provide an answer, say only "FAIL".
 If you have the answer, say only "DONE".

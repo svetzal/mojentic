@@ -14,9 +14,11 @@ def file_gateway(mocker):
     file_gateway.is_binary.return_value = False
     return file_gateway
 
+
 @pytest.fixture
 def file_path():
     return Path("/path/to/file.txt")
+
 
 @pytest.fixture
 def whitespace_file_content():
@@ -122,7 +124,9 @@ class DescribeMessageBuilder:
             assert "test file content" in result
             assert "```" in result
 
-        def should_strip_whitespace_from_file_content(self, message_builder, file_gateway, file_path, whitespace_file_content, mocker):
+        def should_strip_whitespace_from_file_content(
+            self, message_builder, file_gateway, file_path, whitespace_file_content, mocker
+        ):
             # Use the fixtures instead of creating file path and content directly
             file_gateway.read.return_value = whitespace_file_content
             mocker.patch.object(message_builder.type_sensor, 'get_language', return_value='text')

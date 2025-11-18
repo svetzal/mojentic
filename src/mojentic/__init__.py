@@ -8,9 +8,9 @@ import logging
 import structlog
 
 # Core components
-from .dispatcher import Dispatcher
-from .event import Event
-from .router import Router
+from .dispatcher import Dispatcher  # noqa: F401
+from .event import Event  # noqa: F401
+from .router import Router  # noqa: F401
 
 # Initialize logging
 logging.basicConfig(level=logging.INFO)

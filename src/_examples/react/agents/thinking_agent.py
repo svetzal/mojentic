@@ -11,8 +11,12 @@ from ..models.events import InvokeThinking, InvokeDecisioning
 
 class ThinkingAgent(BaseLLMAgent):
     def __init__(self, llm: LLMBroker):
-        super().__init__(llm,
-                         "You are a task coordinator, who breaks down tasks into component steps to be performed by others.")
+        super().__init__(
+            llm,
+            ("You are a task coordinator, "
+             "who breaks down tasks into component steps "
+             "to be performed by others.")
+        )
         self.tools = [ResolveDateTool()]
 
     def receive_event(self, event: InvokeThinking):
@@ -33,5 +37,5 @@ You are to solve a problem by reasoning and acting on the information you have. 
 {format_available_tools(self.tools)}
 
 Your Instructions:
-Given our context and what we've done so far, and the tools available, create a step-by-step plan to answer the query. 
+Given our context and what we've done so far, and the tools available, create a step-by-step plan to answer the query.
         """.strip()

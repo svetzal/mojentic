@@ -12,7 +12,7 @@ class FileTypeSensor:
         """
         Initialize the TypeSensor with a default mapping of file extensions to language declarations.
 
-        The TypeSensor is used to determine the appropriate language syntax highlighting 
+        The TypeSensor is used to determine the appropriate language syntax highlighting
         for code blocks in markdown based on file extensions.
         """
         self.extension_map: Dict[str, str] = {
@@ -128,7 +128,6 @@ class MessageBuilder():
                 f"```{self.type_sensor.get_language(file_path)}\n"
                 f"{content.strip()}\n"
                 f"```\n")
-
 
     def add_image(self, image_path: Union[str, Path]) -> "MessageBuilder":
         """
@@ -253,7 +252,11 @@ class MessageBuilder():
 
         return self
 
-    def load_content(self, file_path: Union[str, Path], template_values: Optional[Dict[str, Union[str, Path]]] = None) -> "MessageBuilder":
+    def load_content(
+        self,
+        file_path: Union[str, Path],
+        template_values: Optional[Dict[str, Union[str, Path]]] = None
+    ) -> "MessageBuilder":
         """
         Load content from a file into the content field of the MessageBuilder.
 

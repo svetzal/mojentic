@@ -7,7 +7,7 @@ from mojentic.llm.tools.llm_tool import LLMTool
 
 # Avoid circular imports with TYPE_CHECKING
 if TYPE_CHECKING:
-    from mojentic.llm.llm_broker import LLMBroker
+    pass
 
 
 class ResolveDateTool(LLMTool):
@@ -34,7 +34,10 @@ class ResolveDateTool(LLMTool):
             "type": "function",
             "function": {
                 "name": "resolve_date",
-                "description": "Take text that specifies a relative date, and output an absolute date. If no reference date is available, the current date is used.",
+                "description": (
+                    "Take text that specifies a relative date, and output an absolute date. If no "
+                    "reference date is available, the current date is used."
+                ),
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -44,8 +47,11 @@ class ResolveDateTool(LLMTool):
                         },
                         "reference_date_in_iso8601": {
                             "type": "string",
-                            "description": "The date from which the resolved date should be calculated, in YYYY-MM-DD"
-                                           " format. Do not provide if you weren't provided one, I will assume the current date."
+                            "description": (
+                                "The date from which the resolved date should be calculated, in YYYY-MM-DD "
+                                "format. Do not provide if you weren't provided one, I will assume the "
+                                "current date."
+                            )
                         }
                     },
                     "additionalProperties": False,

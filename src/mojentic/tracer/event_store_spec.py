@@ -1,8 +1,7 @@
 import time
-from typing import List
 
 from mojentic import Event
-from mojentic.tracer.tracer_events import TracerEvent, LLMCallTracerEvent, AgentInteractionTracerEvent
+from mojentic.tracer.tracer_events import TracerEvent
 from mojentic.tracer.event_store import EventStore
 
 
