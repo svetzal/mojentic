@@ -110,25 +110,56 @@ pip-audit
 
 ## Useful Commands
 
-### Development
+### Development Setup
+
+This project supports both **uv** (preferred) and **pip** for dependency management.
+
+#### Using uv (Preferred)
+```bash
+# Install uv if not present (macOS/Linux)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Sync dependencies (includes dev dependencies)
+uv sync --extra dev
+
+# Run commands in the virtual environment
+.venv/bin/pytest           # Run tests
+.venv/bin/flake8 src       # Run linting
+.venv/bin/pip-audit        # Security audit
+
+# Or activate the virtual environment first
+source .venv/bin/activate  # then use pytest, flake8, etc. directly
+```
+
+#### Using pip (Alternative)
 ```bash
 # Setup virtual environment
 python3 -m venv .venv
 source .venv/bin/activate  # or `.venv\Scripts\activate` on Windows
 pip install -e ".[dev]"
 
-# Run tests
-pytest                                    # All tests with coverage
-pytest src/mojentic/llm/llm_broker_spec.py  # Single test file
-pytest -k test_name                       # Specific test by name
-
-# Linting
+# Run tests, linting, etc.
+pytest
 flake8 src
-
-# Security audit
 pip-audit
+```
 
-# Documentation
+### Running Tests
+```bash
+pytest                                      # All tests with coverage
+pytest src/mojentic/llm/llm_broker_spec.py  # Single test file
+pytest -k test_name                         # Specific test by name
+```
+
+### Linting & Security
+```bash
+flake8 src          # Python linting
+bandit -c .bandit -r src  # Security scan (with config)
+pip-audit           # Dependency vulnerability check
+```
+
+### Documentation
+```bash
 mkdocs serve  # Serve docs locally at http://127.0.0.1:8000
 mkdocs build  # Build static site
 ```
