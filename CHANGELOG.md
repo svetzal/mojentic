@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Updated dependencies: anthropic (0.73.0 → 0.74.1), numpy (2.3.4 → 2.3.5), openai (2.8.0 → 2.8.1)
 
 ## [0.9.0] - 2025-11-13
 
