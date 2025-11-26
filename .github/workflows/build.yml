@@ -23,12 +23,12 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Python 3.13
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v5
         with:
           python-version: "3.13"
 
       - name: Cache virtual environment
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: .venv
           key: ${{ runner.os }}-venv-${{ hashFiles('**/pyproject.toml', '**/requirements.txt', '**/dev-requirements.txt') }}
@@ -52,12 +52,12 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Python 3.13
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v5
         with:
           python-version: "3.13"
 
       - name: Restore virtual environment
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: .venv
           key: ${{ runner.os }}-venv-${{ hashFiles('**/pyproject.toml', '**/requirements.txt', '**/dev-requirements.txt') }}
@@ -81,12 +81,12 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Python 3.13
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v5
         with:
           python-version: "3.13"
 
       - name: Restore virtual environment
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: .venv
           key: ${{ runner.os }}-venv-${{ hashFiles('**/pyproject.toml', '**/requirements.txt', '**/dev-requirements.txt') }}
@@ -112,7 +112,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Python 3.13
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v5
         with:
           python-version: "3.13"
 
@@ -152,12 +152,12 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Python 3.13
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v5
         with:
           python-version: "3.13"
 
       - name: Restore virtual environment
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: .venv
           key: ${{ runner.os }}-venv-${{ hashFiles('**/pyproject.toml', '**/requirements.txt', '**/dev-requirements.txt') }}
