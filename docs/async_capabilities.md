@@ -351,29 +351,7 @@ await dispatcher.start()
 
 ## API Reference
 
-### AsyncDispatcher
-
-::: mojentic.async_dispatcher.AsyncDispatcher
-    options:
-        show_root_heading: true
-        merge_init_into_class: false
-        group_by_category: false
-
-### BaseAsyncAgent
-
-::: mojentic.agents.base_async_agent.BaseAsyncAgent
-    options:
-        show_root_heading: true
-        merge_init_into_class: false
-        group_by_category: false
-
-### AsyncAggregatorAgent
-
-::: mojentic.agents.async_aggregator_agent.AsyncAggregatorAgent
-    options:
-        show_root_heading: true
-        merge_init_into_class: false
-        group_by_category: false
+For detailed API documentation, see [Layer 2 - Agents API](api_2.md#event-driven-agents).
 
 ## Best Practices
 

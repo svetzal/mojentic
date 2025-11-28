@@ -6,7 +6,7 @@ This document provides a comprehensive overview of the observability features an
 
 - [Overview](#overview)
 - [Core Components](#core-components)
-- [Tracer System](#tracer-system)
+  - [TracerSystem](#tracersystem)
 - [Event Store](#event-store)
 - [Tracer Events](#tracer-events)
 - [Integration Points](#integration-points)
