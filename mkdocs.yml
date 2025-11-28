@@ -89,12 +89,14 @@ nav:
     - Examples and Tutorials (Layer 1):
       - Simple Text Generation: simple_text_generation.md
       - Streaming Responses: streaming.md
-      - Building Chatbots: chat_sessions.md
-      - Structured Output: structured_output.md
       - Building Tools: building_tools.md
       - Tool Usage: tool_usage.md
-      - Building Chatbots with Tools: chat_sessions_with_tools.md
+  - Use Cases:
+      - Building Chatbots: chat_sessions.md
+      - Structured Output: structured_output.md
+      - Building Agents: sra.md
       - Image Analysis: image_analysis.md
+  - Examples:
       - File Tools: file_tools.md
       - Task Management: task_management.md
       - Web Search: web_search.md

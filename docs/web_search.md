@@ -1,6 +1,6 @@
-# Web Search
+# Example: Web Search
 
-The `mojentic.llm.tools.WebSearchTool` enables agents to access real-time information from the internet.
+The `mojentic.llm.tools.WebSearchTool` demonstrates how to integrate external APIs into your agent's toolset. This example implementation supports multiple providers like Tavily and Serper.
 
 ## Configuration
 
