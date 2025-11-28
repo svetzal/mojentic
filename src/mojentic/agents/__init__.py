@@ -6,4 +6,4 @@ Mojentic agents module for creating and working with various agent types.
 
 # Special purpose agents
 
-# Agent brokering
+# Event adapters
