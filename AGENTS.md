@@ -108,6 +108,74 @@ pip-audit
 - Include examples in docstrings where helpful
 - Keep README.md synchronized with actual functionality
 
+## Release Process
+
+### Versioning
+- Follow semantic versioning (semver): MAJOR.MINOR.PATCH
+- Update version in `pyproject.toml`
+- Update `CHANGELOG.md` with release notes
+
+### Release Workflow
+
+```bash
+# 1. Update version in pyproject.toml
+
+# 2. Update CHANGELOG.md
+#    - Move [Unreleased] changes to new version section
+#    - Add release date: [X.Y.Z] - YYYY-MM-DD
+
+# 3. Commit and push
+git add -A && git commit -m "chore: prepare vX.Y.Z release"
+git push origin main
+
+# 4. Create GitHub release
+gh release create vX.Y.Z --title "vX.Y.Z" --notes "Release notes here"
+```
+
+The CI/CD pipeline will automatically:
+- Run quality checks (lint, test, security)
+- Build the package
+- Deploy documentation to GitHub Pages
+- Publish to PyPI (using trusted publishing)
+
+### CI/CD Pipeline
+
+The GitHub Actions workflow (`.github/workflows/build.yml`) runs:
+
+| Trigger | Quality Checks | Docs Deploy | PyPI Publish |
+|---------|---------------|-------------|--------------|
+| Push to main | ✅ | ❌ | ❌ |
+| Pull request | ✅ | ❌ | ❌ |
+| Release published | ✅ | ✅ | ✅ |
+
+### Release Types
+
+#### Major Releases (x.0.0)
+- Breaking API changes
+- Removal of deprecated features
+- Provide migration guides
+
+#### Minor Releases (0.x.0)
+- New features (backward-compatible)
+- Deprecation notices
+- Performance improvements
+
+#### Patch Releases (0.0.x)
+- Bug fixes
+- Security updates
+- Documentation corrections
+
+### Pre-Release Checklist
+
+Before creating a release:
+- [ ] All tests pass: `pytest`
+- [ ] Linting passes: `flake8 src`
+- [ ] Security audit clean: `pip-audit`
+- [ ] Docs build: `mkdocs build`
+- [ ] Version updated in `pyproject.toml`
+- [ ] CHANGELOG.md updated
+- [ ] Changes committed and pushed to main
+
 ## Useful Commands
 
 ### Development Setup
