@@ -95,6 +95,10 @@ nav:
       - Tool Usage: tool_usage.md
       - Building Chatbots with Tools: chat_sessions_with_tools.md
       - Image Analysis: image_analysis.md
+      - File Tools: file_tools.md
+      - Task Management: task_management.md
+      - Web Search: web_search.md
+      - Embeddings: embeddings.md
   - Layer 2 - Agents:
       - Asynchronous Capabilities: async_capabilities.md
       - Iterative Problem Solver: ipa.md
