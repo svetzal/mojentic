@@ -115,28 +115,41 @@ pip-audit
 - Update version in `pyproject.toml`
 - Update `CHANGELOG.md` with release notes
 
-### Release Workflow
+### Publishing a Release
+
+**The release pipeline is fully automated.** When you create a GitHub release, the CI/CD workflow will:
+1. Run all quality checks (lint, test, security audit)
+2. Build and publish the package to PyPI (using trusted publishing)
+3. Deploy documentation to GitHub Pages
+
+#### Steps to Release
 
 ```bash
-# 1. Update version in pyproject.toml
+# 1. Update version in pyproject.toml (e.g., version = "1.1.0")
 
 # 2. Update CHANGELOG.md
-#    - Move [Unreleased] changes to new version section
-#    - Add release date: [X.Y.Z] - YYYY-MM-DD
+#    - Add new version section with date: ## [1.1.0] - YYYY-MM-DD
+#    - Document all changes under appropriate headers (Added, Changed, Fixed, etc.)
 
 # 3. Commit and push
-git add -A && git commit -m "chore: prepare vX.Y.Z release"
+git add pyproject.toml CHANGELOG.md
+git commit -m "chore: prepare v1.1.0 release"
 git push origin main
 
-# 4. Create GitHub release
-gh release create vX.Y.Z --title "vX.Y.Z" --notes "Release notes here"
+# 4. Create GitHub release (this triggers the publish)
+gh release create v1.1.0 \
+  --title "v1.1.0 - Release Title" \
+  --notes "## What's New
+
+- Feature 1
+- Feature 2
+
+See [CHANGELOG.md](CHANGELOG.md) for full details."
 ```
 
-The CI/CD pipeline will automatically:
-- Run quality checks (lint, test, security)
-- Build the package
-- Deploy documentation to GitHub Pages
-- Publish to PyPI (using trusted publishing)
+**Note**: Use `v` prefix for tags (e.g., `v1.0.0`) to match other Mojentic implementations.
+
+The pipeline uses PyPI trusted publishing - no API tokens needed in GitHub secrets.
 
 ### CI/CD Pipeline
 
@@ -147,6 +160,8 @@ The GitHub Actions workflow (`.github/workflows/build.yml`) runs:
 | Push to main | ✅ | ❌ | ❌ |
 | Pull request | ✅ | ❌ | ❌ |
 | Release published | ✅ | ✅ | ✅ |
+
+**PyPI Publishing**: Uses [trusted publishing](https://docs.pypi.org/trusted-publishers/) - no API tokens required. The GitHub repository must be configured as a trusted publisher on PyPI.
 
 ### Release Types
 
