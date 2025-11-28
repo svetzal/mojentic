@@ -220,8 +220,8 @@ class TextAnalyzerAgent(BaseAsyncLLMAgent):
             prompt = f"Analyze this text: {event.text}"
             response = await self.generate_response(prompt)
             return [AnalysisEvent(
-                source=type(self), 
-                correlation_id=event.correlation_id, 
+                source=type(self),
+                correlation_id=event.correlation_id,
                 analysis=response.analysis
             )]
         return []
@@ -239,8 +239,8 @@ class TextSummarizerAgent(BaseAsyncLLMAgent):
             prompt = f"Summarize this text: {event.text}"
             response = await self.generate_response(prompt)
             return [SummaryEvent(
-                source=type(self), 
-                correlation_id=event.correlation_id, 
+                source=type(self),
+                correlation_id=event.correlation_id,
                 summary=response.summary
             )]
         return []
