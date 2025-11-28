@@ -5,11 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.0] - 2025-11-27
+
+### 🎉 First Stable Release
+
+This release marks the first stable version of Mojentic, released simultaneously across all four language implementations (Python, Elixir, Rust, and TypeScript) with full feature parity.
+
+### Highlights
+
+- **Complete LLM Integration Layer**: Broker, OpenAI + Ollama gateways, structured output, tool calling, streaming with recursive tool execution, image analysis, tokenizer, embeddings
+- **Full Tracer System**: Event recording, correlation tracking, event filtering, broker/tool integration
+- **Complete Agent System**: Base agents, async agents, event system, dispatcher, router, aggregators, iterative solver, recursive agent, ReAct pattern, shared working memory
+- **Comprehensive Tool Suite**: DateResolver, File tools (8 tools), Task manager, Tell user, Ask user, Web search, Current datetime, Tool wrapper (broker as tool)
+- **24 Examples**: Full example suite demonstrating all major features
 
 ### Changed
 
-- Updated dependencies: anthropic (0.73.0 → 0.74.1), numpy (2.3.4 → 2.3.5), openai (2.8.0 → 2.8.1)
+- Renamed `AgentBroker` to `AgentEventAdapter` for clarity (avoids confusion with `LLMBroker`)
+- Version synchronized with Elixir, Rust, and TypeScript implementations
 
 ## [0.9.0] - 2025-11-13
 
