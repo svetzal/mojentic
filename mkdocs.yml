@@ -93,6 +93,7 @@ nav:
       - Tool Usage: tool_usage.md
   - Use Cases:
       - Building Chatbots: chat_sessions.md
+      - Chatbots with Tools: chat_sessions_with_tools.md
       - Structured Output: structured_output.md
       - Building Agents: sra.md
       - Image Analysis: image_analysis.md
@@ -112,6 +113,7 @@ nav:
       - Intro: api_0.md
       - Layer 1: api_1.md
       - Layer 2: api_2.md
+      - OpenAI Gateway Infrastructure: openai_gateway_enhanced_infrastructure.md
   - Contributing:
       - Testing: testing.md
       - User Personas: personas.md
