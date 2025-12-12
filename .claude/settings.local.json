@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pytest:*)",
+      "Bash(source:*)",
+      "Bash(python -m pytest src/mojentic/tracer/tracer_events_spec.py src/mojentic/tracer/tracer_system_spec.py -v)",
+      "Bash(python -m pytest -v)",
+      "Bash(python -m pytest:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

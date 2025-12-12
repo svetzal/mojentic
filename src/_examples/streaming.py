@@ -1,3 +1,4 @@
+from mojentic.llm import LLMBroker
 from mojentic.llm.gateways.models import LLMMessage
 from mojentic.llm.gateways.ollama import OllamaGateway
 from mojentic.llm.tools.date_resolver import ResolveDateTool
@@ -14,19 +15,25 @@ from mojentic.llm.tools.date_resolver import ResolveDateTool
 def main():
     ollama = OllamaGateway()
     date_tool = ResolveDateTool()
-    
+
+    messages = [
+        LLMMessage(
+            content="Tell me a story about a dragon. In your story, reference several dates relative to today, " \
+                    "like 'three days from now' or 'last week'.")
+    ]
     stream = ollama.complete_stream(
-        model="qwen2.5:7b",
-        messages=[
-            LLMMessage(content="Tell me a story about a dragon. In your story, reference several dates relative to today, "
-                              "like 'three days from now' or 'last week'.")
-        ],
+        model="qwen3:32b",
+        messages=messages,
         tools=[date_tool],
         temperature=0.5,
         num_ctx=32768,
         num_predict=-1
     )
-    
+    for chunk in stream:
+        print(chunk.content, end='', flush=True)
+
+    llm = LLMBroker("qwen3:32b")
+    stream = llm.generate_stream(messages=messages, tools=[date_tool], temperature=0.5, num_predict=-1)
     for chunk in stream:
         print(chunk.content, end='', flush=True)
 

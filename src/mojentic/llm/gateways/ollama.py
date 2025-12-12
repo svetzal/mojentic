@@ -1,5 +1,6 @@
 from typing import List, Iterator
 import structlog
+import json
 from ollama import Client, Options, ChatResponse
 from pydantic import BaseModel
 
@@ -152,8 +153,8 @@ class OllamaGateway(LLMGateway):
         # https://github.com/ollama/ollama/issues/7886
         #
 
-        # if 'tools' in args and args['tools'] is not None:
-        #     ollama_args['tools'] = [t.descriptor for t in args['tools']]
+        if 'tools' in args and args['tools'] is not None:
+            ollama_args['tools'] = [t.descriptor for t in args['tools']]
 
         stream = self.client.chat(**ollama_args)
 
@@ -161,11 +162,11 @@ class OllamaGateway(LLMGateway):
             if chunk.message:
                 if chunk.message.content:
                     yield StreamingResponse(content=chunk.message.content)
-                # if chunk.message.tool_calls:
-                #     for tool_call in chunk.message.tool_calls:
-                #         yield StreamingResponse(
-                #             content=f"\nTOOL CALL: {tool_call.function.name}({tool_call.function.arguments})\n"
-                #         )
+                if chunk.message.tool_calls:
+                    for tool_call in chunk.message.tool_calls:
+                        yield StreamingResponse(
+                            content=f"\nTOOL CALL: {tool_call.function.name}({tool_call.function.arguments})\n"
+                        )
 
     def get_available_models(self) -> List[str]:
         """
