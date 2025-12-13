@@ -27,7 +27,7 @@ class ChatOutputAgent(BaseAgent):
         return []
 
 
-llm = LLMBroker("llama3.1-instruct-8b-32k")
+llm = LLMBroker("qwen3:14b")
 request_agent = ChatAgent(llm)
 output_agent = ChatOutputAgent()
 

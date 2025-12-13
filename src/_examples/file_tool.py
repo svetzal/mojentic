@@ -52,11 +52,11 @@ This is an unfinished story about Ernie, the most adorable and colourful caterpi
 #
 
 
-# llm = LLMBroker("llama3.3-70b-32k")
-# llm = LLMBroker("llama3.1:70b")
-# llm = LLMBroker("llama3.1:8b")
-llm = LLMBroker("qwen2.5:7b")
-# llm = LLMBroker("llama3.3")
+# llm = LLMBroker("qwen3:32b")
+# llm = LLMBroker("qwen3:32b")
+# llm = LLMBroker("qwen3:7b")
+llm = LLMBroker("qwen3:7b")
+# llm = LLMBroker("qwen3:32b")
 # api_key = os.getenv("OPENAI_API_KEY")
 # gateway = OpenAIGateway(api_key)
 # llm = LLMBroker(model="gpt-4o-mini", gateway=gateway)

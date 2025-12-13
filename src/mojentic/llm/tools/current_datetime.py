@@ -6,12 +6,12 @@ class CurrentDateTimeTool(LLMTool):
     def run(self, format_string: str = "%Y-%m-%d %H:%M:%S") -> dict:
         """
         Returns the current date and time.
-        
+
         Parameters
         ----------
         format_string : str, optional
             The format string for the datetime, by default "%Y-%m-%d %H:%M:%S"
-            
+
         Returns
         -------
         dict
@@ -19,13 +19,13 @@ class CurrentDateTimeTool(LLMTool):
         """
         current_time = datetime.now()
         formatted_time = current_time.strftime(format_string)
-        
+
         return {
             "current_datetime": formatted_time,
             "timestamp": current_time.timestamp(),
             "timezone": datetime.now().astimezone().tzname()
         }
-    
+
     @property
     def descriptor(self):
         return {
@@ -38,7 +38,10 @@ class CurrentDateTimeTool(LLMTool):
                     "properties": {
                         "format_string": {
                             "type": "string",
-                            "description": "Format string for the datetime (e.g., '%Y-%m-%d %H:%M:%S', '%A, %B %d, %Y'). Default is ISO format."
+                            "description": (
+                                "Format string for the datetime (e.g., '%Y-%m-%d %H:%M:%S', '%A, %B %d, %Y'). "
+                                "Default is ISO format."
+                            )
                         }
                     },
                     "required": []

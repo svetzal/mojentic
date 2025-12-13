@@ -4,7 +4,7 @@ from mojentic import Event
 from mojentic.agents import BaseLLMAgent
 
 
-class AgentBroker:
+class AgentEventAdapter:
     """
     Wraps an agent to allow participation in an asynchronous event-driven system.
     """
@@ -14,8 +14,8 @@ class AgentBroker:
 
     def receive_event(self, event: Event) -> List[Event]:
         """
-        receive_event is called by the event broker when an event is to be received by an agent. The broker will return
-        a list of events determined from the agent's output in response to the received event.
+        receive_event is called by the event broker when an event is to be received by an agent. The adapter will
+        return a list of events determined from the agent's output in response to the received event.
 
         In this way, you can perform work based on the event, and generate whatever subsequent events may need to be
         processed next.

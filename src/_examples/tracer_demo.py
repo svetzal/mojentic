@@ -1,31 +1,29 @@
 """
 Example script demonstrating the tracer system with ChatSession and tools.
 
-This example shows how to use the tracer system to monitor an interactive 
-chat session with LLMBroker and tools. When the user exits the session, 
+This example shows how to use the tracer system to monitor an interactive
+chat session with LLMBroker and tools. When the user exits the session,
 the script displays a summary of all traced events.
 
 It also demonstrates how correlation_id is used to trace related events
 across the system, allowing you to track the flow of a request from start to finish.
 """
 import uuid
-from datetime import datetime
 
 from mojentic.tracer import TracerSystem
 from mojentic.tracer.tracer_events import LLMCallTracerEvent, LLMResponseTracerEvent, ToolCallTracerEvent
 from mojentic.llm import ChatSession, LLMBroker
-from mojentic.llm.gateways.models import LLMMessage, MessageRole
 from mojentic.llm.tools.date_resolver import ResolveDateTool
 
 
 def print_tracer_events(events):
     """Print tracer events using their printable_summary method."""
-    print(f"\n{'-'*80}")
+    print("\n{'-'*80}")
     print("Tracer Events:")
-    print(f"{'-'*80}")
+    print("{'-'*80}")
 
     for i, event in enumerate(events, 1):
-        print(f"{i}. {event.printable_summary()}")
+        print("{i}. {event.printable_summary()}")
         print()
 
 
@@ -35,7 +33,7 @@ def main():
     tracer = TracerSystem()
 
     # Create an LLM broker with the tracer
-    llm_broker = LLMBroker(model="llama3.3-70b-32k", tracer=tracer)
+    llm_broker = LLMBroker(model="gpt-oss:20b", tracer=tracer)
 
     # Create a date resolver tool that will also use the tracer
     date_tool = ResolveDateTool(llm_broker=llm_broker, tracer=tracer)
@@ -69,7 +67,7 @@ def main():
             turn_counter += 1
             conversation_correlation_ids[turn_counter] = correlation_id
 
-            print(f"[Turn {turn_counter}, correlation_id: {correlation_id[:8]}...]")
+            print("[Turn {turn_counter}, correlation_id: {correlation_id[:8]}...]")
             print("Assistant: ", end="")
 
             # For demonstration purposes, we'll use the chat_session normally
@@ -85,30 +83,30 @@ def main():
     # After the user exits, display tracer event summary
     print("\nTracer System Summary")
     print("=" * 80)
-    print(f"You just had a conversation with an LLM, and the tracer recorded everything!")
+    print("You just had a conversation with an LLM, and the tracer recorded everything!")
 
     # Get all events
     all_events = tracer.get_events()
-    print(f"Total events recorded: {len(all_events)}")
+    print("Total events recorded: {len(all_events)}")
     print_tracer_events(all_events)
 
     # Show how to filter events by type
     print("\nYou can filter events by type:")
 
     llm_calls = tracer.get_events(event_type=LLMCallTracerEvent)
-    print(f"LLM Call Events: {len(llm_calls)}")
+    print("LLM Call Events: {len(llm_calls)}")
     if llm_calls:
-        print(f"Example: {llm_calls[0].printable_summary()}")
+        print("Example: {llm_calls[0].printable_summary()}")
 
     llm_responses = tracer.get_events(event_type=LLMResponseTracerEvent)
-    print(f"LLM Response Events: {len(llm_responses)}")
+    print("LLM Response Events: {len(llm_responses)}")
     if llm_responses:
-        print(f"Example: {llm_responses[0].printable_summary()}")
+        print("Example: {llm_responses[0].printable_summary()}")
 
     tool_calls = tracer.get_events(event_type=ToolCallTracerEvent)
-    print(f"Tool Call Events: {len(tool_calls)}")
+    print("Tool Call Events: {len(tool_calls)}")
     if tool_calls:
-        print(f"Example: {tool_calls[0].printable_summary()}")
+        print("Example: {tool_calls[0].printable_summary()}")
 
     # Show the last few events
     print("\nThe last few events:")
@@ -130,7 +128,7 @@ def main():
         first_correlation_id = conversation_correlation_ids.get(first_turn_id)
 
         if first_correlation_id:
-            print(f"\nEvents for conversation turn {first_turn_id} (correlation_id: {first_correlation_id[:8]}...):")
+            print("\nEvents for conversation turn {first_turn_id} (correlation_id: {first_correlation_id[:8]}...):")
 
             # Define a filter function that checks the correlation_id
             def filter_by_correlation_id(event):
@@ -140,7 +138,7 @@ def main():
             related_events = tracer.get_events(filter_func=filter_by_correlation_id)
 
             if related_events:
-                print(f"Found {len(related_events)} related events")
+                print("Found {len(related_events)} related events")
                 print_tracer_events(related_events)
 
                 # Show how this helps trace the flow of a request
@@ -163,7 +161,7 @@ def main():
 
         print("Tool usage frequency:")
         for tool_name, count in tool_names.items():
-            print(f"  - {tool_name}: {count} calls")
+            print("  - {tool_name}: {count} calls")
 
 
 if __name__ == "__main__":

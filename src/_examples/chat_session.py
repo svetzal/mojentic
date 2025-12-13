@@ -1,6 +1,6 @@
 from mojentic.llm import ChatSession, LLMBroker
 
-llm_broker = LLMBroker(model="llama3.3-70b-32k")
+llm_broker = LLMBroker(model="qwen3:32b")
 chat_session = ChatSession(llm_broker)
 
 while True:

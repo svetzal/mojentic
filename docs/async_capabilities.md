@@ -220,8 +220,8 @@ class TextAnalyzerAgent(BaseAsyncLLMAgent):
             prompt = f"Analyze this text: {event.text}"
             response = await self.generate_response(prompt)
             return [AnalysisEvent(
-                source=type(self), 
-                correlation_id=event.correlation_id, 
+                source=type(self),
+                correlation_id=event.correlation_id,
                 analysis=response.analysis
             )]
         return []
@@ -239,8 +239,8 @@ class TextSummarizerAgent(BaseAsyncLLMAgent):
             prompt = f"Summarize this text: {event.text}"
             response = await self.generate_response(prompt)
             return [SummaryEvent(
-                source=type(self), 
-                correlation_id=event.correlation_id, 
+                source=type(self),
+                correlation_id=event.correlation_id,
                 summary=response.summary
             )]
         return []
@@ -351,29 +351,7 @@ await dispatcher.start()
 
 ## API Reference
 
-### AsyncDispatcher
-
-::: mojentic.async_dispatcher.AsyncDispatcher
-    options:
-        show_root_heading: true
-        merge_init_into_class: false
-        group_by_category: false
-
-### BaseAsyncAgent
-
-::: mojentic.agents.base_async_agent.BaseAsyncAgent
-    options:
-        show_root_heading: true
-        merge_init_into_class: false
-        group_by_category: false
-
-### AsyncAggregatorAgent
-
-::: mojentic.agents.async_aggregator_agent.AsyncAggregatorAgent
-    options:
-        show_root_heading: true
-        merge_init_into_class: false
-        group_by_category: false
+For detailed API documentation, see [Layer 2 - Agents API](api_2.md#event-driven-agents).
 
 ## Best Practices
 

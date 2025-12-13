@@ -152,8 +152,12 @@ class BaseAsyncLLMAgentWithMemory(BaseAsyncLLMAgent):
         """
         messages = super()._create_initial_messages()
         messages.extend([
-            LLMMessage(content=f"This is what you remember:\n{json.dumps(self.memory.get_working_memory(), indent=2)}"
-                               f"\n\nRemember anything new you learn by storing it to your working memory in your response."),
+            LLMMessage(
+                content=(f"This is what you remember:\n"
+                         f"{json.dumps(self.memory.get_working_memory(), indent=2)}"
+                         f"\n\nRemember anything new you learn by storing it "
+                         f"to your working memory in your response.")
+            ),
             LLMMessage(role=MessageRole.User, content=self.instructions),
         ])
         return messages
@@ -180,7 +184,7 @@ class BaseAsyncLLMAgentWithMemory(BaseAsyncLLMAgent):
         messages.extend([
             LLMMessage(content=content),
         ])
-        
+
         # Use asyncio.to_thread to run the synchronous generate_object method in a separate thread
         import asyncio
         response = await asyncio.to_thread(
@@ -188,7 +192,7 @@ class BaseAsyncLLMAgentWithMemory(BaseAsyncLLMAgent):
             messages=messages,
             object_model=ResponseWithMemory
         )
-        
+
         self.memory.merge_to_working_memory(response.memory)
 
         d = response.model_dump()

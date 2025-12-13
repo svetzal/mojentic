@@ -61,7 +61,10 @@ class PrependTaskTool(LLMTool):
             "type": "function",
             "function": {
                 "name": "prepend_task",
-                "description": "Prepend a new task to the beginning of the task list with a description. The task will start with 'pending' status.",
+                "description": (
+                    "Prepend a new task to the beginning of the task list with a description. The task "
+                    "will start with 'pending' status."
+                ),
                 "parameters": {
                     "type": "object",
                     "properties": {

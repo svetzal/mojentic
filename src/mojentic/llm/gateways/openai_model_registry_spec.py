@@ -2,7 +2,6 @@
 Tests for the OpenAI Model Registry system.
 """
 
-import pytest
 from mojentic.llm.gateways.openai_model_registry import (
     OpenAIModelRegistry,
     ModelType,

@@ -1,9 +1,7 @@
-import json
 from unittest.mock import Mock
 
 import pytest
 
-from mojentic.llm.gateways.models import TextContent
 from mojentic.llm.tools.llm_tool import LLMTool
 
 

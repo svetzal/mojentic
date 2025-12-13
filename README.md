@@ -25,16 +25,26 @@ Mojentic is a framework that provides a simple and flexible way to interact with
 
 ## 🔧 Installation
 
+We recommend using [uv](https://docs.astral.sh/uv/) for fast, reliable Python project management.
+
 ```bash
-# Install from PyPI
+# Install from PyPI using uv
+uv pip install mojentic
+
+# Or with pip
 pip install mojentic
 ```
 
-Or install from source
+Or install from source:
 
 ```bash
 git clone https://github.com/svetzal/mojentic.git
 cd mojentic
+
+# Using uv (recommended)
+uv sync
+
+# Or with pip
 pip install -e .
 ```
 
@@ -52,7 +62,7 @@ openai_llm = LLMBroker(model="gpt-5", gateway=OpenAIGateway(api_key="your_api_ke
 # Or use other models: "gpt-4o", "gpt-4.1", "o1-mini", "o3-mini", etc.
 
 # Or use Ollama for local LLMs
-ollama_llm = LLMBroker(model="llama3")
+ollama_llm = LLMBroker(model="qwen3:32b")
 
 # Simple text generation
 result = openai_llm.generate(messages=[LLMMessage(content='Hello, how are you?')])
@@ -153,11 +163,19 @@ Visit [the documentation](https://svetzal.github.io/mojentic/) for comprehensive
 git clone https://github.com/svetzal/mojentic.git
 cd mojentic
 
-# Install dependencies
+# Using uv (recommended)
+uv sync --extra dev
+
+# Or with pip
 pip install -e ".[dev]"
 
 # Run tests
 pytest
+
+# Quality checks
+flake8 src          # Linting
+bandit -r src       # Security scan
+pip-audit           # Dependency vulnerabilities
 ```
 
 ## ✅ Project Status

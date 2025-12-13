@@ -1,7 +1,7 @@
 import asyncio
 import pytest
 import pytest_asyncio
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 from mojentic.async_dispatcher import AsyncDispatcher
 from mojentic.event import Event, TerminateEvent

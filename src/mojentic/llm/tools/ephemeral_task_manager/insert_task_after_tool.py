@@ -64,7 +64,10 @@ class InsertTaskAfterTool(LLMTool):
             "type": "function",
             "function": {
                 "name": "insert_task_after",
-                "description": "Insert a new task after an existing task in the task list. The task will start with 'pending' status.",
+                "description": (
+                    "Insert a new task after an existing task in the task list. The task will start with "
+                    "'pending' status."
+                ),
                 "parameters": {
                     "type": "object",
                     "properties": {

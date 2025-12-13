@@ -1,0 +1,21 @@
+# Bandit security linter configuration for Mojentic
+# https://bandit.readthedocs.io/en/latest/config.html
+
+exclude_dirs:
+  - /test
+  - /tests
+  - /.venv
+  - /venv
+  - /build
+  - /dist
+  - /.tox
+  - /site
+  - /_examples
+
+# Tests to skip (list of test IDs)
+# Uncomment and customize as needed for your security requirements
+skips:
+  - B101  # assert_used - asserts are acceptable in test code
+  - B105  # hardcoded_password_string - false positives on parameter names like 'max_tokens'
+  - B108  # hardcoded_tmp_directory - test files legitimately use /tmp
+  - B113  # request_without_timeout - utility scripts, low risk

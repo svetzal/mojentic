@@ -44,7 +44,7 @@ from mojentic.llm import ChatSession, LLMBroker
 from mojentic.llm.tools.date_resolver import ResolveDateTool
 
 # Create an LLM broker
-llm_broker = LLMBroker(model="llama3.3-70b-32k")
+llm_broker = LLMBroker(model="qwen3:32b")
 
 # Initialize a chat session with tools
 chat_session = ChatSession(
@@ -84,10 +84,10 @@ These imports provide:
 ### 2. Create an LLM broker
 
 ```python
-llm_broker = LLMBroker(model="llama3.3-70b-32k")
+llm_broker = LLMBroker(model="qwen3:32b")
 ```
 
-The `LLMBroker` is configured with a specific model. For chat applications with tools, models with larger context windows (like the 32k variant shown here) are beneficial as they can handle longer conversations and tool interactions.
+The `LLMBroker` is configured with a specific model. For chat applications with tools, capable models are beneficial as they can handle longer conversations and tool interactions effectively.
 
 ### 3. Initialize a chat session with tools
 
@@ -231,8 +231,11 @@ class CurrentDateTimeTool(LLMTool):
             }
         }
 
+        }
+    }
+
 # Create an LLM broker
-llm_broker = LLMBroker(model="llama3.3-70b-32k")
+llm_broker = LLMBroker(model="qwen3:32b")
 
 # Initialize a chat session with the custom tool
 chat_session = ChatSession(
@@ -294,8 +297,11 @@ class CounterTool(LLMTool):
             }
         }
 
+    }
+}
+
 # Create a chat session with the stateful tool
-llm_broker = LLMBroker(model="llama3.3-70b-32k")
+llm_broker = LLMBroker(model="qwen3:32b")
 counter_tool = CounterTool()
 chat_session = ChatSession(
     llm=llm_broker,
@@ -325,8 +331,8 @@ When building chatbots with tools, follow these best practices:
 
 Example system prompt:
 ```
-You are a helpful assistant with access to tools for date calculations, weather information, and simple math. 
-Use these tools when you need precise information that you might not have or when calculations are required. 
+You are a helpful assistant with access to tools for date calculations, weather information, and simple math.
+Use these tools when you need precise information that you might not have or when calculations are required.
 For general knowledge questions, use your training data instead of tools.
 ```
 

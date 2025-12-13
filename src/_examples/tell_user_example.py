@@ -7,17 +7,17 @@ to display messages to the user without expecting a response.
 
 import logging
 
-logging.basicConfig(level=logging.WARN)
-
 from mojentic.agents.iterative_problem_solver import IterativeProblemSolver
 from mojentic.llm.tools.tell_user_tool import TellUserTool
 from mojentic.llm import LLMBroker
+
+logging.basicConfig(level=logging.WARN)
 
 
 def main():
     # Initialize the LLM broker with your preferred model
     # Uncomment one of the following lines or modify as needed:
-    # llm = LLMBroker(model="llama3.3-70b-32k")  # Ollama model
+    # llm = LLMBroker(model="qwen3:32b")  # Ollama model
     # llm = LLMBroker(model="gpt-4o")  # OpenAI model
     llm = LLMBroker(model="qwq")  # Default model for example
 

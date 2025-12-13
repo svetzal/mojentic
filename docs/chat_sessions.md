@@ -43,7 +43,7 @@ Here's the simplest way to create a chat session with Mojentic:
 from mojentic.llm import ChatSession, LLMBroker
 
 # Create an LLM broker
-llm_broker = LLMBroker(model="llama3.3-70b-32k")
+llm_broker = LLMBroker(model="qwen3:32b")
 
 # Initialize a chat session
 chat_session = ChatSession(llm_broker)
@@ -77,10 +77,10 @@ These imports provide:
 ### 2. Create an LLM broker
 
 ```python
-llm_broker = LLMBroker(model="llama3.3-70b-32k")
+llm_broker = LLMBroker(model="qwen3:32b")
 ```
 
-The `LLMBroker` is configured with a specific model. For chat applications, models with larger context windows (like the 32k variant shown here) are often beneficial as they can handle longer conversations.
+The `LLMBroker` is configured with a specific model. For chat applications, models with strong context retention are beneficial as they can handle longer conversations.
 
 ### 3. Initialize a chat session
 
@@ -177,7 +177,7 @@ from mojentic.llm.tools.date_resolver import ResolveDateTool
 date_tool = ResolveDateTool()
 
 # Create chat session with tools
-llm_broker = LLMBroker(model="llama3.3-70b-32k")
+llm_broker = LLMBroker(model="qwen3:32b")
 chat_session = ChatSession(
     llm=llm_broker,
     tools=[date_tool]

@@ -33,7 +33,7 @@ from mojentic.llm.gateways.models import LLMMessage
 from mojentic.llm.llm_broker import LLMBroker
 
 # Create an LLM broker (model parameter is required)
-llm = LLMBroker(model="qwen2.5:14b")
+llm = LLMBroker(model="phi4:14b")
 
 # Generate a response to a simple prompt
 result = llm.generate(messages=[LLMMessage(content='Hello, how are you?')])
@@ -60,11 +60,11 @@ These imports provide:
 ### 2. Create an LLM broker
 
 ```python
-llm = LLMBroker(model="llama3")
+llm = LLMBroker(model="qwen3:32b")
 ```
 
 The `LLMBroker` is the central component that manages communication with the LLM:
-- The `model` parameter is required and specifies which model to use (e.g., "llama3")
+- The `model` parameter is required and specifies which model to use (e.g., "phi4:14b")
 - By default, it uses the Ollama gateway to connect to locally running models (if no gateway is specified)
 
 ### 3. Generate text

@@ -43,6 +43,7 @@ plugins:
           - starter_1.md
           - message_composers.md
           - simple_text_generation.md
+          - streaming.md
           - chat_sessions.md
           - structured_output.md
           - building_tools.md
@@ -87,12 +88,20 @@ nav:
       - Message Composers: message_composers.md
     - Examples and Tutorials (Layer 1):
       - Simple Text Generation: simple_text_generation.md
-      - Building Chatbots: chat_sessions.md
-      - Structured Output: structured_output.md
+      - Streaming Responses: streaming.md
       - Building Tools: building_tools.md
       - Tool Usage: tool_usage.md
-      - Building Chatbots with Tools: chat_sessions_with_tools.md
+  - Use Cases:
+      - Building Chatbots: chat_sessions.md
+      - Chatbots with Tools: chat_sessions_with_tools.md
+      - Structured Output: structured_output.md
+      - Building Agents: sra.md
       - Image Analysis: image_analysis.md
+  - Examples:
+      - File Tools: file_tools.md
+      - Task Management: task_management.md
+      - Web Search: web_search.md
+      - Embeddings: embeddings.md
   - Layer 2 - Agents:
       - Asynchronous Capabilities: async_capabilities.md
       - Iterative Problem Solver: ipa.md
@@ -104,6 +113,7 @@ nav:
       - Intro: api_0.md
       - Layer 1: api_1.md
       - Layer 2: api_2.md
+      - OpenAI Gateway Infrastructure: openai_gateway_enhanced_infrastructure.md
   - Contributing:
       - Testing: testing.md
       - User Personas: personas.md

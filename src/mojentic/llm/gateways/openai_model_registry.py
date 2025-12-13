@@ -6,13 +6,13 @@ their specific parameter requirements and capabilities.
 """
 
 from enum import Enum
-from typing import Dict, Set, Optional, List, TYPE_CHECKING
+from typing import Dict, Optional, List, TYPE_CHECKING
 from dataclasses import dataclass
 
 import structlog
 
 if TYPE_CHECKING:
-    from mojentic.llm.gateways.openai import OpenAIGateway
+    pass
 
 logger = structlog.get_logger()
 
@@ -20,9 +20,9 @@ logger = structlog.get_logger()
 class ModelType(Enum):
     """Classification of OpenAI model types based on their capabilities and parameters."""
     REASONING = "reasoning"  # Models like o1, o3 that use max_completion_tokens
-    CHAT = "chat"           # Standard chat models that use max_tokens
-    EMBEDDING = "embedding" # Text embedding models
-    MODERATION = "moderation" # Content moderation models
+    CHAT = "chat"  # Standard chat models that use max_tokens
+    EMBEDDING = "embedding"  # Text embedding models
+    MODERATION = "moderation"  # Content moderation models
 
 
 @dataclass
@@ -345,6 +345,7 @@ class OpenAIModelRegistry:
 
 # Global registry instance
 _registry = OpenAIModelRegistry()
+
 
 def get_model_registry() -> OpenAIModelRegistry:
     """Get the global OpenAI model registry instance."""

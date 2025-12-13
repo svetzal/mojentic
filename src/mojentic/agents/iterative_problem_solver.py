@@ -43,9 +43,13 @@ class IterativeProblemSolver:
         self.available_tools = available_tools or []
         self.chat = ChatSession(
             llm=llm,
-            system_prompt=system_prompt or "You are a problem-solving assistant that can solve complex problems step by step. "
-                                           "You analyze problems, break them down into smaller parts, and solve them systematically. "
-                                           "If you cannot solve a problem completely in one step, you make progress and identify what to do next.",
+            system_prompt=system_prompt or (
+                "You are a problem-solving assistant that can solve complex problems step by step. "
+                "You analyze problems, break them down into smaller parts, "
+                "and solve them systematically. "
+                "If you cannot solve a problem completely in one step, "
+                "you make progress and identify what to do next."
+            ),
             tools=self.available_tools,
         )
 
@@ -87,7 +91,8 @@ class IterativeProblemSolver:
                 break
 
         result = self.chat.send(
-            "Summarize the final result, and only the final result, without commenting on the process by which you achieved it.")
+            "Summarize the final result, and only the final result, "
+            "without commenting on the process by which you achieved it.")
 
         return result
 
@@ -111,7 +116,8 @@ class IterativeProblemSolver:
 Given the user request:
 {problem}
 
-Use the tools at your disposal to act on their request. You may wish to create a step-by-step plan for more complicated requests.
+Use the tools at your disposal to act on their request.
+You may wish to create a step-by-step plan for more complicated requests.
 
 If you cannot provide an answer, say only "FAIL".
 If you have the answer, say only "DONE".

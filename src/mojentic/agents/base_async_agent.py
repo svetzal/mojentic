@@ -11,8 +11,8 @@ class BaseAsyncAgent:
 
     async def receive_event_async(self, event: Event) -> List[Event]:
         """
-        receive_event_async is the method that all async agents must implement. It takes an event as input and returns a list of
-        events as output.
+        receive_event_async is the method that all async agents must implement.
+        It takes an event as input and returns a list of events as output.
 
         In this way, you can perform work based on the event, and generate whatever subsequent events may need to be
         processed next.

@@ -3,23 +3,24 @@ Mojentic LLM gateways module for connecting to various LLM providers.
 """
 
 # Gateway implementations
-from .llm_gateway import LLMGateway
-from .ollama import OllamaGateway
-from .openai import OpenAIGateway
-from .anthropic import AnthropicGateway
-from .file_gateway import FileGateway
-from .embeddings_gateway import EmbeddingsGateway
-from .tokenizer_gateway import TokenizerGateway
-
-# Message adapters
-from .anthropic_messages_adapter import adapt_messages_to_anthropic
-from .ollama_messages_adapter import adapt_messages_to_ollama
-from .openai_messages_adapter import adapt_messages_to_openai
+from mojentic.llm.gateways.llm_gateway import LLMGateway
+from mojentic.llm.gateways.ollama import OllamaGateway
+from mojentic.llm.gateways.openai import OpenAIGateway
+from mojentic.llm.gateways.anthropic import AnthropicGateway
+from mojentic.llm.gateways.tokenizer_gateway import TokenizerGateway
+from mojentic.llm.gateways.embeddings_gateway import EmbeddingsGateway
 
 # Common models
-from .models import (
-    LLMMessage,
-    MessageRole,
-    LLMGatewayResponse,
-    LLMToolCall
-)
+from mojentic.llm.gateways.models import LLMMessage, LLMToolCall, LLMGatewayResponse
+
+__all__ = [
+    "LLMGateway",
+    "OllamaGateway",
+    "OpenAIGateway",
+    "AnthropicGateway",
+    "TokenizerGateway",
+    "EmbeddingsGateway",
+    "LLMMessage",
+    "LLMToolCall",
+    "LLMGatewayResponse",
+]

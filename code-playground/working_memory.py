@@ -51,7 +51,7 @@ memory = SharedWorkingMemory({
 })
 
 llm = LLMBroker("deepseek-r1:70b")
-# llm = LLMBroker("llama3.3-instruct-70b-32k")
+# llm = LLMBroker("qwen3:32b-instruct-70b-32k")
 request_agent = RequestAgent(llm, memory)
 output_agent = OutputAgent()
 

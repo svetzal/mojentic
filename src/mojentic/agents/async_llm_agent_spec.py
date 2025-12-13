@@ -1,13 +1,12 @@
-import asyncio
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock
 
 from pydantic import BaseModel, Field
 
 from mojentic.agents.async_llm_agent import BaseAsyncLLMAgent
 from mojentic.event import Event
 from mojentic.llm.llm_broker import LLMBroker
-from mojentic.llm.gateways.models import LLMMessage, MessageRole
+from mojentic.llm.gateways.models import MessageRole
 
 
 class TestEvent(Event):
@@ -47,7 +46,7 @@ async def test_async_llm_agent_init(mock_llm_broker):
         behaviour="You are a test assistant.",
         response_model=TestResponse
     )
-    
+
     assert agent.llm == mock_llm_broker
     assert agent.behaviour == "You are a test assistant."
     assert agent.response_model == TestResponse
@@ -58,7 +57,7 @@ async def test_async_llm_agent_init(mock_llm_broker):
 async def test_async_llm_agent_create_initial_messages(async_llm_agent):
     """Test that the BaseAsyncLLMAgent creates initial messages correctly."""
     messages = async_llm_agent._create_initial_messages()
-    
+
     assert len(messages) == 1
     assert messages[0].role == MessageRole.System
     assert messages[0].content == "You are a test assistant."
@@ -69,7 +68,7 @@ async def test_async_llm_agent_add_tool(async_llm_agent):
     """Test that the BaseAsyncLLMAgent can add tools."""
     mock_tool = MagicMock()
     async_llm_agent.add_tool(mock_tool)
-    
+
     assert mock_tool in async_llm_agent.tools
 
 
@@ -77,10 +76,10 @@ async def test_async_llm_agent_add_tool(async_llm_agent):
 async def test_async_llm_agent_generate_response_with_model(async_llm_agent, mock_llm_broker):
     """Test that the BaseAsyncLLMAgent generates responses with a model."""
     response = await async_llm_agent.generate_response("Test question")
-    
+
     # Verify that generate_object was called
     mock_llm_broker.generate_object.assert_called_once()
-    
+
     # Verify the response
     assert isinstance(response, TestResponse)
     assert response.answer == "Test answer"
@@ -93,12 +92,12 @@ async def test_async_llm_agent_generate_response_without_model(mock_llm_broker):
         llm=mock_llm_broker,
         behaviour="You are a test assistant."
     )
-    
+
     response = await agent.generate_response("Test question")
-    
+
     # Verify that generate was called
     mock_llm_broker.generate.assert_called_once()
-    
+
     # Verify the response
     assert response == "Test response"
 
@@ -107,15 +106,15 @@ async def test_async_llm_agent_generate_response_without_model(mock_llm_broker):
 async def test_async_llm_agent_generate_response_with_tools(mock_llm_broker):
     """Test that the BaseAsyncLLMAgent generates responses with tools."""
     mock_tool = MagicMock()
-    
+
     agent = BaseAsyncLLMAgent(
         llm=mock_llm_broker,
         behaviour="You are a test assistant.",
         tools=[mock_tool]
     )
-    
-    response = await agent.generate_response("Test question")
-    
+
+    await agent.generate_response("Test question")
+
     # Verify that generate was called with tools
     mock_llm_broker.generate.assert_called_once()
     args, kwargs = mock_llm_broker.generate.call_args
@@ -126,17 +125,17 @@ async def test_async_llm_agent_generate_response_with_tools(mock_llm_broker):
 async def test_async_llm_agent_receive_event_async(async_llm_agent):
     """Test that the BaseAsyncLLMAgent's receive_event_async method works."""
     event = TestEvent(source=str, message="Test message")
-    
+
     # The base implementation should return an empty list
     result = await async_llm_agent.receive_event_async(event)
-    
+
     assert result == []
 
 
 # Create a subclass for testing the receive_event_async method
 class TestAsyncLLMAgent(BaseAsyncLLMAgent):
     """A test async LLM agent that implements receive_event_async."""
-    
+
     async def receive_event_async(self, event):
         if isinstance(event, TestEvent):
             response = await self.generate_response(event.message)
@@ -156,11 +155,11 @@ async def test_subclass_async_llm_agent_receive_event_async(mock_llm_broker):
         behaviour="You are a test assistant.",
         response_model=TestResponse
     )
-    
+
     event = TestEvent(source=str, message="Test message")
-    
+
     result = await agent.receive_event_async(event)
-    
+
     assert len(result) == 1
     assert isinstance(result[0], TestEvent)
     assert result[0].message == "Response: Test answer"

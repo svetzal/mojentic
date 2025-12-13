@@ -1,41 +1,51 @@
-from mojentic.llm import LLMBroker
+from mojentic.llm.llm_broker import LLMBroker
 from mojentic.llm.gateways.models import LLMMessage
 from mojentic.llm.gateways.ollama import OllamaGateway
 from mojentic.llm.tools.date_resolver import ResolveDateTool
 
-#
-# This is here 2025-02-21 to demonstrate a deficiency in Ollama/llama tool calling
-# using the Stream option. We can't get chunk by chunk responses from the LLM
-# when using tools. This limits our ability to explore streaming capabilities
-# in the mojentic API, so I'm pausing this work for now until this is resolved.
-# https://github.com/ollama/ollama/issues/7886
-#
-
 
 def main():
-    ollama = OllamaGateway()
+    """
+    Demonstrates streaming text generation with tool calling support.
+
+    This example shows how generate_stream() handles tool calls seamlessly:
+    1. Streams content as it arrives
+    2. Detects tool calls in the stream
+    3. Executes tools
+    4. Recursively streams the LLM's response after tool execution
+    """
+    gateway = OllamaGateway()
+    # gateway = OpenAIGateway(api_key=os.getenv("OPENAI_API_KEY"))
+    broker = LLMBroker(
+        model="qwen3:32b",
+        # model="gpt-5",
+        gateway=gateway
+    )
+
     date_tool = ResolveDateTool()
 
-    messages = [
-        LLMMessage(
-            content="Tell me a story about a dragon. In your story, reference several dates relative to today, " \
-                    "like 'three days from now' or 'last week'.")
-    ]
-    stream = ollama.complete_stream(
-        model="qwen3:32b",
-        messages=messages,
+    print("Streaming response with tool calling enabled...\n")
+
+    stream = broker.generate_stream(
+        messages=[
+            LLMMessage(
+                content=(
+                    "Tell me a short story about a dragon. "
+                    "In your story, reference several dates relative to today, "
+                    "like 'three days from now' or 'last week'."
+                )
+            )
+        ],
         tools=[date_tool],
-        temperature=0.5,
+        temperature=0.7,
         num_ctx=32768,
         num_predict=-1
     )
     for chunk in stream:
-        print(chunk.content, end='', flush=True)
+        print(chunk, end='', flush=True)
 
-    llm = LLMBroker("qwen3:32b")
-    stream = llm.generate_stream(messages=messages, tools=[date_tool], temperature=0.5, num_predict=-1)
-    for chunk in stream:
-        print(chunk.content, end='', flush=True)
+    print("\n\nDone!")
+
 
 if __name__ == "__main__":
     main()

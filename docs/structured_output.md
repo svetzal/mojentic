@@ -39,11 +39,11 @@ class Sentiment(BaseModel):
     label: str = Field(..., title="Description", description="label for the sentiment")
 
 # Create an LLM broker with a specified model
-llm = LLMBroker(model="qwen2.5:14b")
+llm = LLMBroker(model="qwen3:14b")
 
 # Generate structured output
 result = llm.generate_object(
-    messages=[LLMMessage(content="Hello, how are you?")], 
+    messages=[LLMMessage(content="Hello, how are you?")],
     object_model=Sentiment
 )
 
@@ -79,19 +79,19 @@ This code:
 from mojentic.llm.gateways.models import LLMMessage
 from mojentic.llm.llm_broker import LLMBroker
 
-llm = LLMBroker(model="llama3")
+llm = LLMBroker(model="qwen3:32b")
 ```
 
 Just like in the simple text generation example, we:
 - Import the necessary components
 - Create an LLM broker with a required model parameter
-- The model parameter specifies which LLM to use (e.g., "llama3")
+- The model parameter specifies which LLM to use (e.g., "qwen3:14b")
 
 ### 3. Generate structured output
 
 ```python
 result = llm.generate_object(
-    messages=[LLMMessage(content="Hello, how are you?")], 
+    messages=[LLMMessage(content="Hello, how are you?")],
     object_model=Sentiment
 )
 ```
@@ -128,7 +128,7 @@ class Shape(BaseModel):
 
 # Generate a shape description
 result = llm.generate_object(
-    messages=[LLMMessage(content="Describe a triangle with vertices at (0,0), (1,0), and (0,1)")], 
+    messages=[LLMMessage(content="Describe a triangle with vertices at (0,0), (1,0), and (0,1)")],
     object_model=Shape
 )
 
@@ -154,7 +154,7 @@ llm = LLMBroker(model="gpt-4o", gateway=gateway)
 
 # Generate structured output
 result = llm.generate_object(
-    messages=[LLMMessage(content="Hello, how are you?")], 
+    messages=[LLMMessage(content="Hello, how are you?")],
     object_model=Sentiment
 )
 ```

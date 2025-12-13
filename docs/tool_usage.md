@@ -62,7 +62,7 @@ from mojentic.llm.llm_broker import LLMBroker
 from mojentic.llm.tools.date_resolver import ResolveDateTool
 
 # Create an LLM broker with a specified model
-llm = LLMBroker(model="qwen2.5")
+llm = LLMBroker(model="qwen3")
 
 # Generate a response with tool assistance
 result = llm.generate(
@@ -95,7 +95,7 @@ These imports provide:
 ### 2. Create an LLM broker
 
 ```python
-llm = LLMBroker(model="qwen2.5")
+llm = LLMBroker(model="qwen3")
 ```
 
 Just like in previous examples, we create an LLM broker with a required model parameter that specifies which LLM to use.
@@ -151,7 +151,7 @@ class CalculatorTool(LLMTool):
             return f"Error evaluating expression: {str(e)}"
 
 # Use the custom tool
-llm = LLMBroker(model="qwen2.5")
+llm = LLMBroker(model="qwen3")
 result = llm.generate(
     messages=[LLMMessage(content='What is 123 * 456?')],
     tools=[CalculatorTool()]
@@ -169,7 +169,7 @@ You can provide multiple tools to the LLM, and it will choose the appropriate on
 from mojentic.llm.tools.organic_web_search import WebSearchTool
 
 # Create an LLM broker with a specified model
-llm = LLMBroker(model="qwen2.5")
+llm = LLMBroker(model="qwen3")
 
 # Generate a response with multiple tools
 result = llm.generate(

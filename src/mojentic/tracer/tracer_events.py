@@ -1,7 +1,7 @@
 """
 Defines tracer event types for tracking system interactions.
 """
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional
 from datetime import datetime
 import uuid
 
@@ -18,7 +18,13 @@ class TracerEvent(Event):
     They are distinct from regular events which are used for agent communication.
     """
     timestamp: float = Field(..., description="Timestamp when the event occurred")
-    correlation_id: str = Field(default_factory=lambda: str(uuid.uuid4()), description="UUID string that is copied from cause-to-affect for tracing events")
+    correlation_id: str = Field(
+        default_factory=lambda: str(uuid.uuid4()),
+        description=(
+            "UUID string that is copied from cause-to-affect "
+            "for tracing events"
+        )
+    )
 
     def printable_summary(self) -> str:
         """

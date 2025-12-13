@@ -24,9 +24,9 @@ def register_llms_from_ollama(url: str, registry: LLMRegistry):
         #         'quantization_level': 'Q4_K_M'
         #     },
         #     'digest': '4bd6cbf2d094264457a17aab6bd6acd1ed7a72fb8f8be3cfb193f63c78dd56df',
-        #     'model': 'qwen2.5-coder:32b',
+        #     'model': 'qwen3-coder:32b',
         #     'modified_at': '2025-01-29T22:37:29.191797577-05:00',
-        #     'name': 'qwen2.5-coder:32b',
+        #     'name': 'qwen3-coder:32b',
         #     'size': 19851349856
         # }
 

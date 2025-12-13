@@ -9,6 +9,7 @@ from mojentic.llm.gateways.anthropic_messages_adapter import adapt_messages_to_a
 
 logger = structlog.get_logger()
 
+
 class AnthropicGateway(LLMGateway):
     def __init__(self, api_key: str):
         self.client = Anthropic(api_key=api_key)

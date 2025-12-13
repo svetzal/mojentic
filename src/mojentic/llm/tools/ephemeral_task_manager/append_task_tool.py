@@ -61,7 +61,10 @@ class AppendTaskTool(LLMTool):
             "type": "function",
             "function": {
                 "name": "append_task",
-                "description": "Append a new task to the end of the task list with a description. The task will start with 'pending' status.",
+                "description": (
+                    "Append a new task to the end of the task list with a description. The task will "
+                    "start with 'pending' status."
+                ),
                 "parameters": {
                     "type": "object",
                     "properties": {

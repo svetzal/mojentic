@@ -35,7 +35,7 @@ def main():
     tracer = TracerSystem()
 
     # Create an LLM broker with the tracer
-    llm_broker = LLMBroker(model="llama3.3-70b-32k", tracer=tracer)
+    llm_broker = LLMBroker(model="qwen3:32b", tracer=tracer)
 
     # Create a date resolver tool that will also use the tracer
     date_tool = ResolveDateTool(llm_broker=llm_broker, tracer=tracer)

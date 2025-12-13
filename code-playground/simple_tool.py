@@ -33,8 +33,8 @@ class RequestAgent(BaseLLMAgent):
 
 
 # llm = LLMBroker("deepseek-r1:70b")
-# llm = LLMBroker("llama3.3-70b-32k")
-llm = LLMBroker("qwen2.5:7b")
+# llm = LLMBroker("qwen3:32b")
+llm = LLMBroker("qwen3:7b")
 request_agent = RequestAgent(llm)
 output_agent = OutputAgent()
 

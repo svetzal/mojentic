@@ -1,7 +1,6 @@
-import os
 from pathlib import Path
 
-from mojentic.llm.gateways import OllamaGateway, OpenAIGateway
+from mojentic.llm.gateways import OllamaGateway
 from mojentic.llm.gateways.models import LLMMessage
 
 llmg = OllamaGateway()

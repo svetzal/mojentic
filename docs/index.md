@@ -28,7 +28,7 @@ from mojentic.llm import LLMBroker
 from mojentic.llm.gateways import OllamaGateway
 from mojentic.llm.gateways.models import LLMMessage
 
-llm = LLMBroker(model="llama3.3", gateway=OllamaGateway())
+llm = LLMBroker(model="qwen3:32b", gateway=OllamaGateway())
 response = llm.generate(messages=[LLMMessage(content="Hello, how are you?")])
 print(response)
 ```
@@ -49,6 +49,31 @@ sequenceDiagram
     OllamaGateway-->>LLMBroker: LLMGatewayResponse
     LLMBroker-->>User: Response text
 ```
+
+### Streaming Responses
+
+Mojentic supports streaming responses for better user experience. Streaming works with both simple text generation and tool calling:
+
+```python
+from mojentic.llm import LLMBroker
+from mojentic.llm.gateways import OpenAIGateway
+from mojentic.llm.gateways.models import LLMMessage
+from mojentic.llm.tools.date_resolver import ResolveDateTool
+
+llm = LLMBroker(model="gpt-4o-mini", gateway=OpenAIGateway())
+date_tool = ResolveDateTool()
+
+# Stream content as it arrives, with seamless tool calling
+stream = llm.generate_stream(
+    messages=[LLMMessage(content="Tell me about tomorrow")],
+    tools=[date_tool]
+)
+
+for chunk in stream:
+    print(chunk, end='', flush=True)
+```
+
+See the [Streaming Responses](streaming.md) guide for detailed information.
 
 ### Chat Session
 
@@ -89,7 +114,7 @@ sequenceDiagram
 
     User->>Dispatcher: dispatch(TextEvent)
     Dispatcher->>Router: Route TextEvent
-    
+
     par Concurrent Processing
         Router->>Agent1: receive_event_async(TextEvent)
         and
@@ -97,16 +122,16 @@ sequenceDiagram
         and
         Router->>Agent3: receive_event_async(TextEvent)
     end
-    
+
     Agent1-->>Dispatcher: [AnalysisEvent]
     Agent2-->>Dispatcher: [SummaryEvent]
-    
+
     Dispatcher->>Router: Route AnalysisEvent
     Router->>Agent3: receive_event_async(AnalysisEvent)
-    
+
     Dispatcher->>Router: Route SummaryEvent
     Router->>Agent3: receive_event_async(SummaryEvent)
-    
+
     Agent3->>Agent3: Aggregate all events
     Agent3-->>Dispatcher: [CombinedResultEvent]
     Dispatcher-->>User: Final result

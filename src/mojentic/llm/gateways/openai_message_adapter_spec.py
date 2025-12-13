@@ -93,11 +93,11 @@ class DescribeOpenAIMessagesAdapter:
             Then it should convert to the correct format with structured content array
             """
             # Patch our own methods that encapsulate external library calls
-            mocker.patch('mojentic.llm.gateways.openai_messages_adapter.read_file_as_binary', 
+            mocker.patch('mojentic.llm.gateways.openai_messages_adapter.read_file_as_binary',
                          return_value=b'fake_image_data')
-            mocker.patch('mojentic.llm.gateways.openai_messages_adapter.encode_base64', 
+            mocker.patch('mojentic.llm.gateways.openai_messages_adapter.encode_base64',
                          return_value='ZmFrZV9pbWFnZV9kYXRhX2VuY29kZWQ=')
-            mocker.patch('mojentic.llm.gateways.openai_messages_adapter.get_image_type', 
+            mocker.patch('mojentic.llm.gateways.openai_messages_adapter.get_image_type',
                          side_effect=lambda path: 'jpg' if path.endswith('.jpg') else 'png')
 
             image_paths = ["/path/to/image1.jpg", "/path/to/image2.png"]

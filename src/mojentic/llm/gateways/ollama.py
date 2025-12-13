@@ -1,4 +1,4 @@
-from typing import List, Iterator
+from typing import List, Iterator, Optional
 import structlog
 import json
 from ollama import Client, Options, ChatResponse
@@ -10,9 +10,21 @@ from mojentic.llm.gateways.ollama_messages_adapter import adapt_messages_to_olla
 
 logger = structlog.get_logger()
 
+
 class StreamingResponse(BaseModel):
-    """Simple wrapper for streaming response content"""
-    content: str
+    """
+    Wrapper for streaming response chunks.
+
+    Attributes
+    ----------
+    content : Optional[str]
+        Text content chunk from the LLM response.
+    tool_calls : Optional[List]
+        Tool calls from the LLM response (raw ollama format).
+    """
+    content: Optional[str] = None
+    tool_calls: Optional[List] = None
+
 
 class OllamaGateway(LLMGateway):
     """
@@ -145,14 +157,7 @@ class OllamaGateway(LLMGateway):
             'stream': True
         }
 
-        #
-        # This is here 2025-02-21 to demonstrate a deficiency in Ollama tool calling
-        # using the Stream option. We can't get chunk by chunk responses from the LLM
-        # when using tools. This limits our ability to explore streaming capabilities
-        # in the mojentic API, so I'm pausing this work for now until this is resolved.
-        # https://github.com/ollama/ollama/issues/7886
-        #
-
+        # Enable tool support if tools are provided
         if 'tools' in args and args['tools'] is not None:
             ollama_args['tools'] = [t.descriptor for t in args['tools']]
 
@@ -160,13 +165,13 @@ class OllamaGateway(LLMGateway):
 
         for chunk in stream:
             if chunk.message:
+                # Yield content chunks as they arrive
                 if chunk.message.content:
                     yield StreamingResponse(content=chunk.message.content)
+
+                # Yield tool calls when they arrive
                 if chunk.message.tool_calls:
-                    for tool_call in chunk.message.tool_calls:
-                        yield StreamingResponse(
-                            content=f"\nTOOL CALL: {tool_call.function.name}({tool_call.function.arguments})\n"
-                        )
+                    yield StreamingResponse(tool_calls=chunk.message.tool_calls)
 
     def get_available_models(self) -> List[str]:
         """

@@ -13,7 +13,7 @@ def openai_llm(model="gpt-4o"):
     return llm
 
 
-def ollama_llm(model="llama3.3-70b-32k"):
+def ollama_llm(model="qwen3:32b"):
     llm = LLMBroker(model=model)
     return llm
 

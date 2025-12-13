@@ -2,7 +2,7 @@ import os
 
 from pydantic import BaseModel, Field
 
-from mojentic.llm.gateways.models import LLMMessage, MessageRole
+from mojentic.llm.gateways.models import LLMMessage
 from mojentic.llm.gateways.openai import OpenAIGateway
 
 api_key = os.getenv("OPENAI_API_KEY")
