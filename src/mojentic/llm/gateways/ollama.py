@@ -1,6 +1,5 @@
 from typing import List, Iterator, Optional
 import structlog
-import json
 from ollama import Client, Options, ChatResponse
 from pydantic import BaseModel
 
