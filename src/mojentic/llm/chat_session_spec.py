@@ -94,6 +94,46 @@ class DescribeChatSession:
             assert chat_session.messages[1].content == "Query message 2"
             assert chat_session.messages[2].content == INTENDED_RESPONSE_MESSAGE
 
+    class DescribeStreamingSend:
+
+        def should_yield_content_chunks(self, chat_session):
+            chat_session.llm.generate_stream.return_value = iter(["Hello", " world"])
+
+            chunks = list(chat_session.send_stream("Query message"))
+
+            assert chunks == ["Hello", " world"]
+
+        def should_grow_message_history_after_stream_consumed(self, chat_session):
+            chat_session.llm.generate_stream.return_value = iter(["Response"])
+
+            list(chat_session.send_stream("Query message"))
+
+            assert len(chat_session.messages) == 3
+
+        def should_record_full_assembled_response_in_history(self, chat_session):
+            chat_session.llm.generate_stream.return_value = iter(["Hello", " world"])
+
+            list(chat_session.send_stream("Query message"))
+
+            assert chat_session.messages[2].content == "Hello world"
+
+        def should_record_user_message_in_history(self, chat_session):
+            chat_session.llm.generate_stream.return_value = iter(["Response"])
+
+            list(chat_session.send_stream("Query message"))
+
+            assert chat_session.messages[1].role == MessageRole.User
+            assert chat_session.messages[1].content == "Query message"
+
+        def should_respect_context_capacity(self, chat_session):
+            chat_session.llm.generate_stream.return_value = iter(["Response 1"])
+            list(chat_session.send_stream("Query 1"))
+
+            chat_session.llm.generate_stream.return_value = iter(["Response 2"])
+            list(chat_session.send_stream("Query 2"))
+
+            assert len(chat_session.messages) == 3
+
     class DescribeMessageRoles:
         """
         Specifications for message role handling

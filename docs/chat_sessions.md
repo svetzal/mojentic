@@ -165,6 +165,24 @@ response = chat_session.send("Hello, how can you help me today?")
 print(response)
 ```
 
+## Streaming Responses
+
+For a better user experience with longer responses, you can stream the LLM's reply as it's generated:
+
+```python
+from mojentic.llm import ChatSession, LLMBroker
+
+llm_broker = LLMBroker(model="qwen3:32b")
+chat_session = ChatSession(llm_broker)
+
+# Stream the response chunk by chunk
+for chunk in chat_session.send_stream("Tell me a story"):
+    print(chunk, end="", flush=True)
+print()  # Newline after streaming completes
+```
+
+The `send_stream()` method works just like `send()` for conversation management — it adds the user message to history before streaming, and records the full assembled response after the stream is consumed. Tools are handled transparently through the broker's recursive streaming.
+
 ## Advanced Usage: Adding Tools
 
 You can enhance your chatbot by providing tools that the LLM can use:
