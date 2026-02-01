@@ -78,7 +78,7 @@ class ChatSession:
         self.insert_message(LLMMessage(role=MessageRole.Assistant, content=response))
         return response
 
-    def send_stream(self, query) -> Iterator[str]:
+    def send_stream(self, query: str) -> Iterator[str]:
         """
         Send a query to the LLM and stream the response. Also records the query and response in the ongoing chat
         session.
