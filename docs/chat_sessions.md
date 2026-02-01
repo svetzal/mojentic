@@ -188,6 +188,77 @@ response = chat_session.send("What day of the week is July 4th, 2025?")
 print(response)
 ```
 
+## Streaming Responses in Chat Sessions
+
+For applications where you want to display responses as they arrive (like a typing indicator in a chat UI), `ChatSession` provides the `send_stream()` method. This works just like `send()` but yields content chunks incrementally instead of returning the complete response at once.
+
+### Basic Streaming Example
+
+```python
+from mojentic.llm import ChatSession, LLMBroker
+
+llm_broker = LLMBroker(model="qwen3:32b")
+chat_session = ChatSession(llm_broker)
+
+# Stream the response chunk by chunk
+for chunk in chat_session.send_stream("Tell me about the history of Python"):
+    print(chunk, end='', flush=True)
+print()  # newline after streaming completes
+```
+
+### How It Works
+
+The `send_stream()` method:
+
+1. Adds the user's query to the conversation history
+2. Calls the underlying `LLMBroker.generate_stream()` with the full conversation context
+3. Yields each content chunk as it arrives from the LLM
+4. After all chunks have been yielded, accumulates them and adds the complete response to the conversation history
+
+This means context management works identically to `send()` — the conversation history is maintained, older messages are pruned when the context limit is reached, and subsequent messages can reference earlier parts of the conversation.
+
+### Interactive Streaming Chatbot
+
+Here's a complete interactive chatbot using streaming:
+
+```python
+from mojentic.llm import ChatSession, LLMBroker
+
+llm_broker = LLMBroker(model="qwen3:32b")
+chat_session = ChatSession(llm_broker)
+
+while True:
+    query = input("\nYou: ")
+    if not query:
+        break
+    print("Assistant: ", end='', flush=True)
+    for chunk in chat_session.send_stream(query):
+        print(chunk, end='', flush=True)
+    print()
+```
+
+### Streaming with Tools
+
+`send_stream()` also supports tool calling. If the chat session was created with tools, streaming works seamlessly — tool calls are detected, executed, and the post-tool response is streamed back:
+
+```python
+from mojentic.llm import ChatSession, LLMBroker
+from mojentic.llm.tools.date_resolver import ResolveDateTool
+
+llm_broker = LLMBroker(model="qwen3:32b")
+chat_session = ChatSession(
+    llm=llm_broker,
+    tools=[ResolveDateTool()]
+)
+
+for chunk in chat_session.send_stream("What day of the week is January 1st, 2026?"):
+    print(chunk, end='', flush=True)
+print()
+```
+
+!!! tip
+    For more details on how streaming works at the broker level, including gateway-specific behavior and best practices, see the [Streaming Responses](streaming.md) guide.
+
 ## Summary
 
 Chat sessions in Mojentic provide a powerful way to build conversational applications with LLMs. In this guide, we've learned:
@@ -197,5 +268,6 @@ Chat sessions in Mojentic provide a powerful way to build conversational applica
 3. How the conversation history is maintained and managed
 4. Ways to customize your chat session with system prompts and other parameters
 5. How to use different LLM providers and add tools to enhance functionality
+6. How to stream responses in real time using `send_stream()`
 
 By leveraging chat sessions, you can create more engaging and coherent conversational experiences that maintain context across multiple interactions.

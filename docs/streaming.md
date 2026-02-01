@@ -320,6 +320,23 @@ For workflows with many tool calls, this adds network round-trips.
 
 Streaming uses less memory than buffering full responses, especially for long-form content.
 
+## Streaming in Chat Sessions
+
+If you're building a conversational application using `ChatSession`, you can use `send_stream()` instead of `send()` to stream responses while maintaining full conversation history and context management:
+
+```python
+from mojentic.llm import ChatSession, LLMBroker
+
+llm_broker = LLMBroker(model="qwen2.5:7b")
+chat_session = ChatSession(llm_broker)
+
+for chunk in chat_session.send_stream("Tell me a short story about a dragon"):
+    print(chunk, end='', flush=True)
+print()
+```
+
+`send_stream()` records both the user query and the accumulated response in the conversation history, just like `send()`. Tool calling is also fully supported. See [Building Chatbots](chat_sessions.md#streaming-responses-in-chat-sessions) for more details and examples.
+
 ## Examples
 
 See the complete working example at `src/_examples/streaming.py` in the repository.
