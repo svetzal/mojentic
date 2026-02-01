@@ -4,12 +4,14 @@ from mojentic.llm.chat_session import ChatSession
 from mojentic.llm.gateways.models import MessageRole
 
 INTENDED_RESPONSE_MESSAGE = "Response message"
+INTENDED_RESPONSE_CHUNKS = ["Response", " ", "message"]
 
 
 @pytest.fixture
 def llm(mocker):
     llm = mocker.MagicMock()
     llm.generate.return_value = INTENDED_RESPONSE_MESSAGE
+    llm.generate_stream.return_value = iter(INTENDED_RESPONSE_CHUNKS)
     return llm
 
 
@@ -110,3 +112,37 @@ class DescribeChatSession:
             assert chat_session.messages[0].role == MessageRole.System
             assert chat_session.messages[1].role == MessageRole.User
             assert chat_session.messages[2].role == MessageRole.Assistant
+
+    class DescribeStreamingMessageHandling:
+
+        def should_yield_content_chunks(self, chat_session):
+            chunks = list(chat_session.send_stream("Query message"))
+
+            assert chunks == INTENDED_RESPONSE_CHUNKS
+
+        def should_grow_message_history_after_stream_consumed(self, chat_session):
+            _ = list(chat_session.send_stream("Query message"))
+
+            assert len(chat_session.messages) == 3
+
+        def should_record_full_response_in_history(self, chat_session):
+            _ = list(chat_session.send_stream("Query message"))
+
+            assert chat_session.messages[2].content == INTENDED_RESPONSE_MESSAGE
+            assert chat_session.messages[2].role == MessageRole.Assistant
+
+        def should_record_user_message_in_history(self, chat_session):
+            _ = list(chat_session.send_stream("Query message"))
+
+            assert chat_session.messages[1].content == "Query message"
+            assert chat_session.messages[1].role == MessageRole.User
+
+        def should_respect_context_capacity(self, chat_session):
+            _ = list(chat_session.send_stream("Query message 1"))
+            chat_session.llm.generate_stream.return_value = iter(INTENDED_RESPONSE_CHUNKS)
+            _ = list(chat_session.send_stream("Query message 2"))
+
+            assert len(chat_session.messages) == 3
+            assert chat_session.messages[0].role == MessageRole.System
+            assert chat_session.messages[1].content == "Query message 2"
+            assert chat_session.messages[2].content == INTENDED_RESPONSE_MESSAGE

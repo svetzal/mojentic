@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Iterator, List, Optional
 
 from mojentic.llm import LLMBroker
 from mojentic.llm.gateways.models import LLMMessage, MessageRole
@@ -77,6 +77,29 @@ class ChatSession:
         self._ensure_all_messages_are_sized()
         self.insert_message(LLMMessage(role=MessageRole.Assistant, content=response))
         return response
+
+    def send_stream(self, query) -> Iterator[str]:
+        """
+        Send a query to the LLM and stream the response. Also records the query and response in the ongoing chat
+        session.
+
+        Parameters
+        ----------
+        query : str
+            The query to send to the LLM.
+
+        Yields
+        ------
+        str
+            Content chunks as they arrive from the LLM.
+        """
+        self.insert_message(LLMMessage(role=MessageRole.User, content=query))
+        accumulated = []
+        for chunk in self.llm.generate_stream(self.messages, tools=self.tools, temperature=self.temperature):
+            accumulated.append(chunk)
+            yield chunk
+        self._ensure_all_messages_are_sized()
+        self.insert_message(LLMMessage(role=MessageRole.Assistant, content="".join(accumulated)))
 
     def insert_message(self, message: LLMMessage):
         """
