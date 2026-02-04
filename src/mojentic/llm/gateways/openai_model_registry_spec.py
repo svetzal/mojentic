@@ -22,9 +22,10 @@ class DescribeOpenAIModelRegistry:
         registry = OpenAIModelRegistry()
         registered_models = registry.get_registered_models()
 
-        # Check that we have reasoning models
+        # Check that we have reasoning models (o1-mini removed in 2026-02-04 audit)
         assert "o1" in registered_models
-        assert "o1-mini" in registered_models
+        assert "o3" in registered_models
+        assert "gpt-5" in registered_models
 
         # Check that we have chat models
         assert "gpt-4o" in registered_models
@@ -43,15 +44,17 @@ class DescribeOpenAIModelRegistry:
         """
         registry = OpenAIModelRegistry()
 
-        # Test known reasoning models
-        assert registry.is_reasoning_model("o1-preview") is True
-        assert registry.is_reasoning_model("o1-mini") is True
+        # Test known reasoning models (o1-mini removed, o1-preview uses pattern matching)
+        assert registry.is_reasoning_model("o1") is True
         assert registry.is_reasoning_model("o3-mini") is True
+        assert registry.is_reasoning_model("gpt-5") is True
+        assert registry.is_reasoning_model("gpt-5.1") is True
 
         # Test chat models
         assert registry.is_reasoning_model("gpt-4o") is False
         assert registry.is_reasoning_model("gpt-4o-mini") is False
         assert registry.is_reasoning_model("gpt-3.5-turbo") is False
+        assert registry.is_reasoning_model("gpt-5-chat-latest") is False
 
     def should_use_pattern_matching_for_unknown_models(self):
         """
@@ -80,7 +83,7 @@ class DescribeOpenAIModelRegistry:
         registry = OpenAIModelRegistry()
 
         # Reasoning models should use max_completion_tokens
-        o1_capabilities = registry.get_model_capabilities("o1-mini")
+        o1_capabilities = registry.get_model_capabilities("o1")
         assert o1_capabilities.get_token_limit_param() == "max_completion_tokens"
 
         # Chat models should use max_tokens
@@ -178,3 +181,101 @@ class DescribeOpenAIModelRegistry:
         assert ModelType.CHAT.value == "chat"
         assert ModelType.EMBEDDING.value == "embedding"
         assert ModelType.MODERATION.value == "moderation"
+
+    def should_support_tools_and_streaming_for_all_reasoning_models(self):
+        """
+        Given reasoning models as of 2026-02-04 audit
+        When checking their capabilities
+        Then all should support tools and streaming except gpt-5-pro
+        """
+        registry = OpenAIModelRegistry()
+
+        # All o1/o3/o4 models now support tools and streaming
+        o1_caps = registry.get_model_capabilities("o1")
+        assert o1_caps.supports_tools is True
+        assert o1_caps.supports_streaming is True
+
+        o3_caps = registry.get_model_capabilities("o3")
+        assert o3_caps.supports_tools is True
+        assert o3_caps.supports_streaming is True
+
+        o3_mini_caps = registry.get_model_capabilities("o3-mini")
+        assert o3_mini_caps.supports_tools is True
+        assert o3_mini_caps.supports_streaming is True
+
+        # GPT-5 family (except gpt-5-pro) supports tools and streaming
+        gpt5_caps = registry.get_model_capabilities("gpt-5")
+        assert gpt5_caps.supports_tools is True
+        assert gpt5_caps.supports_streaming is True
+
+        # gpt-5-pro is responses-only, no tools/streaming
+        gpt5_pro_caps = registry.get_model_capabilities("gpt-5-pro")
+        assert gpt5_pro_caps.supports_tools is False
+        assert gpt5_pro_caps.supports_streaming is False
+
+    def should_support_temperature_1_0_only_for_most_reasoning_models(self):
+        """
+        Given reasoning models as of 2026-02-04 audit
+        When checking temperature support
+        Then most should support only temperature=1.0, except gpt-5.1/5.2 base models
+        """
+        registry = OpenAIModelRegistry()
+
+        # o1/o3/o4 series support only temperature=1.0
+        o1_caps = registry.get_model_capabilities("o1")
+        assert o1_caps.supported_temperatures == [1.0]
+        assert o1_caps.supports_temperature(1.0) is True
+        assert o1_caps.supports_temperature(0.7) is False
+
+        o3_caps = registry.get_model_capabilities("o3")
+        assert o3_caps.supported_temperatures == [1.0]
+
+        # gpt-5.1 and gpt-5.1-2025-11-13 support all temperatures
+        gpt5_1_caps = registry.get_model_capabilities("gpt-5.1")
+        assert gpt5_1_caps.supported_temperatures is None
+        assert gpt5_1_caps.supports_temperature(0.7) is True
+        assert gpt5_1_caps.supports_temperature(1.0) is True
+
+        # gpt-5.1-chat-latest supports only temperature=1.0
+        gpt5_1_chat_caps = registry.get_model_capabilities("gpt-5.1-chat-latest")
+        assert gpt5_1_chat_caps.supported_temperatures == [1.0]
+
+        # gpt-5.2 and gpt-5.2-2025-12-11 support all temperatures
+        gpt5_2_caps = registry.get_model_capabilities("gpt-5.2")
+        assert gpt5_2_caps.supported_temperatures is None
+
+        # gpt-5.2-chat-latest supports only temperature=1.0
+        gpt5_2_chat_caps = registry.get_model_capabilities("gpt-5.2-chat-latest")
+        assert gpt5_2_chat_caps.supported_temperatures == [1.0]
+
+    def should_disable_tools_for_specific_chat_models(self):
+        """
+        Given chat models as of 2026-02-04 audit
+        When checking tool support
+        Then specific models should have tools disabled
+        """
+        registry = OpenAIModelRegistry()
+
+        # chatgpt-4o-latest does not support tools
+        chatgpt_caps = registry.get_model_capabilities("chatgpt-4o-latest")
+        assert chatgpt_caps.supports_tools is False
+        assert chatgpt_caps.supports_vision is False
+
+        # gpt-4.1-nano does not support tools
+        nano_caps = registry.get_model_capabilities("gpt-4.1-nano")
+        assert nano_caps.supports_tools is False
+
+        # Search models do not support tools and have no temperature support
+        search_caps = registry.get_model_capabilities("gpt-4o-search-preview")
+        assert search_caps.supports_tools is False
+        assert search_caps.supported_temperatures == []
+        assert search_caps.supports_temperature(1.0) is False
+
+        gpt5_search_caps = registry.get_model_capabilities("gpt-5-search-api")
+        assert gpt5_search_caps.supports_tools is False
+        assert gpt5_search_caps.supported_temperatures == []
+
+        # Audio models do not support tools or streaming
+        audio_caps = registry.get_model_capabilities("gpt-4o-audio-preview")
+        assert audio_caps.supports_tools is False
+        assert audio_caps.supports_streaming is False

@@ -16,10 +16,10 @@ classifiers = [
 dependencies = [
     "pydantic>=2.12.5",
     "structlog>=25.5.0",
-    "numpy>=2.3.5",
+    "numpy>=2.4.2",
     "ollama>=0.6.1",
-    "openai>=2.12.0",
-    "anthropic>=0.75.0",
+    "openai>=2.16.0",
+    "anthropic>=0.77.1",
     "tiktoken>=0.12.0",
     "parsedatetime>=2.6",
     "pytz>=2025.2",
@@ -35,14 +35,14 @@ dev = [
     "pytest-cov>=7.0.0",
     "pytest-mock>=3.15.0",
     "flake8>=7.3.0",
-    "bandit>=1.9.2",
+    "bandit>=1.9.3",
     "pip-audit>=2.10.0",
     "mkdocs>=1.6.1",
-    "mkdocs-material>=9.7.0",
+    "mkdocs-material>=9.7.1",
     "mkdocs-llmstxt>=0.4.0",
-    "mkdocstrings[python]>=0.21.0",
-    "griffe-fieldz>=0.3.0",
-    "pymdown-extensions>=10.3",
+    "mkdocstrings[python]>=1.0.2",
+    "griffe-fieldz>=0.4.0",
+    "pymdown-extensions>=10.20.1",
 ]
 
 [build-system]

@@ -88,16 +88,16 @@ class DescribeOpenAIGatewayTemperatureHandling:
             call_args = mock_openai_client.chat.completions.create.call_args
             assert call_args[1]['temperature'] == 0.1
 
-        def should_automatically_adjust_unsupported_temperature_for_o1_mini(self, openai_gateway, mock_openai_client):
+        def should_automatically_adjust_unsupported_temperature_for_o1(self, openai_gateway, mock_openai_client):
             """
-            Given an o1-mini model that only supports temperature=1.0
+            Given an o1 model that only supports temperature=1.0
             When calling complete with temperature=0.1 (unsupported)
             Then it should automatically adjust to temperature=1.0
             """
             messages = [LLMMessage(role=MessageRole.User, content="Test message")]
 
             openai_gateway.complete(
-                model="o1-mini",
+                model="o1",
                 messages=messages,
                 temperature=0.1
             )
@@ -124,11 +124,11 @@ class DescribeOpenAIGatewayTemperatureHandling:
             call_args = mock_openai_client.chat.completions.create.call_args
             assert call_args[1]['temperature'] == 1.0
 
-        def should_remove_temperature_parameter_for_o3_mini(self, openai_gateway, mock_openai_client):
+        def should_automatically_adjust_unsupported_temperature_for_o3_mini(self, openai_gateway, mock_openai_client):
             """
-            Given an o3-mini model that doesn't support temperature parameter at all
-            When calling complete with temperature=0.1
-            Then it should remove the temperature parameter entirely
+            Given an o3-mini model that only supports temperature=1.0
+            When calling complete with temperature=0.1 (unsupported)
+            Then it should automatically adjust to temperature=1.0
             """
             messages = [LLMMessage(role=MessageRole.User, content="Test message")]
 
@@ -138,9 +138,9 @@ class DescribeOpenAIGatewayTemperatureHandling:
                 temperature=0.1
             )
 
-            # Verify the API was called without temperature parameter
+            # Verify the API was called with temperature=1.0, not 0.1
             call_args = mock_openai_client.chat.completions.create.call_args
-            assert 'temperature' not in call_args[1]
+            assert call_args[1]['temperature'] == 1.0
 
 
 class DescribeModelCapabilitiesTemperatureRestrictions:
@@ -178,14 +178,14 @@ class DescribeModelCapabilitiesTemperatureRestrictions:
     def should_identify_all_gpt5_variants_temperature_restrictions(self):
         """
         Given the model registry
-        When checking all GPT-5 variant models
-        Then they should all have temperature restrictions to 1.0 only
+        When checking GPT-5 reasoning variant models
+        Then they should have temperature restrictions to 1.0 only
+        Note: gpt-5-chat-latest is a CHAT model and supports all temperatures
         """
         registry = get_model_registry()
-        gpt5_models = [
+        gpt5_reasoning_models = [
             "gpt-5",
             "gpt-5-2025-08-07",
-            "gpt-5-chat-latest",
             "gpt-5-codex",
             "gpt-5-mini",
             "gpt-5-mini-2025-08-07",
@@ -193,7 +193,7 @@ class DescribeModelCapabilitiesTemperatureRestrictions:
             "gpt-5-nano-2025-08-07"
         ]
 
-        for model in gpt5_models:
+        for model in gpt5_reasoning_models:
             capabilities = registry.get_model_capabilities(model)
             assert capabilities.supports_temperature(1.0) is True
             assert capabilities.supports_temperature(0.1) is False
@@ -204,9 +204,10 @@ class DescribeModelCapabilitiesTemperatureRestrictions:
         Given the model registry
         When checking o1 series models
         Then they should have temperature restrictions to 1.0 only
+        Note: o1-mini removed from API as of 2026-02-04 audit
         """
         registry = get_model_registry()
-        o1_models = ["o1", "o1-mini", "o1-pro", "o1-2024-12-17"]
+        o1_models = ["o1", "o1-pro", "o1-2024-12-17", "o1-pro-2025-03-19"]
 
         for model in o1_models:
             capabilities = registry.get_model_capabilities(model)
@@ -214,20 +215,21 @@ class DescribeModelCapabilitiesTemperatureRestrictions:
             assert capabilities.supports_temperature(0.1) is False
             assert capabilities.supported_temperatures == [1.0]
 
-    def should_identify_o3_series_no_temperature_support(self):
+    def should_identify_o3_series_temperature_restrictions(self):
         """
         Given the model registry
         When checking o3 series models
-        Then they should not support temperature parameter at all
+        Then they should now support temperature=1.0 only (as of 2026-02-04 audit)
         """
         registry = get_model_registry()
-        o3_models = ["o3", "o3-mini", "o3-pro", "o3-deep-research"]
+        o3_models = ["o3", "o3-mini", "o3-pro", "o3-deep-research", "o3-2025-04-16",
+                     "o3-mini-2025-01-31", "o3-pro-2025-06-10", "o3-deep-research-2025-06-26"]
 
         for model in o3_models:
             capabilities = registry.get_model_capabilities(model)
-            assert capabilities.supports_temperature(1.0) is False
+            assert capabilities.supports_temperature(1.0) is True
             assert capabilities.supports_temperature(0.1) is False
-            assert capabilities.supported_temperatures == []
+            assert capabilities.supported_temperatures == [1.0]
 
     def should_identify_o4_series_temperature_restrictions(self):
         """
