@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "========================================"
+echo "  Mojentic Python — Pre-Push Checks"
+echo "========================================"
+
+# Activate virtual environment
+if [ -f .venv/bin/activate ]; then
+    source .venv/bin/activate
+else
+    echo "ERROR: Virtual environment not found at .venv/"
+    echo "Run: python3 -m venv .venv && source .venv/bin/activate && pip install -e '.[dev]'"
+    exit 1
+fi
+
+echo ""
+echo "--- [1/4] flake8 (critical errors) ---"
+flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics
+echo "PASSED"
+
+echo ""
+echo "--- [2/4] pytest ---"
+pytest
+echo "PASSED"
+
+echo ""
+echo "--- [3/4] bandit (security scan) ---"
+bandit -c .bandit -r src
+echo "PASSED"
+
+echo ""
+echo "--- [4/4] pip-audit (dependency security) ---"
+pip-audit
+echo "PASSED"
+
+echo ""
+echo "========================================"
+echo "  All checks passed — push allowed"
+echo "========================================"
