@@ -35,6 +35,9 @@ class ModelCapabilities:
     max_context_tokens: Optional[int] = None
     max_output_tokens: Optional[int] = None
     supported_temperatures: Optional[List[float]] = None  # None means all temperatures supported
+    supports_chat_api: bool = True
+    supports_completions_api: bool = False
+    supports_responses_api: bool = False
 
     def get_token_limit_param(self) -> str:
         """Get the correct parameter name for token limits based on model type."""
@@ -119,6 +122,10 @@ class OpenAIModelRegistry:
                 # All other reasoning models (including o1, o3, o4, gpt-5, and *-chat-latest) support only temp=1.0
                 supported_temps = [1.0]
 
+            # API endpoint support flags
+            is_responses_only = "pro" in model or "deep-research" in model or model == "gpt-5-codex"
+            is_both_endpoint = model in ("gpt-5.1", "gpt-5.1-2025-11-13")
+
             self._models[model] = ModelCapabilities(
                 model_type=ModelType.REASONING,
                 supports_tools=supports_tools,
@@ -126,7 +133,10 @@ class OpenAIModelRegistry:
                 supports_vision=False,  # Vision support would need to be confirmed for GPT-5
                 max_context_tokens=context_tokens,
                 max_output_tokens=output_tokens,
-                supported_temperatures=supported_temps
+                supported_temperatures=supported_temps,
+                supports_chat_api=not is_responses_only,
+                supports_completions_api=is_both_endpoint,
+                supports_responses_api=is_responses_only
             )
 
         # Chat Models (GPT-4 and GPT-4.1 series) - Updated 2026-02-04
@@ -188,6 +198,10 @@ class OpenAIModelRegistry:
                 context_tokens = 32000
                 output_tokens = 8192
 
+            # API endpoint support flags
+            is_both_endpoint = model in ("gpt-4.1-nano", "gpt-4.1-nano-2025-04-14",
+                                         "gpt-4o-mini", "gpt-4o-mini-2024-07-18")
+
             self._models[model] = ModelCapabilities(
                 model_type=ModelType.CHAT,
                 supports_tools=supports_tools,
@@ -195,7 +209,8 @@ class OpenAIModelRegistry:
                 supports_vision=vision_support,
                 max_context_tokens=context_tokens,
                 max_output_tokens=output_tokens,
-                supported_temperatures=supported_temps
+                supported_temperatures=supported_temps,
+                supports_completions_api=is_both_endpoint
             )
 
         # Chat Models (GPT-3.5 series) - Updated 2026-02-04
@@ -205,14 +220,17 @@ class OpenAIModelRegistry:
         ]
 
         for model in gpt35_models:
+            is_instruct = "instruct" in model
             context_tokens = 16385 if "16k" not in model else 16385
             self._models[model] = ModelCapabilities(
                 model_type=ModelType.CHAT,
-                supports_tools="instruct" not in model,  # Instruct models don't support tools
-                supports_streaming="instruct" not in model,  # Instruct models don't support streaming
+                supports_tools=not is_instruct,  # Instruct models don't support tools
+                supports_streaming=not is_instruct,  # Instruct models don't support streaming
                 supports_vision=False,
                 max_context_tokens=context_tokens,
-                max_output_tokens=4096
+                max_output_tokens=4096,
+                supports_chat_api=not is_instruct,
+                supports_completions_api=is_instruct
             )
 
         # Embedding Models - Updated 2026-02-04
@@ -225,8 +243,52 @@ class OpenAIModelRegistry:
                 model_type=ModelType.EMBEDDING,
                 supports_tools=False,
                 supports_streaming=False,
-                supports_vision=False
+                supports_vision=False,
+                supports_chat_api=False
             )
+
+        # Legacy & Codex Models - Updated 2026-02-05
+        self._models["babbage-002"] = ModelCapabilities(
+            model_type=ModelType.CHAT,
+            supports_tools=False,
+            supports_streaming=False,
+            supports_vision=False,
+            supports_chat_api=False,
+            supports_completions_api=True
+        )
+
+        self._models["davinci-002"] = ModelCapabilities(
+            model_type=ModelType.CHAT,
+            supports_tools=False,
+            supports_streaming=False,
+            supports_vision=False,
+            supports_chat_api=False,
+            supports_completions_api=True
+        )
+
+        self._models["gpt-5.1-codex-mini"] = ModelCapabilities(
+            model_type=ModelType.REASONING,
+            supports_tools=False,
+            supports_streaming=False,
+            supports_vision=False,
+            max_context_tokens=128000,
+            max_output_tokens=32768,
+            supported_temperatures=[1.0],
+            supports_chat_api=False,
+            supports_completions_api=True
+        )
+
+        self._models["codex-mini-latest"] = ModelCapabilities(
+            model_type=ModelType.REASONING,
+            supports_tools=False,
+            supports_streaming=False,
+            supports_vision=False,
+            max_context_tokens=128000,
+            max_output_tokens=32768,
+            supported_temperatures=[1.0],
+            supports_chat_api=False,
+            supports_responses_api=True
+        )
 
         # Pattern mappings for unknown models - Updated 2026-02-04
         self._pattern_mappings = {
@@ -289,28 +351,40 @@ class OpenAIModelRegistry:
                 model_type=ModelType.REASONING,
                 supports_tools=False,
                 supports_streaming=False,
-                supports_vision=False
+                supports_vision=False,
+                supports_chat_api=True,
+                supports_completions_api=False,
+                supports_responses_api=False
             )
         elif model_type == ModelType.CHAT:
             return ModelCapabilities(
                 model_type=ModelType.CHAT,
                 supports_tools=True,
                 supports_streaming=True,
-                supports_vision=False
+                supports_vision=False,
+                supports_chat_api=True,
+                supports_completions_api=False,
+                supports_responses_api=False
             )
         elif model_type == ModelType.EMBEDDING:
             return ModelCapabilities(
                 model_type=ModelType.EMBEDDING,
                 supports_tools=False,
                 supports_streaming=False,
-                supports_vision=False
+                supports_vision=False,
+                supports_chat_api=False,
+                supports_completions_api=False,
+                supports_responses_api=False
             )
         else:  # MODERATION
             return ModelCapabilities(
                 model_type=ModelType.MODERATION,
                 supports_tools=False,
                 supports_streaming=False,
-                supports_vision=False
+                supports_vision=False,
+                supports_chat_api=False,
+                supports_completions_api=False,
+                supports_responses_api=False
             )
 
     def is_reasoning_model(self, model_name: str) -> bool:

@@ -279,3 +279,69 @@ class DescribeOpenAIModelRegistry:
         audio_caps = registry.get_model_capabilities("gpt-4o-audio-preview")
         assert audio_caps.supports_tools is False
         assert audio_caps.supports_streaming is False
+
+
+class DescribeAPIEndpointSupport:
+
+    def should_flag_chat_only_model(self):
+        registry = OpenAIModelRegistry()
+        caps = registry.get_model_capabilities("gpt-4")
+        assert caps.supports_chat_api is True
+        assert caps.supports_completions_api is False
+        assert caps.supports_responses_api is False
+
+    def should_flag_both_endpoint_model(self):
+        registry = OpenAIModelRegistry()
+        caps = registry.get_model_capabilities("gpt-4o-mini")
+        assert caps.supports_chat_api is True
+        assert caps.supports_completions_api is True
+        assert caps.supports_responses_api is False
+
+    def should_flag_completions_only_model(self):
+        registry = OpenAIModelRegistry()
+        caps = registry.get_model_capabilities("gpt-3.5-turbo-instruct")
+        assert caps.supports_chat_api is False
+        assert caps.supports_completions_api is True
+        assert caps.supports_responses_api is False
+
+    def should_flag_responses_only_model(self):
+        registry = OpenAIModelRegistry()
+        caps = registry.get_model_capabilities("gpt-5-pro")
+        assert caps.supports_chat_api is False
+        assert caps.supports_completions_api is False
+        assert caps.supports_responses_api is True
+
+    def should_flag_legacy_completions_model(self):
+        registry = OpenAIModelRegistry()
+        caps = registry.get_model_capabilities("babbage-002")
+        assert caps.supports_chat_api is False
+        assert caps.supports_completions_api is True
+        assert caps.supports_responses_api is False
+
+    def should_flag_embedding_model_with_no_endpoints(self):
+        registry = OpenAIModelRegistry()
+        caps = registry.get_model_capabilities("text-embedding-3-large")
+        assert caps.supports_chat_api is False
+        assert caps.supports_completions_api is False
+        assert caps.supports_responses_api is False
+
+    def should_flag_codex_mini_latest_as_responses_only(self):
+        registry = OpenAIModelRegistry()
+        caps = registry.get_model_capabilities("codex-mini-latest")
+        assert caps.supports_chat_api is False
+        assert caps.supports_completions_api is False
+        assert caps.supports_responses_api is True
+
+    def should_flag_gpt51_as_both_chat_and_completions(self):
+        registry = OpenAIModelRegistry()
+        caps = registry.get_model_capabilities("gpt-5.1")
+        assert caps.supports_chat_api is True
+        assert caps.supports_completions_api is True
+        assert caps.supports_responses_api is False
+
+    def should_include_endpoint_flags_in_default_capabilities(self):
+        registry = OpenAIModelRegistry()
+        caps = registry.get_model_capabilities("completely-unknown-model-xyz")
+        assert caps.supports_chat_api is True
+        assert caps.supports_completions_api is False
+        assert caps.supports_responses_api is False
