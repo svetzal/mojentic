@@ -137,6 +137,35 @@ llm = LLMBroker(
 )
 ```
 
+## Configuration with CompletionConfig
+
+You can fine-tune LLM behavior using `CompletionConfig`:
+
+```python
+from mojentic.llm import LLMBroker, CompletionConfig
+
+llm = LLMBroker("qwen3:32b")
+
+config = CompletionConfig(
+    temperature=0.3,      # Lower = more focused
+    max_tokens=500,
+    reasoning_effort="high"  # Enable extended thinking
+)
+
+messages = [LLMMessage(role=MessageRole.User, content="Explain quantum computing")]
+response = llm.generate(messages, config=config)
+```
+
+### Available Parameters
+
+- **temperature** (float): Controls randomness. Default: 1.0
+- **num_ctx** (int): Context window size in tokens. Default: 32768
+- **max_tokens** (int): Maximum tokens to generate. Default: 16384
+- **num_predict** (int): Tokens to predict (-1 = no limit). Default: -1
+- **reasoning_effort** (str | None): Extended thinking level — `"low"`, `"medium"`, `"high"`, or `None`. Default: None
+
+For details on reasoning effort, see [Reasoning Effort Control](reasoning_effort.md).
+
 ## Using llms.txt for Configuration
 
 Mojentic now supports a simple configuration file called `llms.txt` that makes it easier to manage your LLM configurations. This is especially useful when you want to switch between different models or environments without changing your code.

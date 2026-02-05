@@ -1,6 +1,7 @@
 from typing import Iterator, List, Optional
 
 from mojentic.llm import LLMBroker
+from mojentic.llm.completion_config import CompletionConfig
 from mojentic.llm.gateways.models import LLMMessage, MessageRole
 from mojentic.llm.gateways.tokenizer_gateway import TokenizerGateway
 from mojentic.llm.tools.llm_tool import LLMTool
@@ -23,6 +24,7 @@ class ChatSession:
                  tools: Optional[List[LLMTool]] = None,
                  max_context: int = 32768,
                  tokenizer_gateway: TokenizerGateway = None,
+                 config: Optional[CompletionConfig] = None,
                  temperature: float = 1.0):
         """
         Create an instance of the ChatSession.
@@ -39,15 +41,25 @@ class ChatSession:
             The maximum number of tokens to keep in the context. Defaults to 32768.
         tokenizer_gateway : TokenizerGateway, optional
             The gateway to use for tokenization. If None, `mxbai-embed-large` is used on a local Ollama server.
+        config : Optional[CompletionConfig], optional
+            Configuration object for LLM completion. If None, one is created from temperature and max_context.
         temperature : float, optional
-            The temperature to use for the response. Defaults to 1.0.
+            The temperature to use for the response. Defaults to 1.0. Deprecated: use config.
         """
 
         self.llm = llm
         self.system_prompt = system_prompt
         self.tools = tools
         self.max_context = max_context
-        self.temperature = temperature
+
+        # Use config if provided, otherwise build from individual kwargs
+        if config is not None:
+            self.config = config
+        else:
+            self.config = CompletionConfig(
+                temperature=temperature,
+                num_ctx=max_context
+            )
 
         if tokenizer_gateway is None:
             self.tokenizer_gateway = TokenizerGateway()
@@ -73,7 +85,7 @@ class ChatSession:
             The response from the LLM.
         """
         self.insert_message(LLMMessage(role=MessageRole.User, content=query))
-        response = self.llm.generate(self.messages, tools=self.tools, temperature=self.temperature)
+        response = self.llm.generate(self.messages, tools=self.tools, config=self.config)
         self._ensure_all_messages_are_sized()
         self.insert_message(LLMMessage(role=MessageRole.Assistant, content=response))
         return response
@@ -95,7 +107,7 @@ class ChatSession:
         """
         self.insert_message(LLMMessage(role=MessageRole.User, content=query))
         accumulated = []
-        for chunk in self.llm.generate_stream(self.messages, tools=self.tools, temperature=self.temperature):
+        for chunk in self.llm.generate_stream(self.messages, tools=self.tools, config=self.config):
             accumulated.append(chunk)
             yield chunk
         self._ensure_all_messages_are_sized()

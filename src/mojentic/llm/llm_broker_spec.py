@@ -1,7 +1,9 @@
 
+import warnings
 import pytest
 from pydantic import BaseModel
 
+from mojentic.llm.completion_config import CompletionConfig
 from mojentic.llm.gateways.models import LLMMessage, MessageRole, LLMGatewayResponse, LLMToolCall
 from mojentic.llm.llm_broker import LLMBroker
 
@@ -209,3 +211,88 @@ class DescribeLLMBroker:
                 list(llm_broker.generate_stream(messages))
 
             assert "does not support streaming" in str(exc_info.value)
+
+    class DescribeCompletionConfigSupport:
+
+        def should_pass_config_to_gateway_in_generate(self, llm_broker, mock_gateway):
+            config = CompletionConfig(temperature=0.7, reasoning_effort="high")
+            messages = [LLMMessage(role=MessageRole.User, content="Test")]
+            mock_gateway.complete.return_value = LLMGatewayResponse(
+                content="Response",
+                object=None,
+                tool_calls=[]
+            )
+
+            llm_broker.generate(messages, config=config)
+
+            mock_gateway.complete.assert_called_once()
+            call_kwargs = mock_gateway.complete.call_args[1]
+            assert call_kwargs['config'] == config
+            assert call_kwargs['config'].reasoning_effort == "high"
+
+        def should_build_config_from_kwargs_when_not_provided(self, llm_broker, mock_gateway):
+            messages = [LLMMessage(role=MessageRole.User, content="Test")]
+            mock_gateway.complete.return_value = LLMGatewayResponse(
+                content="Response",
+                object=None,
+                tool_calls=[]
+            )
+
+            llm_broker.generate(messages, temperature=0.5, num_ctx=16384)
+
+            mock_gateway.complete.assert_called_once()
+            call_kwargs = mock_gateway.complete.call_args[1]
+            assert call_kwargs['config'].temperature == 0.5
+            assert call_kwargs['config'].num_ctx == 16384
+
+        def should_emit_deprecation_warning_when_both_config_and_kwargs_provided(self, llm_broker, mock_gateway):
+            config = CompletionConfig(temperature=0.7)
+            messages = [LLMMessage(role=MessageRole.User, content="Test")]
+            mock_gateway.complete.return_value = LLMGatewayResponse(
+                content="Response",
+                object=None,
+                tool_calls=[]
+            )
+
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("always")
+                llm_broker.generate(messages, config=config, temperature=0.5)
+
+                assert len(w) == 1
+                assert issubclass(w[0].category, DeprecationWarning)
+                assert "deprecated" in str(w[0].message).lower()
+
+        def should_pass_config_to_gateway_in_generate_object(self, llm_broker, mock_gateway):
+            config = CompletionConfig(temperature=0.3, max_tokens=8192)
+            messages = [LLMMessage(role=MessageRole.User, content="Generate object")]
+            mock_object = SimpleModel(text="test", number=42)
+            mock_gateway.complete.return_value = LLMGatewayResponse(
+                content='{"text": "test", "number": 42}',
+                object=mock_object,
+                tool_calls=[]
+            )
+
+            llm_broker.generate_object(messages, object_model=SimpleModel, config=config)
+
+            mock_gateway.complete.assert_called_once()
+            call_kwargs = mock_gateway.complete.call_args[1]
+            assert call_kwargs['config'] == config
+            assert call_kwargs['config'].max_tokens == 8192
+
+        def should_pass_config_to_gateway_in_generate_stream(self, llm_broker, mock_gateway, mocker):
+            from mojentic.llm.gateways.ollama import StreamingResponse
+
+            config = CompletionConfig(temperature=0.9, reasoning_effort="medium")
+            messages = [LLMMessage(role=MessageRole.User, content="Stream test")]
+
+            mock_gateway.complete_stream = mocker.MagicMock()
+            mock_gateway.complete_stream.return_value = iter([
+                StreamingResponse(content="Response")
+            ])
+
+            list(llm_broker.generate_stream(messages, config=config))
+
+            mock_gateway.complete_stream.assert_called_once()
+            call_kwargs = mock_gateway.complete_stream.call_args[1]
+            assert call_kwargs['config'] == config
+            assert call_kwargs['config'].reasoning_effort == "medium"

@@ -170,10 +170,11 @@ def generate_stream(
     self,
     messages: List[LLMMessage],
     tools=None,
-    temperature=1.0,
-    num_ctx=32768,
-    num_predict=-1,
-    max_tokens=16384,
+    config: Optional[CompletionConfig] = None,
+    temperature=None,
+    num_ctx=None,
+    num_predict=None,
+    max_tokens=None,
     correlation_id: str = None
 ) -> Iterator[str]:
     """
@@ -188,16 +189,23 @@ def generate_stream(
         A list of messages to send to the LLM.
     tools : List[Tool]
         A list of tools to use with the LLM.
-    temperature : float
-        The temperature to use for the response. Defaults to 1.0
-    num_ctx : int
-        The number of context tokens to use. Defaults to 32768.
-    num_predict : int
-        The number of tokens to predict. Defaults to no limit.
-    max_tokens : int
-        The maximum number of tokens to generate. Defaults to 16384.
+    config : CompletionConfig, optional
+        Configuration object controlling generation behavior (preferred).
+    temperature : float, optional
+        (Legacy) The temperature to use for the response.
+    num_ctx : int, optional
+        (Legacy) The number of context tokens to use.
+    num_predict : int, optional
+        (Legacy) The number of tokens to predict.
+    max_tokens : int, optional
+        (Legacy) The maximum number of tokens to generate.
     correlation_id : str
         UUID string for tracing events.
+
+    Note
+    ----
+    Prefer using `config=CompletionConfig(...)` over individual kwargs.
+    If both are provided, config takes precedence.
 
     Yields
     ------

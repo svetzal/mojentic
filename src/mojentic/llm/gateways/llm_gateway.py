@@ -1,9 +1,12 @@
-from typing import List, Optional, Type
+from typing import List, Optional, Type, TYPE_CHECKING
 
 from pydantic import BaseModel
 
 from mojentic.llm.gateways.models import LLMGatewayResponse, LLMMessage
 from mojentic.llm.tools.llm_tool import LLMTool
+
+if TYPE_CHECKING:
+    from mojentic.llm.completion_config import CompletionConfig
 
 
 class LLMGateway:
@@ -18,6 +21,7 @@ class LLMGateway:
                  messages: List[LLMMessage],
                  object_model: Optional[Type[BaseModel]] = None,
                  tools: Optional[List[LLMTool]] = None,
+                 config: Optional['CompletionConfig'] = None,
                  temperature: float = 1.0,
                  num_ctx: int = 32768, max_tokens: int = 16384,
                  num_predict: int = -1) -> LLMGatewayResponse:
@@ -35,14 +39,16 @@ class LLMGateway:
         tools : Optional[List[LLMTool]]
             A list of tools to use with the LLM. If a tool call is requested, the tool will be called and the output
             will be included in the response.
+        config : Optional[CompletionConfig]
+            Configuration object for LLM completion (recommended over individual kwargs).
         temperature : float
-            The temperature to use for the response. Defaults to 1.0.
+            The temperature to use for the response. Defaults to 1.0. (Deprecated: use config)
         num_ctx : int
-            The number of context tokens to use. Defaults to 32768.
+            The number of context tokens to use. Defaults to 32768. (Deprecated: use config)
         max_tokens : int
-            The maximum number of tokens to generate. Defaults to 16384.
+            The maximum number of tokens to generate. Defaults to 16384. (Deprecated: use config)
         num_predict : int
-            The number of tokens to predict. Defaults to no limit.
+            The number of tokens to predict. Defaults to no limit. (Deprecated: use config)
 
         Returns
         -------

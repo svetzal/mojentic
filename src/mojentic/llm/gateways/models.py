@@ -97,8 +97,11 @@ class LLMGatewayResponse(BaseModel):
         Parsed response object.
     tool_calls : List[LLMToolCall]
         List of requested tool calls from the LLM.
+    thinking : Optional[str]
+        Model thinking/reasoning trace (populated by some providers).
     """
     content: Optional[Union[str, dict[str, str]]] = Field(None, description="The content of the response.")
     object: Optional[BaseModel] = Field(None, description="Parsed response object")
     tool_calls: List[LLMToolCall] = Field(default_factory=list,
                                           description="List of requested tool calls from the LLM.")
+    thinking: Optional[str] = Field(None, description="Model thinking/reasoning trace (populated by some providers)")

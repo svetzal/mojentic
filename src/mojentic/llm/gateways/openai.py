@@ -121,6 +121,20 @@ class OpenAIGateway(LLMGateway):
                     supported_temperatures=capabilities.supported_temperatures)
                 adapted_args['temperature'] = default_temp
 
+        # Handle reasoning_effort for reasoning models
+        if 'reasoning_effort' in adapted_args and adapted_args['reasoning_effort'] is not None:
+            if capabilities.model_type == ModelType.REASONING:
+                # Keep reasoning_effort for reasoning models
+                logger.info("Adding reasoning_effort parameter for reasoning model",
+                            model=model,
+                            reasoning_effort=adapted_args['reasoning_effort'])
+            else:
+                # Warn and remove for non-reasoning models
+                logger.warning("Model does not support reasoning_effort, ignoring parameter",
+                               model=model,
+                               requested_reasoning_effort=adapted_args['reasoning_effort'])
+                adapted_args.pop('reasoning_effort', None)
+
         return adapted_args
 
     def _validate_model_parameters(self, model: str, args: dict) -> None:
@@ -189,10 +203,21 @@ class OpenAIGateway(LLMGateway):
         messages = kwargs.get('messages')
         object_model = kwargs.get('object_model', None)
         tools = kwargs.get('tools', None)
-        temperature = kwargs.get('temperature', 1.0)
-        num_ctx = kwargs.get('num_ctx', 32768)
-        max_tokens = kwargs.get('max_tokens', 16384)
-        num_predict = kwargs.get('num_predict', -1)
+        config = kwargs.get('config', None)
+
+        # Use config if provided, otherwise use individual kwargs
+        if config:
+            temperature = config.temperature
+            num_ctx = config.num_ctx
+            max_tokens = config.max_tokens
+            num_predict = config.num_predict
+            reasoning_effort = config.reasoning_effort
+        else:
+            temperature = kwargs.get('temperature', 1.0)
+            num_ctx = kwargs.get('num_ctx', 32768)
+            max_tokens = kwargs.get('max_tokens', 16384)
+            num_predict = kwargs.get('num_predict', -1)
+            reasoning_effort = None
 
         if not model:
             raise ValueError("'model' parameter is required")
@@ -208,7 +233,8 @@ class OpenAIGateway(LLMGateway):
             'temperature': temperature,
             'num_ctx': num_ctx,
             'max_tokens': max_tokens,
-            'num_predict': num_predict
+            'num_predict': num_predict,
+            'reasoning_effort': reasoning_effort
         }
 
         # Adapt parameters based on model type
@@ -247,10 +273,15 @@ class OpenAIGateway(LLMGateway):
         elif 'max_completion_tokens' in adapted_args:
             openai_args['max_completion_tokens'] = adapted_args['max_completion_tokens']
 
+        # Add reasoning_effort if present in adapted args
+        if 'reasoning_effort' in adapted_args and adapted_args['reasoning_effort'] is not None:
+            openai_args['reasoning_effort'] = adapted_args['reasoning_effort']
+
         logger.debug("Making OpenAI API call",
                      model=openai_args['model'],
                      has_tools='tools' in openai_args,
                      has_object_model='response_format' in openai_args,
+                     has_reasoning_effort='reasoning_effort' in openai_args,
                      token_param='max_completion_tokens' if 'max_completion_tokens' in openai_args else 'max_tokens')
 
         try:
@@ -339,10 +370,21 @@ class OpenAIGateway(LLMGateway):
         messages = kwargs.get('messages')
         object_model = kwargs.get('object_model', None)
         tools = kwargs.get('tools', None)
-        temperature = kwargs.get('temperature', 1.0)
-        num_ctx = kwargs.get('num_ctx', 32768)
-        max_tokens = kwargs.get('max_tokens', 16384)
-        num_predict = kwargs.get('num_predict', -1)
+        config = kwargs.get('config', None)
+
+        # Use config if provided, otherwise use individual kwargs
+        if config:
+            temperature = config.temperature
+            num_ctx = config.num_ctx
+            max_tokens = config.max_tokens
+            num_predict = config.num_predict
+            reasoning_effort = config.reasoning_effort
+        else:
+            temperature = kwargs.get('temperature', 1.0)
+            num_ctx = kwargs.get('num_ctx', 32768)
+            max_tokens = kwargs.get('max_tokens', 16384)
+            num_predict = kwargs.get('num_predict', -1)
+            reasoning_effort = None
 
         if not model:
             raise ValueError("'model' parameter is required")
@@ -358,7 +400,8 @@ class OpenAIGateway(LLMGateway):
             'temperature': temperature,
             'num_ctx': num_ctx,
             'max_tokens': max_tokens,
-            'num_predict': num_predict
+            'num_predict': num_predict,
+            'reasoning_effort': reasoning_effort
         }
 
         # Adapt parameters based on model type
@@ -401,9 +444,14 @@ class OpenAIGateway(LLMGateway):
         elif 'max_completion_tokens' in adapted_args:
             openai_args['max_completion_tokens'] = adapted_args['max_completion_tokens']
 
+        # Add reasoning_effort if present in adapted args
+        if 'reasoning_effort' in adapted_args and adapted_args['reasoning_effort'] is not None:
+            openai_args['reasoning_effort'] = adapted_args['reasoning_effort']
+
         logger.debug("Making OpenAI streaming API call",
                      model=openai_args['model'],
                      has_tools='tools' in openai_args,
+                     has_reasoning_effort='reasoning_effort' in openai_args,
                      token_param='max_completion_tokens' if 'max_completion_tokens' in openai_args else 'max_tokens')
 
         try:

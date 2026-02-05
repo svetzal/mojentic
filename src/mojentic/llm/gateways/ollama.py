@@ -20,9 +20,12 @@ class StreamingResponse(BaseModel):
         Text content chunk from the LLM response.
     tool_calls : Optional[List]
         Tool calls from the LLM response (raw ollama format).
+    thinking : Optional[str]
+        Thinking/reasoning trace from the LLM response.
     """
     content: Optional[str] = None
     tool_calls: Optional[List] = None
+    thinking: Optional[str] = None
 
 
 class OllamaGateway(LLMGateway):
@@ -41,14 +44,26 @@ class OllamaGateway(LLMGateway):
         self.client = Client(host=host, headers=headers, timeout=timeout)
 
     def _extract_options_from_args(self, args):
-        options = Options(
-            temperature=args.get('temperature', 1.0),
-            num_ctx=args.get('num_ctx', 32768),
-        )
-        if args.get('num_predict', 0) > 0:
-            options.num_predict = args['num_predict']
-        if 'max_tokens' in args:
-            options.num_predict = args['max_tokens']
+        # Extract config if present, otherwise use individual kwargs
+        config = args.get('config', None)
+        if config:
+            options = Options(
+                temperature=config.temperature,
+                num_ctx=config.num_ctx,
+            )
+            if config.num_predict > 0:
+                options.num_predict = config.num_predict
+            if config.max_tokens:
+                options.num_predict = config.max_tokens
+        else:
+            options = Options(
+                temperature=args.get('temperature', 1.0),
+                num_ctx=args.get('num_ctx', 32768),
+            )
+            if args.get('num_predict', 0) > 0:
+                options.num_predict = args['num_predict']
+            if 'max_tokens' in args:
+                options.num_predict = args['max_tokens']
         return options
 
     def complete(self, **args) -> LLMGatewayResponse:
@@ -90,6 +105,12 @@ class OllamaGateway(LLMGateway):
             'options': options
         }
 
+        # Handle reasoning effort - if config has reasoning_effort set, enable thinking
+        config = args.get('config', None)
+        if config and config.reasoning_effort is not None:
+            ollama_args['think'] = True
+            logger.info("Enabling extended thinking for Ollama", reasoning_effort=config.reasoning_effort)
+
         if 'object_model' in args and args['object_model'] is not None:
             ollama_args['format'] = args['object_model'].model_json_schema()
 
@@ -113,10 +134,14 @@ class OllamaGateway(LLMGateway):
                                       arguments={str(k): str(t.function.arguments[k]) for k in t.function.arguments})
                           for t in response.message.tool_calls]
 
+        # Extract thinking content if present
+        thinking = getattr(response.message, 'thinking', None)
+
         return LLMGatewayResponse(
             content=response.message.content,
             object=object,
             tool_calls=tool_calls,
+            thinking=thinking
         )
 
     def complete_stream(self, **args) -> Iterator[StreamingResponse]:
@@ -156,6 +181,12 @@ class OllamaGateway(LLMGateway):
             'stream': True
         }
 
+        # Handle reasoning effort - if config has reasoning_effort set, enable thinking
+        config = args.get('config', None)
+        if config and config.reasoning_effort is not None:
+            ollama_args['think'] = True
+            logger.info("Enabling extended thinking for Ollama streaming", reasoning_effort=config.reasoning_effort)
+
         # Enable tool support if tools are provided
         if 'tools' in args and args['tools'] is not None:
             ollama_args['tools'] = [t.descriptor for t in args['tools']]
@@ -167,6 +198,10 @@ class OllamaGateway(LLMGateway):
                 # Yield content chunks as they arrive
                 if chunk.message.content:
                     yield StreamingResponse(content=chunk.message.content)
+
+                # Yield thinking chunks when they arrive
+                if hasattr(chunk.message, 'thinking') and chunk.message.thinking:
+                    yield StreamingResponse(thinking=chunk.message.thinking)
 
                 # Yield tool calls when they arrive
                 if chunk.message.tool_calls:

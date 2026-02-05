@@ -91,6 +91,7 @@ nav:
       - Streaming Responses: streaming.md
       - Building Tools: building_tools.md
       - Tool Usage: tool_usage.md
+      - Reasoning Effort: reasoning_effort.md
   - Use Cases:
       - Building Chatbots: chat_sessions.md
       - Chatbots with Tools: chat_sessions_with_tools.md

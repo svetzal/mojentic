@@ -17,6 +17,19 @@ class AnthropicGateway(LLMGateway):
     def complete(self, **args) -> LLMGatewayResponse:
 
         messages = args.get('messages')
+        config = args.get('config', None)
+
+        # Extract temperature and max_tokens from config if provided
+        if config:
+            temperature = config.temperature
+            max_tokens = config.max_tokens
+            # Note: reasoning_effort not supported by Anthropic yet
+            if config.reasoning_effort is not None:
+                logger.warning("Anthropic gateway does not yet support reasoning_effort parameter",
+                               reasoning_effort=config.reasoning_effort)
+        else:
+            temperature = args.get('temperature', 1.0)
+            max_tokens = args.get('max_tokens', args.get('num_predict', 2000))
 
         system_messages = [m for m in messages if m.role == MessageRole.System]
         user_messages = [m for m in messages if m.role == MessageRole.User]
@@ -29,8 +42,8 @@ class AnthropicGateway(LLMGateway):
 
         response = self.client.messages.create(
             **anthropic_args,
-            temperature=args.get('temperature', 1.0),
-            max_tokens=args.get('max_tokens', args.get('num_predict', 2000)),
+            temperature=temperature,
+            max_tokens=max_tokens,
             # thinking={
             #     "type": "enabled",
             #     "budget_tokens": 32768,

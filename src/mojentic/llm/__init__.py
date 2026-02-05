@@ -7,6 +7,7 @@ from .llm_broker import LLMBroker  # noqa: F401
 from .chat_session import ChatSession  # noqa: F401
 from .message_composers import MessageBuilder, FileTypeSensor  # noqa: F401
 from .registry.llm_registry import LLMRegistry  # noqa: F401
+from .completion_config import CompletionConfig  # noqa: F401
 
 # Re-export gateway components at the LLM level
 from .gateways.models import (  # noqa: F401

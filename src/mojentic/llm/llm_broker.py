@@ -1,10 +1,12 @@
 import json
 import time
+import warnings
 from typing import List, Optional, Type, Iterator
 
 import structlog
 from pydantic import BaseModel
 
+from mojentic.llm.completion_config import CompletionConfig
 from mojentic.llm.gateways.llm_gateway import LLMGateway
 from mojentic.llm.gateways.models import MessageRole, LLMMessage, LLMGatewayResponse, LLMToolCall
 from mojentic.llm.gateways.ollama import OllamaGateway
@@ -62,8 +64,10 @@ class LLMBroker():
         else:
             self.adapter = gateway
 
-    def generate(self, messages: List[LLMMessage], tools=None, temperature=1.0, num_ctx=32768,
-                 num_predict=-1, max_tokens=16384,
+    def generate(self, messages: List[LLMMessage], tools=None,
+                 config: Optional[CompletionConfig] = None,
+                 temperature: Optional[float] = None, num_ctx: Optional[int] = None,
+                 num_predict: Optional[int] = None, max_tokens: Optional[int] = None,
                  correlation_id: str = None) -> str:
         """
         Generate a text response from the LLM.
@@ -76,12 +80,17 @@ class LLMBroker():
             A list of tools to use with the LLM. If a tool call is requested, the tool will be
             called and the output
             will be included in the response.
-        temperature : float
-            The temperature to use for the response. Defaults to 1.0
-        num_ctx : int
-            The number of context tokens to use. Defaults to 32768.
-        num_predict : int
-            The number of tokens to predict. Defaults to no limit.
+        config : Optional[CompletionConfig]
+            Configuration object for LLM completion (recommended). If provided with individual
+            kwargs, a DeprecationWarning is emitted.
+        temperature : Optional[float]
+            The temperature to use for the response. Deprecated: use config.
+        num_ctx : Optional[int]
+            The number of context tokens to use. Deprecated: use config.
+        num_predict : Optional[int]
+            The number of tokens to predict. Deprecated: use config.
+        max_tokens : Optional[int]
+            The maximum number of tokens to generate. Deprecated: use config.
         correlation_id : str
             UUID string that is copied from cause-to-affect for tracing events.
 
@@ -90,6 +99,23 @@ class LLMBroker():
         str
             The response from the LLM.
         """
+        # Handle config vs individual kwargs
+        if config is not None and any(
+                param is not None for param in [temperature, num_ctx, num_predict, max_tokens]):
+            warnings.warn(
+                "Both config and individual kwargs provided. Using config and ignoring kwargs. "
+                "Individual kwargs are deprecated, use config=CompletionConfig(...) instead.",
+                DeprecationWarning,
+                stacklevel=2
+            )
+        elif config is None:
+            # Build config from individual kwargs
+            config = CompletionConfig(
+                temperature=temperature if temperature is not None else 1.0,
+                num_ctx=num_ctx if num_ctx is not None else 32768,
+                num_predict=num_predict if num_predict is not None else -1,
+                max_tokens=max_tokens if max_tokens is not None else 16384
+            )
         approximate_tokens = len(self.tokenizer.encode(self._content_to_count(messages)))
         logger.info(f"Requesting llm response with approx {approximate_tokens} tokens")
 
@@ -102,7 +128,7 @@ class LLMBroker():
         self.tracer.record_llm_call(
             self.model,
             messages_for_tracer,
-            temperature,
+            config.temperature,
             tools=tools_for_tracer,
             source=type(self),
             correlation_id=correlation_id
@@ -115,10 +141,11 @@ class LLMBroker():
             model=self.model,
             messages=messages,
             tools=tools,
-            temperature=temperature,
-            num_ctx=num_ctx,
-            num_predict=num_predict,
-            max_tokens=max_tokens)
+            config=config,
+            temperature=config.temperature,
+            num_ctx=config.num_ctx,
+            num_predict=config.num_predict,
+            max_tokens=config.max_tokens)
 
         call_duration_ms = (time.time() - start_time) * 1000
 
@@ -172,7 +199,7 @@ class LLMBroker():
                                    tool_calls=[tool_call]))
                     # {'role': 'tool', 'content': str(output), 'name': tool_call.name,
                     # 'tool_call_id': tool_call.id})
-                    return self.generate(messages, tools, temperature, num_ctx, num_predict,
+                    return self.generate(messages, tools, config=config,
                                          correlation_id=correlation_id)
                 else:
                     logger.warn('Function not found', function=tool_call.name)
@@ -182,8 +209,10 @@ class LLMBroker():
 
         return result.content
 
-    def generate_stream(self, messages: List[LLMMessage], tools=None, temperature=1.0, num_ctx=32768,
-                        num_predict=-1, max_tokens=16384,
+    def generate_stream(self, messages: List[LLMMessage], tools=None,
+                        config: Optional[CompletionConfig] = None,
+                        temperature: Optional[float] = None, num_ctx: Optional[int] = None,
+                        num_predict: Optional[int] = None, max_tokens: Optional[int] = None,
                         correlation_id: str = None) -> Iterator[str]:
         """
         Generate a streaming text response from the LLM.
@@ -200,14 +229,17 @@ class LLMBroker():
         tools : List[Tool]
             A list of tools to use with the LLM. If a tool call is requested, the tool will be
             called and the output will be included in the response.
-        temperature : float
-            The temperature to use for the response. Defaults to 1.0
-        num_ctx : int
-            The number of context tokens to use. Defaults to 32768.
-        num_predict : int
-            The number of tokens to predict. Defaults to no limit.
-        max_tokens : int
-            The maximum number of tokens to generate. Defaults to 16384.
+        config : Optional[CompletionConfig]
+            Configuration object for LLM completion (recommended). If provided with individual
+            kwargs, a DeprecationWarning is emitted.
+        temperature : Optional[float]
+            The temperature to use for the response. Deprecated: use config.
+        num_ctx : Optional[int]
+            The number of context tokens to use. Deprecated: use config.
+        num_predict : Optional[int]
+            The number of tokens to predict. Deprecated: use config.
+        max_tokens : Optional[int]
+            The maximum number of tokens to generate. Deprecated: use config.
         correlation_id : str
             UUID string that is copied from cause-to-affect for tracing events.
 
@@ -216,6 +248,23 @@ class LLMBroker():
         str
             Content chunks as they arrive from the LLM.
         """
+        # Handle config vs individual kwargs
+        if config is not None and any(
+                param is not None for param in [temperature, num_ctx, num_predict, max_tokens]):
+            warnings.warn(
+                "Both config and individual kwargs provided. Using config and ignoring kwargs. "
+                "Individual kwargs are deprecated, use config=CompletionConfig(...) instead.",
+                DeprecationWarning,
+                stacklevel=2
+            )
+        elif config is None:
+            # Build config from individual kwargs
+            config = CompletionConfig(
+                temperature=temperature if temperature is not None else 1.0,
+                num_ctx=num_ctx if num_ctx is not None else 32768,
+                num_predict=num_predict if num_predict is not None else -1,
+                max_tokens=max_tokens if max_tokens is not None else 16384
+            )
         # Check if gateway supports streaming
         if not hasattr(self.adapter, 'complete_stream'):
             raise NotImplementedError(f"Gateway {type(self.adapter).__name__} does not support streaming")
@@ -232,7 +281,7 @@ class LLMBroker():
         self.tracer.record_llm_call(
             self.model,
             messages_for_tracer,
-            temperature,
+            config.temperature,
             tools=tools_for_tracer,
             source=type(self),
             correlation_id=correlation_id
@@ -249,10 +298,11 @@ class LLMBroker():
             model=self.model,
             messages=messages,
             tools=tools,
-            temperature=temperature,
-            num_ctx=num_ctx,
-            num_predict=num_predict,
-            max_tokens=max_tokens
+            config=config,
+            temperature=config.temperature,
+            num_ctx=config.num_ctx,
+            num_predict=config.num_predict,
+            max_tokens=config.max_tokens
         )
 
         for chunk in stream:
@@ -335,8 +385,7 @@ class LLMBroker():
 
                     # Recursively stream the response after tool execution
                     yield from self.generate_stream(
-                        messages, tools, temperature, num_ctx, num_predict,
-                        max_tokens, correlation_id=correlation_id
+                        messages, tools, config=config, correlation_id=correlation_id
                     )
                     return  # Exit after recursive call
                 else:
@@ -350,7 +399,9 @@ class LLMBroker():
         return content
 
     def generate_object(self, messages: List[LLMMessage], object_model: Type[BaseModel],
-                        temperature=1.0, num_ctx=32768, num_predict=-1, max_tokens=16384,
+                        config: Optional[CompletionConfig] = None,
+                        temperature: Optional[float] = None, num_ctx: Optional[int] = None,
+                        num_predict: Optional[int] = None, max_tokens: Optional[int] = None,
                         correlation_id: str = None) -> BaseModel:
         """
         Generate a structured response from the LLM and return it as an object.
@@ -361,12 +412,17 @@ class LLMBroker():
             A list of messages to send to the LLM.
         object_model : BaseModel
             The class of the model to use for the structured response data.
-        temperature : float
-            The temperature to use for the response. Defaults to 1.0.
-        num_ctx : int
-            The number of context tokens to use. Defaults to 32768.
-        num_predict : int
-            The number of tokens to predict. Defaults to no limit.
+        config : Optional[CompletionConfig]
+            Configuration object for LLM completion (recommended). If provided with individual
+            kwargs, a DeprecationWarning is emitted.
+        temperature : Optional[float]
+            The temperature to use for the response. Deprecated: use config.
+        num_ctx : Optional[int]
+            The number of context tokens to use. Deprecated: use config.
+        num_predict : Optional[int]
+            The number of tokens to predict. Deprecated: use config.
+        max_tokens : Optional[int]
+            The maximum number of tokens to generate. Deprecated: use config.
         correlation_id : str
             UUID string that is copied from cause-to-affect for tracing events.
 
@@ -375,6 +431,23 @@ class LLMBroker():
         BaseModel
             An instance of the model class provided containing the structured response data.
         """
+        # Handle config vs individual kwargs
+        if config is not None and any(
+                param is not None for param in [temperature, num_ctx, num_predict, max_tokens]):
+            warnings.warn(
+                "Both config and individual kwargs provided. Using config and ignoring kwargs. "
+                "Individual kwargs are deprecated, use config=CompletionConfig(...) instead.",
+                DeprecationWarning,
+                stacklevel=2
+            )
+        elif config is None:
+            # Build config from individual kwargs
+            config = CompletionConfig(
+                temperature=temperature if temperature is not None else 1.0,
+                num_ctx=num_ctx if num_ctx is not None else 32768,
+                num_predict=num_predict if num_predict is not None else -1,
+                max_tokens=max_tokens if max_tokens is not None else 16384
+            )
         approximate_tokens = len(self.tokenizer.encode(self._content_to_count(messages)))
         logger.info(f"Requesting llm response with approx {approximate_tokens} tokens")
 
@@ -385,7 +458,7 @@ class LLMBroker():
         self.tracer.record_llm_call(
             self.model,
             messages_for_tracer,
-            temperature,
+            config.temperature,
             tools=None,
             source=type(self),
             correlation_id=correlation_id
@@ -396,8 +469,9 @@ class LLMBroker():
 
         result = self.adapter.complete(model=self.model, messages=messages,
                                        object_model=object_model,
-                                       temperature=temperature, num_ctx=num_ctx,
-                                       num_predict=num_predict, max_tokens=max_tokens)
+                                       config=config,
+                                       temperature=config.temperature, num_ctx=config.num_ctx,
+                                       num_predict=config.num_predict, max_tokens=config.max_tokens)
 
         call_duration_ms = (time.time() - start_time) * 1000
 

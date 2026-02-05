@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-02-05
+
+### Added
+
+- `CompletionConfig` model for unified LLM configuration (temperature, num_ctx, max_tokens, num_predict, reasoning_effort)
+- Reasoning effort control via `CompletionConfig(reasoning_effort="low"|"medium"|"high")`
+  - Ollama gateway: maps to `think: true` parameter for extended thinking
+  - OpenAI gateway: maps to `reasoning_effort` API parameter for reasoning models
+- `thinking` field on `LLMGatewayResponse` for model reasoning traces (populated by Ollama)
+- `CompletionConfig` support in `ChatSession`
+
+### Deprecated
+
+- Individual kwargs (`temperature`, `num_ctx`, `max_tokens`, `num_predict`) on `LLMBroker.generate()`, `generate_object()`, and `generate_stream()` — use `config=CompletionConfig(...)` instead
+
 ## [1.1.1] - 2026-02-05
 
 ### Security
