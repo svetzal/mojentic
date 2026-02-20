@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-02-20
+
+### Security
+
+- Bumped `openai>=2.21.0`, `anthropic>=0.83.0`, `filelock>=3.24.3`, and `urllib3>=2.6.3` to latest compatible versions to patch known CVEs (CVE-2026-22701 in filelock, CVE-2026-21441 in urllib3)
+
 ## [1.2.0] - 2026-02-05
 
 ### Added
