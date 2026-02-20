@@ -1,0 +1,24 @@
+{
+  "gates": [
+    {
+      "name": "lint",
+      "command": "uv run flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics",
+      "required": true
+    },
+    {
+      "name": "test",
+      "command": "uv run pytest",
+      "required": true
+    },
+    {
+      "name": "security-scan",
+      "command": "uv run bandit -c .bandit -r src",
+      "required": false
+    },
+    {
+      "name": "dependency-audit",
+      "command": "uv run pip-audit",
+      "required": false
+    }
+  ]
+}
