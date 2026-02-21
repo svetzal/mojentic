@@ -941,7 +941,7 @@ dependencies = [
     { name = "urllib3" },
 ]
 
-[package.optional-dependencies]
+[package.dev-dependencies]
 dev = [
     { name = "bandit" },
     { name = "flake8" },
@@ -962,34 +962,37 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "anthropic", specifier = ">=0.83.0" },
-    { name = "bandit", marker = "extra == 'dev'", specifier = ">=1.9.3" },
     { name = "colorama", specifier = ">=0.4.6" },
     { name = "filelock", specifier = ">=3.24.3" },
-    { name = "flake8", marker = "extra == 'dev'", specifier = ">=7.3.0" },
-    { name = "griffe-fieldz", marker = "extra == 'dev'", specifier = ">=0.4.0" },
-    { name = "mkdocs", marker = "extra == 'dev'", specifier = ">=1.6.1" },
-    { name = "mkdocs-llmstxt", marker = "extra == 'dev'", specifier = ">=0.5.0" },
-    { name = "mkdocs-material", marker = "extra == 'dev'", specifier = ">=9.7.2" },
-    { name = "mkdocstrings", extras = ["python"], marker = "extra == 'dev'", specifier = ">=1.0.3" },
     { name = "numpy", specifier = ">=2.4.2" },
     { name = "ollama", specifier = ">=0.6.1" },
     { name = "openai", specifier = ">=2.21.0" },
     { name = "parsedatetime", specifier = ">=2.6" },
-    { name = "pip-audit", marker = "extra == 'dev'", specifier = ">=2.10.0" },
     { name = "pydantic", specifier = ">=2.12.5" },
-    { name = "pymdown-extensions", marker = "extra == 'dev'", specifier = ">=10.21" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=9.0.2" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=1.3.0" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=7.0.0" },
-    { name = "pytest-mock", marker = "extra == 'dev'", specifier = ">=3.15.1" },
-    { name = "pytest-spec", marker = "extra == 'dev'", specifier = ">=5.2.0" },
     { name = "pytz", specifier = ">=2025.2" },
     { name = "serpapi", specifier = ">=0.1.5" },
     { name = "structlog", specifier = ">=25.5.0" },
     { name = "tiktoken", specifier = ">=0.12.0" },
     { name = "urllib3", specifier = ">=2.6.3" },
 ]
-provides-extras = ["dev"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "bandit", specifier = ">=1.9.3" },
+    { name = "flake8", specifier = ">=7.3.0" },
+    { name = "griffe-fieldz", specifier = ">=0.4.0" },
+    { name = "mkdocs", specifier = ">=1.6.1" },
+    { name = "mkdocs-llmstxt", specifier = ">=0.5.0" },
+    { name = "mkdocs-material", specifier = ">=9.7.2" },
+    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.3" },
+    { name = "pip-audit", specifier = ">=2.10.0" },
+    { name = "pymdown-extensions", specifier = ">=10.21" },
+    { name = "pytest", specifier = ">=9.0.2" },
+    { name = "pytest-asyncio", specifier = ">=1.3.0" },
+    { name = "pytest-cov", specifier = ">=7.0.0" },
+    { name = "pytest-mock", specifier = ">=3.15.1" },
+    { name = "pytest-spec", specifier = ">=5.2.0" },
+]
 
 [[package]]
 name = "msgpack"

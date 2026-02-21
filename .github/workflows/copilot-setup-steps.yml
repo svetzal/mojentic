@@ -11,7 +11,10 @@ jobs:
     # Set the permissions to the lowest permissions possible needed for your steps.
     # Copilot will be given its own token for its operations.
     permissions:
-      # If you want to clone the repository as part of your setup steps, for example to install dependencies, you'll need the `contents: read` permission. If you don't clone the repository in your setup steps, Copilot will do this for you automatically after the steps complete.
+      # If you want to clone the repository as part of your setup steps, for example to install
+      # dependencies, you'll need the `contents: read` permission. If you don't clone the
+      # repository in your setup steps, Copilot will do this for you automatically after the
+      # steps complete.
       contents: read
 
     # You can define any steps you want, and they will run before the agent starts.
@@ -20,16 +23,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.13.1
-        uses: actions/setup-python@v3
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: "3.13"
+          enable-cache: true
 
       - name: Install Python dependencies
-        run: pip install -e ".[dev]"
+        run: uv sync
 
-      - name: Install pre-commit hook
-        run: |
-          chmod +x commit-hook.sh
-          cp commit-hook.sh .git/hooks/pre-commit
-          echo "Pre-commit hook installed successfully"
+      - name: Configure versioned git hooks
+        run: git config core.hooksPath .githooks

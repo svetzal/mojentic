@@ -15,95 +15,47 @@ permissions:
   pages: write
 
 jobs:
-  setup:
+  lint:
     runs-on: ubuntu-latest
     # Skip job if actor is github-actions[bot] to ensure agent safety
     if: ${{ github.actor != 'github-actions[bot]' }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python 3.13
-        id: setup-python
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: "3.13"
+          enable-cache: true
 
-      - name: Cache virtual environment
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: ${{ runner.os }}-${{ runner.arch }}-py${{ steps.setup-python.outputs.python-version }}-venv-v2-${{ hashFiles('pyproject.toml', 'requirements.txt', 'dev-requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ runner.arch }}-py${{ steps.setup-python.outputs.python-version }}-venv-v2-
-
-      - name: Create and activate virtual environment
-        shell: bash
-        run: |
-          if [ ! -x .venv/bin/python ]; then
-            rm -rf .venv
-            python -m venv .venv
-          fi
-          source .venv/bin/activate
-          python -m pip install --upgrade pip
-          if [ -f pyproject.toml ]; then pip install -e ".[dev]"; fi
-          if [ -f dev-requirements.txt ]; then pip install -r dev-requirements.txt; fi
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-
-  lint:
-    runs-on: ubuntu-latest
-    needs: setup
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python 3.13
-        id: setup-python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-
-      - name: Restore virtual environment
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: ${{ runner.os }}-${{ runner.arch }}-py${{ steps.setup-python.outputs.python-version }}-venv-v2-${{ hashFiles('pyproject.toml', 'requirements.txt', 'dev-requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ runner.arch }}-py${{ steps.setup-python.outputs.python-version }}-venv-v2-
+      - name: Install dependencies
+        run: uv sync --frozen
 
       - name: Lint with flake8
-        shell: bash
         run: |
-          source .venv/bin/activate
           # stop the validation if there are Python syntax errors or undefined names
-          flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics
+          uv run flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics
           # exit-zero treats all errors as warnings
-          flake8 src --count --exit-zero --max-complexity=10 --max-line-length=127 \
+          uv run flake8 src --count --exit-zero --max-complexity=10 --max-line-length=127 \
             --statistics --ignore=F401
 
   test:
     runs-on: ubuntu-latest
-    needs: setup
+    # Skip job if actor is github-actions[bot] to ensure agent safety
+    if: ${{ github.actor != 'github-actions[bot]' }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python 3.13
-        id: setup-python
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: "3.13"
+          enable-cache: true
 
-      - name: Restore virtual environment
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: ${{ runner.os }}-${{ runner.arch }}-py${{ steps.setup-python.outputs.python-version }}-venv-v2-${{ hashFiles('pyproject.toml', 'requirements.txt', 'dev-requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ runner.arch }}-py${{ steps.setup-python.outputs.python-version }}-venv-v2-
+      - name: Install dependencies
+        run: uv sync --frozen
 
       - name: Test with pytest
-        shell: bash
         run: |
-          source .venv/bin/activate
-          pytest --junitxml=junit/test-results.xml --cov=mojentic \
+          uv run pytest --junitxml=junit/test-results.xml --cov=mojentic \
             --cov-report=xml --cov-report=html
 
       - name: Upload test results
@@ -117,29 +69,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python 3.13
-        id: setup-python
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: "3.13"
+          enable-cache: true
 
-      - name: Install security scanning tools
-        shell: bash
-        run: |
-          python -m pip install --upgrade pip
-          pip install bandit>=1.7.0 pip-audit>=2.0.0
+      - name: Install dependencies
+        run: uv sync --frozen
 
       - name: Code security scan with bandit
-        shell: bash
         run: |
-          bandit -c .bandit -r src -f json -o bandit-report.json || true
-          bandit -c .bandit -r src
+          uv run bandit -c .bandit -r src -f json -o bandit-report.json || true
+          uv run bandit -c .bandit -r src
 
       - name: Dependency security scan with pip-audit
-        shell: bash
         run: |
-          pip-audit --format json --output pip-audit-report.json || true
-          pip-audit
+          uv run pip-audit --format json --output pip-audit-report.json || true
+          uv run pip-audit
 
       - name: Upload security scan results
         uses: actions/upload-artifact@v4
@@ -158,25 +104,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python 3.13
-        id: setup-python
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: "3.13"
+          enable-cache: true
 
-      - name: Restore virtual environment
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: ${{ runner.os }}-${{ runner.arch }}-py${{ steps.setup-python.outputs.python-version }}-venv-v2-${{ hashFiles('pyproject.toml', 'requirements.txt', 'dev-requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ runner.arch }}-py${{ steps.setup-python.outputs.python-version }}-venv-v2-
+      - name: Install dependencies
+        run: uv sync --frozen
 
       - name: Build MkDocs site
-        shell: bash
-        run: |
-          source .venv/bin/activate
-          mkdocs build
+        run: uv run mkdocs build
 
       - name: Upload documentation site
         uses: actions/upload-artifact@v4
@@ -186,11 +123,7 @@ jobs:
           retention-days: 1
 
       - name: Build release distributions
-        shell: bash
-        run: |
-          source .venv/bin/activate
-          python -m pip install build
-          python -m build
+        run: uv build
 
       - name: Upload distributions
         uses: actions/upload-artifact@v4
