@@ -180,7 +180,6 @@ This release marks the first stable version of Mojentic, released simultaneously
 
 ### Added
 
-- Added llms.txt support for easier LLM configuration
 - Added extensive tests for `FilesystemGateway`, `FileManager`, and tools in `file_manager_spec.py`
 - Introduced `IterativeProblemSolverTool` example to illustrate multi-level problem solving
 
