@@ -10,7 +10,6 @@ The --cheap flag skips expensive model families and infers capabilities
 from their -mini variants instead.
 """
 
-import base64
 import json
 import os
 import sys
@@ -20,9 +19,7 @@ from typing import Optional
 
 from openai import OpenAI, BadRequestError, APIError, RateLimitError
 
-from mojentic.llm.gateways.openai_model_registry import (
-    OpenAIModelRegistry, ModelType
-)
+from mojentic.llm.gateways.openai_model_registry import OpenAIModelRegistry
 
 # Models that use different API endpoints (not chat-compatible)
 SKIP_PREFIXES = [
@@ -118,7 +115,7 @@ def probe_basic_chat(client: OpenAI, model_id: str) -> dict:
 
     # Try with max_tokens first (standard chat models)
     try:
-        response = rate_limited_call(
+        rate_limited_call(
             client.chat.completions.create,
             model=model_id,
             messages=[{"role": "user", "content": "Say hi"}],
@@ -132,7 +129,7 @@ def probe_basic_chat(client: OpenAI, model_id: str) -> dict:
         if "max_completion_tokens" in error_msg:
             # Reasoning model - retry with max_completion_tokens
             try:
-                response = rate_limited_call(
+                rate_limited_call(
                     client.chat.completions.create,
                     model=model_id,
                     messages=[{"role": "user", "content": "Say hi"}],
@@ -163,7 +160,7 @@ def probe_tool_calling(client: OpenAI, model_id: str, uses_max_tokens: bool) -> 
         token_kwargs["max_completion_tokens"] = 100
 
     try:
-        response = rate_limited_call(
+        rate_limited_call(
             client.chat.completions.create,
             model=model_id,
             messages=[{"role": "user", "content": "What is the weather in London?"}],
@@ -232,7 +229,7 @@ def probe_vision(client: OpenAI, model_id: str, uses_max_tokens: bool) -> dict:
         token_kwargs["max_completion_tokens"] = 50
 
     try:
-        response = rate_limited_call(
+        rate_limited_call(
             client.chat.completions.create,
             model=model_id,
             messages=[{
@@ -279,7 +276,7 @@ def probe_temperature(client: OpenAI, model_id: str, uses_max_tokens: bool) -> d
 
     for temp in test_temps:
         try:
-            response = rate_limited_call(
+            rate_limited_call(
                 client.chat.completions.create,
                 model=model_id,
                 messages=[{"role": "user", "content": "Say ok"}],
@@ -313,7 +310,7 @@ def probe_embedding(client: OpenAI, model_id: str) -> dict:
     """Test if a model works as an embedding model."""
     result = {"is_embedding": False, "error": None}
     try:
-        response = rate_limited_call(
+        rate_limited_call(
             client.embeddings.create,
             model=model_id,
             input="test",
