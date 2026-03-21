@@ -1,5 +1,7 @@
 # Mojentic Python — Project Guidance
 
+Why this project exists and what problem does it solve: @CHARTER.md
+
 **IMPORTANT**: Consult these guidelines early and often when working with this project.
 
 ## Project Overview
