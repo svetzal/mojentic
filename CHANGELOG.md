@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2026-03-25
+
+### Security
+
+- Updated 24 dependencies including `anthropic` (0.83.0→0.86.0) and `openai` (2.21.0→2.29.0) to latest compatible versions for security patches
+- `pygments 2.19.2` has a known vulnerability (CVE-2026-4539) with no upstream fix available at release time; will be addressed in a future release once a patched version is published
+
 ## [1.2.1] - 2026-02-20
 
 ### Security
