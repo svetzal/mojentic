@@ -205,21 +205,29 @@ Always use the same `show_root_heading`, `merge_init_into_class`, and `group_by_
 2. Build and publish the package to PyPI (using trusted publishing)
 3. Deploy documentation to GitHub Pages
 
-#### Steps to Release
+The pipeline uses PyPI trusted publishing — no API tokens needed in GitHub secrets.
+
+#### To create a new release:
 
 ```bash
-# 1. Update version in pyproject.toml (e.g., version = "1.1.0")
+# 1. Pre-flight — all quality gates must pass
+uv run flake8 src && uv run pytest && uv run pip-audit && uv run mkdocs build
 
-# 2. Update CHANGELOG.md
-#    - Add new version section with date: ## [1.1.0] - YYYY-MM-DD
-#    - Document all changes under appropriate headers (Added, Changed, Fixed, etc.)
+# 2. Update CHANGELOG.md — move [Unreleased] to [X.Y.Z] with today's date
 
-# 3. Commit and push
+# 3. Bump version in pyproject.toml (e.g., version = "1.1.0")
+
+# 4. Commit
 git add pyproject.toml CHANGELOG.md
-git commit -m "chore: prepare v1.1.0 release"
-git push origin main
+git commit -m "Release v1.1.0"
 
-# 4. Create GitHub release (this triggers the publish)
+# 5. Tag
+git tag v1.1.0
+
+# 6. Push
+git push origin main --tags
+
+# 7. Create GitHub Release (triggers PyPI publish and docs deploy)
 gh release create v1.1.0 \
   --title "v1.1.0 - Release Title" \
   --notes "## What's New
@@ -228,9 +236,10 @@ gh release create v1.1.0 \
 - Feature 2
 
 See [CHANGELOG.md](CHANGELOG.md) for full details."
-```
 
-The pipeline uses PyPI trusted publishing — no API tokens needed in GitHub secrets.
+# 8. Local install — immediately available, don't wait for PyPI
+uv tool install . --force
+```
 
 ### CI/CD Pipeline
 
@@ -247,16 +256,6 @@ The GitHub Actions workflow (`.github/workflows/build.yml`) runs:
 - **Major (x.0.0)**: Breaking API changes, removal of deprecated features. Provide migration guides.
 - **Minor (0.x.0)**: New features (backward-compatible), deprecation notices, performance improvements.
 - **Patch (0.0.x)**: Bug fixes, security updates, documentation corrections.
-
-### Pre-Release Checklist
-
-- [ ] All tests pass: `uv run pytest`
-- [ ] Linting passes: `uv run flake8 src`
-- [ ] Security audit clean: `uv run pip-audit`
-- [ ] Docs build: `uv run mkdocs build`
-- [ ] Version updated in `pyproject.toml`
-- [ ] CHANGELOG.md updated
-- [ ] Changes committed and pushed to main
 
 ## Branding
 
