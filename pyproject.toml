@@ -25,7 +25,7 @@ dependencies = [
     "pytz>=2026.1.post1",
     "serpapi>=1.0.2",
     "colorama>=0.4.6",
-    "filelock>=3.25.2",
+    "filelock>=3.29.0",
     "urllib3>=2.6.3",
 ]
 
