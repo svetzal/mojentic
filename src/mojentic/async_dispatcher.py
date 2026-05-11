@@ -35,6 +35,7 @@ class AsyncDispatcher:
         self.event_queue = deque()
         self._stop_event = asyncio.Event()
         self._task = None
+        self._in_flight = 0
 
         # Use null_tracer if no tracer is provided
         from mojentic.tracer import null_tracer
@@ -71,7 +72,7 @@ class AsyncDispatcher:
             True if the queue is empty, False if the timeout was reached
         """
         start_time = asyncio.get_event_loop().time()
-        while len(self.event_queue) > 0:
+        while len(self.event_queue) > 0 or self._in_flight > 0:
             if timeout is not None and asyncio.get_event_loop().time() - start_time > timeout:
                 return False
             await asyncio.sleep(0.1)
@@ -119,10 +120,14 @@ class AsyncDispatcher:
 
                         # Process the event through the agent
                         # If the agent is an async agent, await its receive_event method
-                        if hasattr(agent, 'receive_event_async'):
-                            received_events = await agent.receive_event_async(event)
-                        else:
-                            received_events = agent.receive_event(event)
+                        self._in_flight += 1
+                        try:
+                            if hasattr(agent, 'receive_event_async'):
+                                received_events = await agent.receive_event_async(event)
+                            else:
+                                received_events = agent.receive_event(event)
+                        finally:
+                            self._in_flight -= 1
 
                         logger.debug(f"Agent {agent} returned {len(received_events)} events")
                         events.extend(received_events)

@@ -4,9 +4,10 @@ This implementation provides a more declarative approach to problem-solving.
 """
 
 import asyncio
+import re
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from mojentic.llm.chat_session import ChatSession
 from mojentic.llm.llm_broker import LLMBroker
@@ -62,6 +63,15 @@ class TimeoutEvent(SolverEvent):
     """
 
 
+class GoalFailedDueToErrorEvent(SolverEvent):
+    """
+    Event triggered when an async handler raises an unhandled exception.
+    """
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    error: Exception
+
+
 class EventEmitter:
     """
     A simple event emitter that allows subscribing to and emitting events.
@@ -69,6 +79,7 @@ class EventEmitter:
 
     def __init__(self):
         self.subscribers = {}
+        self._error_callbacks = []
 
     def subscribe(self, event_type, callback):
         """
@@ -91,6 +102,29 @@ class EventEmitter:
         self.subscribers[event_type].append(callback)
         return lambda: self.subscribers[event_type].remove(callback)  # Return unsubscribe function
 
+    def _on_task_done(self, task, state):
+        """
+        Callback attached to async tasks created by emit. Routes exceptions to error subscribers.
+
+        Parameters
+        ----------
+        task : asyncio.Task
+            The completed task to check for exceptions
+        state : GoalState
+            The goal state at the time the task was created
+        """
+        if task.cancelled():
+            return
+        exc = task.exception()
+        if exc is not None:
+            error_event = GoalFailedDueToErrorEvent(state=state, error=exc)
+            event_type = GoalFailedDueToErrorEvent
+            if event_type in self.subscribers:
+                for callback in self.subscribers[event_type]:
+                    result = callback(error_event)
+                    if asyncio.iscoroutine(result):
+                        asyncio.create_task(result)
+
     def emit(self, event):
         """
         Emit an event to all subscribers.
@@ -101,12 +135,15 @@ class EventEmitter:
             The event to emit to subscribers
         """
         event_type = type(event)
+        state = getattr(event, 'state', None)
         if event_type in self.subscribers:
             for callback in self.subscribers[event_type]:
                 result = callback(event)
                 # If the callback is a coroutine, create a task for it
                 if asyncio.iscoroutine(result):
-                    asyncio.create_task(result)
+                    task = asyncio.create_task(result)
+                    if state is not None:
+                        task.add_done_callback(lambda t: self._on_task_done(t, state))
 
 
 class SimpleRecursiveAgent:
@@ -195,10 +232,15 @@ class SimpleRecursiveAgent:
             if not solution_future.done():
                 solution_future.set_result(event.state.solution)
 
+        def handle_error_event(event):
+            if not solution_future.done():
+                solution_future.set_exception(event.error)
+
         # Subscribe to completion events
         self.emitter.subscribe(GoalAchievedEvent, handle_solution_event)
         self.emitter.subscribe(GoalFailedEvent, handle_solution_event)
         self.emitter.subscribe(TimeoutEvent, handle_solution_event)
+        self.emitter.subscribe(GoalFailedDueToErrorEvent, handle_error_event)
 
         # Start the solving process
         self.emitter.emit(GoalSubmittedEvent(state=state))
@@ -239,12 +281,12 @@ class SimpleRecursiveAgent:
         response = event.response
 
         # Check if the task failed or succeeded
-        if "FAIL".lower() in response.lower():
+        if re.search(r'\bFAIL\b', response, re.IGNORECASE):
             state.solution = f"Failed to solve after {state.iteration} iterations:\n{response}"
             state.is_complete = True
             self.emitter.emit(GoalFailedEvent(state=state))
             return
-        elif "DONE".lower() in response.lower():
+        elif re.search(r'\bDONE\b', response, re.IGNORECASE):
             state.solution = response
             state.is_complete = True
             self.emitter.emit(GoalAchievedEvent(state=state))

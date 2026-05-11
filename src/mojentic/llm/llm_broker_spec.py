@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 from mojentic.llm.completion_config import CompletionConfig
 from mojentic.llm.gateways.models import LLMMessage, MessageRole, LLMGatewayResponse, LLMToolCall
-from mojentic.llm.llm_broker import LLMBroker
+from mojentic.llm.llm_broker import LLMBroker, MaxToolIterationsExceededError
 
 
 class SimpleModel(BaseModel):
@@ -296,3 +296,72 @@ class DescribeLLMBroker:
             call_kwargs = mock_gateway.complete_stream.call_args[1]
             assert call_kwargs['config'] == config
             assert call_kwargs['config'].reasoning_effort == "medium"
+
+    class DescribeMaxToolIterations:
+
+        def should_raise_when_tool_calls_exceed_max_iterations_in_generate(
+                self, llm_broker, mock_gateway, mocker):
+            from mojentic.llm.gateways.models import LLMToolCall
+
+            messages = [LLMMessage(role=MessageRole.User, content="Solve this")]
+            tool_call = mocker.create_autospec(LLMToolCall, instance=True)
+            tool_call.name = "some_tool"
+            tool_call.arguments = {}
+
+            mock_gateway.complete.return_value = LLMGatewayResponse(
+                content="", object=None, tool_calls=[tool_call]
+            )
+
+            mock_tool = mocker.MagicMock()
+            mock_tool.matches.return_value = True
+            mock_tool.run.return_value = {"result": "data"}
+
+            with pytest.raises(MaxToolIterationsExceededError):
+                llm_broker.generate(messages, tools=[mock_tool], max_tool_iterations=2)
+
+        def should_raise_when_tool_calls_exceed_max_iterations_in_generate_stream(
+                self, llm_broker, mock_gateway, mocker):
+            from mojentic.llm.gateways.ollama import StreamingResponse
+
+            messages = [LLMMessage(role=MessageRole.User, content="Solve this")]
+            tool_call = mocker.create_autospec(LLMToolCall, instance=True)
+            tool_call.name = "some_tool"
+            tool_call.arguments = {}
+
+            mock_gateway.complete_stream = mocker.MagicMock()
+            mock_gateway.complete_stream.return_value = iter([
+                StreamingResponse(tool_calls=[tool_call])
+            ])
+
+            mock_tool = mocker.MagicMock()
+            mock_tool.matches.return_value = True
+            mock_tool.run.return_value = {"result": "data"}
+
+            with pytest.raises(MaxToolIterationsExceededError):
+                list(llm_broker.generate_stream(
+                    messages, tools=[mock_tool], max_tool_iterations=1
+                ))
+
+        def should_pass_custom_max_iterations(self, llm_broker, mock_gateway, mocker):
+            messages = [LLMMessage(role=MessageRole.User, content="Solve this")]
+            tool_call = mocker.create_autospec(LLMToolCall, instance=True)
+            tool_call.name = "some_tool"
+            tool_call.arguments = {}
+
+            mock_gateway.complete.return_value = LLMGatewayResponse(
+                content="", object=None, tool_calls=[tool_call]
+            )
+
+            mock_tool = mocker.MagicMock()
+            mock_tool.matches.return_value = True
+            mock_tool.run.return_value = {"result": "data"}
+
+            def always_return_tool_call(*args, **kwargs):
+                return LLMGatewayResponse(content="", object=None, tool_calls=[tool_call])
+
+            mock_gateway.complete.side_effect = always_return_tool_call
+
+            with pytest.raises(MaxToolIterationsExceededError):
+                llm_broker.generate(messages, tools=[mock_tool], max_tool_iterations=3)
+
+            assert mock_gateway.complete.call_count == 3

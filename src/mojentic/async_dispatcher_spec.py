@@ -242,3 +242,49 @@ async def test_async_dispatcher_correlation_id(dispatcher):
 
     # The event should now have a correlation_id
     assert event.correlation_id is not None
+
+
+class DescribeAsyncDispatcherInFlightTracking:
+
+    @pytest.mark.asyncio
+    async def should_wait_for_in_flight_agent_followups(self, router):
+        first_agent_received = []
+        second_agent_received = []
+
+        class SlowFollowUpAgent(BaseAsyncAgent):
+            async def receive_event_async(self, event):
+                if isinstance(event, SampleEvent):
+                    first_agent_received.append(event)
+                    await asyncio.sleep(0.2)
+                    return [SampleResponseEvent(
+                        source=type(self),
+                        correlation_id=event.correlation_id,
+                        response="follow-up"
+                    )]
+                return []
+
+        class ResponseCollectorAgent(BaseAsyncAgent):
+            async def receive_event_async(self, event):
+                if isinstance(event, SampleResponseEvent):
+                    second_agent_received.append(event)
+                return []
+
+        slow_agent = SlowFollowUpAgent()
+        collector_agent = ResponseCollectorAgent()
+
+        router.add_route(SampleEvent, slow_agent)
+        router.add_route(SampleResponseEvent, collector_agent)
+
+        dispatcher = AsyncDispatcher(router)
+        await dispatcher.start()
+
+        event = SampleEvent(source=str, message="trigger")
+        dispatcher.dispatch(event)
+
+        result = await dispatcher.wait_for_empty_queue(timeout=2)
+
+        await dispatcher.stop()
+
+        assert result is True
+        assert len(first_agent_received) == 1
+        assert len(second_agent_received) == 1

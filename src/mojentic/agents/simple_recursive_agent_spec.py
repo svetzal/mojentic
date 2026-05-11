@@ -421,3 +421,52 @@ class DescribeSimpleRecursiveAgent:
         await agent.solve("Test problem")
 
         assert iterations_seen == [1, 2, 3]
+
+    @pytest.mark.asyncio
+    async def should_not_false_positive_done_on_prose_with_done_substring(
+            self, mock_llm_broker, mocker):
+        agent = SimpleRecursiveAgent(llm=mock_llm_broker, max_iterations=2)
+
+        responses = [
+            "I've undone the previous step and am working on the next one.",
+            "DONE - Finished.",
+        ]
+        mocker.patch.object(agent.chat, "send", side_effect=responses)
+
+        result = await agent.solve("Test problem")
+
+        assert "DONE" in result
+        assert "Finished" in result
+
+    @pytest.mark.asyncio
+    async def should_not_false_positive_fail_on_prose_with_fail_substring(
+            self, mock_llm_broker, mocker):
+        agent = SimpleRecursiveAgent(llm=mock_llm_broker, max_iterations=2)
+
+        responses = [
+            "The system is failsafe by design and will not encounter issues.",
+            "DONE - Completed successfully.",
+        ]
+        mocker.patch.object(agent.chat, "send", side_effect=responses)
+
+        result = await agent.solve("Test problem")
+
+        assert "DONE" in result
+        assert "Completed successfully" in result
+
+    @pytest.mark.asyncio
+    async def should_propagate_handler_exceptions_to_solve_caller(
+            self, mock_llm_broker, mocker):
+        agent = SimpleRecursiveAgent(llm=mock_llm_broker, max_iterations=3)
+
+        boom = RuntimeError("Handler exploded")
+
+        async def exploding_handler(event):
+            raise boom
+
+        agent.emitter.subscribe(IterationCompletedEvent, exploding_handler)
+
+        mocker.patch.object(agent.chat, "send", return_value="In progress...")
+
+        with pytest.raises(RuntimeError, match="Handler exploded"):
+            await asyncio.wait_for(agent.solve("Test problem"), timeout=2)

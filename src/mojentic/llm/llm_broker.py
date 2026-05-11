@@ -16,6 +16,10 @@ from mojentic.tracer.tracer_system import TracerSystem
 logger = structlog.get_logger()
 
 
+class MaxToolIterationsExceededError(Exception):
+    """Raised when tool calls exceed the maximum allowed iterations."""
+
+
 class LLMBroker():
     """
     This class is responsible for managing interaction with a Large Language Model. It abstracts
@@ -68,7 +72,7 @@ class LLMBroker():
                  config: Optional[CompletionConfig] = None,
                  temperature: Optional[float] = None, num_ctx: Optional[int] = None,
                  num_predict: Optional[int] = None, max_tokens: Optional[int] = None,
-                 correlation_id: str = None) -> str:
+                 correlation_id: str = None, max_tool_iterations: int = 10) -> str:
         """
         Generate a text response from the LLM.
 
@@ -93,12 +97,25 @@ class LLMBroker():
             The maximum number of tokens to generate. Deprecated: use config.
         correlation_id : str
             UUID string that is copied from cause-to-affect for tracing events.
+        max_tool_iterations : int
+            Maximum number of tool-call recursion steps allowed. Defaults to 10.
 
         Returns
         -------
         str
             The response from the LLM.
+
+        Raises
+        ------
+        MaxToolIterationsExceededError
+            If tool calls exceed max_tool_iterations.
         """
+        if max_tool_iterations <= 0:
+            raise MaxToolIterationsExceededError(
+                f"Tool call iterations exceeded the maximum budget for model '{self.model}'. "
+                f"Increase max_tool_iterations to allow more recursion."
+            )
+
         # Handle config vs individual kwargs
         if config is not None and any(
                 param is not None for param in [temperature, num_ctx, num_predict, max_tokens]):
@@ -200,7 +217,8 @@ class LLMBroker():
                     # {'role': 'tool', 'content': str(output), 'name': tool_call.name,
                     # 'tool_call_id': tool_call.id})
                     return self.generate(messages, tools, config=config,
-                                         correlation_id=correlation_id)
+                                         correlation_id=correlation_id,
+                                         max_tool_iterations=max_tool_iterations - 1)
                 else:
                     logger.warn('Function not found', function=tool_call.name)
                     logger.info('Expected usage of missing function', expected_usage=tool_call)
@@ -213,7 +231,7 @@ class LLMBroker():
                         config: Optional[CompletionConfig] = None,
                         temperature: Optional[float] = None, num_ctx: Optional[int] = None,
                         num_predict: Optional[int] = None, max_tokens: Optional[int] = None,
-                        correlation_id: str = None) -> Iterator[str]:
+                        correlation_id: str = None, max_tool_iterations: int = 10) -> Iterator[str]:
         """
         Generate a streaming text response from the LLM.
 
@@ -242,12 +260,25 @@ class LLMBroker():
             The maximum number of tokens to generate. Deprecated: use config.
         correlation_id : str
             UUID string that is copied from cause-to-affect for tracing events.
+        max_tool_iterations : int
+            Maximum number of tool-call recursion steps allowed. Defaults to 10.
 
         Yields
         ------
         str
             Content chunks as they arrive from the LLM.
+
+        Raises
+        ------
+        MaxToolIterationsExceededError
+            If tool calls exceed max_tool_iterations.
         """
+        if max_tool_iterations <= 0:
+            raise MaxToolIterationsExceededError(
+                f"Tool call iterations exceeded the maximum budget for model '{self.model}'. "
+                f"Increase max_tool_iterations to allow more recursion."
+            )
+
         # Handle config vs individual kwargs
         if config is not None and any(
                 param is not None for param in [temperature, num_ctx, num_predict, max_tokens]):
@@ -385,7 +416,8 @@ class LLMBroker():
 
                     # Recursively stream the response after tool execution
                     yield from self.generate_stream(
-                        messages, tools, config=config, correlation_id=correlation_id
+                        messages, tools, config=config, correlation_id=correlation_id,
+                        max_tool_iterations=max_tool_iterations - 1
                     )
                     return  # Exit after recursive call
                 else:
