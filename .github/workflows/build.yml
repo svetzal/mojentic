@@ -20,7 +20,7 @@ jobs:
     # Skip job if actor is github-actions[bot] to ensure agent safety
     if: ${{ github.actor != 'github-actions[bot]' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
@@ -43,7 +43,7 @@ jobs:
     # Skip job if actor is github-actions[bot] to ensure agent safety
     if: ${{ github.actor != 'github-actions[bot]' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
@@ -67,7 +67,7 @@ jobs:
   security:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
@@ -102,7 +102,7 @@ jobs:
     # Only run on release publish events
     if: github.event_name == 'release' && github.event.action == 'published'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
