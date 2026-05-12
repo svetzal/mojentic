@@ -4,7 +4,6 @@ This implementation provides a more declarative approach to problem-solving.
 """
 
 import asyncio
-import re
 from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict
@@ -63,9 +62,9 @@ class TimeoutEvent(SolverEvent):
     """
 
 
-class GoalFailedDueToErrorEvent(SolverEvent):
+class HandlerErrorEvent(SolverEvent):
     """
-    Event triggered when an async handler raises an unhandled exception.
+    Event triggered when an async event handler raises an unhandled exception.
     """
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -117,8 +116,8 @@ class EventEmitter:
             return
         exc = task.exception()
         if exc is not None:
-            error_event = GoalFailedDueToErrorEvent(state=state, error=exc)
-            event_type = GoalFailedDueToErrorEvent
+            error_event = HandlerErrorEvent(state=state, error=exc)
+            event_type = HandlerErrorEvent
             if event_type in self.subscribers:
                 for callback in self.subscribers[event_type]:
                     result = callback(error_event)
@@ -240,7 +239,7 @@ class SimpleRecursiveAgent:
         self.emitter.subscribe(GoalAchievedEvent, handle_solution_event)
         self.emitter.subscribe(GoalFailedEvent, handle_solution_event)
         self.emitter.subscribe(TimeoutEvent, handle_solution_event)
-        self.emitter.subscribe(GoalFailedDueToErrorEvent, handle_error_event)
+        self.emitter.subscribe(HandlerErrorEvent, handle_error_event)
 
         # Start the solving process
         self.emitter.emit(GoalSubmittedEvent(state=state))
@@ -281,12 +280,12 @@ class SimpleRecursiveAgent:
         response = event.response
 
         # Check if the task failed or succeeded
-        if re.search(r'\bFAIL\b', response, re.IGNORECASE):
+        if response.strip().upper() == 'FAIL':
             state.solution = f"Failed to solve after {state.iteration} iterations:\n{response}"
             state.is_complete = True
             self.emitter.emit(GoalFailedEvent(state=state))
             return
-        elif re.search(r'\bDONE\b', response, re.IGNORECASE):
+        elif response.strip().upper() == 'DONE':
             state.solution = response
             state.is_complete = True
             self.emitter.emit(GoalAchievedEvent(state=state))

@@ -34,6 +34,9 @@ class CompletionConfig(BaseModel):
         - Ollama: Maps to `think: true` parameter for all levels
         - OpenAI: Maps to `reasoning_effort` API parameter for reasoning models
         Defaults to None (no extended reasoning).
+    max_tool_iterations : int
+        Maximum number of tool-call recursion steps allowed before raising
+        MaxToolIterationsExceededError. Defaults to 10.
     """
 
     temperature: float = Field(
@@ -55,4 +58,8 @@ class CompletionConfig(BaseModel):
     reasoning_effort: Optional[Literal["low", "medium", "high"]] = Field(
         default=None,
         description="Reasoning effort level for extended thinking"
+    )
+    max_tool_iterations: int = Field(
+        default=10,
+        description="Maximum number of tool-call recursion steps allowed"
     )

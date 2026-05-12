@@ -317,7 +317,7 @@ class DescribeLLMBroker:
             mock_tool.run.return_value = {"result": "data"}
 
             with pytest.raises(MaxToolIterationsExceededError):
-                llm_broker.generate(messages, tools=[mock_tool], max_tool_iterations=2)
+                llm_broker.generate(messages, tools=[mock_tool], config=CompletionConfig(max_tool_iterations=2))
 
         def should_raise_when_tool_calls_exceed_max_iterations_in_generate_stream(
                 self, llm_broker, mock_gateway, mocker):
@@ -339,7 +339,7 @@ class DescribeLLMBroker:
 
             with pytest.raises(MaxToolIterationsExceededError):
                 list(llm_broker.generate_stream(
-                    messages, tools=[mock_tool], max_tool_iterations=1
+                    messages, tools=[mock_tool], config=CompletionConfig(max_tool_iterations=1)
                 ))
 
         def should_pass_custom_max_iterations(self, llm_broker, mock_gateway, mocker):
@@ -362,6 +362,6 @@ class DescribeLLMBroker:
             mock_gateway.complete.side_effect = always_return_tool_call
 
             with pytest.raises(MaxToolIterationsExceededError):
-                llm_broker.generate(messages, tools=[mock_tool], max_tool_iterations=3)
+                llm_broker.generate(messages, tools=[mock_tool], config=CompletionConfig(max_tool_iterations=3))
 
             assert mock_gateway.complete.call_count == 3

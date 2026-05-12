@@ -34,7 +34,7 @@ def mock_llm_broker():
 def mock_chat_session(mocker):
     """Create a mock ChatSession for testing."""
     mock_session = mocker.Mock(spec=ChatSession)
-    mock_session.send.return_value = "DONE - Test solution"
+    mock_session.send.return_value = "DONE"
     return mock_session
 
 
@@ -160,13 +160,12 @@ class DescribeSimpleRecursiveAgent:
 
         # Mock the chat session to return DONE immediately
         mocker.patch.object(
-            agent.chat, "send", return_value="DONE - Solution found"
+            agent.chat, "send", return_value="DONE"
         )
 
         result = await agent.solve("Test problem")
 
-        assert "DONE" in result
-        assert "Solution found" in result
+        assert result == "DONE"
 
     @pytest.mark.asyncio
     async def should_solve_problem_with_multiple_iterations(
@@ -179,7 +178,7 @@ class DescribeSimpleRecursiveAgent:
         responses = [
             "Working on it...",
             "Still working...",
-            "DONE - Final solution",
+            "DONE",
         ]
         mocker.patch.object(
             agent.chat, "send", side_effect=responses
@@ -187,8 +186,7 @@ class DescribeSimpleRecursiveAgent:
 
         result = await agent.solve("Test problem")
 
-        assert "DONE" in result
-        assert "Final solution" in result
+        assert result == "DONE"
 
     @pytest.mark.asyncio
     async def should_handle_explicit_failure(self, mock_llm_broker, mocker):
@@ -197,13 +195,13 @@ class DescribeSimpleRecursiveAgent:
 
         # Mock the chat session to return FAIL
         mocker.patch.object(
-            agent.chat, "send", return_value="FAIL - Cannot solve this problem"
+            agent.chat, "send", return_value="FAIL"
         )
 
         result = await agent.solve("Impossible problem")
 
         assert "Failed to solve" in result
-        assert "Cannot solve this problem" in result
+        assert "FAIL" in result
 
     @pytest.mark.asyncio
     async def should_handle_max_iterations_reached(
@@ -232,7 +230,7 @@ class DescribeSimpleRecursiveAgent:
 
         agent.emitter.subscribe(GoalSubmittedEvent, capture_event)
         mocker.patch.object(
-            agent.chat, "send", return_value="DONE - Solution"
+            agent.chat, "send", return_value="DONE"
         )
 
         await agent.solve("Test problem")
@@ -253,7 +251,7 @@ class DescribeSimpleRecursiveAgent:
             events_received.append(event)
 
         agent.emitter.subscribe(IterationCompletedEvent, capture_event)
-        responses = ["Working...", "Still working...", "DONE - Solution"]
+        responses = ["Working...", "Still working...", "DONE"]
         mocker.patch.object(
             agent.chat, "send", side_effect=responses
         )
@@ -274,7 +272,7 @@ class DescribeSimpleRecursiveAgent:
 
         agent.emitter.subscribe(GoalAchievedEvent, capture_event)
         mocker.patch.object(
-            agent.chat, "send", return_value="DONE - Solution"
+            agent.chat, "send", return_value="DONE"
         )
 
         await agent.solve("Test problem")
@@ -293,7 +291,7 @@ class DescribeSimpleRecursiveAgent:
 
         agent.emitter.subscribe(GoalFailedEvent, capture_event)
         mocker.patch.object(
-            agent.chat, "send", return_value="FAIL - Cannot solve"
+            agent.chat, "send", return_value="FAIL"
         )
 
         await agent.solve("Impossible problem")
@@ -365,12 +363,12 @@ class DescribeSimpleRecursiveAgent:
         """Test that DONE keyword is case-insensitive."""
         agent = SimpleRecursiveAgent(llm=mock_llm_broker)
 
-        test_cases = ["done - solution", "DoNe - solution", "DONE - solution"]
+        test_cases = ["done", "DoNe", "DONE", "  DONE  "]
 
         for response_text in test_cases:
             mocker.patch.object(agent.chat, "send", return_value=response_text)
             result = await agent.solve("Test problem")
-            assert response_text in result
+            assert result == response_text
 
     @pytest.mark.asyncio
     async def should_handle_case_insensitive_fail_keyword(
@@ -379,7 +377,7 @@ class DescribeSimpleRecursiveAgent:
         """Test that FAIL keyword is case-insensitive."""
         agent = SimpleRecursiveAgent(llm=mock_llm_broker)
 
-        test_cases = ["fail - error", "FaIl - error", "FAIL - error"]
+        test_cases = ["fail", "FaIl", "FAIL"]
 
         for response_text in test_cases:
             mocker.patch.object(agent.chat, "send", return_value=response_text)
@@ -395,7 +393,7 @@ class DescribeSimpleRecursiveAgent:
 
         def capture_prompt(prompt):
             captured_prompts.append(prompt)
-            return "DONE - Solution"
+            return "DONE"
 
         mocker.patch.object(agent.chat, "send", side_effect=capture_prompt)
 
@@ -415,7 +413,7 @@ class DescribeSimpleRecursiveAgent:
 
         agent.emitter.subscribe(IterationCompletedEvent, track_iteration)
 
-        responses = ["Working...", "Still working...", "DONE - Solution"]
+        responses = ["Working...", "Still working...", "DONE"]
         mocker.patch.object(agent.chat, "send", side_effect=responses)
 
         await agent.solve("Test problem")
