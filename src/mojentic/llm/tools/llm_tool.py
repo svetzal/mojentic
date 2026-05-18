@@ -20,6 +20,17 @@ class LLMTool:
         self.tracer = tracer or null_tracer
 
     def run(self, **kwargs):
+        """
+        Execute the tool with the LLM-supplied arguments.
+
+        Tools may optionally accept a ``ctx`` keyword argument of type
+        :class:`mojentic.llm.tools.runner.ToolRunContext` to observe batch
+        cancellation. The :class:`SerialToolRunner` and
+        :class:`AsyncParallelToolRunner` detect this parameter via signature
+        inspection and pass the context only when the tool advertises it.
+
+        Tools that ignore ``ctx`` continue to work unchanged.
+        """
         raise NotImplementedError
 
     def call_tool(self, correlation_id: str = None, **kwargs):
