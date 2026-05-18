@@ -55,6 +55,7 @@ nav:
       - Streaming Responses: streaming.md
       - Building Tools: building_tools.md
       - Tool Usage: tool_usage.md
+      - Parallel Tools: parallel_tools.md
       - Reasoning Effort: reasoning_effort.md
   - Use Cases:
       - Building Chatbots: chat_sessions.md
@@ -62,6 +63,7 @@ nav:
       - Structured Output: structured_output.md
       - Building Agents: sra.md
       - Image Analysis: image_analysis.md
+      - Realtime Voice: realtime.md
   - Examples:
       - File Tools: file_tools.md
       - Task Management: task_management.md

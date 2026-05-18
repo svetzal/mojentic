@@ -148,10 +148,12 @@ def _invoke_sync(tool: LLMTool, args: Dict[str, Any], ctx: Optional[ToolRunConte
 async def _invoke_async(
     tool: LLMTool, args: Dict[str, Any], ctx: Optional[ToolRunContext]
 ) -> Any:
-    result = _invoke_sync(tool, args, ctx)
-    if inspect.isawaitable(result):
-        return await result
-    return result
+    if inspect.iscoroutinefunction(tool.run):
+        return await _invoke_sync(tool, args, ctx)
+    # Sync tools must not block the loop when run by the async runner —
+    # dispatch them to a worker thread so parallel batches actually parallelise.
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, lambda: _invoke_sync(tool, args, ctx))
 
 
 def _start_hook(ctx: Optional[ToolRunContext], call: ToolCallExecution) -> None:

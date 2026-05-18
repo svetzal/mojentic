@@ -1,3 +1,5 @@
+import asyncio
+import inspect
 import json
 import time
 import warnings
@@ -429,6 +431,8 @@ class LLMBroker():
             return []
 
         outcomes = self.tool_runner.run_batch(executions, tools)
+        if inspect.isawaitable(outcomes):
+            outcomes = _run_async_outcomes(outcomes)
         paired = list(zip(dispatched, outcomes))
         for tool_call, outcome in paired:
             self.tracer.record_tool_call(
@@ -554,3 +558,24 @@ class LLMBroker():
         )
 
         return result.object
+
+
+def _run_async_outcomes(awaitable):
+    """
+    Drive an async ToolRunner from a sync broker call site.
+
+    When a caller pairs the sync LLMBroker with AsyncParallelToolRunner
+    we need to drive the runner's coroutine here. ``asyncio.run`` is
+    not safe to call from inside an existing event loop, so fall back
+    to creating a dedicated loop in that case.
+    """
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(awaitable)
+    # We're already inside a running loop — drive the coroutine on a fresh loop
+    # in a worker thread so we don't deadlock the outer one.
+    import concurrent.futures
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+        return pool.submit(asyncio.run, awaitable).result()
