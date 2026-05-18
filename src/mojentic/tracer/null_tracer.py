@@ -117,6 +117,19 @@ class NullTracer:
         """
         # Do nothing
 
+    def record_tool_batch(
+            self,
+            batch_id: str,
+            tool_names: List[str],
+            success_count: int,
+            failure_count: int,
+            call_duration_ms: float,
+            caller: Optional[str] = None,
+            source: Any = None,
+            correlation_id: str = None) -> None:
+        """Do nothing implementation of record_tool_batch."""
+        # Do nothing
+
     def record_agent_interaction(
             self,
             from_agent: str,

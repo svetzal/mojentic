@@ -24,8 +24,10 @@ from mojentic.realtime.events import (
     RealtimeItem,
     TokenUsage,
 )
+from mojentic.realtime.broker import RealtimeVoiceBroker
 from mojentic.realtime.gateway import RealtimeGatewaySession, RealtimeVoiceGateway
 from mojentic.realtime.openai_gateway import OpenAIRealtimeGateway
+from mojentic.realtime.session import RealtimeSession, build_session_update
 from mojentic.realtime.transport import RealtimeTransport, WebSocketTransport
 
 __all__ = [
@@ -37,9 +39,11 @@ __all__ = [
     "RealtimeGatewaySession",
     "RealtimeItem",
     "RealtimeModality",
+    "RealtimeSession",
     "RealtimeToolChoice",
     "RealtimeTransport",
     "RealtimeVoice",
+    "RealtimeVoiceBroker",
     "RealtimeVoiceConfig",
     "RealtimeVoiceGateway",
     "SemanticVadConfig",
@@ -47,4 +51,5 @@ __all__ = [
     "TokenUsage",
     "TurnDetectionMode",
     "WebSocketTransport",
+    "build_session_update",
 ]

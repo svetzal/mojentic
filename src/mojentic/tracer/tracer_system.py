@@ -13,6 +13,7 @@ from mojentic.tracer.tracer_events import (
     LLMCallTracerEvent,
     LLMResponseTracerEvent,
     ToolCallTracerEvent,
+    ToolBatchTracerEvent,
     AgentInteractionTracerEvent
 )
 from mojentic.tracer.event_store import EventStore
@@ -175,6 +176,54 @@ class TracerSystem:
             caller=caller,
             call_duration_ms=call_duration_ms,
             correlation_id=correlation_id
+        )
+        self.event_store.store(event)
+
+    def record_tool_batch(
+            self,
+            batch_id: str,
+            tool_names: List[str],
+            success_count: int,
+            failure_count: int,
+            call_duration_ms: float,
+            caller: Optional[str] = None,
+            source: Any = None,
+            correlation_id: str = None) -> None:
+        """
+        Record a parallel tool batch event.
+
+        Parameters
+        ----------
+        batch_id : str
+            Unique id identifying this batch of calls.
+        tool_names : List[str]
+            Names of every tool dispatched in the batch.
+        success_count : int
+            Count of tools that returned a successful result.
+        failure_count : int
+            Count of tools that failed or raised.
+        call_duration_ms : float
+            Wall-clock duration of the batch in milliseconds.
+        caller : str, optional
+            Name of the component that triggered the batch.
+        source : Any, optional
+            The source of the event. If None, the TracerSystem class will be used.
+        correlation_id : str, optional
+            UUID string that is copied from cause-to-affect for tracing events.
+        """
+        if not self.enabled:
+            return
+
+        event = ToolBatchTracerEvent(
+            source=source or type(self),
+            timestamp=time.time(),
+            batch_id=batch_id,
+            tool_names=list(tool_names),
+            success_count=success_count,
+            failure_count=failure_count,
+            call_duration_ms=call_duration_ms,
+            caller=caller,
+            correlation_id=correlation_id,
         )
         self.event_store.store(event)
 

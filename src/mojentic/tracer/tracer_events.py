@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 from datetime import datetime
 import uuid
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from mojentic.event import Event
 
@@ -124,6 +124,37 @@ class ToolCallTracerEvent(TracerEvent):
         if self.call_duration_ms is not None:
             summary += f"\n   Duration: {self.call_duration_ms:.2f}ms"
 
+        return summary
+
+
+class ToolBatchTracerEvent(TracerEvent):
+    """
+    Records the end-to-end execution of a parallel tool batch.
+
+    Per-call detail still lands as :class:`ToolCallTracerEvent` events;
+    the batch event lets observers measure parallelism gains and
+    correlate calls that were dispatched together.
+    """
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    batch_id: str = Field(..., description="Unique id identifying this batch")
+    tool_names: List[str] = Field(..., description="Names of every tool dispatched in the batch")
+    success_count: int = Field(..., description="Number of tools that returned a successful result")
+    failure_count: int = Field(..., description="Number of tools that failed or raised")
+    call_duration_ms: float = Field(..., description="Wall-clock duration of the batch in milliseconds")
+    caller: Optional[str] = Field(None, description="Component that triggered the batch")
+
+    def printable_summary(self) -> str:
+        base = super().printable_summary()
+        summary = (
+            f"{base}\n   Batch: {self.batch_id}\n"
+            f"   Tools: {', '.join(self.tool_names) or '(none)'}\n"
+            f"   Outcome: {self.success_count} ok / {self.failure_count} failed\n"
+            f"   Duration: {self.call_duration_ms:.2f}ms"
+        )
+        if self.caller:
+            summary += f"\n   Caller: {self.caller}"
         return summary
 
 
