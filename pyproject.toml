@@ -27,6 +27,7 @@ dependencies = [
     "colorama>=0.4.6",
     "filelock>=3.29.0",
     "urllib3>=2.6.3",
+    "websockets>=13",
 ]
 
 [dependency-groups]

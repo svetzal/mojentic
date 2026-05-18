@@ -24,19 +24,27 @@ from mojentic.realtime.events import (
     RealtimeItem,
     TokenUsage,
 )
+from mojentic.realtime.gateway import RealtimeGatewaySession, RealtimeVoiceGateway
+from mojentic.realtime.openai_gateway import OpenAIRealtimeGateway
+from mojentic.realtime.transport import RealtimeTransport, WebSocketTransport
 
 __all__ = [
     "InterruptOutputPolicy",
+    "OpenAIRealtimeGateway",
     "REALTIME_DEFAULTS",
     "RealtimeAudioFormat",
     "RealtimeEvent",
+    "RealtimeGatewaySession",
     "RealtimeItem",
     "RealtimeModality",
     "RealtimeToolChoice",
+    "RealtimeTransport",
     "RealtimeVoice",
     "RealtimeVoiceConfig",
+    "RealtimeVoiceGateway",
     "SemanticVadConfig",
     "ServerVadConfig",
     "TokenUsage",
     "TurnDetectionMode",
+    "WebSocketTransport",
 ]
