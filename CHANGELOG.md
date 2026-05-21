@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-05-21
+
 ### Added
 
 - Registered the OpenAI GPT-5.4 and GPT-5.5 reasoning model families in `OpenAIModelRegistry` (`gpt-5.4`, `gpt-5.4-mini`, `gpt-5.4-nano`, `gpt-5.5`, `gpt-5.5-pro`, plus dated snapshots). Each carries its real context window (1.05M or 400K) and 128K output cap, rather than falling through to substring pattern matching that inferred wrong token limits. Added `gpt-5.5`/`gpt-5.4`/`gpt-5.3` pattern mappings, checked before the bare `gpt-5` pattern, so future variants resolve to reasoning models.
