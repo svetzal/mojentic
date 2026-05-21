@@ -281,6 +281,73 @@ class DescribeOpenAIModelRegistry:
         assert audio_caps.supports_streaming is False
 
 
+class DescribeGPT54And55Models:
+    """Specification for the GPT-5.4 and GPT-5.5 model families (added 2026-05-21)."""
+
+    def should_register_all_gpt54_and_gpt55_models_as_reasoning(self):
+        """
+        Given the GPT-5.4 and GPT-5.5 model families
+        When checking their classification
+        Then all should be reasoning models with the correct token windows
+        """
+        registry = OpenAIModelRegistry()
+
+        expected = {
+            "gpt-5.4": (1050000, 128000),
+            "gpt-5.4-2026-03-05": (1050000, 128000),
+            "gpt-5.4-mini": (400000, 128000),
+            "gpt-5.4-mini-2026-03-17": (400000, 128000),
+            "gpt-5.4-nano": (400000, 128000),
+            "gpt-5.4-nano-2026-03-17": (400000, 128000),
+            "gpt-5.5": (1050000, 128000),
+            "gpt-5.5-2026-04-23": (1050000, 128000),
+            "gpt-5.5-pro": (1050000, 128000),
+            "gpt-5.5-pro-2026-04-23": (1050000, 128000),
+        }
+
+        registered = registry.get_registered_models()
+        for model, (context_tokens, output_tokens) in expected.items():
+            assert model in registered
+            caps = registry.get_model_capabilities(model)
+            assert caps.model_type == ModelType.REASONING
+            assert caps.get_token_limit_param() == "max_completion_tokens"
+            assert caps.max_context_tokens == context_tokens
+            assert caps.max_output_tokens == output_tokens
+
+    def should_expose_common_capabilities_for_gpt54_and_gpt55_models(self):
+        """
+        Given the GPT-5.4 and GPT-5.5 model families
+        When checking their capabilities
+        Then all should support tools, streaming, vision, and the expected APIs
+        """
+        registry = OpenAIModelRegistry()
+
+        for model in ("gpt-5.4", "gpt-5.4-mini", "gpt-5.4-nano", "gpt-5.5", "gpt-5.5-pro"):
+            caps = registry.get_model_capabilities(model)
+            assert caps.supports_tools is True
+            assert caps.supports_streaming is True
+            assert caps.supports_vision is True
+            assert caps.supported_temperatures == [1.0]
+            assert caps.supports_temperature(1.0) is True
+            assert caps.supports_temperature(0.7) is False
+            assert caps.supports_chat_api is True
+            assert caps.supports_completions_api is False
+            assert caps.supports_responses_api is True
+
+    def should_pattern_match_unknown_gpt54_and_gpt55_variants_as_reasoning(self):
+        """
+        Given unknown GPT-5.3/5.4/5.5 variant names
+        When getting their capabilities
+        Then they should resolve to reasoning models via pattern matching
+        """
+        registry = OpenAIModelRegistry()
+
+        for model in ("gpt-5.3-future", "gpt-5.4-experimental", "gpt-5.5-turbo-preview"):
+            caps = registry.get_model_capabilities(model)
+            assert caps.model_type == ModelType.REASONING
+            assert caps.get_token_limit_param() == "max_completion_tokens"
+
+
 class DescribeAPIEndpointSupport:
 
     def should_flag_chat_only_model(self):

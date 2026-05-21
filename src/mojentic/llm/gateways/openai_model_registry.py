@@ -290,14 +290,50 @@ class OpenAIModelRegistry:
             supports_responses_api=True
         )
 
-        # Pattern mappings for unknown models - Updated 2026-02-04
+        # GPT-5.4 / GPT-5.5 Reasoning Models - Added 2026-05-21
+        # Registered explicitly: their context/output windows (1.05M or 400K
+        # context, 128K output) differ from the gpt-5 loop's assumptions
+        # (~300K/50K), so the formula above cannot produce correct numbers.
+        gpt5_4_and_5_5_models = {
+            "gpt-5.4": (1050000, 128000),
+            "gpt-5.4-2026-03-05": (1050000, 128000),
+            "gpt-5.4-mini": (400000, 128000),
+            "gpt-5.4-mini-2026-03-17": (400000, 128000),
+            "gpt-5.4-nano": (400000, 128000),
+            "gpt-5.4-nano-2026-03-17": (400000, 128000),
+            "gpt-5.5": (1050000, 128000),
+            "gpt-5.5-2026-04-23": (1050000, 128000),
+            "gpt-5.5-pro": (1050000, 128000),
+            "gpt-5.5-pro-2026-04-23": (1050000, 128000),
+        }
+
+        for model, (context_tokens, output_tokens) in gpt5_4_and_5_5_models.items():
+            self._models[model] = ModelCapabilities(
+                model_type=ModelType.REASONING,
+                supports_tools=True,
+                supports_streaming=True,
+                supports_vision=True,
+                max_context_tokens=context_tokens,
+                max_output_tokens=output_tokens,
+                supported_temperatures=[1.0],
+                supports_chat_api=True,
+                supports_completions_api=False,
+                supports_responses_api=True
+            )
+
+        # Pattern mappings for unknown models - Updated 2026-05-21
+        # Note: more-specific gpt-5.x patterns are listed before the bare
+        # "gpt-5" pattern so they are matched first.
         self._pattern_mappings = {
             "o1": ModelType.REASONING,
             "o3": ModelType.REASONING,
             "o4": ModelType.REASONING,
-            "gpt-5": ModelType.REASONING,  # GPT-5 is a reasoning model
-            "gpt-5.1": ModelType.REASONING,
+            "gpt-5.5": ModelType.REASONING,
+            "gpt-5.4": ModelType.REASONING,
+            "gpt-5.3": ModelType.REASONING,
             "gpt-5.2": ModelType.REASONING,
+            "gpt-5.1": ModelType.REASONING,
+            "gpt-5": ModelType.REASONING,  # GPT-5 is a reasoning model
             "gpt-4": ModelType.CHAT,
             "gpt-4.1": ModelType.CHAT,
             "gpt-3.5": ModelType.CHAT,
