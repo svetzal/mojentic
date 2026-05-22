@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Realtime Voice subsystem** (`mojentic.realtime`): `RealtimeVoiceBroker` and `RealtimeSession`, siblings to `mojentic.llm`, for duplex audio/tool sessions against a realtime-capable provider. Includes `OpenAIRealtimeGateway` over a WebSocket transport (`WebSocketTransport`), a vendor-neutral `RealtimeEvent` model, server and semantic VAD plus push-to-talk turn detection (`ServerVadConfig` / `SemanticVadConfig` / `TurnDetectionMode`), and barge-in interruption with a configurable `InterruptOutputPolicy`. Six runnable examples under `_examples/realtime/`.
+- **`ToolRunner` abstraction** (`mojentic.llm.tools.runner`): pluggable execution strategies for batches of tool calls — `SerialToolRunner` (one-at-a-time, default for `LlmBroker`) and `AsyncParallelToolRunner` (bounded concurrent fan-out). `ToolRunContext` carries start/complete hooks and cancellation; `ToolCallExecution` / `ToolCallOutcome` model each call.
 - Registered the OpenAI GPT-5.4 and GPT-5.5 reasoning model families in `OpenAIModelRegistry` (`gpt-5.4`, `gpt-5.4-mini`, `gpt-5.4-nano`, `gpt-5.5`, `gpt-5.5-pro`, plus dated snapshots). Each carries its real context window (1.05M or 400K) and 128K output cap, rather than falling through to substring pattern matching that inferred wrong token limits. Added `gpt-5.5`/`gpt-5.4`/`gpt-5.3` pattern mappings, checked before the bare `gpt-5` pattern, so future variants resolve to reasoning models.
 
 ## [1.4.0] - 2026-05-11
