@@ -892,7 +892,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "anthropic", specifier = ">=0.104.1" },
+    { name = "anthropic", specifier = ">=0.105.2" },
     { name = "colorama", specifier = ">=0.4.6" },
     { name = "filelock", specifier = ">=3.29.0" },
     { name = "numpy", specifier = ">=2.4.6" },
