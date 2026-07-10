@@ -868,7 +868,7 @@ requires-dist = [
     { name = "filelock", specifier = ">=3.29.5" },
     { name = "numpy", specifier = ">=2.4.6" },
     { name = "ollama", specifier = ">=0.6.2" },
-    { name = "openai", specifier = ">=2.44.0" },
+    { name = "openai", specifier = ">=2.45.0" },
     { name = "parsedatetime", specifier = ">=2.6" },
     { name = "pydantic", specifier = ">=2.13.4" },
     { name = "pytz", specifier = ">=2026.2" },
@@ -876,7 +876,7 @@ requires-dist = [
     { name = "structlog", specifier = ">=26.1.0" },
     { name = "tiktoken", specifier = ">=0.13.0" },
     { name = "urllib3", specifier = ">=2.6.3" },
-    { name = "websockets", specifier = ">=16.0" },
+    { name = "websockets", specifier = ">=16.1" },
 ]
 
 [package.metadata.requires-dev]
