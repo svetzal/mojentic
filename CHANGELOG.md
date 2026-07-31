@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Routine dependency maintenance: locked `openai` to 2.51.0 and `markdown` to 3.10.3 (transitive, via `mkdocstrings`). No source changes required; lint, tests, `bandit`, and `pip-audit` all remain clean.
+
 ## [1.5.0] - 2026-05-21
 
 ### Added
