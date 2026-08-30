@@ -14,20 +14,20 @@ classifiers = [
 ]
 
 dependencies = [
-    "pydantic>=2.13.4",
+    "pydantic>=2.13.5",
     "structlog>=26.1.0",
     "numpy>=2.4.6",
     "ollama>=0.6.2",
     "openai>=2.45.0",
     "anthropic>=0.116.0",
-    "tiktoken>=0.13.0",
+    "tiktoken>=0.14.0",
     "parsedatetime>=2.6",
-    "pytz>=2026.2",
-    "serpapi>=1.0.2",
+    "pytz>=2026.3.post1",
+    "serpapi>=1.1.0",
     "colorama>=0.4.6",
-    "filelock>=3.30.0",
+    "filelock>=3.32.4",
     "urllib3>=2.7.0",
-    "websockets>=16.1",
+    "websockets>=17.1",
 ]
 
 [dependency-groups]
@@ -41,10 +41,10 @@ dev = [
     "bandit>=1.9.4",
     "pip-audit>=2.10.1",
     "mkdocs>=1.6.1",
-    "mkdocs-material>=9.7.6",
+    "mkdocs-material>=9.7.7",
     "mkdocstrings[python]>=1.0.6",
     "griffe-fieldz>=0.5.0",
-    "pymdown-extensions>=11.0.1",
+    "pymdown-extensions>=11.0.2",
 ]
 
 [tool.uv]
