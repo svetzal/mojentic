@@ -14,6 +14,10 @@ def mock_openai_client(mocker):
     mock_client.chat.completions.create.return_value.choices = [MagicMock()]
     mock_client.chat.completions.create.return_value.choices[0].message.content = "Test response"
     mock_client.chat.completions.create.return_value.choices[0].message.tool_calls = None
+    response = mock_client.chat.completions.create.return_value
+    response.usage = None
+    response.model = "reported-model"
+    response.choices[0].finish_reason = "stop"
     return mock_client
 
 

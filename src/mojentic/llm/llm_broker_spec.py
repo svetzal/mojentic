@@ -365,3 +365,61 @@ class DescribeLLMBroker:
                 llm_broker.generate(messages, tools=[mock_tool], config=CompletionConfig(max_tool_iterations=3))
 
             assert mock_gateway.complete.call_count == 3
+
+
+class DescribeNativeResponse:
+    def should_return_native_calls_without_executing_them(self, llm_broker, mock_gateway):
+        response = LLMGatewayResponse(content='Checking', tool_calls=[
+            LLMToolCall(id='call-1', name='missing', arguments={'path': 'file'})
+        ])
+        mock_gateway.complete.return_value = response
+        messages = [LLMMessage(content='Inspect')]
+
+        assert llm_broker.generate_response(messages, tools=[]) == response
+        assert len(messages) == 1
+        mock_gateway.complete.assert_called_once()
+
+    def should_return_unknown_tool_error_to_model(self, llm_broker, mock_gateway):
+        mock_gateway.complete.side_effect = [
+            LLMGatewayResponse(tool_calls=[LLMToolCall(id='missing-1', name='missing', arguments={})]),
+            LLMGatewayResponse(content='Recovered')
+        ]
+        messages = [LLMMessage(content='Inspect')]
+
+        assert llm_broker.generate(messages, tools=[]) == 'Recovered'
+        assert messages[-1].role == MessageRole.Tool
+        assert 'not found' in messages[-1].content
+        assert messages[-1].tool_calls[0].id == 'missing-1'
+
+    def should_allow_explicitly_unlimited_tool_rounds(self, llm_broker, mock_gateway):
+        mock_gateway.complete.side_effect = [
+            *[LLMGatewayResponse(tool_calls=[LLMToolCall(id=f'call-{i}', name='missing', arguments={})])
+              for i in range(12)],
+            LLMGatewayResponse(content='Done')
+        ]
+
+        assert llm_broker.generate([LLMMessage(content='Inspect')], tools=[],
+                                   config=CompletionConfig(max_tool_iterations=None)) == 'Done'
+        assert mock_gateway.complete.call_count == 13
+
+    def should_preserve_one_assistant_batch_and_all_cancelled_receipts(self, mock_gateway):
+        import asyncio
+        from mojentic.llm.tools.runner import ToolRunContext
+        cancelled = asyncio.Event()
+        cancelled.set()
+        outcomes = []
+        calls = [LLMToolCall(id=str(i), name='missing', arguments={}) for i in range(2)]
+        mock_gateway.complete.side_effect = [
+            LLMGatewayResponse(content='Inspecting', tool_calls=calls),
+            LLMGatewayResponse(content='Stopped')
+        ]
+        broker = LLMBroker('test', mock_gateway, tool_context=ToolRunContext(
+            cancel_event=cancelled, on_call_complete=outcomes.append,
+        ))
+        messages = [LLMMessage(content='Inspect')]
+        assert broker.generate(messages, tools=[]) == 'Stopped'
+        assert messages[1].tool_calls == calls
+        assert messages[1].content == 'Inspecting'
+        assert [m.role for m in messages[2:]] == [MessageRole.Tool, MessageRole.Tool]
+        assert [o.id for o in outcomes] == ['0', '1']
+        assert all(not o.ok for o in outcomes)

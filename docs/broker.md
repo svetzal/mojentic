@@ -13,7 +13,6 @@ you can use.
 
 Use `ollama list` to list the available models on your computer, and give you a handy reference to each of their names.
 
-```
 ```shell
 ❯ ollama list
 NAME                                TAG       ID              SIZE      MODIFIED
@@ -24,7 +23,6 @@ phi4:14b                          latest    9b2c5a1f8e7d    8.5 GB    1 week ago
 qwen3-coder:30b                   latest    c4d8f2a1b9e6    18 GB     2 weeks ago
 gemma3:27b                        latest    e7a3c9d2f8b1    16 GB     3 weeks ago
 qwen3:8b                          latest    42182419e950    4.7 GB    2 months ago
-```
 ```
 
 Each model has strengths and weaknesses. A good system of agents will use a variety of models to optimize for speed
@@ -166,3 +164,23 @@ response = llm.generate(messages, config=config)
 
 For details on reasoning effort, see [Reasoning Effort Control](reasoning_effort.md).
 
+## Caller-owned context and native responses
+
+Use `generate_response(messages, tools=tools)` to receive one native gateway response without
+executing tools, extending history or making a follow-up request. Assemble the
+complete message array before each call. The broker traces the supplied request
+and returned response; it does not read repository guidance or apply a context policy.
+
+The existing convenience completion method still executes tools and follows up.
+Choose a serial or parallel runner according to the tools' effects. Parallel
+execution does not make dependent edits safe.
+
+Set `CompletionConfig(max_tool_iterations=None)` to disable the tool-round limit.
+Existing finite defaults remain unchanged. Concurrency controls simultaneous
+work; it is not a task budget or a loop detector.
+
+Unknown tools now reach the runner and produce error receipts. The optional broker `tool_context` forwards cancellation and callbacks.
+
+Native responses preserve the fields supplied by the gateway. Missing provider
+usage or termination evidence must remain unknown; configured model names and
+text length are not substitutes for reported metadata.

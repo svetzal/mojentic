@@ -59,7 +59,7 @@ class CompletionConfig(BaseModel):
         default=None,
         description="Reasoning effort level for extended thinking"
     )
-    max_tool_iterations: int = Field(
+    max_tool_iterations: Optional[int] = Field(
         default=10,
-        description="Maximum number of tool-call recursion steps allowed"
+        description="Maximum number of tool-call recursion steps allowed; None means unlimited"
     )

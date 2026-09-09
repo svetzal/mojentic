@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Add a single-response broker API for caller-owned context and native tool requests.
+- Support explicit unlimited tool rounds while retaining finite defaults.
+- Unknown tools now reach the runner and produce error receipts. The optional broker `tool_context` forwards cancellation and callbacks.
+
 ### Changed
 
 - Routine dependency maintenance: locked `openai` to 2.51.0 and `markdown` to 3.10.3 (transitive, via `mkdocstrings`). No source changes required; lint, tests, `bandit`, and `pip-audit` all remain clean.
@@ -236,7 +240,7 @@ This release marks the first stable version of Mojentic, released simultaneously
 
 - Fixed test failures by preventing module-level Ollama connection
 - Removed circular import issues
-- Removed unnecessary backward compatibility imports from tools __init__.py
+- Removed unnecessary backward compatibility imports from tools **init**.py
 - Maintained backward compatibility for bundled tools
 
 ## [0.7.1] - 2025-05-21

@@ -323,10 +323,7 @@ class OpenAIGateway(LLMGateway):
 
         if response.choices[0].message.tool_calls is not None:
             for t in response.choices[0].message.tool_calls:
-                arguments = {}
-                args_dict = json.loads(t.function.arguments)
-                for k in args_dict:
-                    arguments[str(k)] = str(args_dict[k])
+                arguments = json.loads(t.function.arguments)
                 tool_call = LLMToolCall(id=t.id, name=t.function.name, arguments=arguments)
                 tool_calls.append(tool_call)
 
@@ -334,6 +331,9 @@ class OpenAIGateway(LLMGateway):
             content=response.choices[0].message.content,
             object=object,
             tool_calls=tool_calls,
+            usage=response.usage.model_dump() if response.usage is not None else None,
+            model=response.model,
+            finish_reason=response.choices[0].finish_reason,
         )
 
     def complete_stream(self, **kwargs) -> Iterator[StreamingResponse]:
@@ -517,9 +517,7 @@ class OpenAIGateway(LLMGateway):
                     tc = tool_calls_accumulator[index]
                     try:
                         # Parse the accumulated JSON arguments
-                        args_dict = json.loads(tc['arguments'])
-                        # Convert to string values as per LLMToolCall format
-                        arguments = {str(k): str(v) for k, v in args_dict.items()}
+                        arguments = json.loads(tc['arguments'])
 
                         tool_call = LLMToolCall(
                             id=tc['id'],

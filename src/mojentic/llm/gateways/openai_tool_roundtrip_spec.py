@@ -62,24 +62,9 @@ def mock_openai_client(mocker):
     fixture1 = _load_fixture("response-1-tool-call.json")
     fixture2 = _load_fixture("response-2-final.json")
 
-    # Build response-1: tool call
-    tc_mock = MagicMock()
-    tc_mock.id = fixture1["choices"][0]["message"]["tool_calls"][0]["id"]
-    tc_mock.function.name = fixture1["choices"][0]["message"]["tool_calls"][0]["function"]["name"]
-    tc_mock.function.arguments = (
-        fixture1["choices"][0]["message"]["tool_calls"][0]["function"]["arguments"]
-    )
-
-    resp1 = MagicMock()
-    resp1.choices = [MagicMock()]
-    resp1.choices[0].message.content = fixture1["choices"][0]["message"]["content"]
-    resp1.choices[0].message.tool_calls = [tc_mock]
-
-    # Build response-2: final text
-    resp2 = MagicMock()
-    resp2.choices = [MagicMock()]
-    resp2.choices[0].message.content = fixture2["choices"][0]["message"]["content"]
-    resp2.choices[0].message.tool_calls = None
+    from openai.types.chat import ChatCompletion
+    resp1 = ChatCompletion.model_validate(fixture1)
+    resp2 = ChatCompletion.model_validate(fixture2)
 
     mock_client = MagicMock()
     mock_client.chat.completions.create.side_effect = [resp1, resp2]
@@ -170,3 +155,20 @@ class DescribeOpenAIToolCallingRoundTrip:
         result = broker.generate(messages, tools=[tool])
 
         assert result == "It's currently 22°C and sunny in Paris."
+
+
+def should_preserve_json_argument_types_and_provider_metadata(mocker):
+    from openai.types.chat import ChatCompletion
+    fixture = _load_fixture("response-1-tool-call.json")
+    arguments = {"count": 2, "enabled": True, "items": ["one"], "filter": {"kind": None}}
+    fixture["choices"][0]["message"]["tool_calls"][0]["function"]["arguments"] = json.dumps(arguments)
+    fixture["usage"] = {"prompt_tokens": 10, "completion_tokens": 4, "total_tokens": 14}
+    client = MagicMock()
+    client.chat.completions.create.return_value = ChatCompletion.model_validate(fixture)
+    mocker.patch('mojentic.llm.gateways.openai.OpenAI', return_value=client)
+    broker = LLMBroker(model="configured-model", gateway=OpenAIGateway(api_key="test-key"))
+    response = broker.generate_response([LLMMessage(role=MessageRole.User, content="hi")])
+    assert response.tool_calls[0].arguments == arguments
+    assert response.usage["prompt_tokens"] == 10
+    assert response.model == fixture["model"]
+    assert response.finish_reason == "tool_calls"

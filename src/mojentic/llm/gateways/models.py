@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional, List, Union, Annotated, Literal
+from typing import Optional, List, Union, Annotated, Literal, Any
 
 from pydantic import BaseModel, Field
 
@@ -52,12 +52,12 @@ class LLMToolCall(BaseModel):
         The identifier of the tool call.
     name : str
         The name of the tool call.
-    arguments : dict[str, str]
+    arguments : dict[str, Any]
         The arguments for the tool call.
     """
     id: Optional[str] = None
     name: str
-    arguments: dict[str, str]
+    arguments: dict[str, Any]
 
 
 class LLMMessage(BaseModel):
@@ -105,3 +105,7 @@ class LLMGatewayResponse(BaseModel):
     tool_calls: List[LLMToolCall] = Field(default_factory=list,
                                           description="List of requested tool calls from the LLM.")
     thinking: Optional[str] = Field(None, description="Model thinking/reasoning trace (populated by some providers)")
+    usage: Optional[dict[str, Any]] = None
+    model: Optional[str] = None
+    finish_reason: Optional[str] = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
