@@ -2,6 +2,7 @@ import asyncio
 import inspect
 import json
 import time
+import uuid
 import warnings
 from typing import List, Optional, Type, Iterator
 
@@ -121,7 +122,8 @@ class LLMBroker():
         max_tokens : Optional[int]
             The maximum number of tokens to generate. Deprecated: use config.
         correlation_id : str
-            UUID string that is copied from cause-to-affect for tracing events.
+            UUID string that is copied from cause-to-affect for tracing events. A new UUID is
+            generated when omitted.
 
         Returns
         -------
@@ -151,6 +153,7 @@ class LLMBroker():
                 max_tokens=max_tokens if max_tokens is not None else 16384
             )
 
+        correlation_id = _ensure_correlation_id(correlation_id)
         while True:
             if config.max_tool_iterations is not None and config.max_tool_iterations <= 0:
                 raise MaxToolIterationsExceededError(
@@ -179,9 +182,11 @@ class LLMBroker():
         """Return one native model response without executing tools or changing history.
 
         The caller assembles context and decides when to dispatch returned calls.
-        Provider failures propagate; no retry or tool iteration occurs here.
+        Provider failures propagate; no retry or tool iteration occurs here. A new
+        correlation ID is generated when none is supplied.
         """
         config = config or CompletionConfig()
+        correlation_id = _ensure_correlation_id(correlation_id)
         approximate_tokens = len(self.tokenizer.encode(self._content_to_count(messages)))
         logger.info(f"Requesting llm response with approx {approximate_tokens} tokens")
 
@@ -262,7 +267,8 @@ class LLMBroker():
         max_tokens : Optional[int]
             The maximum number of tokens to generate. Deprecated: use config.
         correlation_id : str
-            UUID string that is copied from cause-to-affect for tracing events.
+            UUID string that is copied from cause-to-affect for tracing events. A new UUID is
+            generated when omitted.
 
         Yields
         ------
@@ -292,6 +298,7 @@ class LLMBroker():
                 max_tokens=max_tokens if max_tokens is not None else 16384
             )
 
+        correlation_id = _ensure_correlation_id(correlation_id)
         while True:
             if config.max_tool_iterations is not None and config.max_tool_iterations <= 0:
                 raise MaxToolIterationsExceededError(
@@ -413,7 +420,8 @@ class LLMBroker():
         config : Optional[CompletionConfig]
             Configuration for the request. ``max_tool_iterations`` is forced to zero.
         correlation_id : Optional[str]
-            UUID string that is copied from cause-to-affect for tracing events.
+            UUID string that is copied from cause-to-affect for tracing events. A new UUID is
+            generated when omitted.
 
         Yields
         ------
@@ -426,6 +434,7 @@ class LLMBroker():
             return
 
         config = (config or CompletionConfig()).model_copy(update={"max_tool_iterations": 0})
+        correlation_id = _ensure_correlation_id(correlation_id)
         self.tracer.record_llm_call(self.model, [m.model_dump() for m in messages], config.temperature,
                                     tools=None, source=type(self), correlation_id=correlation_id)
         start_time = time.time()
@@ -563,7 +572,8 @@ class LLMBroker():
         max_tokens : Optional[int]
             The maximum number of tokens to generate. Deprecated: use config.
         correlation_id : str
-            UUID string that is copied from cause-to-affect for tracing events.
+            UUID string that is copied from cause-to-affect for tracing events. A new UUID is
+            generated when omitted.
 
         Returns
         -------
@@ -587,6 +597,7 @@ class LLMBroker():
                 num_predict=num_predict if num_predict is not None else -1,
                 max_tokens=max_tokens if max_tokens is not None else 16384
             )
+        correlation_id = _ensure_correlation_id(correlation_id)
         approximate_tokens = len(self.tokenizer.encode(self._content_to_count(messages)))
         logger.info(f"Requesting llm response with approx {approximate_tokens} tokens")
 
@@ -664,3 +675,8 @@ def _response_evidence(response: LLMGatewayResponse) -> dict:
         "finish_reason": response.finish_reason,
         "metadata": response.metadata or None,
     }
+
+
+def _ensure_correlation_id(correlation_id: Optional[str]) -> str:
+    """Use the caller's correlation id, or start a new one so every trace event carries an id."""
+    return correlation_id or str(uuid.uuid4())

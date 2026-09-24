@@ -608,3 +608,75 @@ class DescribeStreamEvents:
         events.close()
 
         assert closed == [True]
+
+
+class DescribeMissingCorrelationId:
+
+    @pytest.fixture
+    def tracer(self):
+        from mojentic.tracer.tracer_system import TracerSystem
+        return TracerSystem()
+
+    @pytest.fixture
+    def gateway(self, mocker):
+        from mojentic.llm.gateways.openai import OpenAIGateway
+        gateway = mocker.Mock(spec=OpenAIGateway)
+        gateway.complete.return_value = LLMGatewayResponse(content="Hi", object=SimpleModel(text="a", number=1))
+        return gateway
+
+    @pytest.fixture
+    def broker(self, gateway, tracer):
+        return LLMBroker(model="configured-model", gateway=gateway, tracer=tracer)
+
+    @pytest.fixture
+    def messages(self):
+        return [LLMMessage(role=MessageRole.User, content="Hello")]
+
+    @staticmethod
+    def _correlation_ids(tracer):
+        from mojentic.tracer.tracer_events import LLMCallTracerEvent, LLMResponseTracerEvent
+        return [event.correlation_id for event in
+                tracer.get_events(event_type=LLMCallTracerEvent) + tracer.get_events(event_type=LLMResponseTracerEvent)]
+
+    def should_trace_generate_under_one_generated_correlation_id(self, broker, tracer, messages):
+        broker.generate(messages)
+
+        ids = self._correlation_ids(tracer)
+        assert (len(ids), len(set(ids)), bool(ids[0])) == (2, 1, True)
+
+    def should_trace_generate_response_under_one_generated_correlation_id(self, broker, tracer, messages):
+        broker.generate_response(messages)
+
+        ids = self._correlation_ids(tracer)
+        assert (len(ids), len(set(ids)), bool(ids[0])) == (2, 1, True)
+
+    def should_trace_generate_object_under_one_generated_correlation_id(self, broker, tracer, messages):
+        broker.generate_object(messages, object_model=SimpleModel)
+
+        ids = self._correlation_ids(tracer)
+        assert (len(ids), len(set(ids)), bool(ids[0])) == (2, 1, True)
+
+    def should_trace_generate_stream_under_one_generated_correlation_id(self, broker, gateway, tracer, messages):
+        from mojentic.llm.gateways.ollama import StreamingResponse
+        gateway.complete_stream.return_value = iter([StreamingResponse(content="Hi")])
+
+        list(broker.generate_stream(messages))
+
+        ids = self._correlation_ids(tracer)
+        assert (len(ids), len(set(ids)), bool(ids[0])) == (2, 1, True)
+
+    def should_trace_generate_stream_events_under_one_generated_correlation_id(
+            self, broker, gateway, tracer, messages):
+        from mojentic.llm.gateways.stream_events import CompletionMetadata, StreamCompleted
+        gateway.complete_stream_events.return_value = iter(
+            [StreamCompleted(metadata=CompletionMetadata(finish_reason="stop"))])
+
+        list(broker.generate_stream_events(messages))
+
+        ids = self._correlation_ids(tracer)
+        assert (len(ids), len(set(ids)), bool(ids[0])) == (2, 1, True)
+
+    def should_keep_a_supplied_correlation_id(self, broker, tracer, messages):
+        broker.generate(messages, correlation_id="supplied")
+
+        assert set(self._correlation_ids(tracer)) == {"supplied"}

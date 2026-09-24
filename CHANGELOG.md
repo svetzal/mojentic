@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `LLMResponseTracerEvent` gains `usage`, `provider_model`, `finish_reason` and `metadata`, filled unchanged from the gateway response for ordinary and structured responses. `model` stays the configured request model, and usage is never estimated. The Ollama and Anthropic gateways now report usage, provider model and finish reason (Ollama also reports its durations as metadata). The existing `generate_stream` API is unchanged.
 - `LLMBroker.generate_stream_events(messages, config=None, correlation_id=None)` streams one turn as typed events (`StreamContent`, `StreamCompleted`, `StreamError`) and ends every stream with exactly one terminal event. Success requires the provider's `stop` finish reason and its terminal marker (`[DONE]` for OpenAI, `done: true` for Ollama). A `length` or other finish reason, a missing marker, a provider error, a tool call or a malformed frame is a `StreamError` that carries the reported finish reason, usage, provider model and metadata. One HTTP request, no tools, no retry; closing the generator closes the request. Supported by `OpenAIGateway` and `OllamaGateway`; other gateways yield `STREAM_EVENTS_UNSUPPORTED` before any request. `httpx` is now a direct dependency.
 
+### Fixed
+
+- `LLMBroker` methods called without a `correlation_id` failed with a validation error when given a real `TracerSystem`. Each broker method (`generate`, `generate_response`, `generate_object`, `generate_stream`, `generate_stream_events`) now generates a UUID when none is supplied, as the TypeScript and Rust brokers do, so every trace event from one call shares an ID.
+
 ### Changed
 
 - Routine dependency maintenance: locked `openai` to 2.51.0 and `markdown` to 3.10.3 (transitive, via `mkdocstrings`). No source changes required; lint, tests, `bandit`, and `pip-audit` all remain clean.
