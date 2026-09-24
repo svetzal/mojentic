@@ -1,5 +1,35 @@
-from typing import Optional, Literal
-from pydantic import BaseModel, Field
+from typing import Any, Dict, Literal, Optional
+
+from pydantic import BaseModel, Field, model_validator
+
+
+class ResponseFormat(BaseModel):
+    """
+    The output format requested from the provider.
+
+    This records what was requested. It is not proof that the provider enforced it,
+    so callers must still validate the returned content.
+
+    Attributes
+    ----------
+    type : Literal["text", "json_object"]
+        ``"text"`` requests plain text. ``"json_object"`` requests JSON object mode,
+        or JSON schema mode when ``json_schema`` is set.
+    json_schema : Optional[Dict[str, Any]]
+        The JSON schema the response must follow. Only valid with ``"json_object"``.
+    """
+
+    type: Literal["text", "json_object"] = Field(description="Requested output format")
+    json_schema: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="JSON schema for schema mode; only valid with type 'json_object'"
+    )
+
+    @model_validator(mode="after")
+    def _schema_requires_json_object(self) -> "ResponseFormat":
+        if self.json_schema is not None and self.type != "json_object":
+            raise ValueError("json_schema is only valid when type is 'json_object'")
+        return self
 
 
 class CompletionConfig(BaseModel):
@@ -37,6 +67,9 @@ class CompletionConfig(BaseModel):
     max_tool_iterations : int
         Maximum number of tool-call recursion steps allowed before raising
         MaxToolIterationsExceededError. Defaults to 10.
+    response_format : Optional[ResponseFormat]
+        The output format to request from the provider. Defaults to None, which leaves
+        the request unchanged and uses the provider default.
     """
 
     temperature: float = Field(
@@ -62,4 +95,8 @@ class CompletionConfig(BaseModel):
     max_tool_iterations: Optional[int] = Field(
         default=10,
         description="Maximum number of tool-call recursion steps allowed; None means unlimited"
+    )
+    response_format: Optional[ResponseFormat] = Field(
+        default=None,
+        description="Requested output format; None leaves the provider default"
     )

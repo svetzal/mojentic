@@ -291,6 +291,24 @@ obj = broker.generate_object(
 )
 ```
 
+### Requested response formats
+
+Streaming cannot return a parsed object, but it can ask the provider for JSON.
+Set `CompletionConfig(response_format=...)` and the OpenAI and Ollama gateways
+forward it in the streaming request, the same way they do without streaming:
+
+```python
+from mojentic.llm import CompletionConfig, ResponseFormat
+
+config = CompletionConfig(response_format=ResponseFormat(type="json_object"))
+for chunk in broker.generate_stream(messages=messages, config=config):
+    print(chunk, end="", flush=True)
+```
+
+Add `json_schema=...` to request JSON schema mode. This records the request. It
+is not proof that the provider enforced the format, so validate the assembled
+content before you use it. See [Requesting a response format](broker.md#requesting-a-response-format).
+
 ### Model Compatibility
 
 OpenAI's streaming respects model capabilities. Reasoning models and some older models may not support streaming:

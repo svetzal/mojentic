@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from mojentic.llm.completion_config import CompletionConfig
+from mojentic.llm.completion_config import CompletionConfig, ResponseFormat
 
 
 class DescribeCompletionConfig:
@@ -42,3 +42,36 @@ class DescribeCompletionConfig:
     def should_accept_none_reasoning_effort(self):
         config = CompletionConfig(reasoning_effort=None)
         assert config.reasoning_effort is None
+
+
+class DescribeResponseFormat:
+
+    def should_default_to_absent_on_config(self):
+        config = CompletionConfig()
+
+        assert config.response_format is None
+
+    def should_accept_text_format(self):
+        config = CompletionConfig(response_format=ResponseFormat(type="text"))
+
+        assert config.response_format.type == "text"
+
+    def should_accept_json_object_without_schema(self):
+        response_format = ResponseFormat(type="json_object")
+
+        assert response_format.json_schema is None
+
+    def should_accept_json_object_with_schema(self):
+        schema = {"type": "object", "properties": {"answer": {"type": "string"}}}
+
+        response_format = ResponseFormat(type="json_object", json_schema=schema)
+
+        assert response_format.json_schema == schema
+
+    def should_reject_schema_on_text_format(self):
+        with pytest.raises(ValidationError):
+            ResponseFormat(type="text", json_schema={"type": "object"})
+
+    def should_reject_unknown_format_type(self):
+        with pytest.raises(ValidationError):
+            ResponseFormat(type="yaml")

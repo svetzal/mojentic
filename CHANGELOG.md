@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add a single-response broker API for caller-owned context and native tool requests.
 - Support explicit unlimited tool rounds while retaining finite defaults.
 - Unknown tools now reach the runner and produce error receipts. The optional broker `tool_context` forwards cancellation and callbacks.
+- `CompletionConfig.response_format` takes a `ResponseFormat` (`text`, `json_object`, or `json_object` with a `json_schema`). The OpenAI and Ollama gateways forward it in streaming and non-streaming requests. It records the request; callers still validate content.
 
 ### Changed
 

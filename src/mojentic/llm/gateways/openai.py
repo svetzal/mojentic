@@ -1,7 +1,7 @@
 import json
 import os
 from itertools import islice
-from typing import List, Iterable, Optional, Iterator, Dict
+from typing import List, Iterable, Optional, Iterator, Dict, TYPE_CHECKING
 
 import numpy as np
 import structlog
@@ -14,7 +14,31 @@ from mojentic.llm.gateways.openai_model_registry import get_model_registry, Mode
 from mojentic.llm.gateways.tokenizer_gateway import TokenizerGateway
 from mojentic.llm.gateways.ollama import StreamingResponse
 
+if TYPE_CHECKING:
+    from mojentic.llm.completion_config import ResponseFormat
+
 logger = structlog.get_logger()
+
+
+def openai_response_format(response_format: Optional['ResponseFormat']) -> Optional[dict]:
+    """
+    Translate a configured response format into the OpenAI ``response_format`` request value.
+
+    Parameters
+    ----------
+    response_format : Optional[ResponseFormat]
+        The configured format, or None for the provider default.
+
+    Returns
+    -------
+    Optional[dict]
+        The request value, or None when the request must stay unchanged.
+    """
+    if response_format is None:
+        return None
+    if response_format.json_schema is not None:
+        return {"type": "json_schema", "json_schema": {"name": "response", "schema": response_format.json_schema}}
+    return {"type": response_format.type}
 
 
 class OpenAIGateway(LLMGateway):
@@ -263,6 +287,8 @@ class OpenAIGateway(LLMGateway):
         if adapted_args['object_model'] is not None:
             completion = self.client.beta.chat.completions.parse
             openai_args['response_format'] = adapted_args['object_model']
+        elif (response_format := openai_response_format(config.response_format if config else None)) is not None:
+            openai_args['response_format'] = response_format
 
         if adapted_args.get('tools') is not None:
             openai_args['tools'] = [t.descriptor for t in adapted_args['tools']]
@@ -430,6 +456,10 @@ class OpenAIGateway(LLMGateway):
             'messages': adapt_messages_to_openai(adapted_args['messages']),
             'stream': True,
         }
+
+        response_format = openai_response_format(config.response_format if config else None)
+        if response_format is not None:
+            openai_args['response_format'] = response_format
 
         # Add temperature if specified
         if 'temperature' in adapted_args:

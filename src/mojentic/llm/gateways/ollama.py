@@ -1,4 +1,4 @@
-from typing import List, Iterator, Optional
+from typing import List, Iterator, Optional, TYPE_CHECKING, Union
 import structlog
 from ollama import Client, Options, ChatResponse
 from pydantic import BaseModel
@@ -7,7 +7,30 @@ from mojentic.llm.gateways.llm_gateway import LLMGateway
 from mojentic.llm.gateways.models import LLMToolCall, LLMGatewayResponse
 from mojentic.llm.gateways.ollama_messages_adapter import adapt_messages_to_ollama
 
+if TYPE_CHECKING:
+    from mojentic.llm.completion_config import ResponseFormat
+
 logger = structlog.get_logger()
+
+
+def ollama_format(response_format: Optional['ResponseFormat']) -> Optional[Union[str, dict]]:
+    """
+    Translate a configured response format into the Ollama ``format`` request value.
+
+    Parameters
+    ----------
+    response_format : Optional[ResponseFormat]
+        The configured format, or None for the provider default.
+
+    Returns
+    -------
+    Optional[Union[str, dict]]
+        ``"json"``, a JSON schema, or None when the request must omit ``format``
+        (plain text is Ollama's default).
+    """
+    if response_format is None or response_format.type == "text":
+        return None
+    return response_format.json_schema if response_format.json_schema is not None else "json"
 
 
 class StreamingResponse(BaseModel):
@@ -113,6 +136,8 @@ class OllamaGateway(LLMGateway):
 
         if 'object_model' in args and args['object_model'] is not None:
             ollama_args['format'] = args['object_model'].model_json_schema()
+        elif (response_format := ollama_format(config.response_format if config else None)) is not None:
+            ollama_args['format'] = response_format
 
         if 'tools' in args and args['tools'] is not None:
             ollama_args['tools'] = [t.descriptor for t in args['tools']]
@@ -186,6 +211,10 @@ class OllamaGateway(LLMGateway):
         if config and config.reasoning_effort is not None:
             ollama_args['think'] = True
             logger.info("Enabling extended thinking for Ollama streaming", reasoning_effort=config.reasoning_effort)
+
+        response_format = ollama_format(config.response_format if config else None)
+        if response_format is not None:
+            ollama_args['format'] = response_format
 
         # Enable tool support if tools are provided
         if 'tools' in args and args['tools'] is not None:

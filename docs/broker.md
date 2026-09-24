@@ -161,8 +161,37 @@ response = llm.generate(messages, config=config)
 - **max_tokens** (int): Maximum tokens to generate. Default: 16384
 - **num_predict** (int): Tokens to predict (-1 = no limit). Default: -1
 - **reasoning_effort** (str | None): Extended thinking level — `"low"`, `"medium"`, `"high"`, or `None`. Default: None
+- **response_format** (`ResponseFormat` | None): Output format to request from the provider. Default: None
 
 For details on reasoning effort, see [Reasoning Effort Control](reasoning_effort.md).
+
+### Requesting a response format
+
+`response_format` asks the provider for plain text, a JSON object, or JSON that
+follows a schema. The OpenAI and Ollama gateways forward it in streaming and
+non-streaming requests.
+
+```python
+from mojentic.llm import CompletionConfig, ResponseFormat
+
+json_mode = CompletionConfig(response_format=ResponseFormat(type="json_object"))
+
+schema_mode = CompletionConfig(response_format=ResponseFormat(
+    type="json_object",
+    json_schema={"type": "object", "properties": {"answer": {"type": "string"}}},
+))
+```
+
+| Value | OpenAI request | Ollama request |
+| ----- | -------------- | -------------- |
+| `None` | unchanged | unchanged |
+| `ResponseFormat(type="text")` | `response_format: {"type": "text"}` | no `format` |
+| `ResponseFormat(type="json_object")` | `response_format: {"type": "json_object"}` | `format: "json"` |
+| `ResponseFormat(type="json_object", json_schema=s)` | `response_format: {"type": "json_schema", "json_schema": {"name": "response", "schema": s}}` | `format: s` |
+
+This records what you asked for. It does not prove that the provider enforced
+the format, so validate the returned content yourself. `generate_object()` keeps
+its own schema handling and takes precedence over `response_format`.
 
 ## Caller-owned context and native responses
 
