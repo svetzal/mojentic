@@ -308,3 +308,11 @@ class DescribeResponseEvidence:
 
         null_tracer.record_llm_response("m", "c", usage={"x": 1}, provider_model="p",
                                         finish_reason="stop", metadata={})
+
+
+class DescribeTracerPackage:
+
+    def should_export_tracer_system_and_event_store(self):
+        import mojentic.tracer
+
+        assert (mojentic.tracer.TracerSystem, mojentic.tracer.EventStore) == (TracerSystem, EventStore)

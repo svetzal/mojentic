@@ -329,13 +329,13 @@ You can customize the `AsyncDispatcher` to fit your specific needs:
 ```python
 from mojentic.async_dispatcher import AsyncDispatcher
 from mojentic.router import Router
-from mojentic.tracer import Tracer
+from mojentic.tracer import TracerSystem
 
 # Create a router
 router = Router()
 
 # Create a tracer for observability
-tracer = Tracer()
+tracer = TracerSystem()
 
 # Create a customized AsyncDispatcher
 dispatcher = AsyncDispatcher(

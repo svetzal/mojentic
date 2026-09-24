@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - `LLMBroker` methods called without a `correlation_id` failed with a validation error when given a real `TracerSystem`. Each broker method (`generate`, `generate_response`, `generate_object`, `generate_stream`, `generate_stream_events`) now generates a UUID when none is supplied, as the TypeScript and Rust brokers do, so every trace event from one call shares an ID.
+- `from mojentic.tracer import TracerSystem, EventStore`, used throughout the docs, `AGENTS.md` and `_examples`, raised `ImportError`. The `mojentic.tracer` package now exports both.
 
 ### Changed
 
