@@ -57,6 +57,9 @@ class AnthropicGateway(LLMGateway):
             content=response.content[0].text,
             object=object,
             tool_calls=tool_calls,
+            usage=response.usage.model_dump() if response.usage is not None else None,
+            model=response.model,
+            finish_reason=response.stop_reason,
         )
 
     def get_available_models(self) -> List[str]:

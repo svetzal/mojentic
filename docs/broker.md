@@ -212,4 +212,5 @@ Unknown tools now reach the runner and produce error receipts. The optional brok
 
 Native responses preserve the fields supplied by the gateway. Missing provider
 usage or termination evidence must remain unknown; configured model names and
-text length are not substitutes for reported metadata.
+text length are not substitutes for reported metadata. Response traces carry the
+same evidence; see [Provider evidence in response traces](tracer.md#provider-evidence-in-response-traces).

@@ -279,3 +279,32 @@ class DescribeTracerSystem:
 
         # Then
         assert len(tracer_system.get_events()) == 0
+
+
+class DescribeResponseEvidence:
+
+    def should_record_reported_provider_evidence_on_llm_responses(self):
+        tracer_system = TracerSystem()
+        usage = {"input_tokens": 12, "output_tokens": 4}
+
+        tracer_system.record_llm_response(
+            "configured-model", "content", usage=usage, provider_model="provider-model",
+            finish_reason="length", metadata={"request_id": "r1"}, correlation_id="c-1")
+
+        event = tracer_system.get_events(event_type=LLMResponseTracerEvent)[0]
+        assert (event.model, event.usage, event.provider_model, event.finish_reason, event.metadata) == (
+            "configured-model", usage, "provider-model", "length", {"request_id": "r1"})
+
+    def should_leave_evidence_unknown_when_not_reported(self):
+        tracer_system = TracerSystem()
+
+        tracer_system.record_llm_response("configured-model", "content", correlation_id="c-1")
+
+        event = tracer_system.get_events(event_type=LLMResponseTracerEvent)[0]
+        assert (event.usage, event.provider_model, event.finish_reason, event.metadata) == (None, None, None, None)
+
+    def should_accept_evidence_on_null_tracer(self):
+        from mojentic.tracer import null_tracer
+
+        null_tracer.record_llm_response("m", "c", usage={"x": 1}, provider_model="p",
+                                        finish_reason="stop", metadata={})

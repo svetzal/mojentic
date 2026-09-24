@@ -217,7 +217,8 @@ class LLMBroker():
             tool_calls=tool_calls_for_tracer,
             call_duration_ms=call_duration_ms,
             source=type(self),
-            correlation_id=correlation_id
+            correlation_id=correlation_id,
+            **_response_evidence(result),
         )
 
         return result
@@ -541,7 +542,8 @@ class LLMBroker():
             f"Structured response: {object_str}",
             call_duration_ms=call_duration_ms,
             source=type(self),
-            correlation_id=correlation_id
+            correlation_id=correlation_id,
+            **_response_evidence(result),
         )
 
         return result.object
@@ -570,3 +572,13 @@ def _run_async_outcomes(awaitable):
 
 def _next_iteration(remaining: Optional[int]) -> Optional[int]:
     return None if remaining is None else remaining - 1
+
+
+def _response_evidence(response: LLMGatewayResponse) -> dict:
+    """Tracer keyword arguments carrying a gateway response's provider evidence unchanged."""
+    return {
+        "usage": response.usage,
+        "provider_model": response.model,
+        "finish_reason": response.finish_reason,
+        "metadata": response.metadata or None,
+    }

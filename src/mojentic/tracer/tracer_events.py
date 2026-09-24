@@ -70,11 +70,19 @@ class LLMCallTracerEvent(TracerEvent):
 class LLMResponseTracerEvent(TracerEvent):
     """
     Records when an LLM responds to a call.
+
+    ``model`` is the configured request model. The provider evidence fields keep what the
+    gateway reported, unchanged; anything the provider did not report stays None and is
+    never estimated.
     """
-    model: str = Field(..., description="The LLM model that was used")
+    model: str = Field(..., description="The configured LLM model for the request")
     content: str = Field(..., description="The content of the LLM response")
     tool_calls: Optional[List[Dict]] = Field(None, description="Any tool calls made by the LLM")
     call_duration_ms: Optional[float] = Field(None, description="Duration of the LLM call in milliseconds")
+    usage: Optional[Dict[str, Any]] = Field(None, description="Token usage exactly as the provider reported it")
+    provider_model: Optional[str] = Field(None, description="Model name the provider reported")
+    finish_reason: Optional[str] = Field(None, description="Finish reason the provider reported")
+    metadata: Optional[Dict[str, Any]] = Field(None, description="Gateway response metadata")
 
     def printable_summary(self) -> str:
         """Return a formatted summary of the LLM response event."""

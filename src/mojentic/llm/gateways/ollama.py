@@ -13,6 +13,25 @@ if TYPE_CHECKING:
 logger = structlog.get_logger()
 
 
+OLLAMA_USAGE_FIELDS = ("prompt_eval_count", "eval_count")
+OLLAMA_METADATA_FIELDS = ("total_duration", "load_duration", "prompt_eval_duration", "eval_duration")
+
+
+def _reported(frame: dict, fields) -> Optional[dict]:
+    reported = {field: frame[field] for field in fields if frame.get(field) is not None}
+    return reported or None
+
+
+def ollama_usage(frame: dict) -> Optional[dict]:
+    """Token counts an Ollama response frame reported, under Ollama's own names, or None."""
+    return _reported(frame, OLLAMA_USAGE_FIELDS)
+
+
+def ollama_metadata(frame: dict) -> Optional[dict]:
+    """Timing fields an Ollama response frame reported, or None."""
+    return _reported(frame, OLLAMA_METADATA_FIELDS)
+
+
 def ollama_format(response_format: Optional['ResponseFormat']) -> Optional[Union[str, dict]]:
     """
     Translate a configured response format into the Ollama ``format`` request value.
@@ -162,11 +181,16 @@ class OllamaGateway(LLMGateway):
         # Extract thinking content if present
         thinking = getattr(response.message, 'thinking', None)
 
+        frame = response.model_dump()
         return LLMGatewayResponse(
             content=response.message.content,
             object=object,
             tool_calls=tool_calls,
-            thinking=thinking
+            thinking=thinking,
+            usage=ollama_usage(frame),
+            model=response.model,
+            finish_reason=response.done_reason,
+            metadata=ollama_metadata(frame) or {},
         )
 
     def complete_stream(self, **args) -> Iterator[StreamingResponse]:

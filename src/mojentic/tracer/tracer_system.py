@@ -103,7 +103,11 @@ class TracerSystem:
                             tool_calls: Optional[List[Dict]] = None,
                             call_duration_ms: Optional[float] = None,
                             source: Any = None,
-                            correlation_id: str = None) -> None:
+                            correlation_id: str = None,
+                            usage: Optional[Dict[str, Any]] = None,
+                            provider_model: Optional[str] = None,
+                            finish_reason: Optional[str] = None,
+                            metadata: Optional[Dict[str, Any]] = None) -> None:
         """
         Record an LLM response event.
 
@@ -121,6 +125,14 @@ class TracerSystem:
             The source of the event. If None, the TracerSystem class will be used.
         correlation_id : str, required
             UUID string that is copied from cause-to-affect for tracing events.
+        usage : Dict[str, Any], optional
+            Token usage exactly as the provider reported it. None when not reported.
+        provider_model : str, optional
+            The model name the provider reported.
+        finish_reason : str, optional
+            The finish reason the provider reported.
+        metadata : Dict[str, Any], optional
+            The gateway response metadata.
         """
         if not self.enabled:
             return
@@ -132,7 +144,11 @@ class TracerSystem:
             content=content,
             tool_calls=tool_calls,
             call_duration_ms=call_duration_ms,
-            correlation_id=correlation_id
+            correlation_id=correlation_id,
+            usage=usage,
+            provider_model=provider_model,
+            finish_reason=finish_reason,
+            metadata=metadata,
         )
         self.event_store.store(event)
 

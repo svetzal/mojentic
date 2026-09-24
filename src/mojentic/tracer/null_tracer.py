@@ -66,7 +66,11 @@ class NullTracer:
                             tool_calls: Optional[List[Dict]] = None,
                             call_duration_ms: Optional[float] = None,
                             source: Any = None,
-                            correlation_id: str = None) -> None:
+                            correlation_id: str = None,
+                            usage: Optional[Dict[str, Any]] = None,
+                            provider_model: Optional[str] = None,
+                            finish_reason: Optional[str] = None,
+                            metadata: Optional[Dict[str, Any]] = None) -> None:
         """
         Do nothing implementation of record_llm_response.
 
@@ -84,6 +88,14 @@ class NullTracer:
             The source of the event.
         correlation_id : str, optional
             UUID string that is copied from cause-to-affect for tracing events.
+        usage : Dict[str, Any], optional
+            Token usage exactly as the provider reported it. None when not reported.
+        provider_model : str, optional
+            The model name the provider reported.
+        finish_reason : str, optional
+            The finish reason the provider reported.
+        metadata : Dict[str, Any], optional
+            The gateway response metadata.
         """
         # Do nothing
 

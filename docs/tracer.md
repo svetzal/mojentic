@@ -26,6 +26,36 @@ The base class for all tracer events, extending the core `Event` class. All trac
 - **ToolCallTracerEvent**: Records when a tool is called during agent execution
 - **AgentInteractionTracerEvent**: Records interactions between agents
 
+### Provider evidence in response traces
+
+`LLMResponseTracerEvent` keeps what the provider reported about each response:
+
+| Field | Source | When the provider did not report it |
+| ----- | ------ | ----------------------------------- |
+| `usage` | gateway response usage, unchanged | `None` |
+| `provider_model` | model name the provider reported | `None` |
+| `finish_reason` | provider finish reason | `None` |
+| `metadata` | gateway response metadata | `None` |
+
+`model` stays the configured request model. The broker fills these fields for
+`generate`, `generate_response` and `generate_object`. Usage is never estimated
+from text length or a tokenizer, so unknown usage stays `None`. The existing
+`generate_stream` API keeps its previous tracing and does not carry this
+evidence.
+
+Each gateway reports what its provider sends, in the shape its response already
+holds. OpenAI reports its `usage` object and `finish_reason`. Ollama reports
+`prompt_eval_count` and `eval_count` as usage, `done_reason` as the finish
+reason, and its durations as metadata. Anthropic reports its `usage` object and
+`stop_reason`.
+
+```python
+from mojentic.tracer.tracer_events import LLMResponseTracerEvent
+
+for event in tracer.get_events(event_type=LLMResponseTracerEvent):
+    print(event.model, event.provider_model, event.finish_reason, event.usage)
+```
+
 ### EventStore
 
 The `EventStore` class stores and manages tracer events, providing methods to:

@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support explicit unlimited tool rounds while retaining finite defaults.
 - Unknown tools now reach the runner and produce error receipts. The optional broker `tool_context` forwards cancellation and callbacks.
 - `CompletionConfig.response_format` takes a `ResponseFormat` (`text`, `json_object`, or `json_object` with a `json_schema`). The OpenAI and Ollama gateways forward it in streaming and non-streaming requests. It records the request; callers still validate content.
+- `LLMResponseTracerEvent` gains `usage`, `provider_model`, `finish_reason` and `metadata`, filled unchanged from the gateway response for ordinary and structured responses. `model` stays the configured request model, and usage is never estimated. The Ollama and Anthropic gateways now report usage, provider model and finish reason (Ollama also reports its durations as metadata). The existing `generate_stream` API is unchanged.
 
 ### Changed
 

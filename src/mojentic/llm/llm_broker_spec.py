@@ -423,3 +423,60 @@ class DescribeNativeResponse:
         assert [m.role for m in messages[2:]] == [MessageRole.Tool, MessageRole.Tool]
         assert [o.id for o in outcomes] == ['0', '1']
         assert all(not o.ok for o in outcomes)
+
+
+class DescribeResponseEvidenceInTraces:
+
+    @pytest.fixture
+    def tracer(self):
+        from mojentic.tracer.tracer_system import TracerSystem
+        return TracerSystem()
+
+    @pytest.fixture
+    def evidence_gateway(self, mocker):
+        from mojentic.llm.gateways.ollama import OllamaGateway
+        return mocker.Mock(spec=OllamaGateway)
+
+    @pytest.fixture
+    def broker(self, evidence_gateway, tracer):
+        return LLMBroker(model="configured-model", gateway=evidence_gateway, tracer=tracer)
+
+    @pytest.fixture
+    def messages(self):
+        return [LLMMessage(role=MessageRole.User, content="Hello")]
+
+    @staticmethod
+    def _response_event(tracer):
+        from mojentic.tracer.tracer_events import LLMResponseTracerEvent
+        return tracer.get_events(event_type=LLMResponseTracerEvent)[-1]
+
+    def should_record_gateway_evidence_unchanged_for_ordinary_responses(self, broker, evidence_gateway,
+                                                                        tracer, messages):
+        usage = {"prompt_tokens": 7, "completion_tokens": 3, "details": {"cached": 1}}
+        evidence_gateway.complete.return_value = LLMGatewayResponse(
+            content="Hi", usage=usage, model="provider-model-2026", finish_reason="stop",
+            metadata={"system_fingerprint": "fp_1"})
+
+        broker.generate(messages, correlation_id="c-1")
+
+        event = self._response_event(tracer)
+        assert (event.model, event.usage, event.provider_model, event.finish_reason, event.metadata) == (
+            "configured-model", usage, "provider-model-2026", "stop", {"system_fingerprint": "fp_1"})
+
+    def should_record_null_usage_when_gateway_reports_none(self, broker, evidence_gateway, tracer, messages):
+        evidence_gateway.complete.return_value = LLMGatewayResponse(content="Hi")
+
+        broker.generate(messages, correlation_id="c-1")
+
+        assert self._response_event(tracer).usage is None
+
+    def should_record_gateway_evidence_for_structured_responses(self, broker, evidence_gateway, tracer, messages):
+        usage = {"prompt_tokens": 9, "completion_tokens": 4}
+        evidence_gateway.complete.return_value = LLMGatewayResponse(
+            object=SimpleModel(text="a", number=1), usage=usage, model="provider-model",
+            finish_reason="stop")
+
+        broker.generate_object(messages, object_model=SimpleModel, correlation_id="c-1")
+
+        event = self._response_event(tracer)
+        assert (event.usage, event.provider_model, event.finish_reason) == (usage, "provider-model", "stop")
