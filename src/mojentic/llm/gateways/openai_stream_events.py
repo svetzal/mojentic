@@ -49,7 +49,8 @@ def parse_openai_stream(lines: Iterable[str]) -> Iterator[StreamEvent]:
         yield from events
         if events and not isinstance(events[-1], StreamContent):
             return
-    yield StreamError(reason=StreamErrorReason.INCOMPLETE_STREAM, metadata=evidence)
+    yield StreamError(reason=StreamErrorReason.INCOMPLETE_STREAM,
+                      metadata=evidence if evidence != CompletionMetadata() else None)
 
 
 def _sse_data(line: str) -> Optional[str]:

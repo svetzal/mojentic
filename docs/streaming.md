@@ -320,6 +320,11 @@ when the provider did not report it.
   The request sets `stream_options: {"include_usage": true}` so usage is reported.
 - **Ollama:** success requires a frame with `done: true` and `done_reason: "stop"`.
   Any other `done_reason` is an `INCOMPLETE_COMPLETION` error with the same evidence.
+  A final frame without `done_reason` is also `INCOMPLETE_COMPLETION`, so Ollama
+  servers too old to send `done_reason` cannot use this API.
+
+An `INCOMPLETE_STREAM` error carries whatever evidence arrived before the stream
+ended (for example the model or usage), and `None` when nothing arrived.
 
 | `StreamErrorReason` | Cause |
 | ------------------- | ----- |
@@ -340,6 +345,8 @@ It is not a result, even when it happens to be valid JSON.
   `max_tool_iterations` to zero and never retries.
 - Stop consuming the stream to cancel the request: `break` out of the loop, or
   call `close()` on the generator. Closing the generator closes the HTTP response.
+  An early stop is not an error and yields no further event. The tracer keeps the
+  LLM call event but records no response event for that turn.
 - `OpenAIGateway` and `OllamaGateway` support this API. Other gateways, such as
   `AnthropicGateway`, yield a single `STREAM_EVENTS_UNSUPPORTED` error before any
   request.

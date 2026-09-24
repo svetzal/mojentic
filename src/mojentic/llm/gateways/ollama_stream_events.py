@@ -53,7 +53,7 @@ def parse_ollama_stream(frames: Iterable[object]) -> Iterator[StreamEvent]:
             return
         provider_model = frame.get("model") or provider_model
     yield StreamError(reason=StreamErrorReason.INCOMPLETE_STREAM,
-                      metadata=CompletionMetadata(provider_model=provider_model))
+                      metadata=CompletionMetadata(provider_model=provider_model) if provider_model else None)
 
 
 def _frame_events(frame: object) -> List[StreamEvent]:

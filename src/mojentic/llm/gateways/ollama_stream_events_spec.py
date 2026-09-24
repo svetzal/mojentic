@@ -106,3 +106,16 @@ class DescribeParseOllamaStream:
         list(parse_ollama_stream(frames()))
 
         assert len(read) == 1
+
+    def should_leave_incomplete_stream_evidence_null_when_none_arrived(self):
+        events = list(parse_ollama_stream([{"done": False, "message": {"role": "assistant", "content": "Hi"}}]))
+
+        assert events[-1] == StreamError(reason=StreamErrorReason.INCOMPLETE_STREAM, metadata=None)
+
+    def should_treat_a_done_frame_without_done_reason_as_incomplete_completion(self):
+        frame = {"model": "qwen3:32b", "done": True, "message": {"role": "assistant", "content": ""}}
+
+        events = list(parse_ollama_stream([frame]))
+
+        assert events[-1] == StreamError(reason=StreamErrorReason.INCOMPLETE_COMPLETION,
+                                         metadata=CompletionMetadata(provider_model="qwen3:32b"))

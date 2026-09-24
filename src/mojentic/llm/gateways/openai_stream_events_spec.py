@@ -122,3 +122,8 @@ class DescribeParseOpenAIStream:
         list(parse_openai_stream(lines()))
 
         assert len(read) == 2
+
+    def should_leave_incomplete_stream_evidence_null_when_none_arrived(self):
+        events = list(parse_openai_stream(['data: {"choices":[{"delta":{"content":"Hi"}}]}']))
+
+        assert events[-1] == StreamError(reason=StreamErrorReason.INCOMPLETE_STREAM, metadata=None)

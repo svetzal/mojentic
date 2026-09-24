@@ -586,6 +586,20 @@ class DescribeStreamEvents:
         response = tracer.get_events(event_type=LLMResponseTracerEvent)[0]
         assert (response.content, response.finish_reason, response.usage) == ("Hel", "length", {"completion_tokens": 1})
 
+    def should_trace_the_call_but_no_response_when_the_consumer_stops_early(
+            self, broker, openai_gateway, tracer, messages):
+        from mojentic.llm.gateways.stream_events import StreamContent
+        from mojentic.tracer.tracer_events import LLMCallTracerEvent, LLMResponseTracerEvent
+        openai_gateway.complete_stream_events.return_value = iter(
+            [StreamContent(text="Hel"), StreamContent(text="lo"), self._completed()])
+        events = broker.generate_stream_events(messages, correlation_id="c-1")
+        next(events)
+
+        events.close()
+
+        assert (len(tracer.get_events(event_type=LLMCallTracerEvent)),
+                len(tracer.get_events(event_type=LLMResponseTracerEvent))) == (1, 0)
+
     def should_close_the_http_request_when_the_consumer_stops_early(self, mocker, tracer, messages):
         from mojentic.llm.gateways.openai import OpenAIGateway, OpenAIStreamTransport
         closed = []
