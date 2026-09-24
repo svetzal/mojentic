@@ -271,6 +271,83 @@ else:
     response = broker.generate(messages=messages)
 ```
 
+## Single-turn streaming with completion evidence
+
+`generate_stream()` yields text and never tells you whether the provider finished.
+When incomplete output must never be used as a result (for example, before you act
+on generated JSON), use `generate_stream_events()`. It yields typed events and
+ends every stream with exactly one terminal event:
+
+| Event | Meaning |
+| ----- | ------- |
+| `StreamContent(text)` | Visible assistant content, in order |
+| `StreamCompleted(metadata)` | Terminal success. `metadata` is a `CompletionMetadata` |
+| `StreamError(reason, detail, metadata)` | Terminal failure. `reason` is a `StreamErrorReason` |
+
+Nothing follows the terminal event.
+
+```python
+from mojentic.llm import (
+    CompletionConfig, LLMBroker, ResponseFormat, StreamCompleted, StreamContent, StreamError,
+)
+from mojentic.llm.gateways import OpenAIGateway
+
+broker = LLMBroker(model="gpt-4o-mini", gateway=OpenAIGateway())
+config = CompletionConfig(response_format=ResponseFormat(type="json_object"))
+
+received = []
+for event in broker.generate_stream_events(messages, config):
+    match event:
+        case StreamContent(text=text):
+            received.append(text)
+        case StreamCompleted(metadata=metadata):
+            result = "".join(received)
+            print(metadata.finish_reason, metadata.usage)
+        case StreamError(reason=reason, metadata=metadata):
+            # "received" is evidence of what arrived, not a result. Do not use it.
+            print(f"Turn failed: {reason.value}", metadata)
+```
+
+`CompletionMetadata` holds `finish_reason`, `usage`, `provider_model` and a
+provider `metadata` map (for example Ollama's durations). Each field is `None`
+when the provider did not report it.
+
+### Completion rules
+
+- **OpenAI:** success requires `finish_reason: "stop"` and then `data: [DONE]`.
+  `[DONE]` after any other finish reason (for example `length`) is an
+  `INCOMPLETE_COMPLETION` error that carries the finish reason, usage and model.
+  The request sets `stream_options: {"include_usage": true}` so usage is reported.
+- **Ollama:** success requires a frame with `done: true` and `done_reason: "stop"`.
+  Any other `done_reason` is an `INCOMPLETE_COMPLETION` error with the same evidence.
+
+| `StreamErrorReason` | Cause |
+| ------------------- | ----- |
+| `INCOMPLETE_COMPLETION` | The provider finished for a reason other than `stop` |
+| `INCOMPLETE_STREAM` | The stream ended without the provider's terminal marker |
+| `PROVIDER_ERROR` | The provider sent an error frame or an error response |
+| `UNEXPECTED_TOOL_CALLS` | The provider asked for a tool call |
+| `INVALID_STREAM_EVENT` | A frame could not be decoded or had an unexpected shape |
+| `REQUEST_FAILED` | The request could not be sent, or the connection failed mid-stream |
+| `STREAM_EVENTS_UNSUPPORTED` | The gateway or model does not support this API. No request was sent |
+
+Content that arrived before a `StreamError` is evidence of what the provider sent.
+It is not a result, even when it happens to be valid JSON.
+
+### Behaviour
+
+- The broker sends exactly one HTTP request. It supplies no tools, forces
+  `max_tool_iterations` to zero and never retries.
+- Stop consuming the stream to cancel the request: `break` out of the loop, or
+  call `close()` on the generator. Closing the generator closes the HTTP response.
+- `OpenAIGateway` and `OllamaGateway` support this API. Other gateways, such as
+  `AnthropicGateway`, yield a single `STREAM_EVENTS_UNSUPPORTED` error before any
+  request.
+- The tracer records the LLM call when the request starts, and the response
+  (content so far plus the provider evidence) when the terminal event arrives. See
+  [Provider evidence in response traces](tracer.md#provider-evidence-in-response-traces).
+- `generate_stream()` keeps its existing behaviour.
+
 ## Limitations
 
 ### Structured Output
@@ -355,5 +432,6 @@ See the complete working example at `src/_examples/streaming.py` in the reposito
 For detailed API documentation, see:
 
 - [LLMBroker.generate_stream()][mojentic.llm.LLMBroker.generate_stream]
+- [LLMBroker.generate_stream_events()][mojentic.llm.LLMBroker.generate_stream_events]
 - [OllamaGateway.complete_stream()][mojentic.llm.gateways.OllamaGateway.complete_stream]
 - [OpenAIGateway.complete_stream()][mojentic.llm.gateways.OpenAIGateway.complete_stream]

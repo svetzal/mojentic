@@ -1,21 +1,25 @@
 import json
 import os
+from contextlib import closing
 from itertools import islice
 from typing import List, Iterable, Optional, Iterator, Dict, TYPE_CHECKING
 
+import httpx
 import numpy as np
 import structlog
-from openai import OpenAI, BadRequestError
+from openai import OpenAI, APIConnectionError, APIStatusError, BadRequestError
 
 from mojentic.llm.gateways.llm_gateway import LLMGateway
-from mojentic.llm.gateways.models import LLMToolCall, LLMGatewayResponse
+from mojentic.llm.gateways.models import LLMMessage, LLMToolCall, LLMGatewayResponse
+from mojentic.llm.gateways.openai_stream_events import parse_openai_stream
+from mojentic.llm.gateways.stream_events import StreamError, StreamErrorReason, StreamEvent
 from mojentic.llm.gateways.openai_messages_adapter import adapt_messages_to_openai
 from mojentic.llm.gateways.openai_model_registry import get_model_registry, ModelType
 from mojentic.llm.gateways.tokenizer_gateway import TokenizerGateway
 from mojentic.llm.gateways.ollama import StreamingResponse
 
 if TYPE_CHECKING:
-    from mojentic.llm.completion_config import ResponseFormat
+    from mojentic.llm.completion_config import CompletionConfig, ResponseFormat
 
 logger = structlog.get_logger()
 
@@ -41,6 +45,24 @@ def openai_response_format(response_format: Optional['ResponseFormat']) -> Optio
     return {"type": response_format.type}
 
 
+class OpenAIStreamTransport:
+    """
+    Sends one streaming chat completions request and yields the raw server-sent-event lines.
+
+    A thin wrapper around the OpenAI client with retries disabled, so each call is exactly
+    one HTTP request. Closing the generator closes the HTTP response, which cancels the
+    request.
+    """
+
+    def __init__(self, client: OpenAI):
+        self._client = client.with_options(max_retries=0)
+
+    def stream_lines(self, body: dict) -> Iterator[str]:
+        """Send ``body`` as one streaming request and yield each response line."""
+        with self._client.chat.completions.with_streaming_response.create(**body) as response:
+            yield from response.iter_lines()
+
+
 class OpenAIGateway(LLMGateway):
     """
     This class is a gateway to the OpenAI LLM service.
@@ -53,15 +75,19 @@ class OpenAIGateway(LLMGateway):
     base_url : str, optional
         The base URL for the OpenAI API. If not provided, defaults to the value of the
         OPENAI_API_ENDPOINT environment variable, or None if not set.
+    stream_transport : OpenAIStreamTransport, optional
+        The transport ``complete_stream_events`` uses. Defaults to one over this gateway's client.
     """
 
-    def __init__(self, api_key: Optional[str] = None, base_url: Optional[str] = None):
+    def __init__(self, api_key: Optional[str] = None, base_url: Optional[str] = None,
+                 stream_transport: Optional[OpenAIStreamTransport] = None):
         if api_key is None:
             api_key = os.getenv("OPENAI_API_KEY")
         if base_url is None:
             base_url = os.getenv("OPENAI_API_ENDPOINT")
         self.client = OpenAI(api_key=api_key, base_url=base_url)
         self.model_registry = get_model_registry()
+        self.stream_transport = stream_transport or OpenAIStreamTransport(self.client)
 
     def _is_reasoning_model(self, model: str) -> bool:
         """
@@ -451,32 +477,7 @@ class OpenAIGateway(LLMGateway):
         if adapted_args['object_model'] is not None:
             raise NotImplementedError("Streaming with structured output (object_model) is not supported")
 
-        openai_args = {
-            'model': adapted_args['model'],
-            'messages': adapt_messages_to_openai(adapted_args['messages']),
-            'stream': True,
-        }
-
-        response_format = openai_response_format(config.response_format if config else None)
-        if response_format is not None:
-            openai_args['response_format'] = response_format
-
-        # Add temperature if specified
-        if 'temperature' in adapted_args:
-            openai_args['temperature'] = adapted_args['temperature']
-
-        if adapted_args.get('tools') is not None:
-            openai_args['tools'] = [t.descriptor for t in adapted_args['tools']]
-
-        # Handle both max_tokens (for chat models) and max_completion_tokens (for reasoning models)
-        if 'max_tokens' in adapted_args:
-            openai_args['max_tokens'] = adapted_args['max_tokens']
-        elif 'max_completion_tokens' in adapted_args:
-            openai_args['max_completion_tokens'] = adapted_args['max_completion_tokens']
-
-        # Add reasoning_effort if present in adapted args
-        if 'reasoning_effort' in adapted_args and adapted_args['reasoning_effort'] is not None:
-            openai_args['reasoning_effort'] = adapted_args['reasoning_effort']
+        openai_args = self._stream_body(adapted_args, config)
 
         logger.debug("Making OpenAI streaming API call",
                      model=openai_args['model'],
@@ -575,6 +576,92 @@ class OpenAIGateway(LLMGateway):
                             )
                         ))
                     yield StreamingResponse(tool_calls=ollama_format_calls)
+
+    def _stream_body(self, adapted_args: dict, config) -> dict:
+        """Build the chat completions body shared by both streaming APIs."""
+        openai_args = {
+            'model': adapted_args['model'],
+            'messages': adapt_messages_to_openai(adapted_args['messages']),
+            'stream': True,
+        }
+
+        response_format = openai_response_format(config.response_format if config else None)
+        if response_format is not None:
+            openai_args['response_format'] = response_format
+
+        # Add temperature if specified
+        if 'temperature' in adapted_args:
+            openai_args['temperature'] = adapted_args['temperature']
+
+        if adapted_args.get('tools') is not None:
+            openai_args['tools'] = [t.descriptor for t in adapted_args['tools']]
+
+        # Handle both max_tokens (for chat models) and max_completion_tokens (for reasoning models)
+        if 'max_tokens' in adapted_args:
+            openai_args['max_tokens'] = adapted_args['max_tokens']
+        elif 'max_completion_tokens' in adapted_args:
+            openai_args['max_completion_tokens'] = adapted_args['max_completion_tokens']
+
+        # Add reasoning_effort if present in adapted args
+        if 'reasoning_effort' in adapted_args and adapted_args['reasoning_effort'] is not None:
+            openai_args['reasoning_effort'] = adapted_args['reasoning_effort']
+        return openai_args
+
+    def complete_stream_events(self, model: str, messages: List[LLMMessage],
+                               config: 'CompletionConfig') -> Iterator[StreamEvent]:
+        """
+        Stream one turn as events, with terminal completion evidence.
+
+        Sends one streaming request with no tools, no retries and
+        ``stream_options: {"include_usage": true}``. The turn completes only when the
+        provider reports ``finish_reason: "stop"`` and then sends ``data: [DONE]``.
+        Closing the generator closes the HTTP request.
+
+        Parameters
+        ----------
+        model : str
+            The name of the model to use.
+        messages : List[LLMMessage]
+            The messages to send.
+        config : CompletionConfig
+            Configuration for the request.
+
+        Yields
+        ------
+        StreamEvent
+            Content events followed by exactly one terminal event.
+        """
+        if not self.model_registry.get_model_capabilities(model).supports_streaming:
+            yield StreamError(reason=StreamErrorReason.STREAM_EVENTS_UNSUPPORTED,
+                              detail=f"Model {model} does not support streaming")
+            return
+        body = self._stream_body(self._adapted_stream_args(model, messages, config), config)
+        body['stream_options'] = {'include_usage': True}
+        lines = self.stream_transport.stream_lines(body)
+        try:
+            with closing(lines):
+                yield from parse_openai_stream(lines)
+        except APIStatusError as e:
+            yield StreamError(reason=StreamErrorReason.PROVIDER_ERROR,
+                              detail={"status_code": e.status_code, "error": e.body})
+        except (APIConnectionError, httpx.HTTPError) as e:
+            yield StreamError(reason=StreamErrorReason.REQUEST_FAILED, detail=str(e))
+
+    def _adapted_stream_args(self, model: str, messages: List[LLMMessage], config: 'CompletionConfig') -> dict:
+        args = {
+            'model': model,
+            'messages': messages,
+            'object_model': None,
+            'tools': None,
+            'temperature': config.temperature,
+            'num_ctx': config.num_ctx,
+            'max_tokens': config.max_tokens,
+            'num_predict': config.num_predict,
+            'reasoning_effort': config.reasoning_effort,
+        }
+        adapted_args = self._adapt_parameters_for_model(model, args)
+        self._validate_model_parameters(model, adapted_args)
+        return adapted_args
 
     def get_available_models(self) -> list[str]:
         """

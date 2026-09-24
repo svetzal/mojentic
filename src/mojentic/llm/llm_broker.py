@@ -12,6 +12,13 @@ from mojentic.llm.completion_config import CompletionConfig
 from mojentic.llm.gateways.llm_gateway import LLMGateway
 from mojentic.llm.gateways.models import MessageRole, LLMMessage, LLMGatewayResponse, LLMToolCall
 from mojentic.llm.gateways.ollama import OllamaGateway
+from mojentic.llm.gateways.stream_events import (
+    StreamContent,
+    StreamError,
+    StreamErrorReason,
+    StreamEvent,
+    TerminalStreamEvent,
+)
 from mojentic.llm.gateways.tokenizer_gateway import TokenizerGateway
 from mojentic.llm.tools.runner import (
     SerialToolRunner,
@@ -380,6 +387,81 @@ class LLMBroker():
                 )
             else:
                 return
+
+    def generate_stream_events(self, messages: List[LLMMessage],
+                               config: Optional[CompletionConfig] = None,
+                               correlation_id: Optional[str] = None) -> Iterator[StreamEvent]:
+        """
+        Stream one model turn as events that end with terminal completion evidence.
+
+        Use this when incomplete output must never be mistaken for a result. The stream
+        yields :class:`StreamContent` events and ends with exactly one terminal event:
+        :class:`StreamCompleted` when the provider finished the turn normally, or
+        :class:`StreamError` otherwise. Content yielded before a :class:`StreamError` is
+        evidence of what the provider sent, not a usable result.
+
+        The broker sends one request with no tools, forces zero tool iterations and never
+        retries. Stop consuming the stream (break out of the loop, or call ``close()`` on
+        the generator) to cancel the HTTP request. A gateway without
+        ``complete_stream_events`` yields a single ``STREAM_EVENTS_UNSUPPORTED`` error
+        without sending a request.
+
+        Parameters
+        ----------
+        messages : List[LLMMessage]
+            The messages to send.
+        config : Optional[CompletionConfig]
+            Configuration for the request. ``max_tool_iterations`` is forced to zero.
+        correlation_id : Optional[str]
+            UUID string that is copied from cause-to-affect for tracing events.
+
+        Yields
+        ------
+        StreamEvent
+            Content events followed by exactly one terminal event.
+        """
+        complete_stream_events = getattr(self.adapter, 'complete_stream_events', None)
+        if complete_stream_events is None:
+            yield StreamError(reason=StreamErrorReason.STREAM_EVENTS_UNSUPPORTED, detail=type(self.adapter).__name__)
+            return
+
+        config = (config or CompletionConfig()).model_copy(update={"max_tool_iterations": 0})
+        self.tracer.record_llm_call(self.model, [m.model_dump() for m in messages], config.temperature,
+                                    tools=None, source=type(self), correlation_id=correlation_id)
+        start_time = time.time()
+        content = ""
+        events = iter(complete_stream_events(model=self.model, messages=messages, config=config))
+        try:
+            for event in events:
+                if isinstance(event, StreamContent):
+                    content += event.text
+                    yield event
+                    continue
+                self._record_stream_events_response(content, event, start_time, correlation_id)
+                yield event
+                return
+            terminal = StreamError(reason=StreamErrorReason.INCOMPLETE_STREAM)
+            self._record_stream_events_response(content, terminal, start_time, correlation_id)
+            yield terminal
+        finally:
+            close = getattr(events, 'close', None)
+            if close is not None:
+                close()
+
+    def _record_stream_events_response(self, content: str, terminal: TerminalStreamEvent,
+                                       start_time: float, correlation_id: Optional[str]) -> None:
+        evidence = terminal.metadata
+        self.tracer.record_llm_response(
+            self.model,
+            content,
+            call_duration_ms=(time.time() - start_time) * 1000,
+            source=type(self),
+            correlation_id=correlation_id,
+            usage=evidence.usage if evidence else None,
+            provider_model=evidence.provider_model if evidence else None,
+            finish_reason=evidence.finish_reason if evidence else None,
+            metadata=evidence.metadata if evidence else None,
+        )
 
     @staticmethod
     def _normalize_streamed_tool_call(tool_call):

@@ -38,10 +38,16 @@ The base class for all tracer events, extending the core `Event` class. All trac
 | `metadata` | gateway response metadata | `None` |
 
 `model` stays the configured request model. The broker fills these fields for
-`generate`, `generate_response` and `generate_object`. Usage is never estimated
-from text length or a tokenizer, so unknown usage stays `None`. The existing
-`generate_stream` API keeps its previous tracing and does not carry this
-evidence.
+`generate`, `generate_response`, `generate_object` and `generate_stream_events`.
+Usage is never estimated from text length or a tokenizer, so unknown usage stays
+`None`. The existing `generate_stream` API keeps its previous tracing and does not
+carry this evidence.
+
+For `generate_stream_events`, the response event is recorded when the stream
+reaches its terminal event, success or failure. Its `content` is the content
+received so far, and the evidence fields come from the terminal event's
+`CompletionMetadata`, including the provider `metadata` map (for example Ollama's
+durations).
 
 Each gateway reports what its provider sends, in the shape its response already
 holds. OpenAI reports its `usage` object and `finish_reason`. Ollama reports

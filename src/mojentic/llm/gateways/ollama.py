@@ -1,35 +1,22 @@
+import json
+from contextlib import closing
 from typing import List, Iterator, Optional, TYPE_CHECKING, Union
+
+import httpx
 import structlog
-from ollama import Client, Options, ChatResponse
-from pydantic import BaseModel
+from ollama import Client, Options, ChatResponse, ResponseError
+from pydantic import BaseModel, ValidationError
 
 from mojentic.llm.gateways.llm_gateway import LLMGateway
-from mojentic.llm.gateways.models import LLMToolCall, LLMGatewayResponse
+from mojentic.llm.gateways.models import LLMMessage, LLMToolCall, LLMGatewayResponse
 from mojentic.llm.gateways.ollama_messages_adapter import adapt_messages_to_ollama
+from mojentic.llm.gateways.ollama_stream_events import ollama_metadata, ollama_usage, parse_ollama_stream
+from mojentic.llm.gateways.stream_events import StreamError, StreamErrorReason, StreamEvent
 
 if TYPE_CHECKING:
-    from mojentic.llm.completion_config import ResponseFormat
+    from mojentic.llm.completion_config import CompletionConfig, ResponseFormat
 
 logger = structlog.get_logger()
-
-
-OLLAMA_USAGE_FIELDS = ("prompt_eval_count", "eval_count")
-OLLAMA_METADATA_FIELDS = ("total_duration", "load_duration", "prompt_eval_duration", "eval_duration")
-
-
-def _reported(frame: dict, fields) -> Optional[dict]:
-    reported = {field: frame[field] for field in fields if frame.get(field) is not None}
-    return reported or None
-
-
-def ollama_usage(frame: dict) -> Optional[dict]:
-    """Token counts an Ollama response frame reported, under Ollama's own names, or None."""
-    return _reported(frame, OLLAMA_USAGE_FIELDS)
-
-
-def ollama_metadata(frame: dict) -> Optional[dict]:
-    """Timing fields an Ollama response frame reported, or None."""
-    return _reported(frame, OLLAMA_METADATA_FIELDS)
 
 
 def ollama_format(response_format: Optional['ResponseFormat']) -> Optional[Union[str, dict]]:
@@ -70,6 +57,24 @@ class StreamingResponse(BaseModel):
     thinking: Optional[str] = None
 
 
+class OllamaStreamTransport:
+    """
+    Sends one streaming ``/api/chat`` request and yields its decoded frames.
+
+    A thin wrapper around the Ollama client. Closing the generator closes the HTTP
+    response, which cancels the request.
+    """
+
+    def __init__(self, client: Client):
+        self._client = client
+
+    def stream_frames(self, request: dict) -> Iterator[dict]:
+        """Send ``request`` as one streaming chat request and yield each frame as a dict."""
+        with closing(self._client.chat(**request, stream=True)) as parts:
+            for part in parts:
+                yield part.model_dump(exclude_none=True)
+
+
 class OllamaGateway(LLMGateway):
     """
     This class is a gateway to the Ollama LLM service.
@@ -80,10 +85,16 @@ class OllamaGateway(LLMGateway):
         The Ollama host to connect to. Defaults to "http://localhost:11434".
     headers : dict, optional
         The headers to send with the request. Defaults to an empty dict.
+    timeout : optional
+        The request timeout passed to the Ollama client.
+    stream_transport : OllamaStreamTransport, optional
+        The transport ``complete_stream_events`` uses. Defaults to one over this gateway's client.
     """
 
-    def __init__(self, host="http://localhost:11434", headers={}, timeout=None):
+    def __init__(self, host="http://localhost:11434", headers={}, timeout=None,
+                 stream_transport: Optional[OllamaStreamTransport] = None):
         self.client = Client(host=host, headers=headers, timeout=timeout)
+        self.stream_transport = stream_transport or OllamaStreamTransport(self.client)
 
     def _extract_options_from_args(self, args):
         # Extract config if present, otherwise use individual kwargs
@@ -222,23 +233,8 @@ class OllamaGateway(LLMGateway):
         """
         logger.info("Delegating to Ollama for streaming completion", **args)
 
-        options = self._extract_options_from_args(args)
-        ollama_args = {
-            'model': args['model'],
-            'messages': adapt_messages_to_ollama(args['messages']),
-            'options': options,
-            'stream': True
-        }
-
-        # Handle reasoning effort - if config has reasoning_effort set, enable thinking
-        config = args.get('config', None)
-        if config and config.reasoning_effort is not None:
-            ollama_args['think'] = True
-            logger.info("Enabling extended thinking for Ollama streaming", reasoning_effort=config.reasoning_effort)
-
-        response_format = ollama_format(config.response_format if config else None)
-        if response_format is not None:
-            ollama_args['format'] = response_format
+        ollama_args = self._stream_request(args)
+        ollama_args['stream'] = True
 
         # Enable tool support if tools are provided
         if 'tools' in args and args['tools'] is not None:
@@ -259,6 +255,61 @@ class OllamaGateway(LLMGateway):
                 # Yield tool calls when they arrive
                 if chunk.message.tool_calls:
                     yield StreamingResponse(tool_calls=chunk.message.tool_calls)
+
+    def complete_stream_events(self, model: str, messages: List[LLMMessage],
+                               config: 'CompletionConfig') -> Iterator[StreamEvent]:
+        """
+        Stream one turn as events, with terminal completion evidence.
+
+        Sends one streaming request with no tools. The turn completes only when Ollama
+        reports ``done: true`` with ``done_reason: "stop"``. Closing the generator closes
+        the HTTP request.
+
+        Parameters
+        ----------
+        model : str
+            The name of the model to use, as appears in `ollama list`.
+        messages : List[LLMMessage]
+            The messages to send.
+        config : CompletionConfig
+            Configuration for the request.
+
+        Yields
+        ------
+        StreamEvent
+            Content events followed by exactly one terminal event.
+        """
+        frames = self.stream_transport.stream_frames(
+            self._stream_request({'model': model, 'messages': messages, 'config': config}))
+        try:
+            with closing(frames):
+                yield from parse_ollama_stream(frames)
+        except ResponseError as e:
+            yield StreamError(reason=StreamErrorReason.PROVIDER_ERROR,
+                              detail={"status_code": e.status_code, "error": e.error})
+        except (json.JSONDecodeError, ValidationError) as e:
+            yield StreamError(reason=StreamErrorReason.INVALID_STREAM_EVENT, detail=str(e))
+        except (ConnectionError, httpx.HTTPError) as e:
+            yield StreamError(reason=StreamErrorReason.REQUEST_FAILED, detail=str(e))
+
+    def _stream_request(self, args: dict) -> dict:
+        """Build the chat request shared by both streaming APIs, without tools or the stream flag."""
+        request = {
+            'model': args['model'],
+            'messages': adapt_messages_to_ollama(args['messages']),
+            'options': self._extract_options_from_args(args),
+        }
+
+        # Handle reasoning effort - if config has reasoning_effort set, enable thinking
+        config = args.get('config', None)
+        if config and config.reasoning_effort is not None:
+            request['think'] = True
+            logger.info("Enabling extended thinking for Ollama streaming", reasoning_effort=config.reasoning_effort)
+
+        response_format = ollama_format(config.response_format if config else None)
+        if response_format is not None:
+            request['format'] = response_format
+        return request
 
     def get_available_models(self) -> List[str]:
         """

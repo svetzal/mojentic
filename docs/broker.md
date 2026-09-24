@@ -210,6 +210,14 @@ work; it is not a task budget or a loop detector.
 
 Unknown tools now reach the runner and produce error receipts. The optional broker `tool_context` forwards cancellation and callbacks.
 
+## Single-turn streaming with completion evidence
+
+`generate_stream_events(messages, config)` streams one turn as typed events and
+ends with exactly one terminal event: `StreamCompleted` with the finish reason,
+usage and provider model, or `StreamError`. Use it when truncated or unfinished
+output must never be treated as a result. It sends one request, supplies no tools
+and never retries. See [Single-turn streaming with completion evidence](streaming.md#single-turn-streaming-with-completion-evidence).
+
 Native responses preserve the fields supplied by the gateway. Missing provider
 usage or termination evidence must remain unknown; configured model names and
 text length are not substitutes for reported metadata. Response traces carry the

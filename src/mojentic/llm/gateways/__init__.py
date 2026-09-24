@@ -12,6 +12,14 @@ from mojentic.llm.gateways.embeddings_gateway import EmbeddingsGateway
 
 # Common models
 from mojentic.llm.gateways.models import LLMMessage, LLMToolCall, LLMGatewayResponse
+from mojentic.llm.gateways.stream_events import (
+    CompletionMetadata,
+    StreamCompleted,
+    StreamContent,
+    StreamError,
+    StreamErrorReason,
+    StreamEvent,
+)
 
 __all__ = [
     "LLMGateway",
@@ -23,4 +31,10 @@ __all__ = [
     "LLMMessage",
     "LLMToolCall",
     "LLMGatewayResponse",
+    "CompletionMetadata",
+    "StreamCompleted",
+    "StreamContent",
+    "StreamError",
+    "StreamErrorReason",
+    "StreamEvent",
 ]

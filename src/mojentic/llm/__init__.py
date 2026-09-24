@@ -15,3 +15,11 @@ from .gateways.models import (  # noqa: F401
     LLMGatewayResponse,
     MessageRole
 )
+from .gateways.stream_events import (  # noqa: F401
+    CompletionMetadata,
+    StreamCompleted,
+    StreamContent,
+    StreamError,
+    StreamErrorReason,
+    StreamEvent,
+)

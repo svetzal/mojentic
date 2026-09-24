@@ -480,3 +480,131 @@ class DescribeResponseEvidenceInTraces:
 
         event = self._response_event(tracer)
         assert (event.usage, event.provider_model, event.finish_reason) == (usage, "provider-model", "stop")
+
+
+class DescribeStreamEvents:
+
+    @pytest.fixture
+    def tracer(self):
+        from mojentic.tracer.tracer_system import TracerSystem
+        return TracerSystem()
+
+    @pytest.fixture
+    def messages(self):
+        return [LLMMessage(role=MessageRole.User, content="Hello")]
+
+    @pytest.fixture
+    def openai_gateway(self, mocker):
+        from mojentic.llm.gateways.openai import OpenAIGateway
+        return mocker.Mock(spec=OpenAIGateway)
+
+    @pytest.fixture
+    def broker(self, openai_gateway, tracer):
+        return LLMBroker(model="configured-model", gateway=openai_gateway, tracer=tracer)
+
+    @staticmethod
+    def _completed():
+        from mojentic.llm.gateways.stream_events import CompletionMetadata, StreamCompleted
+        return StreamCompleted(metadata=CompletionMetadata(
+            finish_reason="stop", usage={"prompt_tokens": 3, "completion_tokens": 2}, provider_model="gpt-4o-x",
+            metadata={"total_duration": 900}))
+
+    def should_relay_gateway_events_in_order(self, broker, openai_gateway, messages):
+        from mojentic.llm.gateways.stream_events import StreamContent
+        openai_gateway.complete_stream_events.return_value = iter(
+            [StreamContent(text="Hel"), StreamContent(text="lo"), self._completed()])
+
+        events = list(broker.generate_stream_events(messages, correlation_id="c-1"))
+
+        assert events == [StreamContent(text="Hel"), StreamContent(text="lo"), self._completed()]
+
+    def should_force_zero_tool_iterations(self, broker, openai_gateway, messages):
+        openai_gateway.complete_stream_events.return_value = iter([self._completed()])
+
+        list(broker.generate_stream_events(messages, CompletionConfig(temperature=0.2), correlation_id="c-1"))
+
+        config = openai_gateway.complete_stream_events.call_args.kwargs["config"]
+        assert (config.max_tool_iterations, config.temperature) == (0, 0.2)
+
+    def should_end_with_an_incomplete_stream_error_when_the_gateway_stops_early(self, broker, openai_gateway,
+                                                                                messages):
+        from mojentic.llm.gateways.stream_events import StreamContent, StreamError, StreamErrorReason
+        openai_gateway.complete_stream_events.return_value = iter([StreamContent(text="Hel")])
+
+        events = list(broker.generate_stream_events(messages, correlation_id="c-1"))
+
+        assert events[-1] == StreamError(reason=StreamErrorReason.INCOMPLETE_STREAM)
+
+    def should_yield_nothing_after_the_terminal_event(self, broker, openai_gateway, messages):
+        from mojentic.llm.gateways.stream_events import StreamContent
+        openai_gateway.complete_stream_events.return_value = iter(
+            [self._completed(), StreamContent(text="late")])
+
+        events = list(broker.generate_stream_events(messages, correlation_id="c-1"))
+
+        assert events == [self._completed()]
+
+    def should_report_unsupported_gateways_without_a_request(self, mocker, tracer, messages):
+        from mojentic.llm.gateways.anthropic import AnthropicGateway
+        from mojentic.llm.gateways.stream_events import StreamErrorReason
+        from mojentic.tracer.tracer_events import LLMCallTracerEvent
+        gateway = mocker.Mock(spec=AnthropicGateway)
+        broker = LLMBroker(model="claude", gateway=gateway, tracer=tracer)
+
+        events = list(broker.generate_stream_events(messages, correlation_id="c-1"))
+
+        assert ([event.reason for event in events], gateway.method_calls,
+                tracer.get_events(event_type=LLMCallTracerEvent)) == (
+            [StreamErrorReason.STREAM_EVENTS_UNSUPPORTED], [], [])
+
+    def should_trace_the_call_and_the_response_with_reported_usage(self, broker, openai_gateway, tracer, messages):
+        from mojentic.llm.gateways.stream_events import StreamContent
+        from mojentic.tracer.tracer_events import LLMCallTracerEvent, LLMResponseTracerEvent
+        openai_gateway.complete_stream_events.return_value = iter(
+            [StreamContent(text="Hel"), StreamContent(text="lo"), self._completed()])
+
+        list(broker.generate_stream_events(messages, correlation_id="c-1"))
+
+        response = tracer.get_events(event_type=LLMResponseTracerEvent)[0]
+        assert (len(tracer.get_events(event_type=LLMCallTracerEvent)), response.model, response.content,
+                response.usage, response.provider_model, response.finish_reason, response.metadata) == (
+            1, "configured-model", "Hello", {"prompt_tokens": 3, "completion_tokens": 2}, "gpt-4o-x", "stop",
+            {"total_duration": 900})
+
+    def should_trace_failure_evidence_with_the_content_so_far(self, broker, openai_gateway, tracer, messages):
+        from mojentic.llm.gateways.stream_events import (
+            CompletionMetadata, StreamContent, StreamError, StreamErrorReason)
+        from mojentic.tracer.tracer_events import LLMResponseTracerEvent
+        openai_gateway.complete_stream_events.return_value = iter([
+            StreamContent(text="Hel"),
+            StreamError(reason=StreamErrorReason.INCOMPLETE_COMPLETION,
+                        metadata=CompletionMetadata(finish_reason="length", usage={"completion_tokens": 1})),
+        ])
+
+        list(broker.generate_stream_events(messages, correlation_id="c-1"))
+
+        response = tracer.get_events(event_type=LLMResponseTracerEvent)[0]
+        assert (response.content, response.finish_reason, response.usage) == ("Hel", "length", {"completion_tokens": 1})
+
+    def should_close_the_http_request_when_the_consumer_stops_early(self, mocker, tracer, messages):
+        from mojentic.llm.gateways.openai import OpenAIGateway, OpenAIStreamTransport
+        closed = []
+
+        def lines(body):
+            try:
+                yield 'data: {"choices":[{"delta":{"content":"Hel"}}]}'
+                yield 'data: {"choices":[{"delta":{"content":"lo"}}]}'
+            finally:
+                closed.append(True)
+
+        transport = mocker.Mock(spec=OpenAIStreamTransport)
+        transport.stream_lines.side_effect = lines
+        mocker.patch('mojentic.llm.gateways.openai.OpenAI')
+        broker = LLMBroker(model="gpt-4o", gateway=OpenAIGateway(api_key="k", stream_transport=transport),
+                           tracer=tracer)
+        events = broker.generate_stream_events(messages, correlation_id="c-1")
+        next(events)
+
+        events.close()
+
+        assert closed == [True]
