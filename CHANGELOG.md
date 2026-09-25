@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Routine dependency maintenance: locked `openai` to 2.51.0 and `markdown` to 3.10.3 (transitive, via `mkdocstrings`). No source changes required; lint, tests, `bandit`, and `pip-audit` all remain clean.
+- Routine dependency maintenance: refreshed `uv.lock` to the latest compatible releases, notably `openai` 3.19.2, `anthropic` 1.8.0, `filelock` 4.0.3, `pymdown-extensions` 12.1, `urllib3` 2.8.0, `numpy` 2.5.3 and `flake8` 7.4.1. No source changes required; lint, tests, `bandit`, and `pip-audit` all remain clean.
 
 ## [1.5.0] - 2026-05-21
 
