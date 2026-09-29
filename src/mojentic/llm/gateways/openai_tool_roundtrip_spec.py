@@ -172,3 +172,41 @@ def should_preserve_json_argument_types_and_provider_metadata(mocker):
     assert response.usage["prompt_tokens"] == 10
     assert response.model == fixture["model"]
     assert response.finish_reason == "tool_calls"
+
+
+def _stream_chunk(delta, finish_reason=None):
+    from openai.types.chat import ChatCompletionChunk
+    return ChatCompletionChunk.model_validate({
+        "id": "chatcmpl-stream", "object": "chat.completion.chunk", "created": 0, "model": "gpt-4o",
+        "choices": [{"index": 0, "delta": delta, "finish_reason": finish_reason}],
+    })
+
+
+class DescribeOpenAIStreamingToolCallRoundTrip:
+
+    @pytest.fixture
+    def streaming_client(self, mocker):
+        tool_call_stream = [
+            _stream_chunk({"role": "assistant", "tool_calls": [{
+                "index": 0, "id": "call_abc123", "type": "function",
+                "function": {"name": "get_weather", "arguments": ""}}]}),
+            _stream_chunk({"tool_calls": [{"index": 0, "function": {"arguments": '{"location": "Paris"}'}}]}),
+            _stream_chunk({}, finish_reason="tool_calls"),
+        ]
+        final_stream = [
+            _stream_chunk({"role": "assistant", "content": "Sunny."}),
+            _stream_chunk({}, finish_reason="stop"),
+        ]
+        client = MagicMock()
+        client.chat.completions.create.side_effect = [iter(tool_call_stream), iter(final_stream)]
+        mocker.patch('mojentic.llm.gateways.openai.OpenAI', return_value=client)
+        return client
+
+    def should_carry_streamed_tool_call_id_into_follow_up_request(self, streaming_client, tool):
+        broker = LLMBroker(model="gpt-4o", gateway=OpenAIGateway(api_key="test-key"))
+        messages = [LLMMessage(role=MessageRole.User, content="What's the weather in Paris?")]
+
+        list(broker.generate_stream(messages, tools=[tool]))
+
+        follow_up = streaming_client.chat.completions.create.call_args_list[1].kwargs["messages"]
+        assert [m["tool_call_id"] for m in follow_up if m["role"] == "tool"] == ["call_abc123"]

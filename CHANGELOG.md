@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `LLMBroker` methods called without a `correlation_id` failed with a validation error when given a real `TracerSystem`. Each broker method (`generate`, `generate_response`, `generate_object`, `generate_stream`, `generate_stream_events`) now generates a UUID when none is supplied, as the TypeScript and Rust brokers do, so every trace event from one call shares an ID.
 - `from mojentic.tracer import TracerSystem, EventStore`, used throughout the docs, `AGENTS.md` and `_examples`, raised `ImportError`. The `mojentic.tracer` package now exports both.
+- `LLMBroker.generate_stream` dropped the id of tool calls streamed by `OpenAIGateway`, so the follow-up request sent tool results with no `tool_call_id`. The broker now reads the id from the tool call itself rather than from its `function`.
 
 ### Changed
 

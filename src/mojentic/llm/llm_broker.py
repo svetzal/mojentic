@@ -477,15 +477,8 @@ class LLMBroker():
         """Convert raw provider tool-call payloads into LLMToolCall objects."""
         if isinstance(tool_call, LLMToolCall):
             return tool_call
-        if hasattr(tool_call, 'name'):
-            tool_name = tool_call.name
-            tool_arguments = tool_call.arguments
-            tool_call_id = getattr(tool_call, 'id', None)
-        else:
-            tool_name = tool_call.function.name
-            tool_arguments = tool_call.function.arguments
-            tool_call_id = getattr(tool_call.function, 'id', None)
-        return LLMToolCall(id=tool_call_id, name=tool_name, arguments=tool_arguments)
+        call = tool_call if hasattr(tool_call, 'name') else tool_call.function
+        return LLMToolCall(id=getattr(tool_call, 'id', None), name=call.name, arguments=call.arguments)
 
     def _dispatch_tool_batch(self, tool_calls, tools, caller, correlation_id):
         """
