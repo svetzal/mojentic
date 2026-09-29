@@ -135,6 +135,107 @@ llm = LLMBroker(
 )
 ```
 
+### Using OMLXGateway
+
+[oMLX](https://github.com/jundot/omlx) is an LLM server for Apple Silicon. It speaks
+the OpenAI chat completions protocol, but use `OMLXGateway` rather than pointing
+`OpenAIGateway` at it. The OpenAI gateway rewrites requests for model names it does not
+know, drops `reasoning_content`, and chunks embeddings with the OpenAI tokenizer.
+`OMLXGateway` sends your configuration as you wrote it.
+
+```py { linenums=1 }
+from mojentic.llm import LLMBroker
+from mojentic.llm.gateways import OMLXGateway
+from mojentic.llm.gateways.models import LLMMessage
+
+llm = LLMBroker("Qwen3.8-27B-MLX-8bit", gateway=OMLXGateway())
+print(llm.generate([LLMMessage(content="Reply with exactly: hello")]))
+```
+
+#### Configuration
+
+| Setting | Constructor | Environment | Default |
+| ------- | ----------- | ----------- | ------- |
+| Host | `host` | `OMLX_HOST` | `http://localhost:8000` |
+| API key | `api_key` | `OMLX_API_KEY` | none |
+| Timeout | `timeout`, in seconds | `OMLX_TIMEOUT`, in milliseconds | 600 seconds |
+
+- An explicit value wins over the environment, and the environment wins over the default.
+- The host has no `/v1` suffix. The gateway adds `/v1` to every path.
+- With an API key, the gateway sends `Authorization: Bearer <key>`. Without one, it
+  sends no authorization header.
+- One timeout covers every request, including `load_model`. Local models are slow: a
+  16384-token reply at 16 tokens a second takes 17 minutes.
+
+#### Requests
+
+The gateway builds each request from `CompletionConfig` with no per-model changes. It
+always sends `temperature` and `max_tokens` (never `max_completion_tokens`), and sends
+`reasoning_effort` unchanged when you set it. It does not send `num_ctx` or
+`num_predict`, because oMLX sets the context length per model.
+
+`reasoning_effort` goes to the model's chat template, so its effect depends on the
+model. Leave it unset to keep the model's default. Qwen 3 models think by default.
+
+#### Thinking
+
+oMLX reports the model's reasoning in `reasoning_content`. The gateway puts it in
+`LLMGatewayResponse.thinking`, and `complete_stream` yields it as thinking chunks.
+`generate_stream_events` has no thinking event, so reasoning produces no events there.
+
+#### Truncation
+
+When `max_tokens` ends generation during thinking, a non-streaming response puts the
+partial reasoning in `content`, leaves `thinking` empty, and reports a `length` finish
+reason. A streaming response keeps it as thinking. The gateway maps the fields as they
+arrive and does not move text between them. **`content` is not an answer unless
+`finish_reason` is `stop`.**
+
+#### Structured output and the `Warning` header
+
+`generate_object` sends `response_format: {type: "json_schema", json_schema: {name:
+"response", schema: <schema>}}` and validates the content against your model.
+
+When oMLX cannot compile a grammar for a `json_object` or `json_schema` request, it
+falls back to instructions in the prompt and says so in a `Warning` response header. For
+a structured output request, the gateway records that header in
+`response.metadata["response_format_warning"]` (several headers are joined with `, `)
+and logs a warning. It does not retry and does not fail. The header is ignored for text
+or absent response formats. Validate the content either way.
+
+#### Streaming
+
+oMLX opens every stream with a keep-alive frame whose `model` is `keepalive`, and sends
+more during long prefill. The gateway drops these frames before parsing, in both
+`complete_stream` and `generate_stream_events`, so `keepalive` never appears as the
+provider model. `generate_stream_events` follows the rules in
+[Single-turn streaming with completion evidence](streaming.md#single-turn-streaming-with-completion-evidence).
+
+#### Models and embeddings
+
+```py { linenums=1 }
+gateway = OMLXGateway()
+gateway.get_available_models()               # the server's model ids, sorted
+gateway.load_model("Qwen3.8-27B-MLX-8bit")   # returns when the model is in memory
+gateway.unload_model("Qwen3.8-27B-MLX-8bit")
+gateway.calculate_embeddings("some text", model="your-embedding-model")
+```
+
+- A chat request loads its model automatically. Use `load_model` to warm a model up
+  ahead of time.
+- oMLX downloads models only through its admin dashboard. There is no pull operation.
+- `calculate_embeddings` needs a model, because oMLX has no standard embedding model.
+  A missing or empty model raises `ValueError` before any request. The text goes in one
+  request, with no client-side chunking.
+
+#### Errors
+
+A non-2xx response raises `httpx.HTTPStatusError`. Its `response` carries the status and
+the oMLX error body, for example a 404 `not_found_error` for an unknown model, or a 400
+`invalid_request_error` when you unload a model that is not loaded or embed with a chat
+model. In `generate_stream_events` the same response is a `PROVIDER_ERROR` whose detail
+holds `status_code` and the `error` object.
+
 ## Configuration with CompletionConfig
 
 You can fine-tune LLM behavior using `CompletionConfig`:

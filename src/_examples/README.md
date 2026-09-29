@@ -34,6 +34,13 @@ List all available models from the Ollama gateway.
 python src/_examples/list_models.py
 ```
 
+#### `omlx_gateway.py`
+Run one turn against a local oMLX server, then stream the same turn as events.
+Reads `OMLX_HOST` and `OMLX_API_KEY`. Pass a model id, or it uses the first model the server lists.
+```bash
+python src/_examples/omlx_gateway.py Qwen3.8-27B-MLX-8bit
+```
+
 #### `simple_structured.py`
 Generate structured JSON output using Pydantic models.
 ```bash

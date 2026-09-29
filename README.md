@@ -8,7 +8,7 @@ Mojentic is a framework that provides a simple and flexible way to interact with
 
 ## 🚀 Features
 
-- **LLM Integration**: Support for multiple LLM providers (OpenAI, Ollama)
+- **LLM Integration**: Support for multiple LLM providers (OpenAI, Ollama, Anthropic, oMLX)
 - **Latest OpenAI Models**: Full support for GPT-5, GPT-4.1, and all reasoning models (o1, o3, o4 series)
 - **Automatic Model Adaptation**: Seamless parameter handling across different OpenAI model types
 - **Structured Output**: Generate structured data from LLM responses using Pydantic models

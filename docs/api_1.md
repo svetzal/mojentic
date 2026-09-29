@@ -12,9 +12,10 @@ At this layer we have:
 - [ChatSession](#mojentic.llm.ChatSession): This is a simple class that wraps the LLMBroker and provides a
   conversational interface to the LLM with context size management. It is a good starting point for building a chatbot.
 
-- [OllamaGateway](#mojentic.llm.gateways.OllamaGateway), [OpenAIGateway](#mojentic.llm.gateways.OpenAIGateway): These are
+- [OllamaGateway](#mojentic.llm.gateways.OllamaGateway), [OpenAIGateway](#mojentic.llm.gateways.OpenAIGateway),
+  [OMLXGateway](#mojentic.llm.gateways.OMLXGateway): These are
   out-of-the-box adapters that will interact with models available through
-  Ollama and OpenAI.
+  Ollama, OpenAI and oMLX.
 
   Note:
   - `OpenAIGateway` supports environment-variable defaults. If `api_key` is not provided, it uses `OPENAI_API_KEY`. If `base_url` is not provided, it uses `OPENAI_API_ENDPOINT`.
@@ -221,6 +222,12 @@ print(result)
         group_by_category: false
 
 ::: mojentic.llm.gateways.OpenAIGateway
+    options:
+        show_root_heading: true
+        merge_init_into_class: false
+        group_by_category: false
+
+::: mojentic.llm.gateways.OMLXGateway
     options:
         show_root_heading: true
         merge_init_into_class: false

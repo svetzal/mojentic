@@ -347,7 +347,7 @@ It is not a result, even when it happens to be valid JSON.
   call `close()` on the generator. Closing the generator closes the HTTP response.
   An early stop is not an error and yields no further event. The tracer keeps the
   LLM call event but records no response event for that turn.
-- `OpenAIGateway` and `OllamaGateway` support this API. Other gateways, such as
+- `OpenAIGateway`, `OllamaGateway` and `OMLXGateway` support this API. Other gateways, such as
   `AnthropicGateway`, yield a single `STREAM_EVENTS_UNSUPPORTED` error before any
   request.
 - The tracer records the LLM call when the request starts, and the response
