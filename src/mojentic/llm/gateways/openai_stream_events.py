@@ -39,7 +39,7 @@ def parse_openai_stream(lines: Iterable[str]) -> Iterator[StreamEvent]:
     """
     evidence = CompletionMetadata()
     for line in lines:
-        data = _sse_data(line)
+        data = sse_data(line)
         if data is None:
             continue
         if data == DONE_MARKER:
@@ -53,7 +53,7 @@ def parse_openai_stream(lines: Iterable[str]) -> Iterator[StreamEvent]:
                       metadata=evidence if evidence != CompletionMetadata() else None)
 
 
-def _sse_data(line: str) -> Optional[str]:
+def sse_data(line: str) -> Optional[str]:
     """Return the value of an SSE ``data`` field, or None for comments, blanks and other fields."""
     if not line.startswith("data:"):
         return None
