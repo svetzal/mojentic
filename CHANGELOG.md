@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-09-30
+
+### Added
+
 - Add a single-response broker API for caller-owned context and native tool requests.
 - Support explicit unlimited tool rounds while retaining finite defaults.
 - Unknown tools now reach the runner and produce error receipts. The optional broker `tool_context` forwards cancellation and callbacks.
@@ -19,11 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Explicit empty oMLX API keys now override environment keys, and blank model ids are rejected before load, unload or embedding requests.
 - Ollama event streams retain provider evidence across frames and on incomplete streams. Malformed provider evidence and non-boolean `done` values are invalid stream events; success still requires `done_reason: "stop"` on the final frame.
-
 - OpenAI image messages now preserve HTTP(S) URLs and data URIs supplied in `image_paths`. Previously, the adapter treated them as file paths and silently dropped the images.
-
 - OpenAI embeddings for long text now weight each part by its token count before normalization. Previously, equal vector dimensions gave a short trailing part the same weight as a full part.
-
 - `LLMBroker` methods called without a `correlation_id` failed with a validation error when given a real `TracerSystem`. Each broker method (`generate`, `generate_response`, `generate_object`, `generate_stream`, `generate_stream_events`) now generates a UUID when none is supplied, as the TypeScript and Rust brokers do, so every trace event from one call shares an ID.
 - `from mojentic.tracer import TracerSystem, EventStore`, used throughout the docs, `AGENTS.md` and `_examples`, raised `ImportError`. The `mojentic.tracer` package now exports both.
 - `LLMBroker.generate_stream` dropped the id of tool calls streamed by `OpenAIGateway`, so the follow-up request sent tool results with no `tool_call_id`. The broker now reads the id from the tool call itself rather than from its `function`.
