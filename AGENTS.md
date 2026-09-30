@@ -6,7 +6,7 @@ Why this project exists and what problem does it solve: @CHARTER.md
 
 ## Project Overview
 
-Mojentic is an agentic framework providing simple and flexible LLM interaction capabilities. This is the **reference implementation** for all language ports (Elixir, Rust, TypeScript). Changes here should be reflected in PARITY.md.
+Mojentic is an agentic framework providing simple and flexible LLM interaction capabilities. This is the original Python port. Elixir (`mojentic-ex`) is the reference for API design and feature behavior across all six ports. Changes here should be reflected in PARITY.md.
 
 - **Tech stack**: Python 3.11+, Pydantic, structlog, pytest, MkDocs
 - **Key dependencies**: pydantic (data validation), structlog (logging), ollama/openai (LLM integration)
@@ -269,13 +269,13 @@ The GitHub Actions workflow (`.github/workflows/build.yml`) runs:
 
 ### Version Synchronization
 
-All mojentic ports (mojentic-py, mojentic-ts, mojentic-ex, mojentic-ru) share synchronized major and minor version numbers. When releasing:
+All mojentic ports (mojentic-py, mojentic-ts, mojentic-ex, mojentic-ru, mojentic-kt, mojentic-sw) share synchronized major and minor version numbers. When releasing:
 
 - Patch releases (X.Y.Z → X.Y.Z+1) can be made independently per port
-- Minor releases (X.Y.0 → X.Y+1.0) must be coordinated — all four ports bump together
-- Major releases (X.0.0 → X+1.0.0) must be coordinated — all four ports bump together
+- Minor releases (X.Y.0 → X.Y+1.0) must be coordinated — all six ports bump together
+- Major releases (X.0.0 → X+1.0.0) must be coordinated — all six ports bump together
 
-Before tagging a minor or major release, verify the other three ports are also ready to release at the same version.
+Before tagging a minor or major release, verify the other five ports are also ready to release at the same version.
 
 Current ports:
 
@@ -283,6 +283,8 @@ Current ports:
 - mojentic-ts (TypeScript) — package.json
 - mojentic-ex (Elixir) — mix.exs
 - mojentic-ru (Rust) — Cargo.toml
+- mojentic-kt (Kotlin) — gradle.properties
+- mojentic-sw (Swift) — release tag
 
 ## Branding
 
