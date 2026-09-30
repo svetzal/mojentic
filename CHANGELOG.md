@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Explicit empty oMLX API keys now override environment keys, and blank model ids are rejected before load, unload or embedding requests.
+- Ollama event streams retain provider evidence across frames and on incomplete streams. Malformed provider evidence and non-boolean `done` values are invalid stream events; success still requires `done_reason: "stop"` on the final frame.
 
 - OpenAI image messages now preserve HTTP(S) URLs and data URIs supplied in `image_paths`. Previously, the adapter treated them as file paths and silently dropped the images.
 

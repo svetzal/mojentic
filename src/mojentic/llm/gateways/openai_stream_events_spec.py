@@ -1,3 +1,5 @@
+import pytest
+
 import json
 
 from mojentic.llm.gateways.openai_stream_events import parse_openai_stream
@@ -127,3 +129,16 @@ class DescribeParseOpenAIStream:
         events = list(parse_openai_stream(['data: {"choices":[{"delta":{"content":"Hi"}}]}']))
 
         assert events[-1] == StreamError(reason=StreamErrorReason.INCOMPLETE_STREAM, metadata=None)
+
+
+@pytest.mark.parametrize("field,value", [("model", []), ("usage", []), ("finish_reason", [])])
+def should_reject_malformed_provider_evidence_with_one_terminal_error(field, value):
+    frame = {"model": "model", "choices": [{"delta": {}, "finish_reason": "stop"}]}
+    if field == "finish_reason":
+        frame["choices"][0][field] = value
+    else:
+        frame[field] = value
+
+    events = list(parse_openai_stream([f"data: {json.dumps(frame)}", "data: [DONE]"]))
+
+    assert events == [StreamError(reason=StreamErrorReason.INVALID_STREAM_EVENT, detail=json.dumps(frame))]

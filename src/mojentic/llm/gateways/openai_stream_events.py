@@ -79,10 +79,19 @@ def _parse_frame(data: str, evidence: CompletionMetadata) -> FrameResult:
     choices = frame.get("choices")
     if not isinstance(choices, list) or len(choices) > 1:
         return [_invalid(data)], evidence
+    if not _valid_evidence(frame, choices):
+        return [_invalid(data)], evidence
     evidence = _fold_evidence(evidence, frame, choices)
     if not choices:
         return [], evidence
     return _delta_events(choices[0], data), evidence
+
+
+def _valid_evidence(frame: dict, choices: list) -> bool:
+    fields = [(frame.get("model"), str), (frame.get("usage"), dict)]
+    if choices and isinstance(choices[0], dict):
+        fields.append((choices[0].get("finish_reason"), str))
+    return all(value is None or isinstance(value, expected) for value, expected in fields)
 
 
 def _fold_evidence(evidence: CompletionMetadata, frame: dict, choices: list) -> CompletionMetadata:

@@ -1,3 +1,5 @@
+import pytest
+
 from mojentic.llm.gateways.ollama_stream_events import parse_ollama_stream
 from mojentic.llm.gateways.stream_events import (
     CompletionMetadata,
@@ -68,6 +70,46 @@ class DescribeParseOllamaStream:
 
         assert events[-1] == StreamError(reason=StreamErrorReason.INCOMPLETE_STREAM,
                                          metadata=CompletionMetadata(provider_model="qwen3:32b"))
+
+    def should_preserve_all_evidence_when_the_stream_ends_without_done(self):
+        frame = _final("stop", done=False)
+        tail = {"message": {"content": ""}, "done": False}
+
+        events = list(parse_ollama_stream([frame, tail]))
+
+        assert events[-1] == StreamError(
+            reason=StreamErrorReason.INCOMPLETE_STREAM,
+            metadata=CompletionMetadata(finish_reason="stop", usage=USAGE,
+                                        provider_model="qwen3:32b", metadata=DURATIONS))
+
+    def should_preserve_earlier_usage_on_a_sparse_terminal_frame(self):
+        frames = [_final("stop", done=False), {"done": True, "done_reason": "stop"}]
+
+        events = list(parse_ollama_stream(frames))
+
+        assert events[-1] == StreamCompleted(metadata=CompletionMetadata(
+            finish_reason="stop", usage=USAGE, provider_model="qwen3:32b", metadata=DURATIONS))
+
+    def should_require_done_reason_on_the_terminal_frame_itself(self):
+        frames = [_final("stop", done=False), {"done": True}]
+
+        events = list(parse_ollama_stream(frames))
+
+        assert events[-1].reason == StreamErrorReason.INCOMPLETE_COMPLETION
+
+    @pytest.mark.parametrize("done", ["false", "true", 1, [], {}])
+    def should_reject_non_boolean_terminal_markers(self, done):
+        events = list(parse_ollama_stream([_final("stop", done=done)]))
+
+        assert events[-1].reason == StreamErrorReason.INVALID_STREAM_EVENT
+
+    @pytest.mark.parametrize("field,value", [("model", []), ("done_reason", []), ("message", [])])
+    def should_reject_malformed_evidence_or_message(self, field, value):
+        frame = _final("stop") | {field: value}
+
+        events = list(parse_ollama_stream([frame]))
+
+        assert events == [StreamError(reason=StreamErrorReason.INVALID_STREAM_EVENT, detail=str(frame))]
 
     def should_reject_tool_calls(self):
         frame = {"model": "qwen3:32b", "done": False,

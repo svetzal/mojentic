@@ -45,23 +45,30 @@ def parse_ollama_stream(frames: Iterable[object]) -> Iterator[StreamEvent]:
         Content events followed by exactly one terminal event. Reading stops at the
         terminal event.
     """
-    provider_model = None
+    evidence = CompletionMetadata()
     for frame in frames:
-        events = _frame_events(frame)
+        events = _frame_events(frame, evidence)
         yield from events
         if events and not isinstance(events[-1], StreamContent):
             return
-        provider_model = frame.get("model") or provider_model
+        evidence = _fold_evidence(evidence, frame)
     yield StreamError(reason=StreamErrorReason.INCOMPLETE_STREAM,
-                      metadata=CompletionMetadata(provider_model=provider_model) if provider_model else None)
+                      metadata=evidence if evidence != CompletionMetadata() else None)
 
 
-def _frame_events(frame: object) -> List[StreamEvent]:
+def _frame_events(frame: object, evidence: CompletionMetadata) -> List[StreamEvent]:
     if not isinstance(frame, dict):
         return [_invalid(frame)]
     if frame.get("error") is not None:
         return [StreamError(reason=StreamErrorReason.PROVIDER_ERROR, detail=frame["error"])]
-    message = frame.get("message") or {}
+    if "done" in frame and not isinstance(frame["done"], bool):
+        return [_invalid(frame)]
+    if any(frame.get(field) is not None and not isinstance(frame[field], str)
+           for field in ("model", "done_reason")):
+        return [_invalid(frame)]
+    message = frame.get("message")
+    if message is None:
+        message = {}
     if not isinstance(message, dict):
         return [_invalid(frame)]
     if message.get("tool_calls"):
@@ -71,17 +78,23 @@ def _frame_events(frame: object) -> List[StreamEvent]:
         return [_invalid(frame)]
     events: List[StreamEvent] = [StreamContent(text=content)] if content else []
     if frame.get("done"):
-        events.append(_terminal(frame))
+        terminal_evidence = _fold_evidence(evidence, frame).model_copy(update={"finish_reason": frame.get("done_reason")})
+        events.append(_terminal(terminal_evidence))
     return events
 
 
-def _terminal(frame: dict) -> StreamEvent:
-    evidence = CompletionMetadata(
-        finish_reason=frame.get("done_reason"),
-        usage=ollama_usage(frame),
-        provider_model=frame.get("model"),
-        metadata=ollama_metadata(frame),
-    )
+def _fold_evidence(evidence: CompletionMetadata, frame: dict) -> CompletionMetadata:
+    reported = {
+        "finish_reason": frame.get("done_reason"),
+        "usage": ollama_usage(frame),
+        "provider_model": frame.get("model"),
+        "metadata": ollama_metadata(frame),
+    }
+    updates = {field: value for field, value in reported.items() if value is not None}
+    return evidence.model_copy(update=updates)
+
+
+def _terminal(evidence: CompletionMetadata) -> StreamEvent:
     if evidence.finish_reason == "stop":
         return StreamCompleted(metadata=evidence)
     return StreamError(reason=StreamErrorReason.INCOMPLETE_COMPLETION, metadata=evidence)
