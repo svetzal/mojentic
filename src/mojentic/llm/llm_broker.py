@@ -408,8 +408,9 @@ class LLMBroker():
         evidence of what the provider sent, not a usable result.
 
         The broker sends one request with no tools, forces zero tool iterations and never
-        retries. Stop consuming the stream (break out of the loop, or call ``close()`` on
-        the generator) to cancel the HTTP request. A gateway without
+        retries. Call ``close()`` on the generator to cancel the HTTP request. Use
+        ``contextlib.closing`` around a loop that may break early. A retained generator
+        stays open after ``break``. A gateway without
         ``complete_stream_events`` yields a single ``STREAM_EVENTS_UNSUPPORTED`` error
         without sending a request.
 

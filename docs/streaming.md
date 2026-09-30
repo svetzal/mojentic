@@ -347,8 +347,9 @@ It is not a result, even when it happens to be valid JSON.
 
 - The broker sends exactly one HTTP request. It supplies no tools, forces
   `max_tool_iterations` to zero and never retries.
-- Stop consuming the stream to cancel the request: `break` out of the loop, or
-  call `close()` on the generator. Closing the generator closes the HTTP response.
+- Call `close()` on the generator to cancel the request, or use
+  `contextlib.closing` around a loop that may break early. A retained generator
+  stays open after `break`. Closing it closes the HTTP response.
   An early stop is not an error and yields no further event. The tracer keeps the
   LLM call event but records no response event for that turn.
 - `OpenAIGateway`, `OllamaGateway` and `OMLXGateway` support this API. Other gateways, such as
