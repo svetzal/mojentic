@@ -72,7 +72,7 @@ def omlx_settings(host: Optional[str] = None, api_key: Optional[str] = None, tim
     """
     environ = environ or {}
     host = host or environ.get("OMLX_HOST") or DEFAULT_HOST
-    api_key = api_key or environ.get("OMLX_API_KEY")
+    api_key = environ.get("OMLX_API_KEY") if api_key is None else api_key
     if timeout is None:
         timeout = float(environ["OMLX_TIMEOUT"]) / 1000 if environ.get("OMLX_TIMEOUT") else DEFAULT_TIMEOUT
     return OMLXSettings(

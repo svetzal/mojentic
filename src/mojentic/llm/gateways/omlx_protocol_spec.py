@@ -77,6 +77,11 @@ class DescribeOMLXSettings:
 
         assert settings.headers == {}
 
+    def should_allow_an_explicit_empty_key_to_override_the_environment(self):
+        settings = omlx_settings(api_key="", environ={"OMLX_API_KEY": "env-key"})
+
+        assert settings.headers == {}
+
     def should_default_the_timeout(self):
         settings = omlx_settings(environ={})
 

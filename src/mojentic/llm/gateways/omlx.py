@@ -282,7 +282,7 @@ class OMLXGateway(LLMGateway):
         httpx.HTTPStatusError
             A 400 ``invalid_request_error`` when the model is not an embedding model.
         """
-        if not model:
+        if not model or not model.strip():
             raise ValueError("oMLX has no default embedding model; pass 'model'")
         response = self.transport.post("/embeddings", {"model": model, "input": text})
         return response.json()["data"][0]["embedding"]
@@ -305,4 +305,6 @@ def _validated_object(object_model: Type[BaseModel], content: Optional[str]) -> 
 
 
 def _path_segment(model: str) -> str:
+    if not model.strip():
+        raise ValueError("oMLX model id must not be blank")
     return quote(model, safe="")

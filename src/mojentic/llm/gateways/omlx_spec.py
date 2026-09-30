@@ -414,6 +414,14 @@ class DescribeOMLXGateway:
 
             assert gateway.get_available_models() == [MODEL]
 
+        @pytest.mark.parametrize("operation", ["load_model", "unload_model"])
+        @pytest.mark.parametrize("model", ["", " ", "\t\n"])
+        def should_reject_blank_model_ids_without_a_request(self, gateway, transport, operation, model):
+            with pytest.raises(ValueError):
+                getattr(gateway, operation)(model)
+
+            assert transport.method_calls == []
+
         def should_load_a_model_and_return_nothing(self, gateway, transport):
             transport.post.return_value = ok(load_fixture("model_load.json"))
 
@@ -454,7 +462,7 @@ class DescribeOMLXGateway:
             assert (transport.post.call_count, transport.post.call_args.args, embedding) == (
                 1, ("/embeddings", {"model": "embed-model", "input": "some text"}), [0.1, 0.2])
 
-        @pytest.mark.parametrize("model", [None, ""])
+        @pytest.mark.parametrize("model", [None, "", " "])
         def should_reject_a_missing_or_empty_model_before_any_request(self, gateway, transport, model):
             with pytest.raises(ValueError):
                 gateway.calculate_embeddings("some text", model=model)
