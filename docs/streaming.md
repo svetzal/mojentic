@@ -151,6 +151,10 @@ The OpenAI implementation is more complex because tool arguments arrive incremen
 4. Complete tool calls are parsed and executed
 5. Recursive streaming continues with tool results
 
+OpenAI and oMLX follow-up requests include every parallel tool call in the assistant
+message. Each tool result keeps the matching call id, including when the id and
+arguments arrive in separate stream chunks. This also applies to ordinary tool turns.
+
 Example of OpenAI tool call streaming:
 ```
 Chunk 1: id='call_123', name='get_weather', arguments=''

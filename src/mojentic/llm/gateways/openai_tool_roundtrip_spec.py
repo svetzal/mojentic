@@ -210,3 +210,92 @@ class DescribeOpenAIStreamingToolCallRoundTrip:
 
         follow_up = streaming_client.chat.completions.create.call_args_list[1].kwargs["messages"]
         assert [m["tool_call_id"] for m in follow_up if m["role"] == "tool"] == ["call_abc123"]
+
+
+@pytest.fixture(params=["openai", "omlx"])
+def parallel_round_trip(request, streaming, mocker):
+    provider = request.param
+    import httpx
+    from openai import OpenAI
+    from mojentic.llm.gateways.omlx import OMLXGateway, OMLXTransport
+
+    calls = [
+        {"id": "call_paris", "type": "function",
+         "function": {"name": "get_weather", "arguments": '{"location": "Paris"}'}},
+        {"id": "call_london", "type": "function",
+         "function": {"name": "get_weather", "arguments": '{"location": "London"}'}},
+    ]
+    first = _load_fixture("response-1-tool-call.json")
+    first["choices"][0]["message"]["tool_calls"] = calls
+    final = _load_fixture("response-2-final.json")
+    first_chunks = [
+        _stream_chunk({"role": "assistant", "tool_calls": [
+            {"index": index, "id": call["id"], "type": "function",
+             "function": {"name": "get_weather", "arguments": ""}}
+            for index, call in enumerate(calls)]}),
+        _stream_chunk({"tool_calls": [
+            {"index": index, "function": {"arguments": call["function"]["arguments"]}}
+            for index, call in enumerate(calls)]}),
+        _stream_chunk({}, finish_reason="tool_calls"),
+    ]
+    final_chunks = [_stream_chunk({"content": "Sunny."}), _stream_chunk({}, finish_reason="stop")]
+    streams = [
+        [f"data: {chunk.model_dump_json()}" for chunk in chunks] + ["data: [DONE]"]
+        for chunks in [first_chunks, final_chunks]
+    ]
+    requests = []
+
+    def respond(request):
+        requests.append(json.loads(request.content))
+        index = len(requests) - 1
+        if streaming:
+            return httpx.Response(200, text="\n\n".join(streams[index]) + "\n\n",
+                                  headers={"Content-Type": "text/event-stream"})
+        return httpx.Response(200, json=[first, final][index])
+
+    if provider == "openai":
+        gateway = OpenAIGateway(api_key="test-key")
+        gateway.client = OpenAI(api_key="test-key", http_client=httpx.Client(transport=httpx.MockTransport(respond)))
+    else:
+        transport = mocker.Mock(spec=OMLXTransport)
+
+        def post(path, body):
+            requests.append(body)
+            return httpx.Response(200, json=[first, final][len(requests) - 1])
+
+        def stream_lines(path, body):
+            requests.append(body)
+            yield from streams[len(requests) - 1]
+
+        transport.post.side_effect = post
+        transport.stream_lines.side_effect = stream_lines
+        gateway = OMLXGateway(transport=transport)
+    broker = LLMBroker(model="gpt-4o", gateway=gateway)
+    messages = [LLMMessage(role=MessageRole.User, content="Compare Paris and London weather.")]
+
+    return broker, messages, requests, calls
+
+
+@pytest.fixture(params=[False, True], ids=["ordinary", "streaming"])
+def streaming(request):
+    return request.param
+
+
+@pytest.fixture
+def generate(streaming):
+    if streaming:
+        return lambda broker, messages, tools: list(broker.generate_stream(messages, tools=tools))
+    return lambda broker, messages, tools: broker.generate(messages, tools=tools)
+
+
+def should_keep_both_parallel_tool_call_ids_in_the_broker_follow_up(parallel_round_trip, generate, tool):
+    broker, messages, requests, calls = parallel_round_trip
+
+    generate(broker, messages, [tool])
+
+    follow_up = requests[1]["messages"]
+    assistant_calls = [message["tool_calls"] for message in follow_up if message["role"] == "assistant"]
+    assert assistant_calls == [calls]
+    assert [message["tool_call_id"] for message in follow_up if message["role"] == "tool"] == [
+        "call_paris", "call_london"]
+    assert [call.id for call in messages[1].tool_calls] == ["call_paris", "call_london"]

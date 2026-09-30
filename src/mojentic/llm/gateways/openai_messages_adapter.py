@@ -97,13 +97,13 @@ def adapt_messages_to_openai(messages: List[LLMMessage]):
             msg = {'role': 'assistant', 'content': m.content or ''}
             if m.tool_calls is not None:
                 msg['tool_calls'] = [{
-                    'id': m.tool_calls[0].id,
+                    'id': call.id,
                     'type': 'function',
                     'function': {
-                        'name': m.tool_calls[0].name,
-                        'arguments': json.dumps({k: v for k, v in m.tool_calls[0].arguments.items()})
+                        'name': call.name,
+                        'arguments': json.dumps(call.arguments)
                     }
-                }]
+                } for call in m.tool_calls]
             new_messages.append(msg)
         elif m.role == MessageRole.Tool:
             new_messages.append({
