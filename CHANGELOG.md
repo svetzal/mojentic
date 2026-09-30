@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- OpenAI image messages now preserve HTTP(S) URLs and data URIs supplied in `image_paths`. Previously, the adapter treated them as file paths and silently dropped the images.
+
 - OpenAI embeddings for long text now weight each part by its token count before normalization. Previously, equal vector dimensions gave a short trailing part the same weight as a full part.
 
 - `LLMBroker` methods called without a `correlation_id` failed with a validation error when given a real `TracerSystem`. Each broker method (`generate`, `generate_response`, `generate_object`, `generate_stream`, `generate_stream_events`) now generates a UUID when none is supplied, as the TypeScript and Rust brokers do, so every trace event from one call shares an ID.

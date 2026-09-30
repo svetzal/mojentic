@@ -73,8 +73,11 @@ def adapt_messages_to_openai(messages: List[LLMMessage]):
                 if m.content:
                     content.append({"type": "text", "text": m.content})
 
-                # Add each image as a base64-encoded URL
+                # Keep remote URLs and data URIs; encode local image files.
                 for image_path in m.image_paths:
+                    if image_path.lower().startswith(('data:', 'http://', 'https://')):
+                        content.append({"type": "image_url", "image_url": {"url": image_path}})
+                        continue
                     try:
                         # Use our encapsulated methods instead of direct library calls
                         binary_data = read_file_as_binary(image_path)

@@ -323,3 +323,20 @@ Native responses preserve the fields supplied by the gateway. Missing provider
 usage or termination evidence must remain unknown; configured model names and
 text length are not substitutes for reported metadata. Response traces carry the
 same evidence; see [Provider evidence in response traces](tracer.md#provider-evidence-in-response-traces).
+
+### Image references in OpenAI messages
+
+`LLMMessage.image_paths` accepts local files, HTTP(S) URLs and data URIs with
+`OpenAIGateway`. URLs and data URIs pass through unchanged; local files are
+encoded as base64 data URIs. The same adapter is used by `OMLXGateway`. Choose
+an image-capable model.
+
+```python
+message = LLMMessage(
+    content="Describe this image",
+    image_paths=["https://example.com/photo.png"],
+)
+```
+
+`LLMMessage.content` is optional plain text. Lists of content parts are not
+accepted, including for system and tool messages.

@@ -75,7 +75,8 @@ class LLMMessage(BaseModel):
     tool_calls : Optional[List[LLMToolCall]]
         A list of tool calls to be made available to the LLM.
     image_paths : Optional[List[str]]
-        A list of file paths to images to be included with the message.
+        Local image paths, HTTP(S) URLs or data URIs to include with the message.
+        OpenAI passes URLs and data URIs through without reading a file.
         Note: You must use an image-capable model to process images.
     """
     role: MessageRole = MessageRole.User

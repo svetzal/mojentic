@@ -86,6 +86,23 @@ class DescribeOpenAIMessagesAdapter:
                 }
             ]
 
+        @pytest.mark.parametrize("image_reference", [
+            "https://example.com/photo.png",
+            "http://example.com/photo.png",
+            "data:image/png;base64,aGVsbG8=",
+            "HTTPS://example.com/photo.png",
+            "DATA:image/png;base64,aGVsbG8=",
+        ])
+        def should_preserve_image_urls_without_reading_files(self, image_reference):
+            messages = [LLMMessage(content="Describe", image_paths=[image_reference])]
+
+            adapted = adapt_messages_to_openai(messages)
+
+            assert adapted == [{"role": "user", "content": [
+                {"type": "text", "text": "Describe"},
+                {"type": "image_url", "image_url": {"url": image_reference}},
+            ]}]
+
         def should_adapt_user_message_with_image_paths(self, mocker):
             """
             Given a user message with image paths
