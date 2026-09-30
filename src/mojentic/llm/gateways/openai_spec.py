@@ -1,9 +1,11 @@
+import json
+import math
 import os
 from unittest.mock import patch
 
 import httpx
 import pytest
-from openai import APIStatusError
+from openai import APIStatusError, OpenAI
 
 from mojentic.llm.completion_config import CompletionConfig, ResponseFormat
 from mojentic.llm.gateways.stream_events import StreamCompleted, StreamContent, StreamError, StreamErrorReason
@@ -192,3 +194,30 @@ class DescribeStreamEvents:
 
         assert ([event.reason for event in events], transport.stream_lines.call_count) == (
             [StreamErrorReason.STREAM_EVENTS_UNSUPPORTED], 0)
+
+
+class DescribeOpenAIEmbeddings:
+    def should_weight_parts_by_token_count_before_normalizing(self):
+        token_counts = []
+
+        def respond(request):
+            tokens = json.loads(request.content)["input"]
+            token_counts.append(len(tokens))
+            vector = [1.0, 0.0] if len(tokens) == 8191 else [0.0, 1.0]
+            return httpx.Response(200, json={
+                "object": "list",
+                "data": [{"object": "embedding", "index": 0, "embedding": vector}],
+                "model": "text-embedding-3-large",
+                "usage": {"prompt_tokens": len(tokens), "total_tokens": len(tokens)},
+            })
+
+        gateway = OpenAIGateway(api_key="test-key")
+        gateway.client.close()
+        with OpenAI(api_key="test-key", http_client=httpx.Client(transport=httpx.MockTransport(respond))) as client:
+            gateway.client = client
+            result = gateway.calculate_embeddings(" word" * 8291)
+
+        norm = math.hypot(8191, 100)
+        assert result == pytest.approx([8191 / norm, 100 / norm])
+        assert token_counts == [8191, 100]
+        assert math.hypot(*result) == pytest.approx(1.0)

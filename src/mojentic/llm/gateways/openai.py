@@ -688,13 +688,14 @@ class OpenAIGateway(LLMGateway):
         Returns
         -------
         list
-            The embeddings for the text.
+            The mean of the part embeddings, weighted by each part's token count and normalized to length 1.
         """
         logger.debug("calculate_embeddings", text=text, model=model)
 
+        chunks = list(self._chunked_tokens(text, 8191))
         embeddings = [self.client.embeddings.create(model=model, input=chunk).data[0].embedding
-                      for chunk in self._chunked_tokens(text, 8191)]
-        lengths = [len(embedding) for embedding in embeddings]
+                      for chunk in chunks]
+        lengths = [len(chunk) for chunk in chunks]
 
         average = np.average(embeddings, axis=0, weights=lengths)
         average = average / np.linalg.norm(average)

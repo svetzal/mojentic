@@ -139,6 +139,8 @@ print(f"Ollama embeddings dimension: {len(ollama_embeddings)}")
 print(f"OpenAI embeddings dimension: {len(openai_embeddings)}")
 ```
 
+OpenAI splits long text into parts of at most 8191 tokens. It weights each part's embedding by its token count, then normalizes the mean to length 1.
+
 ### Important Notes
 
 - **Available Models**:
