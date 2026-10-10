@@ -1,12 +1,14 @@
+import asyncio
 import json
 from contextlib import closing
 from typing import List, Iterator, Optional, TYPE_CHECKING, Union
 
 import httpx
 import structlog
-from ollama import Client, Options, ChatResponse, ResponseError
+from ollama import Client, Options, ChatResponse, Image, ResponseError
 from pydantic import BaseModel, ValidationError
 
+from mojentic.llm.recovery import Capabilities, RecoveryCall, RecoveryPolicy, preparation_error, recover
 from mojentic.llm.gateways.llm_gateway import LLMGateway
 from mojentic.llm.gateways.models import LLMMessage, LLMToolCall, LLMGatewayResponse
 from mojentic.llm.gateways.ollama_messages_adapter import adapt_messages_to_ollama
@@ -87,12 +89,22 @@ class OllamaGateway(LLMGateway):
         The headers to send with the request. Defaults to an empty dict.
     timeout : optional
         The request timeout passed to the Ollama client.
+    recovery_policy : RecoveryPolicy, optional
+        Opt in to ordinary/structured request recovery; streaming remains unchanged.
+    recovery_call : RecoveryCall, optional
+        Cancellation for a synchronous broker/session operation. Use a fresh call per operation.
     stream_transport : OllamaStreamTransport, optional
         The transport ``complete_stream_events`` uses. Defaults to one over this gateway's client.
     """
 
     def __init__(self, host="http://localhost:11434", headers={}, timeout=None,
-                 stream_transport: Optional[OllamaStreamTransport] = None):
+                 stream_transport: Optional[OllamaStreamTransport] = None,
+                 recovery_policy: RecoveryPolicy | None = None, recovery_call: RecoveryCall | None = None):
+        self.recovery_policy = recovery_policy
+        self.recovery_call = recovery_call
+        self._recovery_host = host.rstrip("/") if isinstance(host, str) else "http://localhost:11434"
+        self._recovery_headers = dict(headers or {})
+        self._recovery_timeout = timeout
         self.client = Client(host=host, headers=headers, timeout=timeout)
         self.stream_transport = stream_transport or OllamaStreamTransport(self.client)
 
@@ -148,8 +160,27 @@ class OllamaGateway(LLMGateway):
         LLMGatewayResponse
             The response from the Ollama service.
         """
+        if self.recovery_policy is not None:
+            return asyncio.run(self.complete_with_recovery(**args))
+
         logger.info("Delegating to Ollama for completion", **args)
 
+        ollama_args = self._completion_request(args)
+
+        response: ChatResponse = self.client.chat(**ollama_args)
+
+        object = None
+
+        if 'object_model' in args:
+            try:
+                object = args['object_model'].model_validate_json(response.message.content)
+            except Exception as e:
+                logger.error("Failed to validate model in", error=str(e), response=response.message.content,
+                             object_model=args['object_model'])
+
+        return self._completion_response(response, object)
+
+    def _completion_request(self, args: dict) -> dict:
         options = self._extract_options_from_args(args)
 
         ollama_args = {
@@ -162,7 +193,8 @@ class OllamaGateway(LLMGateway):
         config = args.get('config', None)
         if config and config.reasoning_effort is not None:
             ollama_args['think'] = True
-            logger.info("Enabling extended thinking for Ollama", reasoning_effort=config.reasoning_effort)
+            if self.recovery_policy is None:
+                logger.info("Enabling extended thinking for Ollama", reasoning_effort=config.reasoning_effort)
 
         if 'object_model' in args and args['object_model'] is not None:
             ollama_args['format'] = args['object_model'].model_json_schema()
@@ -172,18 +204,58 @@ class OllamaGateway(LLMGateway):
         if 'tools' in args and args['tools'] is not None:
             ollama_args['tools'] = [t.descriptor for t in args['tools']]
 
-        response: ChatResponse = self.client.chat(**ollama_args)
+        return ollama_args
 
-        object = None
+    def recovery_capabilities(self) -> Capabilities:
+        """Report recovery support without implying remote cancellation or idempotency."""
+        return Capabilities()
+
+    async def complete_with_recovery(self, call: RecoveryCall | None = None, **args) -> LLMGatewayResponse:
+        """Complete one ordinary or structured request with safe recovery metadata.
+
+        Raises
+        ------
+        RecoveryError
+            Provider, protocol, capture, cancellation, or recovery admission failed.
+        ValueError
+            No recovery policy is configured.
+        """
+        if self.recovery_policy is None:
+            raise ValueError("configure recovery_policy before using complete_with_recovery")
+        operation = 'structured' if args.get('object_model') is not None else 'ordinary'
+        try:
+            request = self._completion_request(args)
+            request['options'] = request['options'].model_dump(exclude_none=True)
+            request['stream'] = False
+            for message in request['messages']:
+                if message.get('images'):
+                    message['images'] = [Image(value=image).model_dump(mode='json') for image in message['images']]
+            body = json.dumps(request, ensure_ascii=False, separators=(',', ':'), allow_nan=False).encode('utf-8')
+            headers = self._recovery_headers | {'Content-Type': 'application/json', 'Accept-Encoding': 'identity'}
+        except (ValueError, TypeError, KeyError, OSError) as cause:
+            raise preparation_error(cause, operation) from None
+        result, report = await recover(
+            self._recovery_host + '/api/chat', body, headers, self._recovery_timeout,
+            lambda frame: self._decode_recovery(frame, args.get('object_model')),
+            self.recovery_policy, call or self.recovery_call or RecoveryCall(),
+            operation)
+        result.recovery_report = report
+        result.metadata = result.metadata | {'recovery': report.model_dump(mode='json')}
+        return result
+
+    def _decode_recovery(self, frame: object, object_model: type[BaseModel] | None) -> LLMGatewayResponse:
+        if not isinstance(frame, dict) or not isinstance(frame.get('message'), dict):
+            raise TypeError("missing response message")
+        if frame['message'].get('role') != 'assistant':
+            raise ValueError("invalid response role")
+        if not isinstance(frame['message'].get('content', ''), str):
+            raise TypeError("invalid response content")
+        response = ChatResponse.model_validate(frame)
+        object = object_model.model_validate_json(response.message.content) if object_model is not None else None
+        return self._completion_response(response, object)
+
+    def _completion_response(self, response: ChatResponse, object: BaseModel | None) -> LLMGatewayResponse:
         tool_calls = []
-
-        if 'object_model' in args:
-            try:
-                object = args['object_model'].model_validate_json(response.message.content)
-            except Exception as e:
-                logger.error("Failed to validate model in", error=str(e), response=response.message.content,
-                             object_model=args['object_model'])
-
         if response.message.tool_calls is not None:
             tool_calls = [LLMToolCall(name=t.function.name,
                                       arguments={str(k): str(t.function.arguments[k]) for k in t.function.arguments})

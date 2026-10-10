@@ -3,6 +3,8 @@ from typing import Optional, List, Union, Annotated, Literal, Any
 
 from pydantic import BaseModel, Field
 
+from mojentic.llm.recovery import RecoveryReport
+
 
 class MessageRole(Enum):
     """
@@ -110,3 +112,4 @@ class LLMGatewayResponse(BaseModel):
     model: Optional[str] = None
     finish_reason: Optional[str] = None
     metadata: dict[str, Any] = Field(default_factory=dict)
+    recovery_report: RecoveryReport | None = Field(default=None, exclude=True, repr=False)

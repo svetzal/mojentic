@@ -185,3 +185,11 @@ The agentic aspects of this framework are in the highest state of flux. The firs
 ## 📄 License
 
 This code is Copyright 2025 Mojility, Inc. and is freely provided under the terms of the [MIT license](LICENSE.md).
+
+### Opt-in Ollama recovery
+
+Ollama ordinary and structured completions can use an explicit `RecoveryPolicy`
+through the existing broker and chat session APIs. Retries require caller admission
+when inference termination is unknown. See [the migration guide](docs/transient_recovery.md)
+for bounded delays, cancellation, safe reports, and caller-owned wire capture.
+Streaming and other adapter recovery remain pending.
