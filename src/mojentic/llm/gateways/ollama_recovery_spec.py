@@ -1,11 +1,14 @@
 """Recovery specifications exercise actual loopback HTTP through public callers."""
 
 import asyncio
+import base64
 import json
+import os
 import threading
 import time
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 
 import pytest
 
@@ -53,6 +56,21 @@ def scripted_http(replies):
         server.shutdown()
         server.server_close()
         thread.join()
+        if os.environ.get("MOJENTIC_RECOVERY_EVIDENCE") == "1":
+            evidence = {
+                "test": os.environ.get("PYTEST_CURRENT_TEST"),
+                "endpoint": f"http://127.0.0.1:{server.server_port}",
+                "received_requests": [
+                    {
+                        "path": path,
+                        "body_base64": base64.b64encode(body).decode(),
+                        "headers": headers,
+                    }
+                    for path, body, headers in requests
+                ],
+            }
+            with Path(".foundry/logs/loopback.jsonl").open("a") as log:
+                log.write(json.dumps(evidence) + "\n")
 
 
 def frame(content="answer", **message):
@@ -64,6 +82,342 @@ def frame(content="answer", **message):
             "message": {"role": "assistant", "content": content, **message},
         }
     ).encode()
+
+
+def retain_wire_evidence(captured):
+    if os.environ.get("MOJENTIC_RECOVERY_EVIDENCE") == "1":
+        with Path(".foundry/logs/authenticated_capture.jsonl").open("a") as log:
+            for event in captured:
+                evidence = event.model_dump(exclude={"body"})
+                evidence["body_base64"] = base64.b64encode(event.body).decode()
+                evidence["test"] = os.environ.get("PYTEST_CURRENT_TEST")
+                log.write(json.dumps(evidence) + "\n")
+
+
+class DescribeHttpBoundaryCorrection:
+    def should_keep_predispatch_expiry_observer_failure_private(self, messages):
+        from mojentic.llm.recovery import RecoveryError, RecoveryPolicy
+
+        cause = OSError("secret-observer")
+
+        def observe(event):
+            raise cause
+
+        with scripted_http([]) as (host, requests):
+            gateway = OllamaGateway(
+                host=host,
+                recovery_policy=RecoveryPolicy(
+                    deadline=0,
+                    monotonic=lambda: 1,
+                    observer=observe,
+                ),
+            )
+            with pytest.raises(RecoveryError) as caught:
+                gateway.complete(model="test", messages=messages)
+
+        assert requests == []
+        assert caught.value.report.identity.wire_attempt == 0
+        assert caught.value.report.history == ()
+        assert caught.value.report.outcome == "interrupted"
+        assert caught.value.inspect_cause() is cause
+        assert caught.value.report.final_failure.inspect_cause() is cause
+        assert "secret" not in str(caught.value) + caught.value.report.model_dump_json()
+
+    @pytest.mark.parametrize(
+        "entrypoint",
+        ["gateway", "generate", "generate_response", "generate_object", "session"],
+    )
+    def should_capture_the_authenticated_request_actually_sent(
+        self, messages, broker_factory, entrypoint
+    ):
+        from pydantic import BaseModel
+
+        from mojentic.llm.chat_session import ChatSession
+        from mojentic.llm.recovery import RecoveryPolicy
+
+        class Answer(BaseModel):
+            value: str
+
+        captured, events = [], []
+        with scripted_http(
+            [(503, {}, b"private"), (200, {}, frame('{"value":"answer"}'))]
+        ) as (host, requests):
+            gateway = OllamaGateway(
+                host=host.replace("http://", "http://username:password@"),
+                recovery_policy=RecoveryPolicy(
+                    max_attempts=2,
+                    base_delay=0,
+                    admission=allow,
+                    wire_observer=captured.append,
+                    observer=events.append,
+                ),
+            )
+            broker = broker_factory(gateway)
+            operations = {
+                "gateway": lambda: gateway.complete(model="test", messages=messages),
+                "generate": lambda: broker.generate(messages),
+                "generate_response": lambda: broker.generate_response(messages),
+                "generate_object": lambda: broker.generate_object(messages, Answer),
+                "session": lambda: ChatSession(broker).send("payload-sentinel"),
+            }
+            operations[entrypoint]()
+
+        outgoing = [event for event in captured if event.kind == "request"]
+        assert len(requests) == len(outgoing) == 2
+        assert outgoing[0].body == outgoing[1].body == requests[0][1] == requests[1][1]
+        for request, received in zip(outgoing, requests, strict=True):
+            assert (
+                dict(request.headers)["authorization"] == received[2]["Authorization"]
+            )
+            assert received[2]["Authorization"] == "Basic dXNlcm5hbWU6cGFzc3dvcmQ="
+            assert request.url.endswith(received[0])
+        assert (
+            outgoing[0].identity.logical_request_id
+            == outgoing[1].identity.logical_request_id
+        )
+        assert outgoing[0].identity.attempt_id != outgoing[1].identity.attempt_id
+        assert outgoing[0].identity.attempt_id is not None
+        assert outgoing[1].identity.attempt_id is not None
+        assert [event.identity.wire_attempt for event in outgoing] == [1, 2]
+        retain_wire_evidence(captured)
+
+    @pytest.mark.parametrize(
+        "stage", ["request", "attempt_started", "headers", "body", "attempt_succeeded"]
+    )
+    async def should_make_callback_cancellation_authoritative(self, messages, stage):
+        from mojentic.llm.recovery import RecoveryCall, RecoveryError, RecoveryPolicy
+
+        call, events, captured = RecoveryCall(), [], []
+
+        def capture(event):
+            captured.append(event)
+            if event.kind == stage:
+                call.cancel()
+
+        def observe(event):
+            events.append(event)
+            if event.transition == stage:
+                call.cancel()
+
+        body = frame("secret-content", thinking="secret-reasoning")
+        with scripted_http([(200, {"X-Private": "secret-header"}, body)]) as (
+            host,
+            requests,
+        ):
+            gateway = OllamaGateway(
+                host=host,
+                recovery_policy=RecoveryPolicy(
+                    max_attempts=3,
+                    admission=allow,
+                    wire_observer=capture,
+                    observer=observe,
+                ),
+            )
+            with pytest.raises(RecoveryError) as caught:
+                await gateway.complete_with_recovery(
+                    call=call, model="test", messages=messages
+                )
+
+        error = caught.value
+        failure = error.report.final_failure
+        expected_count = {
+            "request": 0,
+            "attempt_started": 0,
+            "headers": 1,
+            "body": 1,
+            "attempt_succeeded": 1,
+        }[stage]
+        assert len(requests) == error.report.identity.wire_attempt == expected_count
+        assert len(error.report.history) == expected_count
+        assert error.report.outcome == "cancelled"
+        assert failure.category == "cancellation"
+        assert isinstance(error.inspect_cause(), asyncio.CancelledError)
+        assert isinstance(failure.inspect_cause(), asyncio.CancelledError)
+        assert (
+            failure.progress.delivered_content
+            == failure.progress.delivered_reasoning
+            == 0
+        )
+        assert [event.transition for event in events].count("cancelled") == 1
+        assert events[-1].transition == "cancelled"
+        assert [event.transition for event in events].count(
+            "attempt_failed"
+        ) == expected_count
+        assert failure.http_status == {0: None, 1: 200}[expected_count]
+        assert (
+            dict(failure.inspect_headers()).get("x-private")
+            == {0: None, 1: "secret-header"}[expected_count]
+        )
+        assert error.inspect_headers() == failure.inspect_headers()
+        assert error.report.history == {0: (), 1: (failure,)}[expected_count]
+        assert (error.report.identity.attempt_id is not None) == bool(expected_count)
+        expected_body = {
+            "request": b"",
+            "attempt_started": b"",
+            "headers": b"",
+            "body": body,
+            "attempt_succeeded": body,
+        }[stage]
+        assert (
+            failure.progress.observed_content
+            == failure.progress.observed_reasoning
+            == bool(expected_body)
+        )
+        assert failure.progress.raw_bytes == len(expected_body)
+        assert failure.inspect_response() == expected_body
+        assert (
+            "secret" not in str(error) + repr(failure) + error.report.model_dump_json()
+        )
+
+    @pytest.mark.parametrize(
+        "stage",
+        [
+            "admission_allowed",
+            "delay_scheduled",
+            "retry_started",
+            "request",
+            "attempt_started",
+        ],
+    )
+    def should_refuse_callback_expiry_without_phantom_retry(self, messages, stage):
+        from mojentic.llm.recovery import RecoveryError, RecoveryPolicy
+
+        now, events = [10.0], []
+
+        def capture(event):
+            if event.kind == stage and event.identity.wire_attempt == 2:
+                now[0] = 12.0
+
+        def observe(event):
+            events.append(event)
+            if event.transition == stage and (
+                stage != "attempt_started" or event.identity.wire_attempt == 2
+            ):
+                now[0] = 12.0
+
+        with scripted_http([(503, {}, b"private"), (200, {}, frame())]) as (
+            host,
+            requests,
+        ):
+            gateway = OllamaGateway(
+                host=host,
+                recovery_policy=RecoveryPolicy(
+                    max_attempts=2,
+                    base_delay=0,
+                    admission=allow,
+                    deadline=11,
+                    monotonic=lambda: now[0],
+                    wire_observer=capture,
+                    observer=observe,
+                ),
+            )
+            with pytest.raises(RecoveryError) as caught:
+                gateway.complete(model="test", messages=messages)
+
+        assert len(requests) == caught.value.report.identity.wire_attempt == 1
+        assert len(caught.value.report.history) == 1
+        assert caught.value.report.outcome == "budget_exhausted"
+        assert [event.transition for event in events].count("exhausted") == 1
+        assert "attempt_succeeded" not in [event.transition for event in events]
+
+    @pytest.mark.parametrize("echo_source", ["credentials", "payload"])
+    def should_keep_uuid_shaped_secret_echoes_private(self, messages, echo_source):
+        from mojentic.llm.recovery import RecoveryError, RecoveryPolicy
+
+        secret = "bd38be36-6698-43f1-9d34-7452b980f471"
+        events, captured = [], []
+        messages[0].content = secret if echo_source == "payload" else "payload-sentinel"
+        with scripted_http(
+            [(503, {"X-Request-ID": secret, "X-Echo": secret}, secret.encode())]
+        ) as (host, requests):
+            host = (
+                host.replace("http://", f"http://{secret}:password@")
+                if echo_source == "credentials"
+                else host
+            )
+            gateway = OllamaGateway(
+                host=host,
+                recovery_policy=RecoveryPolicy(
+                    wire_observer=captured.append,
+                    observer=events.append,
+                ),
+            )
+            with pytest.raises(RecoveryError) as caught:
+                gateway.complete(model="test", messages=messages)
+
+        failure = caught.value.report.final_failure
+        assert len(requests) == 1
+        assert failure.provider_request_id is None
+        assert dict(failure.inspect_headers())["x-request-id"] == secret
+        assert failure.inspect_response() == secret.encode()
+        assert captured[-1].body == secret.encode()
+        safe = (
+            str(caught.value)
+            + repr(caught.value)
+            + repr(failure)
+            + caught.value.report.model_dump_json()
+        )
+        safe += "".join(event.model_dump_json() + repr(event) for event in events)
+        assert secret not in safe
+        retain_wire_evidence(captured)
+
+    @pytest.mark.parametrize(
+        "stage",
+        [
+            "attempt_failed",
+            "admission_pending",
+            "admission_allowed",
+            "delay_scheduled",
+            "retry_started",
+        ],
+    )
+    async def should_cancel_at_admission_and_backoff_callbacks_without_resending(
+        self, messages, stage
+    ):
+        from mojentic.llm.recovery import RecoveryCall, RecoveryError, RecoveryPolicy
+
+        call, events = RecoveryCall(), []
+
+        def observe(event):
+            events.append(event)
+            if event.transition == stage:
+                call.cancel()
+
+        with scripted_http([(503, {"X-Private": "secret"}, b"private")]) as (
+            host,
+            requests,
+        ):
+            gateway = OllamaGateway(
+                host=host,
+                recovery_policy=RecoveryPolicy(
+                    max_attempts=2,
+                    base_delay=0,
+                    admission=allow,
+                    observer=observe,
+                ),
+            )
+            with pytest.raises(RecoveryError) as caught:
+                await gateway.complete_with_recovery(
+                    call=call, model="test", messages=messages
+                )
+
+        error = caught.value
+        assert (
+            len(requests)
+            == error.report.identity.wire_attempt
+            == len(error.report.history)
+            == 1
+        )
+        assert error.report.outcome == "cancelled"
+        assert isinstance(error.inspect_cause(), asyncio.CancelledError)
+        assert isinstance(
+            error.report.final_failure.inspect_cause(), asyncio.CancelledError
+        )
+        assert error.report.history[0].http_status == 503
+        assert dict(error.report.history[0].inspect_headers())["x-private"] == "secret"
+        assert [event.transition for event in events].count("attempt_failed") == 1
+        assert [event.transition for event in events].count("cancelled") == 1
+        assert events[-1].transition == "cancelled"
 
 
 class DescribePublicRecoveryProof:
@@ -691,6 +1045,7 @@ class DescribeRecoveryCancellation:
         assert caught.value.report.final_failure.progress.headers_received
         assert [event.transition for event in events] == [
             "attempt_started",
+            "attempt_failed",
             "cancelled",
         ]
         assert isinstance(caught.value.inspect_cause(), asyncio.CancelledError)
@@ -1068,8 +1423,6 @@ class DescribeRecoveryEdgeEvidence:
     def should_freeze_images_and_controls_once_before_admission(
         self, tmp_path, messages
     ):
-        import base64
-
         from mojentic.llm.completion_config import CompletionConfig, ResponseFormat
         from mojentic.llm.recovery import RecoveryPolicy
 
@@ -1229,7 +1582,7 @@ class DescribePublicCancellationAndMetadata:
         [
             (
                 "bd38be36-6698-43f1-9d34-7452b980f471",
-                "bd38be36-6698-43f1-9d34-7452b980f471",
+                None,
             ),
             ("credential-payload-echo-secret", None),
         ],

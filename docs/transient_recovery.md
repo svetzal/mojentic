@@ -37,6 +37,7 @@ except RecoveryError as error:
     # Explicit inspection is sensitive; apply your own storage policy.
     original_exception = error.inspect_cause()
     exact_response_bytes = error.inspect_response()
+    exact_response_headers = error.inspect_headers()
 ```
 
 A policy defaults to one attempt, including the original request. Eligible errors
@@ -56,7 +57,8 @@ Backoff uses full jitter below the smaller of the delay ceiling and exponential
 base delay. Retry-After seconds or HTTP dates set a minimum delay. Invalid and
 absent values are explicit; excessive minima cause refusal rather than shortening.
 A duration budget starts at the first failure; `deadline` is absolute monotonic
-time. Both constrain admission and backoff. An admitted generation can finish
+time. Both constrain admission, backoff, and dispatch, including time consumed
+by request-capture and lifecycle callbacks. An admitted generation can finish
 later. No automatic whole-generation timeout is added; an explicitly configured
 Ollama timeout still applies. Clocks, sleeper, and jitter are injectable.
 
@@ -101,7 +103,10 @@ retries; attempt UUIDs are distinct, unmasked correlation values.
 `observer` receives immutable, payload-free `LifecycleEvent` models in order.
 `wire_observer` explicitly receives sensitive `WireEvent` objects for the actual
 request, response headers/status, and each raw response-body chunk. Request bytes
-include any images encoded once before sending. Hooks must synchronously accept
+include any images encoded once before sending. Capture includes HTTPX's outgoing
+headers and URL-based Basic authorization on the same request that is sent.
+The request hook precedes dispatch: it can prevent the request, so a capture alone
+does not prove a wire attempt occurred. Hooks must synchronously accept
 an event or raise; returning an awaitable is unsupported. The caller owns capture
 storage, access, redaction, and retention. The library never persists captures.
 A hook failure retains response evidence and its typed original exception,
@@ -109,11 +114,20 @@ prevents success, and prohibits another request. Observed content, reasoning, or
 tool evidence is recorded before calling the body hook, even when nothing was
 delivered to the caller.
 
+Cancellation requested by a request or `attempt_started` hook is checked before
+dispatch and produces no wire history. Header/body capture cancellation retains
+the received status, private headers, bytes and observed semantics, with no
+delivered output. An actual cancelled request emits `attempt_failed` before one
+terminal `cancelled` event. Admission/backoff cancellation retains the earlier
+failed request and adds a typed cancellation cause to the terminal failure.
+
 Recovery uses a dedicated HTTP transport with retries and redirects disabled.
 No SDK or environment proxy retry layer runs underneath it. Provider text,
 credentials, tool arguments, and raw exception text are excluded from safe
-reports and lifecycle serialization. Arbitrary provider codes and request ID
-strings are omitted; only UUID-valued `X-Request-ID` metadata is accepted.
+reports and lifecycle serialization. Provider codes and request IDs are omitted,
+including syntactically valid UUIDs: a UUID can echo an outbound credential or
+payload. Raw response headers remain available through `Failure.inspect_headers()`
+and `RecoveryError.inspect_headers()`; these methods are explicitly sensitive.
 Successful content, explicit application tracers, and explicit wire capture remain
 caller-owned sensitive data.
 
@@ -134,3 +148,15 @@ and returns native reasoning from successful responses; it does not add native
 history support or change reasoning-disabled behavior. Streaming replay, cross-port
 parity, live inference, and experiment efficacy remain unverified and pending.
 See the repository's `RECOVERY-CONFORMANCE.md` for actual assertion mappings.
+
+## Migrating from the preserved first recovery increment
+
+The opt-in APIs and immutable payload policy are retained. Consumers of
+`provider_request_id` must use private header inspection when they need the
+untrusted provider value; client logical/attempt UUIDs remain safe correlation
+metadata. Capture consumers now receive URL Basic authorization as sent and
+must protect it along with bodies. Cancellation consumers should expect an
+`attempt_failed` event for an active cancelled wire request before `cancelled`.
+Use the report's wire count/history rather than counting request-capture or
+`attempt_started` callbacks, since a callback can prevent dispatch. The legacy
+SDK path, other adapters, streaming, and ordinary finish behavior are unchanged.

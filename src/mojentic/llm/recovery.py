@@ -15,7 +15,7 @@ from collections.abc import Awaitable, Callable
 from datetime import UTC
 from email.utils import parsedate_to_datetime
 from typing import Literal, TypeVar
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import httpx
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
@@ -126,6 +126,7 @@ class Failure(SafeModel):
     reason: str
     _original_cause: BaseException | None = PrivateAttr(default=None)
     _response_bytes: bytes = PrivateAttr(default=b"")
+    _response_headers: tuple[tuple[str, str], ...] = PrivateAttr(default=())
 
     def inspect_cause(self) -> BaseException | None:
         """Inspect the original exception, whose text may contain secrets."""
@@ -134,6 +135,10 @@ class Failure(SafeModel):
     def inspect_response(self) -> bytes:
         """Inspect exact response evidence for this failure."""
         return self._response_bytes
+
+    def inspect_headers(self) -> tuple[tuple[str, str], ...]:
+        """Inspect private response headers, including untrusted metadata."""
+        return self._response_headers
 
 
 class RecoveryReport(SafeModel):
@@ -179,6 +184,13 @@ class RecoveryError(Exception):
     def inspect_response(self, index: int = -1) -> bytes:
         """Return exact private response bytes for a failed attempt."""
         return self._responses[index]
+
+    def inspect_headers(self, index: int = -1) -> tuple[tuple[str, str], ...]:
+        """Inspect response headers of the final failure or a history entry."""
+        failure = (
+            self.report.final_failure if index == -1 else self.report.history[index]
+        )
+        return failure.inspect_headers() if failure is not None else ()
 
 
 class LifecycleEvent(SafeModel):
@@ -307,6 +319,7 @@ class _Attempt(BaseModel):
     request_id: str | None = None
     retry_after: RetryAfter = Field(default_factory=RetryAfter)
     raw: bytes = Field(default=b"", repr=False)
+    headers: tuple[tuple[str, str], ...] = Field(default=(), repr=False)
     phase: str | None = None
     category: str = "transport"
     reason: str = "transient"
@@ -327,6 +340,7 @@ class _Attempt(BaseModel):
             "policy_failed",
             "invalid_response",
             "provider_error",
+            "budget_exhausted",
         }:
             return self.reason
         if self.status is not None and 200 <= self.status < 300 and self.raw:
@@ -356,6 +370,7 @@ class _Attempt(BaseModel):
         )
         failure._original_cause = self.cause
         failure._response_bytes = self.raw
+        failure._response_headers = self.headers
         return failure
 
     def observe_semantics(self) -> None:
@@ -519,7 +534,16 @@ class _Recovery:
         attempt: _Attempt,
         decode: Callable[[object], Result],
     ) -> Result:
+        self.check_dispatch()
         request = client.build_request("POST", url, content=body, headers=headers)
+        # Resolve URL Basic authentication before capture; disable implicit auth
+        # on send so HTTPX cannot mutate the captured request afterwards.
+        if request.url.username or request.url.password:
+            request = next(
+                httpx.BasicAuth(request.url.username, request.url.password).auth_flow(
+                    request
+                )
+            )
         self.capture(
             WireEvent(
                 kind="request",
@@ -531,20 +555,17 @@ class _Recovery:
             ),
             attempt,
         )
+        self.check_dispatch()
         self.emit("attempt_started", attempt)
+        self.check_dispatch()
         attempt.sent = True
         attempt.phase = "awaiting_headers"
-        async with client.stream(
-            "POST", url, content=body, headers=headers
-        ) as response:
+        response = await client.send(request, stream=True, auth=httpx.Auth())
+        try:
             attempt.status = response.status_code
-            request_id = response.headers.get("x-request-id")
-            try:
-                attempt.request_id = (
-                    str(UUID(request_id)) if request_id is not None else None
-                )
-            except ValueError:
-                attempt.request_id = None
+            # Even syntactically valid UUIDs can echo outbound secrets. Keep
+            # provider metadata exclusively in explicit private inspection.
+            attempt.headers = tuple(response.headers.multi_items())
             attempt.retry_after = parse_retry_after(
                 response.headers.get("retry-after"), self.policy.wall()
             )
@@ -560,6 +581,7 @@ class _Recovery:
                 ),
                 attempt,
             )
+            self.check_cancelled()
             async for chunk in response.aiter_raw():
                 attempt.raw += chunk
                 attempt.progress = attempt.progress.model_copy(
@@ -571,6 +593,7 @@ class _Recovery:
                     WireEvent(kind="body", identity=attempt.identity, body=chunk),
                     attempt,
                 )
+                self.check_cancelled()
             response.raise_for_status()
             try:
                 frame = json.loads(attempt.raw)
@@ -586,6 +609,18 @@ class _Recovery:
                     attempt.category, attempt.reason = "protocol", "invalid_response"
                 raise
             return result
+        finally:
+            await response.aclose()
+
+    def check_cancelled(self) -> None:
+        if self.call.cancelled:
+            raise asyncio.CancelledError()
+
+    def check_dispatch(self) -> None:
+        self.check_cancelled()
+        remaining = self.remaining()
+        if remaining is not None and remaining <= 0:
+            raise _BudgetExpired()
 
     async def admit(self, attempt: _Attempt, failure: Failure) -> str | None:
         if self.policy.admission is None:
@@ -703,11 +738,24 @@ class _Recovery:
                         self.exchange(client, url, body, headers, attempt, decode),
                         self.call,
                     )
+                    self.check_cancelled()
                     self.emit("attempt_succeeded", attempt)
-                    if self.call.cancelled:
-                        raise asyncio.CancelledError()
+                    self.check_cancelled()
                 except asyncio.CancelledError as cause:
                     self.cancel(attempt, cause)
+                except _BudgetExpired as cause:
+                    attempt.category, attempt.reason = (
+                        "client_timeout",
+                        "budget_exhausted",
+                    )
+                    failure = self.record_failure(attempt, cause)
+                    outcome = "budget_exhausted"
+                    try:
+                        self.emit("exhausted", attempt, failure)
+                    except _HookError as observer_error:
+                        failure = self.callback_failure(attempt, observer_error)
+                        outcome = "interrupted"
+                    raise self.error(outcome, attempt, failure) from None
                 except (
                     httpx.HTTPError,
                     ValueError,
@@ -766,8 +814,9 @@ class _Recovery:
         refusal = self.limit_refusal(delay)
         if refusal:
             return refusal
-        remaining = self.remaining()
         self.emit("delay_scheduled", attempt, failure, delay)
+        self.check_dispatch()
+        remaining = self.remaining()
         await _guard(_sleep(self.policy.sleeper, delay), self.call, remaining)
         refusal = self.limit_refusal(0)
         if refusal:
@@ -797,6 +846,17 @@ class _Recovery:
         if not recorded:
             if attempt.sent:
                 self.history.append(failure)
+            self.causes.append(cause)
+            self.responses.append(attempt.raw)
+            if attempt.sent:
+                try:
+                    self.emit("attempt_failed", attempt, failure)
+                except _HookError as observer_error:
+                    self.causes.append(observer_error.original)
+                    self.responses.append(attempt.raw)
+        else:
+            # Cancellation during admission/backoff retains the original failed
+            # attempt in history, and adds its typed terminal cause privately.
             self.causes.append(cause)
             self.responses.append(attempt.raw)
         try:
