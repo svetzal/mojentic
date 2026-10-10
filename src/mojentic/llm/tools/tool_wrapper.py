@@ -1,10 +1,11 @@
 """
 Not sure about this module right now. There are a couple ways to do this.
 """
+
 from typing import TYPE_CHECKING
 
-from mojentic.llm.tools.llm_tool import LLMTool
 from mojentic.llm.gateways.models import LLMMessage
+from mojentic.llm.tools.llm_tool import LLMTool
 
 # Use TYPE_CHECKING to avoid circular imports
 if TYPE_CHECKING:
@@ -12,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class ToolWrapper(LLMTool):
-    def __init__(self, agent: 'BaseLLMAgent', name: str, description: str):
+    def __init__(self, agent: "BaseLLMAgent", name: str, description: str):
         self.agent = agent
         self.tool_name = name  # agent.__class__.__name__.lower()
         self.tool_description = description
@@ -38,7 +39,7 @@ class ToolWrapper(LLMTool):
                         }
                     },
                     "required": ["input"],
-                    "additionalProperties": False
-                }
-            }
+                    "additionalProperties": False,
+                },
+            },
         }

@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -26,44 +25,37 @@ class ModelInfo(BaseModel):
     """
     A Pydantic model capturing metadata for a given AI model.
     """
+
     name: str
     vendor: str
-    foundation_model: Optional[str] = Field(
-        default=None,
-        description="Base or family, e.g., LLaMA, GPT-3.5, Qwen..."
+    foundation_model: str | None = Field(
+        default=None, description="Base or family, e.g., LLaMA, GPT-3.5, Qwen..."
     )
-    parameter_count: Optional[str] = Field(
+    parameter_count: str | None = Field(
         default=None,
-        description="Parameter size like '7B', '70B', or 'N/A' if unknown."
+        description="Parameter size like '7B', '70B', or 'N/A' if unknown.",
     )
-    quantization: Optional[Quantization] = Field(
-        default=None,
-        description="Quantization level, e.g. 4-bit, 8-bit, 16-bit..."
+    quantization: Quantization | None = Field(
+        default=None, description="Quantization level, e.g. 4-bit, 8-bit, 16-bit..."
     )
     # Instead of a free-form string list, we now use a list of Modality enum members
-    modalities: List[Modality] = Field(
+    modalities: list[Modality] = Field(
         default_factory=list,
-        description="Modalities the model handles, e.g. [Modality.TEXT, Modality.IMAGE]."
+        description="Modalities the model handles, e.g. [Modality.TEXT, Modality.IMAGE].",
     )
     # You could also use an enum for capabilities if you have a known set.
     # For illustration, we'll keep it free-form for now.
-    capabilities: List[str] = Field(
+    capabilities: list[str] = Field(
         default_factory=list,
-        description="Functions the model supports, e.g. ['text-gen', 'embeddings']. Could also be enumerated."
+        description="Functions the model supports, e.g. ['text-gen', 'embeddings']. Could also be enumerated.",
     )
-    is_local: bool = Field(
-        default=False,
-        description="Whether the model runs locally."
-    )
+    is_local: bool = Field(default=False, description="Whether the model runs locally.")
     is_open_source: bool = Field(
-        default=False,
-        description="Whether the model is open source."
+        default=False, description="Whether the model is open source."
     )
     can_be_fine_tuned: bool = Field(
-        default=False,
-        description="Whether the model can be fine-tuned by end users."
+        default=False, description="Whether the model can be fine-tuned by end users."
     )
-    notes: Optional[str] = Field(
-        default=None,
-        description="Additional commentary about the model."
+    notes: str | None = Field(
+        default=None, description="Additional commentary about the model."
     )

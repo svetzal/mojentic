@@ -1,8 +1,11 @@
-import pytest
 from unittest.mock import Mock
 
+import pytest
+
 from mojentic.llm.tools.ephemeral_task_manager.clear_tasks_tool import ClearTasksTool
-from mojentic.llm.tools.ephemeral_task_manager.ephemeral_task_list import EphemeralTaskList
+from mojentic.llm.tools.ephemeral_task_manager.ephemeral_task_list import (
+    EphemeralTaskList,
+)
 
 
 @pytest.fixture

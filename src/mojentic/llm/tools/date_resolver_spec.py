@@ -9,7 +9,6 @@ def date_resolver():
 
 
 class DescribeResolveDateTool:
-
     def should_resolve_date_without_reference(self, date_resolver):
         """
         Given a date resolver
@@ -27,6 +26,10 @@ class DescribeResolveDateTool:
         Then it should return 2023-10-06
         """
         reference_date = "2023-10-01"
-        result = date_resolver.run(relative_date_found="next Friday", reference_date_in_iso8601=reference_date)
+        result = date_resolver.run(
+            relative_date_found="next Friday", reference_date_in_iso8601=reference_date
+        )
         assert result["relative_date"] == "next Friday"
-        assert result["resolved_date"] == "2023-10-06"  # Adjust the expected date based on the reference date
+        assert (
+            result["resolved_date"] == "2023-10-06"
+        )  # Adjust the expected date based on the reference date

@@ -1,6 +1,6 @@
 import asyncio
 import time
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 
@@ -56,11 +56,10 @@ class _RaisingTool(LLMTool):
 class _AsyncSlowTool(LLMTool):
     """Async tool that sleeps for ``delay_s`` seconds before returning."""
 
-    async def run(self, value: str, delay_s: float = 0.05, ctx: Optional[ToolRunContext] = None) -> dict:
-        try:
-            await asyncio.sleep(delay_s)
-        except asyncio.CancelledError:
-            raise
+    async def run(
+        self, value: str, delay_s: float = 0.05, ctx: ToolRunContext | None = None
+    ) -> dict:
+        await asyncio.sleep(delay_s)
         if ctx is not None and ctx.cancelled:
             raise asyncio.CancelledError("ctx cancelled")
         return {"value": value, "delay_s": delay_s}
@@ -162,7 +161,9 @@ class DescribeAsyncParallelToolRunner:
             runner = AsyncParallelToolRunner(max_concurrency=4)
             delay = 0.1
             calls = [
-                ToolCallExecution(id=str(i), name="slow", args={"value": str(i), "delay_s": delay})
+                ToolCallExecution(
+                    id=str(i), name="slow", args={"value": str(i), "delay_s": delay}
+                )
                 for i in range(4)
             ]
 
@@ -172,13 +173,17 @@ class DescribeAsyncParallelToolRunner:
 
             assert len(outcomes) == 4
             assert all(o.ok for o in outcomes)
-            assert elapsed < delay * 3, f"expected parallel dispatch, took {elapsed:.3f}s"
+            assert elapsed < delay * 3, (
+                f"expected parallel dispatch, took {elapsed:.3f}s"
+            )
 
         def should_respect_max_concurrency(self, slow_tool):
             runner = AsyncParallelToolRunner(max_concurrency=2)
             delay = 0.1
             calls = [
-                ToolCallExecution(id=str(i), name="slow", args={"value": str(i), "delay_s": delay})
+                ToolCallExecution(
+                    id=str(i), name="slow", args={"value": str(i), "delay_s": delay}
+                )
                 for i in range(4)
             ]
 
@@ -186,14 +191,22 @@ class DescribeAsyncParallelToolRunner:
             asyncio.run(runner.run_batch(calls, [slow_tool]))
             elapsed = time.time() - start
 
-            assert elapsed >= delay * 1.5, "expected at least two waves at concurrency=2"
+            assert elapsed >= delay * 1.5, (
+                "expected at least two waves at concurrency=2"
+            )
 
         def should_preserve_input_order_in_outcomes(self, slow_tool):
             runner = AsyncParallelToolRunner(max_concurrency=4)
             calls = [
-                ToolCallExecution(id="a", name="slow", args={"value": "a", "delay_s": 0.05}),
-                ToolCallExecution(id="b", name="slow", args={"value": "b", "delay_s": 0.01}),
-                ToolCallExecution(id="c", name="slow", args={"value": "c", "delay_s": 0.03}),
+                ToolCallExecution(
+                    id="a", name="slow", args={"value": "a", "delay_s": 0.05}
+                ),
+                ToolCallExecution(
+                    id="b", name="slow", args={"value": "b", "delay_s": 0.01}
+                ),
+                ToolCallExecution(
+                    id="c", name="slow", args={"value": "c", "delay_s": 0.03}
+                ),
             ]
 
             outcomes = asyncio.run(runner.run_batch(calls, [slow_tool]))
@@ -202,7 +215,9 @@ class DescribeAsyncParallelToolRunner:
             assert [o.result["value"] for o in outcomes] == ["a", "b", "c"]
 
     class DescribeCancellation:
-        def should_skip_pending_calls_when_context_cancelled_before_start(self, slow_tool):
+        def should_skip_pending_calls_when_context_cancelled_before_start(
+            self, slow_tool
+        ):
             runner = AsyncParallelToolRunner(max_concurrency=2)
 
             async def run() -> Any:

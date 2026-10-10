@@ -12,10 +12,7 @@ class MockLLMTool(LLMTool):
         super().__init__(tracer=tracer)
         self._run_result = run_result
         self._descriptor = {
-            "function": {
-                "name": "mock_tool",
-                "description": "A mock tool for testing"
-            }
+            "function": {"name": "mock_tool", "description": "A mock tool for testing"}
         }
 
     def run(self, **kwargs):
@@ -38,17 +35,12 @@ def mock_tool_with_string_result():
 
 class DescribeLLMTool:
     class DescribeCallTool:
-
         def should_convert_dict_result_to_json_string(self, mock_tool_with_dict_result):
             result = mock_tool_with_dict_result.call_tool()
 
             assert result == {
                 "content": [
-                    {
-                        "type": "text",
-                        "text": '{"key": "value"}',
-                        "annotations": None
-                    }
+                    {"type": "text", "text": '{"key": "value"}', "annotations": None}
                 ]
             }
 
@@ -57,11 +49,7 @@ class DescribeLLMTool:
 
             assert result == {
                 "content": [
-                    {
-                        "type": "text",
-                        "text": "test result",
-                        "annotations": None
-                    }
+                    {"type": "text", "text": "test result", "annotations": None}
                 ]
             }
 

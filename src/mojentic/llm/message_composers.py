@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Union, Dict, List, Optional
 
 from mojentic.llm.gateways.file_gateway import FileGateway
 from mojentic.llm.gateways.models import LLMMessage, MessageRole
@@ -15,34 +14,34 @@ class FileTypeSensor:
         The TypeSensor is used to determine the appropriate language syntax highlighting
         for code blocks in markdown based on file extensions.
         """
-        self.extension_map: Dict[str, str] = {
-            'c': 'c',
-            'cpp': 'c++',
-            'c++': 'c++',
-            'cxx': 'c++',
-            'h': 'c',
-            'objc': 'objective-c',
-            'swift': 'swift',
-            'cs': 'csharp',
-            'fs': 'fsharp',
-            'clj': 'clojure',
-            'py': 'python',
-            'java': 'java',
-            'kt': 'kotlin',
-            'rb': 'ruby',
-            'js': 'javascript',
-            'ts': 'typescript',
-            'rs': 'rust',
-            'go': 'go',
-            'cbl': 'cobol',
-            'html': 'html',
-            'css': 'css',
-            'json': 'json',
-            'csv': 'csv',
-            'xml': 'xml',
-            'md': 'markdown',
+        self.extension_map: dict[str, str] = {
+            "c": "c",
+            "cpp": "c++",
+            "c++": "c++",
+            "cxx": "c++",
+            "h": "c",
+            "objc": "objective-c",
+            "swift": "swift",
+            "cs": "csharp",
+            "fs": "fsharp",
+            "clj": "clojure",
+            "py": "python",
+            "java": "java",
+            "kt": "kotlin",
+            "rb": "ruby",
+            "js": "javascript",
+            "ts": "typescript",
+            "rs": "rust",
+            "go": "go",
+            "cbl": "cobol",
+            "html": "html",
+            "css": "css",
+            "json": "json",
+            "csv": "csv",
+            "xml": "xml",
+            "md": "markdown",
         }
-        self.default_language = 'text'
+        self.default_language = "text"
 
     def add_language(self, extension: str, language: str):
         """
@@ -75,7 +74,7 @@ class FileTypeSensor:
         return self.extension_map.get(ext, self.default_language)
 
 
-class MessageBuilder():
+class MessageBuilder:
     """
     A builder class for creating LLM messages with text content, images, and files.
 
@@ -83,13 +82,14 @@ class MessageBuilder():
     with support for adding text content, images, and file contents. It handles file reading,
     language detection for syntax highlighting, and proper formatting of the message.
     """
+
     role: MessageRole
-    content: Optional[str]
-    image_paths: List[Path]
-    file_paths: List[Path]
+    content: str | None
+    image_paths: list[Path]
+    file_paths: list[Path]
     type_sensor: FileTypeSensor
 
-    def __init__(self, content: str = None):
+    def __init__(self, content: str | None = None):
         """
         Initialize a new MessageBuilder with optional text content.
 
@@ -124,12 +124,14 @@ class MessageBuilder():
             Formatted string containing the file path and content with markdown code-fence
         """
         content = self.file_gateway.read(file_path)
-        return (f"File: {file_path}\n"
-                f"```{self.type_sensor.get_language(file_path)}\n"
-                f"{content.strip()}\n"
-                f"```\n")
+        return (
+            f"File: {file_path}\n"
+            f"```{self.type_sensor.get_language(file_path)}\n"
+            f"{content.strip()}\n"
+            f"```\n"
+        )
 
-    def add_image(self, image_path: Union[str, Path]) -> "MessageBuilder":
+    def add_image(self, image_path: str | Path) -> "MessageBuilder":
         """
         Add a single image to the message.
 
@@ -156,7 +158,7 @@ class MessageBuilder():
             self.image_paths.append(image_path)
         return self
 
-    def add_file(self, file_path: Union[str, Path]) -> "MessageBuilder":
+    def add_file(self, file_path: str | Path) -> "MessageBuilder":
         """
         Add a single file to the message.
 
@@ -183,7 +185,7 @@ class MessageBuilder():
             self.file_paths.append(file_path)
         return self
 
-    def add_images(self, *image_paths: Union[str, Path]) -> "MessageBuilder":
+    def add_images(self, *image_paths: str | Path) -> "MessageBuilder":
         """
         Add multiple images to the message.
 
@@ -202,11 +204,13 @@ class MessageBuilder():
             path_obj = Path(path) if isinstance(path, str) else path
 
             if path_obj.is_dir():
-                for ext in ['*.jpg', '*.png']:
+                for ext in ["*.jpg", "*.png"]:
                     for img_path in path_obj.glob(ext):
                         self.add_image(img_path)
-            elif '*' in str(path_obj):
-                parent_dir = path_obj.parent if path_obj.parent != Path('.') else Path.cwd()
+            elif "*" in str(path_obj):
+                parent_dir = (
+                    path_obj.parent if path_obj.parent != Path(".") else Path.cwd()
+                )
                 for img_path in parent_dir.glob(path_obj.name):
                     if img_path.is_file():
                         self.add_image(img_path)
@@ -215,7 +219,7 @@ class MessageBuilder():
 
         return self
 
-    def add_files(self, *file_paths: List[Union[str, Path]]) -> "MessageBuilder":
+    def add_files(self, *file_paths: list[str | Path]) -> "MessageBuilder":
         """
         Add multiple text files to the message, ignoring binary files.
 
@@ -236,14 +240,20 @@ class MessageBuilder():
 
             if path_obj.is_dir():
                 # If a directory is provided, add all text files in the directory
-                for file_path in path_obj.glob('*'):
-                    if file_path.is_file() and not self.file_gateway.is_binary(file_path):
+                for file_path in path_obj.glob("*"):
+                    if file_path.is_file() and not self.file_gateway.is_binary(
+                        file_path
+                    ):
                         self.add_file(file_path)
-            elif '*' in str(path_obj):
+            elif "*" in str(path_obj):
                 # If a glob pattern is provided, add all matching text files
-                parent_dir = path_obj.parent if path_obj.parent != Path('.') else Path.cwd()
+                parent_dir = (
+                    path_obj.parent if path_obj.parent != Path(".") else Path.cwd()
+                )
                 for file_path in parent_dir.glob(path_obj.name):
-                    if file_path.is_file() and not self.file_gateway.is_binary(file_path):
+                    if file_path.is_file() and not self.file_gateway.is_binary(
+                        file_path
+                    ):
                         self.add_file(file_path)
             else:
                 # If a single file is provided, add it if it's a text file
@@ -254,8 +264,8 @@ class MessageBuilder():
 
     def load_content(
         self,
-        file_path: Union[str, Path],
-        template_values: Optional[Dict[str, Union[str, Path]]] = None
+        file_path: str | Path,
+        template_values: dict[str, str | Path] | None = None,
     ) -> "MessageBuilder":
         """
         Load content from a file into the content field of the MessageBuilder.
@@ -330,5 +340,5 @@ class MessageBuilder():
         return LLMMessage(
             role=self.role,
             content="\n\n".join(parts),
-            image_paths=[str(p) for p in self.image_paths]
+            image_paths=[str(p) for p in self.image_paths],
         )

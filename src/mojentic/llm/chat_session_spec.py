@@ -16,14 +16,21 @@ def llm(mocker):
 @pytest.fixture
 def tokenizer(mocker):
     tokenizer = mocker.MagicMock()
-    tokenizer.encode.return_value = [1]  # Each message in the chat session will count as length 1
+    tokenizer.encode.return_value = [
+        1
+    ]  # Each message in the chat session will count as length 1
     return tokenizer
 
 
 @pytest.fixture
 def chat_session(llm, tokenizer):
-    return ChatSession(llm=llm, system_prompt="You are a helpful assistant.", tokenizer_gateway=tokenizer,
-                       max_context=3, temperature=1.0)
+    return ChatSession(
+        llm=llm,
+        system_prompt="You are a helpful assistant.",
+        tokenizer_gateway=tokenizer,
+        max_context=3,
+        temperature=1.0,
+    )
 
 
 class DescribeChatSession:
@@ -64,7 +71,9 @@ class DescribeChatSession:
         Specifications for managing the chat session's message history
         """
 
-        def should_grow_message_history_to_three_when_first_user_message_sent(self, chat_session):
+        def should_grow_message_history_to_three_when_first_user_message_sent(
+            self, chat_session
+        ):
             """
             Given a new chat session
             """
@@ -95,7 +104,6 @@ class DescribeChatSession:
             assert chat_session.messages[2].content == INTENDED_RESPONSE_MESSAGE
 
     class DescribeStreamingSend:
-
         def should_yield_content_chunks(self, chat_session):
             chat_session.llm.generate_stream.return_value = iter(["Hello", " world"])
 

@@ -5,13 +5,15 @@ Provides pluggable execution strategies (serial sync, async parallel) so
 brokers can stay independent of concurrency policy. Mirrors the TypeScript
 ``ToolRunner`` design from ``mojentic-ts``.
 """
+
 from __future__ import annotations
 
 import asyncio
 import inspect
 import time
 from abc import ABC, abstractmethod
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Sequence, Union
+from collections.abc import Awaitable, Callable, Sequence
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -29,19 +31,19 @@ class ToolRunContext(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    cancel_event: Optional[asyncio.Event] = None
+    cancel_event: asyncio.Event | None = None
     """Async event that fires when the runner aborts the batch."""
 
-    correlation_id: Optional[str] = None
+    correlation_id: str | None = None
     """Correlation id propagated to per-tool tracing."""
 
-    source: Optional[str] = None
+    source: str | None = None
     """Source identifier propagated to per-tool tracing."""
 
-    on_call_start: Optional[Callable[["ToolCallExecution"], None]] = None
+    on_call_start: Callable[[ToolCallExecution], None] | None = None
     """Hook fired when a tool starts running."""
 
-    on_call_complete: Optional[Callable[["ToolCallOutcome"], None]] = None
+    on_call_complete: Callable[[ToolCallOutcome], None] | None = None
     """Hook fired when a tool produces an outcome."""
 
     @property
@@ -54,7 +56,7 @@ class ToolCallExecution(BaseModel):
 
     id: str
     name: str
-    args: Dict[str, Any] = Field(default_factory=dict)
+    args: dict[str, Any] = Field(default_factory=dict)
 
 
 class ToolCallOutcome(BaseModel):
@@ -70,8 +72,8 @@ class ToolCallOutcome(BaseModel):
     id: str
     name: str
     ok: bool
-    result: Optional[Any] = None
-    error: Optional[BaseException] = None
+    result: Any | None = None
+    error: BaseException | None = None
     duration_ms: float = 0.0
 
 
@@ -89,9 +91,8 @@ class ToolRunner(ABC):
         self,
         calls: Sequence[ToolCallExecution],
         tools: Sequence[LLMTool],
-        context: Optional[ToolRunContext] = None,
-    ) -> Union[List[ToolCallOutcome], Awaitable[List[ToolCallOutcome]]]:
-        ...
+        context: ToolRunContext | None = None,
+    ) -> list[ToolCallOutcome] | Awaitable[list[ToolCallOutcome]]: ...
 
 
 def _accepts_ctx(tool: LLMTool) -> bool:
@@ -103,9 +104,7 @@ def _accepts_ctx(tool: LLMTool) -> bool:
     params = sig.parameters
     if "ctx" in params:
         return True
-    return any(
-        p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values()
-    )
+    return any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values())
 
 
 def _not_found(name: str) -> Exception:
@@ -122,7 +121,9 @@ def _build_aborted_outcome(call: ToolCallExecution) -> ToolCallOutcome:
     )
 
 
-def _make_not_found_outcome(call: ToolCallExecution, duration_ms: float) -> ToolCallOutcome:
+def _make_not_found_outcome(
+    call: ToolCallExecution, duration_ms: float
+) -> ToolCallOutcome:
     return ToolCallOutcome(
         id=call.id,
         name=call.name,
@@ -132,21 +133,23 @@ def _make_not_found_outcome(call: ToolCallExecution, duration_ms: float) -> Tool
     )
 
 
-def _resolve_tool(tools: Sequence[LLMTool], name: str) -> Optional[LLMTool]:
+def _resolve_tool(tools: Sequence[LLMTool], name: str) -> LLMTool | None:
     for tool in tools:
         if tool.matches(name):
             return tool
     return None
 
 
-def _invoke_sync(tool: LLMTool, args: Dict[str, Any], ctx: Optional[ToolRunContext]) -> Any:
+def _invoke_sync(
+    tool: LLMTool, args: dict[str, Any], ctx: ToolRunContext | None
+) -> Any:
     if ctx is not None and _accepts_ctx(tool):
         return tool.run(**args, ctx=ctx)
     return tool.run(**args)
 
 
 async def _invoke_async(
-    tool: LLMTool, args: Dict[str, Any], ctx: Optional[ToolRunContext]
+    tool: LLMTool, args: dict[str, Any], ctx: ToolRunContext | None
 ) -> Any:
     if inspect.iscoroutinefunction(tool.run):
         return await _invoke_sync(tool, args, ctx)
@@ -156,12 +159,12 @@ async def _invoke_async(
     return await loop.run_in_executor(None, lambda: _invoke_sync(tool, args, ctx))
 
 
-def _start_hook(ctx: Optional[ToolRunContext], call: ToolCallExecution) -> None:
+def _start_hook(ctx: ToolRunContext | None, call: ToolCallExecution) -> None:
     if ctx is not None and ctx.on_call_start is not None:
         ctx.on_call_start(call)
 
 
-def _complete_hook(ctx: Optional[ToolRunContext], outcome: ToolCallOutcome) -> None:
+def _complete_hook(ctx: ToolRunContext | None, outcome: ToolCallOutcome) -> None:
     if ctx is not None and ctx.on_call_complete is not None:
         ctx.on_call_complete(outcome)
 
@@ -178,9 +181,9 @@ class SerialToolRunner(ToolRunner):
         self,
         calls: Sequence[ToolCallExecution],
         tools: Sequence[LLMTool],
-        context: Optional[ToolRunContext] = None,
-    ) -> List[ToolCallOutcome]:
-        outcomes: List[ToolCallOutcome] = []
+        context: ToolRunContext | None = None,
+    ) -> list[ToolCallOutcome]:
+        outcomes: list[ToolCallOutcome] = []
         for call in calls:
             if context is not None and context.cancelled:
                 aborted = _build_aborted_outcome(call)
@@ -194,7 +197,7 @@ class SerialToolRunner(ToolRunner):
     def _execute(
         call: ToolCallExecution,
         tools: Sequence[LLMTool],
-        context: Optional[ToolRunContext],
+        context: ToolRunContext | None,
     ) -> ToolCallOutcome:
         start = time.time()
         _start_hook(context, call)
@@ -244,12 +247,12 @@ class AsyncParallelToolRunner(ToolRunner):
         self,
         calls: Sequence[ToolCallExecution],
         tools: Sequence[LLMTool],
-        context: Optional[ToolRunContext] = None,
-    ) -> List[ToolCallOutcome]:
+        context: ToolRunContext | None = None,
+    ) -> list[ToolCallOutcome]:
         if not calls:
             return []
 
-        outcomes: List[Optional[ToolCallOutcome]] = [None] * len(calls)
+        outcomes: list[ToolCallOutcome | None] = [None] * len(calls)
         semaphore = asyncio.Semaphore(self.max_concurrency)
 
         async def worker(idx: int, call: ToolCallExecution) -> None:
@@ -273,7 +276,7 @@ class AsyncParallelToolRunner(ToolRunner):
     async def _execute(
         call: ToolCallExecution,
         tools: Sequence[LLMTool],
-        context: Optional[ToolRunContext],
+        context: ToolRunContext | None,
     ) -> ToolCallOutcome:
         start = time.time()
         _start_hook(context, call)

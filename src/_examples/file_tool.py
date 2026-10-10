@@ -5,7 +5,11 @@ from mojentic.agents.output_agent import OutputAgent
 from mojentic.dispatcher import Dispatcher
 from mojentic.event import Event
 from mojentic.llm.llm_broker import LLMBroker
-from mojentic.llm.tools.file_manager import ReadFileTool, WriteFileTool, FilesystemGateway
+from mojentic.llm.tools.file_manager import (
+    FilesystemGateway,
+    ReadFileTool,
+    WriteFileTool,
+)
 from mojentic.router import Router
 
 
@@ -23,8 +27,7 @@ class ResponseModel(BaseModel):
 
 class RequestAgent(BaseLLMAgent):
     def __init__(self, llm: LLMBroker):
-        super().__init__(llm,
-                         "You are a helpful assistant.")
+        super().__init__(llm, "You are a helpful assistant.")
         # Create a filesystem gateway for the /tmp directory
         fs = FilesystemGateway(base_path="/tmp")
         self.add_tool(ReadFileTool(fs))
@@ -32,15 +35,21 @@ class RequestAgent(BaseLLMAgent):
 
     def receive_event(self, event):
         response = self.generate_response(event.text)
-        return [ResponseEvent(source=type(self), correlation_id=event.correlation_id, text=response)]
+        return [
+            ResponseEvent(
+                source=type(self), correlation_id=event.correlation_id, text=response
+            )
+        ]
 
 
-with open("/tmp/ernie.md", 'w') as file:
-    file.write("""
+with open("/tmp/ernie.md", "w") as file:
+    file.write(
+        """
 # Ernie the Caterpillar
 
 This is an unfinished story about Ernie, the most adorable and colourful caterpillar.
-""".strip())
+""".strip()
+    )
 
 #
 # OK this example is fun, it shows trying to make 2 consecutive
@@ -63,11 +72,15 @@ llm = LLMBroker("qwen3:7b")
 request_agent = RequestAgent(llm)
 output_agent = OutputAgent()
 
-router = Router({
-    RequestEvent: [request_agent, output_agent],
-    ResponseEvent: [output_agent]
-})
+router = Router(
+    {RequestEvent: [request_agent, output_agent], ResponseEvent: [output_agent]}
+)
 
 dispatcher = Dispatcher(router)
-dispatcher.dispatch(RequestEvent(source=str, text="Step 1 - Read the unfinished story in ernie.md\n"
-                                                  "Step 2 - Complete the story and store it in ernie2.md"))
+dispatcher.dispatch(
+    RequestEvent(
+        source=str,
+        text="Step 1 - Read the unfinished story in ernie.md\n"
+        "Step 2 - Complete the story and store it in ernie2.md",
+    )
+)

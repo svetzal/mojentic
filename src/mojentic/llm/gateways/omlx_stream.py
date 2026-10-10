@@ -7,8 +7,9 @@ oMLX opens every chat stream with a keep-alive frame, a real ``data:`` frame who
 fails during prefill never reports ``keepalive`` as the provider model.
 :func:`omlx_stream_chunks` turns the remaining lines into the legacy streaming chunks.
 """
+
 import json
-from typing import Dict, Iterable, Iterator, List, Optional
+from collections.abc import Iterable, Iterator
 
 import structlog
 
@@ -44,7 +45,7 @@ def _is_keepalive(line: str) -> bool:
     return isinstance(frame, dict) and frame.get("model") == KEEPALIVE_MODEL
 
 
-def _decoded_frame(line: str) -> Optional[object]:
+def _decoded_frame(line: str) -> object | None:
     data = sse_data(line)
     if data is None or data == DONE_MARKER:
         return None
@@ -73,7 +74,7 @@ def omlx_stream_chunks(lines: Iterable[str]) -> Iterator[StreamingResponse]:
     StreamingResponse
         Content, thinking and tool call chunks. Reading stops at ``data: [DONE]``.
     """
-    tool_calls: Dict[int, dict] = {}
+    tool_calls: dict[int, dict] = {}
     for line in lines:
         data = sse_data(line)
         if data == DONE_MARKER:
@@ -85,7 +86,9 @@ def omlx_stream_chunks(lines: Iterable[str]) -> Iterator[StreamingResponse]:
             yield from _choice_chunks(choice, tool_calls)
 
 
-def _choice_chunks(choice: dict, tool_calls: Dict[int, dict]) -> Iterator[StreamingResponse]:
+def _choice_chunks(
+    choice: dict, tool_calls: dict[int, dict]
+) -> Iterator[StreamingResponse]:
     delta = choice.get("delta") or {}
     if delta.get("content"):
         yield StreamingResponse(content=delta["content"])
@@ -99,21 +102,33 @@ def _choice_chunks(choice: dict, tool_calls: Dict[int, dict]) -> Iterator[Stream
             yield StreamingResponse(tool_calls=complete)
 
 
-def _accumulate(tool_calls: Dict[int, dict], fragment: dict) -> None:
-    call = tool_calls.setdefault(fragment.get("index", 0), {"id": None, "name": None, "arguments": ""})
+def _accumulate(tool_calls: dict[int, dict], fragment: dict) -> None:
+    call = tool_calls.setdefault(
+        fragment.get("index", 0), {"id": None, "name": None, "arguments": ""}
+    )
     function = fragment.get("function") or {}
     call["id"] = fragment.get("id") or call["id"]
     call["name"] = function.get("name") or call["name"]
     call["arguments"] += function.get("arguments") or ""
 
 
-def _complete_tool_calls(tool_calls: Dict[int, dict]) -> List[LLMToolCall]:
+def _complete_tool_calls(tool_calls: dict[int, dict]) -> list[LLMToolCall]:
     complete = []
     for index in sorted(tool_calls):
         call = tool_calls[index]
         try:
-            complete.append(LLMToolCall(id=call["id"], name=call["name"], arguments=json.loads(call["arguments"])))
+            complete.append(
+                LLMToolCall(
+                    id=call["id"],
+                    name=call["name"],
+                    arguments=json.loads(call["arguments"]),
+                )
+            )
         except json.JSONDecodeError as e:
-            logger.error("Failed to parse tool call arguments", tool_name=call["name"],
-                         arguments=call["arguments"], error=str(e))
+            logger.error(
+                "Failed to parse tool call arguments",
+                tool_name=call["name"],
+                arguments=call["arguments"],
+                error=str(e),
+            )
     return complete

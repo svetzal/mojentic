@@ -2,7 +2,11 @@ from unittest.mock import Mock
 
 import pytest
 
-from mojentic.llm.tools.ephemeral_task_manager.ephemeral_task_list import EphemeralTaskList, Task, TaskStatus
+from mojentic.llm.tools.ephemeral_task_manager.ephemeral_task_list import (
+    EphemeralTaskList,
+    Task,
+    TaskStatus,
+)
 from mojentic.llm.tools.ephemeral_task_manager.start_task_tool import StartTaskTool
 
 
@@ -34,7 +38,9 @@ class DescribeStartTaskTool:
 
         mock_task_list.start_task.assert_called_once_with(id=1)
 
-    def should_handle_error_when_start_task_fails(self, start_task_tool, mock_task_list):
+    def should_handle_error_when_start_task_fails(
+        self, start_task_tool, mock_task_list
+    ):
         error_message = "Task '1' cannot be started because it is not in PENDING status"
         mock_task_list.start_task.side_effect = ValueError(error_message)
 

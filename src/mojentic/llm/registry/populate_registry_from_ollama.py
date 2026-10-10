@@ -1,7 +1,11 @@
 import requests
 
 from mojentic.llm.gateways.ollama import OllamaGateway
-from mojentic.llm.registry.llm_registry import LLMRegistry, LLMRegistryEntry, LLMCharacteristics
+from mojentic.llm.registry.llm_registry import (
+    LLMCharacteristics,
+    LLMRegistry,
+    LLMRegistryEntry,
+)
 
 
 def query_ollama_server(url: str):
@@ -13,7 +17,7 @@ def query_ollama_server(url: str):
 def register_llms_from_ollama(url: str, registry: LLMRegistry):
     tags_data = query_ollama_server(url)
 
-    for model in tags_data['models']:
+    for model in tags_data["models"]:
         # tm = {
         #     'details': {
         #         'families': ['qwen2'],
@@ -31,18 +35,23 @@ def register_llms_from_ollama(url: str, registry: LLMRegistry):
         # }
 
         # Map parameter_size to one of the LLMSize values
-        family = model['details']['family']
+        family = model["details"]["family"]
         characteristics = LLMCharacteristics(
-            model=model['model'],
-            quantization_level=model['details']['quantization_level'],
-            parameter_size=(model['details']['parameter_size']),
+            model=model["model"],
+            quantization_level=model["details"]["quantization_level"],
+            parameter_size=(model["details"]["parameter_size"]),
             family=family,
-            tools=family in ['qwen2', 'llama', 'mistral'] and "instruct" not in model['model'],
-            structured_output="instruct" in model['model'],
-            embeddings="mxbai" in model['model']
+            tools=family in ["qwen2", "llama", "mistral"]
+            and "instruct" not in model["model"],
+            structured_output="instruct" in model["model"],
+            embeddings="mxbai" in model["model"],
         )
-        adapter = OllamaGateway()  # All models from ollama can be accessed via the OllamaGateway
-        entry = LLMRegistryEntry(name=model['name'], characteristics=characteristics, adapter=adapter)
+        adapter = (
+            OllamaGateway()
+        )  # All models from ollama can be accessed via the OllamaGateway
+        entry = LLMRegistryEntry(
+            name=model["name"], characteristics=characteristics, adapter=adapter
+        )
         registry.register(entry)
 
 
@@ -55,7 +64,11 @@ if __name__ == "__main__":
     # print(f"Tool using: {registry.find_first(tools=True, structured_output=True).name}")
     print(f"Fastest model: {registry.find_fastest().name}")
     print(f"Fastest model with tools: {registry.find_fastest(tools=True).name}")
-    print(f"Fastest model with structured output: {registry.find_fastest(structured_output=True).name}")
+    print(
+        f"Fastest model with structured output: {registry.find_fastest(structured_output=True).name}"
+    )
     print(f"Smartest model: {registry.find_smartest().name}")
     print(f"Smartest model with tools: {registry.find_smartest(tools=True).name}")
-    print(f"Smartest model with structured output: {registry.find_smartest(structured_output=True).name}")
+    print(
+        f"Smartest model with structured output: {registry.find_smartest(structured_output=True).name}"
+    )

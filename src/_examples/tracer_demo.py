@@ -8,12 +8,17 @@ the script displays a summary of all traced events.
 It also demonstrates how correlation_id is used to trace related events
 across the system, allowing you to track the flow of a request from start to finish.
 """
+
 import uuid
 
-from mojentic.tracer import TracerSystem
-from mojentic.tracer.tracer_events import LLMCallTracerEvent, LLMResponseTracerEvent, ToolCallTracerEvent
 from mojentic.llm import ChatSession, LLMBroker
 from mojentic.llm.tools.date_resolver import ResolveDateTool
+from mojentic.tracer import TracerSystem
+from mojentic.tracer.tracer_events import (
+    LLMCallTracerEvent,
+    LLMResponseTracerEvent,
+    ToolCallTracerEvent,
+)
 
 
 def print_tracer_events(events):
@@ -46,9 +51,13 @@ def main():
     conversation_correlation_ids = {}
 
     print("Welcome to the chat session with tracer demonstration!")
-    print("Ask questions about dates (e.g., 'What day is next Friday?') or anything else.")
+    print(
+        "Ask questions about dates (e.g., 'What day is next Friday?') or anything else."
+    )
     print("Behind the scenes, the tracer system is recording all interactions.")
-    print("Each interaction is assigned a unique correlation_id to trace related events.")
+    print(
+        "Each interaction is assigned a unique correlation_id to trace related events."
+    )
     print("Press Enter with no input to exit and see the trace summary.")
     print("-" * 80)
 
@@ -83,7 +92,9 @@ def main():
     # After the user exits, display tracer event summary
     print("\nTracer System Summary")
     print("=" * 80)
-    print("You just had a conversation with an LLM, and the tracer recorded everything!")
+    print(
+        "You just had a conversation with an LLM, and the tracer recorded everything!"
+    )
 
     # Get all events
     all_events = tracer.get_events()
@@ -115,11 +126,15 @@ def main():
 
     # Show how to use time-based filtering
     print("\nYou can also filter events by time range:")
-    print("Example: tracer.get_events(start_time=start_timestamp, end_time=end_timestamp)")
+    print(
+        "Example: tracer.get_events(start_time=start_timestamp, end_time=end_timestamp)"
+    )
 
     # Demonstrate filtering events by correlation_id
     print("\nFiltering events by correlation_id:")
-    print("This is a powerful feature that allows you to trace all events related to a specific request")
+    print(
+        "This is a powerful feature that allows you to trace all events related to a specific request"
+    )
 
     # If we have any conversation turns, show events for the first turn
     if conversation_correlation_ids:
@@ -128,7 +143,9 @@ def main():
         first_correlation_id = conversation_correlation_ids.get(first_turn_id)
 
         if first_correlation_id:
-            print("\nEvents for conversation turn {first_turn_id} (correlation_id: {first_correlation_id[:8]}...):")
+            print(
+                "\nEvents for conversation turn {first_turn_id} (correlation_id: {first_correlation_id[:8]}...):"
+            )
 
             # Define a filter function that checks the correlation_id
             def filter_by_correlation_id(event):
@@ -142,14 +159,20 @@ def main():
                 print_tracer_events(related_events)
 
                 # Show how this helps trace the flow of a request
-                print("\nThe correlation_id allows you to trace the complete flow of a request:")
+                print(
+                    "\nThe correlation_id allows you to trace the complete flow of a request:"
+                )
                 print("1. From the initial LLM call")
                 print("2. To the LLM response")
                 print("3. To any tool calls triggered by the LLM")
                 print("4. And any subsequent LLM calls with the tool results")
-                print("\nThis creates a complete audit trail for debugging and observability.")
+                print(
+                    "\nThis creates a complete audit trail for debugging and observability."
+                )
             else:
-                print("No events found with this correlation_id. This is unexpected and may indicate an issue.")
+                print(
+                    "No events found with this correlation_id. This is unexpected and may indicate an issue."
+                )
 
     # Show how to extract specific information from events
     if tool_calls:
@@ -160,7 +183,7 @@ def main():
             tool_names[tool_name] = tool_names.get(tool_name, 0) + 1
 
         print("Tool usage frequency:")
-        for tool_name, count in tool_names.items():
+        for tool_name in tool_names:
             print("  - {tool_name}: {count} calls")
 
 

@@ -4,14 +4,19 @@ import json
 import time
 import uuid
 import warnings
-from typing import List, Optional, Type, Iterator
+from collections.abc import Iterator
 
 import structlog
 from pydantic import BaseModel
 
 from mojentic.llm.completion_config import CompletionConfig
 from mojentic.llm.gateways.llm_gateway import LLMGateway
-from mojentic.llm.gateways.models import MessageRole, LLMMessage, LLMGatewayResponse, LLMToolCall
+from mojentic.llm.gateways.models import (
+    LLMGatewayResponse,
+    LLMMessage,
+    LLMToolCall,
+    MessageRole,
+)
 from mojentic.llm.gateways.ollama import OllamaGateway
 from mojentic.llm.gateways.stream_events import (
     StreamContent,
@@ -23,8 +28,8 @@ from mojentic.llm.gateways.stream_events import (
 from mojentic.llm.gateways.tokenizer_gateway import TokenizerGateway
 from mojentic.llm.tools.runner import (
     SerialToolRunner,
-    ToolRunner,
     ToolRunContext,
+    ToolRunner,
 )
 from mojentic.tracer.tracer_system import TracerSystem
 
@@ -35,7 +40,7 @@ class MaxToolIterationsExceededError(Exception):
     """Raised when tool calls exceed the maximum allowed iterations."""
 
 
-class LLMBroker():
+class LLMBroker:
     """
     This class is responsible for managing interaction with a Large Language Model. It abstracts
     the user
@@ -45,14 +50,18 @@ class LLMBroker():
     adapter: LLMGateway
     tokenizer: TokenizerGateway
     model: str
-    tracer: Optional[TracerSystem]
+    tracer: TracerSystem | None
     tool_runner: ToolRunner
 
-    def __init__(self, model: str, gateway: Optional[LLMGateway] = None,
-                 tokenizer: Optional[TokenizerGateway] = None,
-                 tracer: Optional[TracerSystem] = None,
-                 tool_runner: Optional[ToolRunner] = None,
-                 tool_context: Optional[ToolRunContext] = None):
+    def __init__(
+        self,
+        model: str,
+        gateway: LLMGateway | None = None,
+        tokenizer: TokenizerGateway | None = None,
+        tracer: TracerSystem | None = None,
+        tool_runner: ToolRunner | None = None,
+        tool_context: ToolRunContext | None = None,
+    ):
         """
         Create an instance of the LLMBroker.
 
@@ -80,6 +89,7 @@ class LLMBroker():
 
         # Use null_tracer if no tracer is provided
         from mojentic.tracer import null_tracer
+
         self.tracer = tracer or null_tracer
 
         if tokenizer is None:
@@ -94,11 +104,17 @@ class LLMBroker():
         self.tool_runner = tool_runner or SerialToolRunner()
         self.tool_context = tool_context
 
-    def generate(self, messages: List[LLMMessage], tools=None,
-                 config: Optional[CompletionConfig] = None,
-                 temperature: Optional[float] = None, num_ctx: Optional[int] = None,
-                 num_predict: Optional[int] = None, max_tokens: Optional[int] = None,
-                 correlation_id: str = None) -> str:
+    def generate(
+        self,
+        messages: list[LLMMessage],
+        tools=None,
+        config: CompletionConfig | None = None,
+        temperature: float | None = None,
+        num_ctx: int | None = None,
+        num_predict: int | None = None,
+        max_tokens: int | None = None,
+        correlation_id: str | None = None,
+    ) -> str:
         """
         Generate a text response from the LLM.
 
@@ -137,12 +153,14 @@ class LLMBroker():
         """
         # Handle config vs individual kwargs
         if config is not None and any(
-                param is not None for param in [temperature, num_ctx, num_predict, max_tokens]):
+            param is not None
+            for param in [temperature, num_ctx, num_predict, max_tokens]
+        ):
             warnings.warn(
                 "Both config and individual kwargs provided. Using config and ignoring kwargs. "
                 "Individual kwargs are deprecated, use config=CompletionConfig(...) instead.",
                 DeprecationWarning,
-                stacklevel=2
+                stacklevel=2,
             )
         elif config is None:
             # Build config from individual kwargs
@@ -150,12 +168,15 @@ class LLMBroker():
                 temperature=temperature if temperature is not None else 1.0,
                 num_ctx=num_ctx if num_ctx is not None else 32768,
                 num_predict=num_predict if num_predict is not None else -1,
-                max_tokens=max_tokens if max_tokens is not None else 16384
+                max_tokens=max_tokens if max_tokens is not None else 16384,
             )
 
         correlation_id = _ensure_correlation_id(correlation_id)
         while True:
-            if config.max_tool_iterations is not None and config.max_tool_iterations <= 0:
+            if (
+                config.max_tool_iterations is not None
+                and config.max_tool_iterations <= 0
+            ):
                 raise MaxToolIterationsExceededError(
                     f"Tool call iterations exceeded the maximum budget for model '{self.model}'. "
                     f"Increase config.max_tool_iterations to allow more rounds."
@@ -164,21 +185,39 @@ class LLMBroker():
             if not result.tool_calls or tools is None:
                 return result.content
             paired = self._dispatch_tool_batch(
-                result.tool_calls, tools, caller="LLMBroker", correlation_id=correlation_id,
+                result.tool_calls,
+                tools,
+                caller="LLMBroker",
+                correlation_id=correlation_id,
             )
-            messages.append(LLMMessage(
-                role=MessageRole.Assistant, content=result.content, tool_calls=result.tool_calls,
-            ))
-            messages.extend(LLMMessage(
-                role=MessageRole.Tool, content=self._serialize_outcome(outcome), tool_calls=[call],
-            ) for call, outcome in paired)
+            messages.append(
+                LLMMessage(
+                    role=MessageRole.Assistant,
+                    content=result.content,
+                    tool_calls=result.tool_calls,
+                )
+            )
+            messages.extend(
+                LLMMessage(
+                    role=MessageRole.Tool,
+                    content=self._serialize_outcome(outcome),
+                    tool_calls=[call],
+                )
+                for call, outcome in paired
+            )
             config = config.model_copy(
-                update={"max_tool_iterations": _next_iteration(config.max_tool_iterations)}
+                update={
+                    "max_tool_iterations": _next_iteration(config.max_tool_iterations)
+                }
             )
 
-    def generate_response(self, messages: List[LLMMessage], tools=None,
-                          config: Optional[CompletionConfig] = None,
-                          correlation_id: Optional[str] = None) -> LLMGatewayResponse:
+    def generate_response(
+        self,
+        messages: list[LLMMessage],
+        tools=None,
+        config: CompletionConfig | None = None,
+        correlation_id: str | None = None,
+    ) -> LLMGatewayResponse:
         """Return one native model response without executing tools or changing history.
 
         The caller assembles context and decides when to dispatch returned calls.
@@ -187,22 +226,27 @@ class LLMBroker():
         """
         config = config or CompletionConfig()
         correlation_id = _ensure_correlation_id(correlation_id)
-        approximate_tokens = len(self.tokenizer.encode(self._content_to_count(messages)))
+        approximate_tokens = len(
+            self.tokenizer.encode(self._content_to_count(messages))
+        )
         logger.info(f"Requesting llm response with approx {approximate_tokens} tokens")
 
         # Convert messages to serializable dict for audit
         messages_for_tracer = [m.model_dump() for m in messages]
 
         # Record LLM call in tracer
-        tools_for_tracer = [{"name": t.name, "description": t.description} for t in
-                            tools] if tools else None
+        tools_for_tracer = (
+            [{"name": t.name, "description": t.description} for t in tools]
+            if tools
+            else None
+        )
         self.tracer.record_llm_call(
             self.model,
             messages_for_tracer,
             config.temperature,
             tools=tools_for_tracer,
             source=type(self),
-            correlation_id=correlation_id
+            correlation_id=correlation_id,
         )
 
         # Measure call duration for audit
@@ -216,13 +260,15 @@ class LLMBroker():
             temperature=config.temperature,
             num_ctx=config.num_ctx,
             num_predict=config.num_predict,
-            max_tokens=config.max_tokens)
+            max_tokens=config.max_tokens,
+        )
 
         call_duration_ms = (time.time() - start_time) * 1000
 
         # Record LLM response in tracer
-        tool_calls_for_tracer = [tc.model_dump() for tc in
-                                 result.tool_calls] if result.tool_calls else None
+        tool_calls_for_tracer = (
+            [tc.model_dump() for tc in result.tool_calls] if result.tool_calls else None
+        )
         self.tracer.record_llm_response(
             self.model,
             result.content,
@@ -235,11 +281,17 @@ class LLMBroker():
 
         return result
 
-    def generate_stream(self, messages: List[LLMMessage], tools=None,
-                        config: Optional[CompletionConfig] = None,
-                        temperature: Optional[float] = None, num_ctx: Optional[int] = None,
-                        num_predict: Optional[int] = None, max_tokens: Optional[int] = None,
-                        correlation_id: str = None) -> Iterator[str]:
+    def generate_stream(
+        self,
+        messages: list[LLMMessage],
+        tools=None,
+        config: CompletionConfig | None = None,
+        temperature: float | None = None,
+        num_ctx: int | None = None,
+        num_predict: int | None = None,
+        max_tokens: int | None = None,
+        correlation_id: str | None = None,
+    ) -> Iterator[str]:
         """
         Generate a streaming text response from the LLM.
 
@@ -282,12 +334,14 @@ class LLMBroker():
         """
         # Handle config vs individual kwargs
         if config is not None and any(
-                param is not None for param in [temperature, num_ctx, num_predict, max_tokens]):
+            param is not None
+            for param in [temperature, num_ctx, num_predict, max_tokens]
+        ):
             warnings.warn(
                 "Both config and individual kwargs provided. Using config and ignoring kwargs. "
                 "Individual kwargs are deprecated, use config=CompletionConfig(...) instead.",
                 DeprecationWarning,
-                stacklevel=2
+                stacklevel=2,
             )
         elif config is None:
             # Build config from individual kwargs
@@ -295,36 +349,48 @@ class LLMBroker():
                 temperature=temperature if temperature is not None else 1.0,
                 num_ctx=num_ctx if num_ctx is not None else 32768,
                 num_predict=num_predict if num_predict is not None else -1,
-                max_tokens=max_tokens if max_tokens is not None else 16384
+                max_tokens=max_tokens if max_tokens is not None else 16384,
             )
 
         correlation_id = _ensure_correlation_id(correlation_id)
         while True:
-            if config.max_tool_iterations is not None and config.max_tool_iterations <= 0:
+            if (
+                config.max_tool_iterations is not None
+                and config.max_tool_iterations <= 0
+            ):
                 raise MaxToolIterationsExceededError(
                     f"Tool call iterations exceeded the maximum budget for model '{self.model}'. "
                     f"Increase config.max_tool_iterations to allow more recursion."
                 )
             # Check if gateway supports streaming
-            if not hasattr(self.adapter, 'complete_stream'):
-                raise NotImplementedError(f"Gateway {type(self.adapter).__name__} does not support streaming")
+            if not hasattr(self.adapter, "complete_stream"):
+                raise NotImplementedError(
+                    f"Gateway {type(self.adapter).__name__} does not support streaming"
+                )
 
-            approximate_tokens = len(self.tokenizer.encode(self._content_to_count(messages)))
-            logger.info(f"Requesting streaming llm response with approx {approximate_tokens} tokens")
+            approximate_tokens = len(
+                self.tokenizer.encode(self._content_to_count(messages))
+            )
+            logger.info(
+                f"Requesting streaming llm response with approx {approximate_tokens} tokens"
+            )
 
             # Convert messages to serializable dict for audit
             messages_for_tracer = [m.model_dump() for m in messages]
 
             # Record LLM call in tracer
-            tools_for_tracer = [{"name": t.name, "description": t.description} for t in
-                                tools] if tools else None
+            tools_for_tracer = (
+                [{"name": t.name, "description": t.description} for t in tools]
+                if tools
+                else None
+            )
             self.tracer.record_llm_call(
                 self.model,
                 messages_for_tracer,
                 config.temperature,
                 tools=tools_for_tracer,
                 source=type(self),
-                correlation_id=correlation_id
+                correlation_id=correlation_id,
             )
 
             # Measure call duration for audit
@@ -342,38 +408,45 @@ class LLMBroker():
                 temperature=config.temperature,
                 num_ctx=config.num_ctx,
                 num_predict=config.num_predict,
-                max_tokens=config.max_tokens
+                max_tokens=config.max_tokens,
             )
 
             for chunk in stream:
                 # Handle content chunks
-                if hasattr(chunk, 'content') and chunk.content:
+                if hasattr(chunk, "content") and chunk.content:
                     accumulated_content += chunk.content
                     yield chunk.content
 
                 # Handle tool calls if present
-                if hasattr(chunk, 'tool_calls') and chunk.tool_calls:
+                if hasattr(chunk, "tool_calls") and chunk.tool_calls:
                     accumulated_tool_calls.extend(chunk.tool_calls)
 
             call_duration_ms = (time.time() - start_time) * 1000
 
             # Record LLM response in tracer
-            tool_calls_for_tracer = [tc.model_dump() if hasattr(tc, 'model_dump') else tc for tc in
-                                     accumulated_tool_calls] if accumulated_tool_calls else None
+            tool_calls_for_tracer = (
+                [
+                    tc.model_dump() if hasattr(tc, "model_dump") else tc
+                    for tc in accumulated_tool_calls
+                ]
+                if accumulated_tool_calls
+                else None
+            )
             self.tracer.record_llm_response(
                 self.model,
                 accumulated_content,
                 tool_calls=tool_calls_for_tracer,
                 call_duration_ms=call_duration_ms,
                 source=type(self),
-                correlation_id=correlation_id
+                correlation_id=correlation_id,
             )
 
             # Process tool calls if any were accumulated
             if accumulated_tool_calls and tools is not None:
                 logger.info("Tool call requested in streaming response")
                 normalized_calls = [
-                    self._normalize_streamed_tool_call(tc) for tc in accumulated_tool_calls
+                    self._normalize_streamed_tool_call(tc)
+                    for tc in accumulated_tool_calls
                 ]
                 paired = self._dispatch_tool_batch(
                     normalized_calls,
@@ -382,22 +455,37 @@ class LLMBroker():
                     correlation_id=correlation_id,
                 )
 
-                messages.append(LLMMessage(
-                    role=MessageRole.Assistant, content=accumulated_content,
-                    tool_calls=normalized_calls,
-                ))
-                messages.extend(LLMMessage(
-                    role=MessageRole.Tool, content=self._serialize_outcome(outcome), tool_calls=[call],
-                ) for call, outcome in paired)
+                messages.append(
+                    LLMMessage(
+                        role=MessageRole.Assistant,
+                        content=accumulated_content,
+                        tool_calls=normalized_calls,
+                    )
+                )
+                messages.extend(
+                    LLMMessage(
+                        role=MessageRole.Tool,
+                        content=self._serialize_outcome(outcome),
+                        tool_calls=[call],
+                    )
+                    for call, outcome in paired
+                )
                 config = config.model_copy(
-                    update={"max_tool_iterations": _next_iteration(config.max_tool_iterations)}
+                    update={
+                        "max_tool_iterations": _next_iteration(
+                            config.max_tool_iterations
+                        )
+                    }
                 )
             else:
                 return
 
-    def generate_stream_events(self, messages: List[LLMMessage],
-                               config: Optional[CompletionConfig] = None,
-                               correlation_id: Optional[str] = None) -> Iterator[StreamEvent]:
+    def generate_stream_events(
+        self,
+        messages: list[LLMMessage],
+        config: CompletionConfig | None = None,
+        correlation_id: str | None = None,
+    ) -> Iterator[StreamEvent]:
         """
         Stream one model turn as events that end with terminal completion evidence.
 
@@ -429,37 +517,59 @@ class LLMBroker():
         StreamEvent
             Content events followed by exactly one terminal event.
         """
-        complete_stream_events = getattr(self.adapter, 'complete_stream_events', None)
+        complete_stream_events = getattr(self.adapter, "complete_stream_events", None)
         if complete_stream_events is None:
-            yield StreamError(reason=StreamErrorReason.STREAM_EVENTS_UNSUPPORTED, detail=type(self.adapter).__name__)
+            yield StreamError(
+                reason=StreamErrorReason.STREAM_EVENTS_UNSUPPORTED,
+                detail=type(self.adapter).__name__,
+            )
             return
 
-        config = (config or CompletionConfig()).model_copy(update={"max_tool_iterations": 0})
+        config = (config or CompletionConfig()).model_copy(
+            update={"max_tool_iterations": 0}
+        )
         correlation_id = _ensure_correlation_id(correlation_id)
-        self.tracer.record_llm_call(self.model, [m.model_dump() for m in messages], config.temperature,
-                                    tools=None, source=type(self), correlation_id=correlation_id)
+        self.tracer.record_llm_call(
+            self.model,
+            [m.model_dump() for m in messages],
+            config.temperature,
+            tools=None,
+            source=type(self),
+            correlation_id=correlation_id,
+        )
         start_time = time.time()
         content = ""
-        events = iter(complete_stream_events(model=self.model, messages=messages, config=config))
+        events = iter(
+            complete_stream_events(model=self.model, messages=messages, config=config)
+        )
         try:
             for event in events:
                 if isinstance(event, StreamContent):
                     content += event.text
                     yield event
                     continue
-                self._record_stream_events_response(content, event, start_time, correlation_id)
+                self._record_stream_events_response(
+                    content, event, start_time, correlation_id
+                )
                 yield event
                 return
             terminal = StreamError(reason=StreamErrorReason.INCOMPLETE_STREAM)
-            self._record_stream_events_response(content, terminal, start_time, correlation_id)
+            self._record_stream_events_response(
+                content, terminal, start_time, correlation_id
+            )
             yield terminal
         finally:
-            close = getattr(events, 'close', None)
+            close = getattr(events, "close", None)
             if close is not None:
                 close()
 
-    def _record_stream_events_response(self, content: str, terminal: TerminalStreamEvent,
-                                       start_time: float, correlation_id: Optional[str]) -> None:
+    def _record_stream_events_response(
+        self,
+        content: str,
+        terminal: TerminalStreamEvent,
+        start_time: float,
+        correlation_id: str | None,
+    ) -> None:
         evidence = terminal.metadata
         self.tracer.record_llm_response(
             self.model,
@@ -478,8 +588,10 @@ class LLMBroker():
         """Convert raw provider tool-call payloads into LLMToolCall objects."""
         if isinstance(tool_call, LLMToolCall):
             return tool_call
-        call = tool_call if hasattr(tool_call, 'name') else tool_call.function
-        return LLMToolCall(id=getattr(tool_call, 'id', None), name=call.name, arguments=call.arguments)
+        call = tool_call if hasattr(tool_call, "name") else tool_call.function
+        return LLMToolCall(
+            id=getattr(tool_call, "id", None), name=call.name, arguments=call.arguments
+        )
 
     def _dispatch_tool_batch(self, tool_calls, tools, caller, correlation_id):
         """
@@ -493,16 +605,24 @@ class LLMBroker():
 
         dispatched = list(tool_calls)
         executions = [
-            _ToolCallExecution(id=getattr(call, "id", None) or f"call-{idx}",
-                               name=call.name, args=call.arguments)
+            _ToolCallExecution(
+                id=getattr(call, "id", None) or f"call-{idx}",
+                name=call.name,
+                args=call.arguments,
+            )
             for idx, call in enumerate(dispatched)
         ]
 
         if not executions:
             return []
 
-        context = self.tool_context.model_copy(update={"correlation_id": correlation_id, "source": caller}) \
-            if self.tool_context is not None else None
+        context = (
+            self.tool_context.model_copy(
+                update={"correlation_id": correlation_id, "source": caller}
+            )
+            if self.tool_context is not None
+            else None
+        )
         outcomes = self.tool_runner.run_batch(executions, tools, context)
         if inspect.isawaitable(outcomes):
             outcomes = _run_async_outcomes(outcomes)
@@ -518,10 +638,10 @@ class LLMBroker():
                 correlation_id=correlation_id,
             )
             if outcome.ok:
-                logger.info('Function output', output=outcome.result)
+                logger.info("Function output", output=outcome.result)
             else:
-                logger.warn(
-                    'Tool execution failed',
+                logger.warning(
+                    "Tool execution failed",
                     function=tool_call.name,
                     error=str(outcome.error),
                 )
@@ -533,18 +653,24 @@ class LLMBroker():
             return json.dumps(outcome.result)
         return json.dumps({"error": str(outcome.error)})
 
-    def _content_to_count(self, messages: List[LLMMessage]):
+    def _content_to_count(self, messages: list[LLMMessage]):
         content = ""
         for message in messages:
             if message.content:
                 content += message.content
         return content
 
-    def generate_object(self, messages: List[LLMMessage], object_model: Type[BaseModel],
-                        config: Optional[CompletionConfig] = None,
-                        temperature: Optional[float] = None, num_ctx: Optional[int] = None,
-                        num_predict: Optional[int] = None, max_tokens: Optional[int] = None,
-                        correlation_id: str = None) -> BaseModel:
+    def generate_object(
+        self,
+        messages: list[LLMMessage],
+        object_model: type[BaseModel],
+        config: CompletionConfig | None = None,
+        temperature: float | None = None,
+        num_ctx: int | None = None,
+        num_predict: int | None = None,
+        max_tokens: int | None = None,
+        correlation_id: str | None = None,
+    ) -> BaseModel:
         """
         Generate a structured response from the LLM and return it as an object.
 
@@ -576,12 +702,14 @@ class LLMBroker():
         """
         # Handle config vs individual kwargs
         if config is not None and any(
-                param is not None for param in [temperature, num_ctx, num_predict, max_tokens]):
+            param is not None
+            for param in [temperature, num_ctx, num_predict, max_tokens]
+        ):
             warnings.warn(
                 "Both config and individual kwargs provided. Using config and ignoring kwargs. "
                 "Individual kwargs are deprecated, use config=CompletionConfig(...) instead.",
                 DeprecationWarning,
-                stacklevel=2
+                stacklevel=2,
             )
         elif config is None:
             # Build config from individual kwargs
@@ -589,10 +717,12 @@ class LLMBroker():
                 temperature=temperature if temperature is not None else 1.0,
                 num_ctx=num_ctx if num_ctx is not None else 32768,
                 num_predict=num_predict if num_predict is not None else -1,
-                max_tokens=max_tokens if max_tokens is not None else 16384
+                max_tokens=max_tokens if max_tokens is not None else 16384,
             )
         correlation_id = _ensure_correlation_id(correlation_id)
-        approximate_tokens = len(self.tokenizer.encode(self._content_to_count(messages)))
+        approximate_tokens = len(
+            self.tokenizer.encode(self._content_to_count(messages))
+        )
         logger.info(f"Requesting llm response with approx {approximate_tokens} tokens")
 
         # Convert messages to serializable dict for audit
@@ -605,25 +735,32 @@ class LLMBroker():
             config.temperature,
             tools=None,
             source=type(self),
-            correlation_id=correlation_id
+            correlation_id=correlation_id,
         )
 
         # Measure call duration for audit
         start_time = time.time()
 
-        result = self.adapter.complete(model=self.model, messages=messages,
-                                       object_model=object_model,
-                                       config=config,
-                                       temperature=config.temperature, num_ctx=config.num_ctx,
-                                       num_predict=config.num_predict, max_tokens=config.max_tokens)
+        result = self.adapter.complete(
+            model=self.model,
+            messages=messages,
+            object_model=object_model,
+            config=config,
+            temperature=config.temperature,
+            num_ctx=config.num_ctx,
+            num_predict=config.num_predict,
+            max_tokens=config.max_tokens,
+        )
 
         call_duration_ms = (time.time() - start_time) * 1000
 
         # Record LLM response in tracer with object representation
         # Convert object to string for tracer
-        object_str = str(result.object.model_dump()) if hasattr(result.object,
-                                                                "model_dump") else str(
-            result.object)
+        object_str = (
+            str(result.object.model_dump())
+            if hasattr(result.object, "model_dump")
+            else str(result.object)
+        )
         self.tracer.record_llm_response(
             self.model,
             f"Structured response: {object_str}",
@@ -657,7 +794,7 @@ def _run_async_outcomes(awaitable):
         return pool.submit(asyncio.run, awaitable).result()
 
 
-def _next_iteration(remaining: Optional[int]) -> Optional[int]:
+def _next_iteration(remaining: int | None) -> int | None:
     return None if remaining is None else remaining - 1
 
 
@@ -671,6 +808,6 @@ def _response_evidence(response: LLMGatewayResponse) -> dict:
     }
 
 
-def _ensure_correlation_id(correlation_id: Optional[str]) -> str:
+def _ensure_correlation_id(correlation_id: str | None) -> str:
     """Use the caller's correlation id, or start a new one so every trace event carries an id."""
     return correlation_id or str(uuid.uuid4())

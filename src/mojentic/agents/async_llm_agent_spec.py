@@ -1,21 +1,23 @@
-import pytest
 from unittest.mock import MagicMock
 
+import pytest
 from pydantic import BaseModel, Field
 
 from mojentic.agents.async_llm_agent import BaseAsyncLLMAgent
 from mojentic.event import Event
-from mojentic.llm.llm_broker import LLMBroker
 from mojentic.llm.gateways.models import MessageRole
+from mojentic.llm.llm_broker import LLMBroker
 
 
 class TestEvent(Event):
     """A simple event for testing."""
+
     message: str
 
 
 class TestResponse(BaseModel):
     """A simple response model for testing."""
+
     answer: str = Field(..., description="The answer to the question")
 
 
@@ -34,7 +36,7 @@ def async_llm_agent(mock_llm_broker):
     return BaseAsyncLLMAgent(
         llm=mock_llm_broker,
         behaviour="You are a test assistant.",
-        response_model=TestResponse
+        response_model=TestResponse,
     )
 
 
@@ -44,7 +46,7 @@ async def test_async_llm_agent_init(mock_llm_broker):
     agent = BaseAsyncLLMAgent(
         llm=mock_llm_broker,
         behaviour="You are a test assistant.",
-        response_model=TestResponse
+        response_model=TestResponse,
     )
 
     assert agent.llm == mock_llm_broker
@@ -73,7 +75,9 @@ async def test_async_llm_agent_add_tool(async_llm_agent):
 
 
 @pytest.mark.asyncio
-async def test_async_llm_agent_generate_response_with_model(async_llm_agent, mock_llm_broker):
+async def test_async_llm_agent_generate_response_with_model(
+    async_llm_agent, mock_llm_broker
+):
     """Test that the BaseAsyncLLMAgent generates responses with a model."""
     response = await async_llm_agent.generate_response("Test question")
 
@@ -89,8 +93,7 @@ async def test_async_llm_agent_generate_response_with_model(async_llm_agent, moc
 async def test_async_llm_agent_generate_response_without_model(mock_llm_broker):
     """Test that the BaseAsyncLLMAgent generates responses without a model."""
     agent = BaseAsyncLLMAgent(
-        llm=mock_llm_broker,
-        behaviour="You are a test assistant."
+        llm=mock_llm_broker, behaviour="You are a test assistant."
     )
 
     response = await agent.generate_response("Test question")
@@ -108,17 +111,15 @@ async def test_async_llm_agent_generate_response_with_tools(mock_llm_broker):
     mock_tool = MagicMock()
 
     agent = BaseAsyncLLMAgent(
-        llm=mock_llm_broker,
-        behaviour="You are a test assistant.",
-        tools=[mock_tool]
+        llm=mock_llm_broker, behaviour="You are a test assistant.", tools=[mock_tool]
     )
 
     await agent.generate_response("Test question")
 
     # Verify that generate was called with tools
     mock_llm_broker.generate.assert_called_once()
-    args, kwargs = mock_llm_broker.generate.call_args
-    assert kwargs.get('tools') == [mock_tool]
+    _args, kwargs = mock_llm_broker.generate.call_args
+    assert kwargs.get("tools") == [mock_tool]
 
 
 @pytest.mark.asyncio
@@ -139,11 +140,13 @@ class TestAsyncLLMAgent(BaseAsyncLLMAgent):
     async def receive_event_async(self, event):
         if isinstance(event, TestEvent):
             response = await self.generate_response(event.message)
-            return [TestEvent(
-                source=type(self),
-                correlation_id=event.correlation_id,
-                message=f"Response: {response.answer}"
-            )]
+            return [
+                TestEvent(
+                    source=type(self),
+                    correlation_id=event.correlation_id,
+                    message=f"Response: {response.answer}",
+                )
+            ]
         return []
 
 
@@ -153,7 +156,7 @@ async def test_subclass_async_llm_agent_receive_event_async(mock_llm_broker):
     agent = TestAsyncLLMAgent(
         llm=mock_llm_broker,
         behaviour="You are a test assistant.",
-        response_model=TestResponse
+        response_model=TestResponse,
     )
 
     event = TestEvent(source=str, message="Test message")

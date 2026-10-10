@@ -1,5 +1,5 @@
 import json
-from typing import Annotated, Optional, Type, List
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 
@@ -14,8 +14,13 @@ class BaseLLMAgent(BaseAgent):
     llm: LLMBroker
     behaviour: Annotated[str, "The personality and behavioural traits of the agent."]
 
-    def __init__(self, llm: LLMBroker, behaviour: str = "You are a helpful assistant.",
-                 tools: Optional[List[LLMTool]] = None, response_model: Optional[Type[BaseModel]] = None):
+    def __init__(
+        self,
+        llm: LLMBroker,
+        behaviour: str = "You are a helpful assistant.",
+        tools: list[LLMTool] | None = None,
+        response_model: type[BaseModel] | None = None,
+    ):
         super().__init__()
         self.llm = llm
         self.behaviour = behaviour
@@ -35,7 +40,9 @@ class BaseLLMAgent(BaseAgent):
         messages.append(LLMMessage(content=content))
 
         if self.response_model is not None:
-            response = self.llm.generate_object(messages, object_model=self.response_model)
+            response = self.llm.generate_object(
+                messages, object_model=self.response_model
+            )
         else:
             response = self.llm.generate(messages, tools=self.tools)
 
@@ -43,10 +50,18 @@ class BaseLLMAgent(BaseAgent):
 
 
 class BaseLLMAgentWithMemory(BaseLLMAgent):
-    instructions: Annotated[str, "The instructions for the agent to follow when receiving events."]
+    instructions: Annotated[
+        str, "The instructions for the agent to follow when receiving events."
+    ]
 
-    def __init__(self, llm: LLMBroker, memory: SharedWorkingMemory, behaviour: str, instructions: str,
-                 response_model: BaseModel):
+    def __init__(
+        self,
+        llm: LLMBroker,
+        memory: SharedWorkingMemory,
+        behaviour: str,
+        instructions: str,
+        response_model: BaseModel,
+    ):
         super().__init__(llm, behaviour)
         self.instructions = instructions
         self.memory = memory
@@ -54,29 +69,36 @@ class BaseLLMAgentWithMemory(BaseLLMAgent):
 
     def _create_initial_messages(self):
         messages = super()._create_initial_messages()
-        messages.extend([
-            LLMMessage(
-                content=(f"This is what you remember:\n"
-                         f"{json.dumps(self.memory.get_working_memory(), indent=2)}"
-                         f"\n\nRemember anything new you learn by storing it "
-                         f"to your working memory in your response.")
-            ),
-            LLMMessage(role=MessageRole.User, content=self.instructions),
-        ])
+        messages.extend(
+            [
+                LLMMessage(
+                    content=(
+                        f"This is what you remember:\n"
+                        f"{json.dumps(self.memory.get_working_memory(), indent=2)}"
+                        f"\n\nRemember anything new you learn by storing it "
+                        f"to your working memory in your response."
+                    )
+                ),
+                LLMMessage(role=MessageRole.User, content=self.instructions),
+            ]
+        )
         return messages
 
     def generate_response(self, content):
         class ResponseWithMemory(self.response_model):
-            memory: dict = Field(self.memory.get_working_memory(),
-                                 description="Add anything new that you have learned here.")
+            memory: dict = Field(
+                self.memory.get_working_memory(),
+                description="Add anything new that you have learned here.",
+            )
 
         messages = self._create_initial_messages()
-        messages.extend([
-            LLMMessage(content=content),
-        ])
+        messages.extend(
+            [
+                LLMMessage(content=content),
+            ]
+        )
         response = self.llm.generate_object(
-            messages=messages,
-            object_model=ResponseWithMemory
+            messages=messages, object_model=ResponseWithMemory
         )
         self.memory.merge_to_working_memory(response.memory)
 

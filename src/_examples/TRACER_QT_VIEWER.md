@@ -75,10 +75,12 @@ To use the tracer in your own code:
 ```python
 from mojentic.tracer import TracerSystem, EventStore
 
+
 # Create EventStore with callback
 def my_callback(event):
     # Handle event in real-time
     print(f"Event: {event}")
+
 
 event_store = EventStore(on_store_callback=my_callback)
 tracer = TracerSystem(event_store=event_store)

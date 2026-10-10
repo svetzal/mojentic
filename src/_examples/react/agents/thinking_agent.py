@@ -2,7 +2,8 @@
 
 This agent creates structured plans for solving user queries.
 """
-from typing import List
+
+import logging
 
 from mojentic.agents.base_llm_agent import BaseLLMAgent
 from mojentic.event import Event
@@ -31,13 +32,15 @@ class ThinkingAgent(BaseLLMAgent):
         """
         super().__init__(
             llm,
-            ("You are a task coordinator, "
-             "who breaks down tasks into component steps "
-             "to be performed by others.")
+            (
+                "You are a task coordinator, "
+                "who breaks down tasks into component steps "
+                "to be performed by others."
+            ),
         )
         self.tools = [ResolveDateTool()]
 
-    def receive_event(self, event: Event) -> List[Event]:
+    def receive_event(self, event: Event) -> list[Event]:
         """Process a thinking event and generate a plan.
 
         Args:
@@ -55,8 +58,7 @@ class ThinkingAgent(BaseLLMAgent):
             print(format_block(prompt))
 
             plan: Plan = self.llm.generate_object(
-                [LLMMessage(content=prompt)],
-                object_model=Plan
+                [LLMMessage(content=prompt)], object_model=Plan
             )
             print(format_block(str(plan)))
 
@@ -68,23 +70,28 @@ class ThinkingAgent(BaseLLMAgent):
                 ThoughtActionObservation(
                     thought="I need to create a plan to solve this query.",
                     action="Created a step-by-step plan.",
-                    observation=f"Plan has {len(plan.steps)} steps."
+                    observation=f"Plan has {len(plan.steps)} steps.",
                 )
             )
 
-            return [InvokeDecisioning(
-                source=type(self),
-                context=event.context,
-                correlation_id=event.correlation_id
-            )]
+            return [
+                InvokeDecisioning(
+                    source=type(self),
+                    context=event.context,
+                    correlation_id=event.correlation_id,
+                )
+            ]
 
         except Exception as e:
-            return [FailureOccurred(
-                source=type(self),
-                context=event.context,
-                reason=f"Error during planning: {str(e)}",
-                correlation_id=event.correlation_id
-            )]
+            logging.getLogger(__name__).exception("Example operation failed")
+            return [
+                FailureOccurred(
+                    source=type(self),
+                    context=event.context,
+                    reason=f"Error during planning: {e!s}",
+                    correlation_id=event.correlation_id,
+                )
+            ]
 
     def prompt(self, event: InvokeThinking):
         """Generate the prompt for the planning LLM.

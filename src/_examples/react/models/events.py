@@ -3,6 +3,7 @@
 This module defines all event types used to coordinate the ReAct loop,
 including thinking, decisioning, tool calls, completion, and failure events.
 """
+
 from pydantic import Field
 
 from mojentic import Event
@@ -18,8 +19,7 @@ class InvokeThinking(Event):
     """
 
     context: CurrentContext = Field(
-        ...,
-        description="The current context as we work through our response."
+        ..., description="The current context as we work through our response."
     )
 
 
@@ -31,8 +31,7 @@ class InvokeDecisioning(Event):
     """
 
     context: CurrentContext = Field(
-        ...,
-        description="The current context as we work through our response."
+        ..., description="The current context as we work through our response."
     )
 
 
@@ -44,21 +43,13 @@ class InvokeToolCall(Event):
     """
 
     context: CurrentContext = Field(
-        ...,
-        description="The current context as we work through our response."
+        ..., description="The current context as we work through our response."
     )
-    thought: str = Field(
-        ...,
-        description="The reasoning behind the decision."
-    )
+    thought: str = Field(..., description="The reasoning behind the decision.")
     action: NextAction
-    tool: object = Field(
-        ...,
-        description="The tool instance to invoke."
-    )
+    tool: object = Field(..., description="The tool instance to invoke.")
     tool_arguments: dict = Field(
-        default_factory=dict,
-        description="Arguments to pass to the tool."
+        default_factory=dict, description="Arguments to pass to the tool."
     )
 
 
@@ -70,13 +61,9 @@ class FinishAndSummarize(Event):
     """
 
     context: CurrentContext = Field(
-        ...,
-        description="The current context as we work through our response."
+        ..., description="The current context as we work through our response."
     )
-    thought: str = Field(
-        ...,
-        description="The reasoning behind the decision."
-    )
+    thought: str = Field(..., description="The reasoning behind the decision.")
 
 
 class FailureOccurred(Event):
@@ -87,10 +74,6 @@ class FailureOccurred(Event):
     """
 
     context: CurrentContext = Field(
-        ...,
-        description="The current context as we work through our response."
+        ..., description="The current context as we work through our response."
     )
-    reason: str = Field(
-        ...,
-        description="The reason for the failure."
-    )
+    reason: str = Field(..., description="The reason for the failure.")

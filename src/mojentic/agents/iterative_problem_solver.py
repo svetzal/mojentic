@@ -1,8 +1,6 @@
-from typing import List, Optional
-
 import structlog
 
-from mojentic.llm import LLMBroker, ChatSession
+from mojentic.llm import ChatSession, LLMBroker
 from mojentic.llm.tools.llm_tool import LLMTool
 
 logger = structlog.get_logger()
@@ -26,8 +24,13 @@ class IterativeProblemSolver:
     max_iterations: int
     chat: ChatSession
 
-    def __init__(self, llm: LLMBroker, available_tools: Optional[List[LLMTool]] = None, max_iterations: int = 3,
-                 system_prompt: Optional[str] = None):
+    def __init__(
+        self,
+        llm: LLMBroker,
+        available_tools: list[LLMTool] | None = None,
+        max_iterations: int = 3,
+        system_prompt: str | None = None,
+    ):
         """Initialize the IterativeProblemSolver.
 
         Parameters
@@ -43,7 +46,8 @@ class IterativeProblemSolver:
         self.available_tools = available_tools or []
         self.chat = ChatSession(
             llm=llm,
-            system_prompt=system_prompt or (
+            system_prompt=system_prompt
+            or (
                 "You are a problem-solving assistant that can solve complex problems step by step. "
                 "You analyze problems, break them down into smaller parts, "
                 "and solve them systematically. "
@@ -86,13 +90,18 @@ class IterativeProblemSolver:
 
             iterations_remaining -= 1
             if iterations_remaining == 0:
-                logger.info("Max iterations reached", max_iterations=self.max_iterations,
-                            user_request=problem, result=result)
+                logger.info(
+                    "Max iterations reached",
+                    max_iterations=self.max_iterations,
+                    user_request=problem,
+                    result=result,
+                )
                 break
 
         result = self.chat.send(
             "Summarize the final result, and only the final result, "
-            "without commenting on the process by which you achieved it.")
+            "without commenting on the process by which you achieved it."
+        )
 
         return result
 

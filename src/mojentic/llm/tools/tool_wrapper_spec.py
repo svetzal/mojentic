@@ -1,9 +1,10 @@
-import pytest
 from unittest.mock import Mock
 
-from mojentic.llm.tools.tool_wrapper import ToolWrapper
+import pytest
+
 from mojentic.agents.base_llm_agent import BaseLLMAgent
 from mojentic.llm.gateways.models import LLMMessage, MessageRole
+from mojentic.llm.tools.tool_wrapper import ToolWrapper
 
 
 @pytest.fixture

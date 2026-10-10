@@ -6,10 +6,12 @@ the chat-completions gateway exposes a request/response surface, this
 one exposes a duplex session. The gateway is intentionally thin — own
 the transport, validate events at the boundary, do no orchestration.
 """
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, AsyncIterator, Dict, Optional
+from collections.abc import AsyncIterator
+from typing import Any
 
 from mojentic.realtime.config import RealtimeVoiceConfig
 
@@ -25,24 +27,19 @@ class RealtimeGatewaySession(ABC):
 
     @property
     @abstractmethod
-    def session_id(self) -> str:
-        ...
+    def session_id(self) -> str: ...
 
     @abstractmethod
-    async def send_event(self, event: Dict[str, Any]) -> None:
-        ...
+    async def send_event(self, event: dict[str, Any]) -> None: ...
 
     @abstractmethod
-    def events(self) -> AsyncIterator[Dict[str, Any]]:
-        ...
+    def events(self) -> AsyncIterator[dict[str, Any]]: ...
 
     @abstractmethod
-    async def close(self) -> None:
-        ...
+    async def close(self) -> None: ...
 
     @abstractmethod
-    def is_closed(self) -> bool:
-        ...
+    def is_closed(self) -> bool: ...
 
 
 class RealtimeVoiceGateway(ABC):
@@ -58,6 +55,5 @@ class RealtimeVoiceGateway(ABC):
         self,
         model: str,
         config: RealtimeVoiceConfig,
-        correlation_id: Optional[str] = None,
-    ) -> RealtimeGatewaySession:
-        ...
+        correlation_id: str | None = None,
+    ) -> RealtimeGatewaySession: ...

@@ -9,7 +9,7 @@ from mojentic.llm.gateways import OpenAIGateway
 from mojentic.llm.gateways.models import LLMMessage
 from mojentic.llm.tools.date_resolver import ResolveDateTool
 
-logging.basicConfig(level=logging.WARN)
+logging.basicConfig(level=logging.WARNING)
 
 
 def openai_llm(model="gpt-5"):
@@ -25,31 +25,42 @@ def ollama_llm(model="qwen3:32b"):
 
 
 def check_simple_textgen(llm):
-    result = llm.generate(messages=[(LLMMessage(content='Hello, how are you?'))])
+    result = llm.generate(messages=[(LLMMessage(content="Hello, how are you?"))])
     print(result)
 
 
 def check_structured_output(llm):
     class Sentiment(BaseModel):
-        label: str = Field(..., title="Description", description="label for the sentiment")
+        label: str = Field(
+            ..., title="Description", description="label for the sentiment"
+        )
 
-    result = llm.generate_object(messages=[LLMMessage(content="Hello, how are you?")], object_model=Sentiment)
+    result = llm.generate_object(
+        messages=[LLMMessage(content="Hello, how are you?")], object_model=Sentiment
+    )
     print(result.label)
 
 
 def check_tool_use(llm):
-    result = llm.generate(messages=[(LLMMessage(content='What is the date on Friday?'))],
-                          tools=[ResolveDateTool()])
+    result = llm.generate(
+        messages=[(LLMMessage(content="What is the date on Friday?"))],
+        tools=[ResolveDateTool()],
+    )
     print(result)
 
 
-def check_image_analysis(llm, image_path: Path = None):
+def check_image_analysis(llm, image_path: Path | None = None):
     if image_path is None:
-        image_path = Path.cwd() / 'images' / 'flash_rom.jpg'
-    result = llm.generate(messages=[
-        (LLMMessage(content='What is in this image?',
-                    image_paths=[str(image_path)]))
-    ])
+        image_path = Path.cwd() / "images" / "flash_rom.jpg"
+    result = llm.generate(
+        messages=[
+            (
+                LLMMessage(
+                    content="What is in this image?", image_paths=[str(image_path)]
+                )
+            )
+        ]
+    )
     print(result)
 
 
@@ -72,7 +83,7 @@ gpt5_models = [
     "gpt-5-mini",
     "gpt-5-mini-2025-08-07",
     "gpt-5-nano",
-    "gpt-5-nano-2025-08-07"
+    "gpt-5-nano-2025-08-07",
 ]
 
 for model in gpt5_models:
@@ -80,4 +91,5 @@ for model in gpt5_models:
     try:
         check_simple_textgen(openai_llm(model=model))
     except Exception as e:
+        logging.getLogger(__name__).exception("Example operation failed")
         print(f"Error with {model}: {e}")

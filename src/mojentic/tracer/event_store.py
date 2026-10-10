@@ -1,4 +1,4 @@
-from typing import Callable, List, Optional, Type
+from collections.abc import Callable
 
 from mojentic.event import Event
 from mojentic.tracer.tracer_events import TracerEvent
@@ -8,7 +8,8 @@ class EventStore:
     """
     Store for capturing and querying events, particularly useful for tracer events.
     """
-    def __init__(self, on_store_callback: Optional[Callable[[Event], None]] = None):
+
+    def __init__(self, on_store_callback: Callable[[Event], None] | None = None):
         """
         Initialize an EventStore.
 
@@ -37,11 +38,12 @@ class EventStore:
             self.on_store_callback(event)
 
     def get_events(
-            self,
-            event_type: Optional[Type[Event]] = None,
-            start_time: Optional[float] = None,
-            end_time: Optional[float] = None,
-            filter_func: Optional[Callable[[Event], bool]] = None) -> List[Event]:
+        self,
+        event_type: type[Event] | None = None,
+        start_time: float | None = None,
+        end_time: float | None = None,
+        filter_func: Callable[[Event], bool] | None = None,
+    ) -> list[Event]:
         """
         Get events from the store, optionally filtered by type, time range, and custom filter function.
 
@@ -69,10 +71,18 @@ class EventStore:
 
         # Filter by time range if dealing with TracerEvents
         if start_time is not None:
-            result = [e for e in result if isinstance(e, TracerEvent) and e.timestamp >= start_time]
+            result = [
+                e
+                for e in result
+                if isinstance(e, TracerEvent) and e.timestamp >= start_time
+            ]
 
         if end_time is not None:
-            result = [e for e in result if isinstance(e, TracerEvent) and e.timestamp <= end_time]
+            result = [
+                e
+                for e in result
+                if isinstance(e, TracerEvent) and e.timestamp <= end_time
+            ]
 
         # Apply custom filter function if provided
         if filter_func is not None:
@@ -86,7 +96,9 @@ class EventStore:
         """
         self.events = []
 
-    def get_last_n_events(self, n: int, event_type: Optional[Type[Event]] = None) -> List[Event]:
+    def get_last_n_events(
+        self, n: int, event_type: type[Event] | None = None
+    ) -> list[Event]:
         """
         Get the last N events, optionally filtered by type.
 

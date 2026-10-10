@@ -4,7 +4,9 @@ NullTracer implementation to eliminate conditional checks in the code.
 This module provides a NullTracer that implements the same interface as TracerSystem
 but performs no operations, following the Null Object Pattern.
 """
-from typing import Any, Callable, Dict, List, Optional, Type
+
+from collections.abc import Callable
+from typing import Any
 
 from mojentic.tracer.tracer_events import TracerEvent
 
@@ -33,13 +35,15 @@ class NullTracer:
         """
         # Do nothing
 
-    def record_llm_call(self,
-                        model: str,
-                        messages: List[Dict],
-                        temperature: float = 1.0,
-                        tools: Optional[List[Dict]] = None,
-                        source: Any = None,
-                        correlation_id: str = None) -> None:
+    def record_llm_call(
+        self,
+        model: str,
+        messages: list[dict],
+        temperature: float = 1.0,
+        tools: list[dict] | None = None,
+        source: Any = None,
+        correlation_id: str | None = None,
+    ) -> None:
         """
         Do nothing implementation of record_llm_call.
 
@@ -60,17 +64,19 @@ class NullTracer:
         """
         # Do nothing
 
-    def record_llm_response(self,
-                            model: str,
-                            content: str,
-                            tool_calls: Optional[List[Dict]] = None,
-                            call_duration_ms: Optional[float] = None,
-                            source: Any = None,
-                            correlation_id: str = None,
-                            usage: Optional[Dict[str, Any]] = None,
-                            provider_model: Optional[str] = None,
-                            finish_reason: Optional[str] = None,
-                            metadata: Optional[Dict[str, Any]] = None) -> None:
+    def record_llm_response(
+        self,
+        model: str,
+        content: str,
+        tool_calls: list[dict] | None = None,
+        call_duration_ms: float | None = None,
+        source: Any = None,
+        correlation_id: str | None = None,
+        usage: dict[str, Any] | None = None,
+        provider_model: str | None = None,
+        finish_reason: str | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
         """
         Do nothing implementation of record_llm_response.
 
@@ -99,14 +105,16 @@ class NullTracer:
         """
         # Do nothing
 
-    def record_tool_call(self,
-                         tool_name: str,
-                         arguments: Dict[str, Any],
-                         result: Any,
-                         caller: Optional[str] = None,
-                         call_duration_ms: Optional[float] = None,
-                         source: Any = None,
-                         correlation_id: str = None) -> None:
+    def record_tool_call(
+        self,
+        tool_name: str,
+        arguments: dict[str, Any],
+        result: Any,
+        caller: str | None = None,
+        call_duration_ms: float | None = None,
+        source: Any = None,
+        correlation_id: str | None = None,
+    ) -> None:
         """
         Do nothing implementation of record_tool_call.
 
@@ -130,26 +138,28 @@ class NullTracer:
         # Do nothing
 
     def record_tool_batch(
-            self,
-            batch_id: str,
-            tool_names: List[str],
-            success_count: int,
-            failure_count: int,
-            call_duration_ms: float,
-            caller: Optional[str] = None,
-            source: Any = None,
-            correlation_id: str = None) -> None:
+        self,
+        batch_id: str,
+        tool_names: list[str],
+        success_count: int,
+        failure_count: int,
+        call_duration_ms: float,
+        caller: str | None = None,
+        source: Any = None,
+        correlation_id: str | None = None,
+    ) -> None:
         """Do nothing implementation of record_tool_batch."""
         # Do nothing
 
     def record_agent_interaction(
-            self,
-            from_agent: str,
-            to_agent: str,
-            event_type: str,
-            event_id: Optional[str] = None,
-            source: Any = None,
-            correlation_id: str = None) -> None:
+        self,
+        from_agent: str,
+        to_agent: str,
+        event_type: str,
+        event_id: str | None = None,
+        source: Any = None,
+        correlation_id: str | None = None,
+    ) -> None:
         """
         Do nothing implementation of record_agent_interaction.
 
@@ -171,11 +181,12 @@ class NullTracer:
         # Do nothing
 
     def get_events(
-            self,
-            event_type: Optional[Type[TracerEvent]] = None,
-            start_time: Optional[float] = None,
-            end_time: Optional[float] = None,
-            filter_func: Optional[Callable[[TracerEvent], bool]] = None) -> List[TracerEvent]:
+        self,
+        event_type: type[TracerEvent] | None = None,
+        start_time: float | None = None,
+        end_time: float | None = None,
+        filter_func: Callable[[TracerEvent], bool] | None = None,
+    ) -> list[TracerEvent]:
         """
         Return an empty list for any get_events request.
 
@@ -197,7 +208,9 @@ class NullTracer:
         """
         return []
 
-    def get_last_n_tracer_events(self, n: int, event_type: Optional[Type[TracerEvent]] = None) -> List[TracerEvent]:
+    def get_last_n_tracer_events(
+        self, n: int, event_type: type[TracerEvent] | None = None
+    ) -> list[TracerEvent]:
         """
         Return an empty list for any get_last_n_tracer_events request.
 

@@ -9,6 +9,7 @@ The ReAct pattern consists of:
 3. Tool Call Agent - Executes tools
 4. Summarization Agent - Generates final answers
 """
+
 from _examples.react.agents.decisioning_agent import DecisioningAgent
 from _examples.react.agents.summarization_agent import SummarizationAgent
 from _examples.react.agents.thinking_agent import ThinkingAgent
@@ -42,21 +43,21 @@ def main():
     output_agent = OutputAgent()
 
     # Configure router - maps event types to agent handlers
-    router = Router({
-        InvokeThinking: [thinking_agent, output_agent],
-        InvokeDecisioning: [decisioning_agent, output_agent],
-        InvokeToolCall: [tool_call_agent, output_agent],
-        FinishAndSummarize: [summarization_agent, output_agent],
-        FailureOccurred: [output_agent],
-    })
+    router = Router(
+        {
+            InvokeThinking: [thinking_agent, output_agent],
+            InvokeDecisioning: [decisioning_agent, output_agent],
+            InvokeToolCall: [tool_call_agent, output_agent],
+            FinishAndSummarize: [summarization_agent, output_agent],
+            FailureOccurred: [output_agent],
+        }
+    )
 
     # Create dispatcher
     dispatcher = Dispatcher(router)
 
     # Create initial context
-    initial_context = CurrentContext(
-        user_query="What is the date next Friday?"
-    )
+    initial_context = CurrentContext(user_query="What is the date next Friday?")
 
     # Start the ReAct loop
     print("\n" + "=" * 80)
@@ -66,10 +67,7 @@ def main():
     print("=" * 80 + "\n")
 
     # Create and dispatch initial thinking event
-    initial_event = InvokeThinking(
-        source=type(main),
-        context=initial_context
-    )
+    initial_event = InvokeThinking(source=type(main), context=initial_context)
 
     dispatcher.dispatch(initial_event)
 

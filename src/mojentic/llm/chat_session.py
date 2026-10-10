@@ -1,9 +1,9 @@
-from typing import Iterator, List, Optional
+from collections.abc import Iterator
 
-from mojentic.llm import LLMBroker
 from mojentic.llm.completion_config import CompletionConfig
 from mojentic.llm.gateways.models import LLMMessage, MessageRole
 from mojentic.llm.gateways.tokenizer_gateway import TokenizerGateway
+from mojentic.llm.llm_broker import LLMBroker
 from mojentic.llm.tools.llm_tool import LLMTool
 
 
@@ -16,16 +16,18 @@ class ChatSession:
     This class is responsible for managing the state of a conversation with the LLM.
     """
 
-    messages: List[SizedLLMMessage] = []
+    messages: list[SizedLLMMessage]
 
-    def __init__(self,
-                 llm: LLMBroker,
-                 system_prompt: str = "You are a helpful assistant.",
-                 tools: Optional[List[LLMTool]] = None,
-                 max_context: int = 32768,
-                 tokenizer_gateway: TokenizerGateway = None,
-                 config: Optional[CompletionConfig] = None,
-                 temperature: float = 1.0):
+    def __init__(
+        self,
+        llm: LLMBroker,
+        system_prompt: str = "You are a helpful assistant.",
+        tools: list[LLMTool] | None = None,
+        max_context: int = 32768,
+        tokenizer_gateway: TokenizerGateway = None,
+        config: CompletionConfig | None = None,
+        temperature: float = 1.0,
+    ):
         """
         Create an instance of the ChatSession.
 
@@ -56,10 +58,7 @@ class ChatSession:
         if config is not None:
             self.config = config
         else:
-            self.config = CompletionConfig(
-                temperature=temperature,
-                num_ctx=max_context
-            )
+            self.config = CompletionConfig(temperature=temperature, num_ctx=max_context)
 
         if tokenizer_gateway is None:
             self.tokenizer_gateway = TokenizerGateway()
@@ -67,7 +66,9 @@ class ChatSession:
             self.tokenizer_gateway = tokenizer_gateway
 
         self.messages = []
-        self.insert_message(LLMMessage(role=MessageRole.System, content=self.system_prompt))
+        self.insert_message(
+            LLMMessage(role=MessageRole.System, content=self.system_prompt)
+        )
 
     def send(self, query):
         """
@@ -85,7 +86,9 @@ class ChatSession:
             The response from the LLM.
         """
         self.insert_message(LLMMessage(role=MessageRole.User, content=query))
-        response = self.llm.generate(self.messages, tools=self.tools, config=self.config)
+        response = self.llm.generate(
+            self.messages, tools=self.tools, config=self.config
+        )
         self._ensure_all_messages_are_sized()
         self.insert_message(LLMMessage(role=MessageRole.Assistant, content=response))
         return response
@@ -107,11 +110,15 @@ class ChatSession:
         """
         self.insert_message(LLMMessage(role=MessageRole.User, content=query))
         accumulated = []
-        for chunk in self.llm.generate_stream(self.messages, tools=self.tools, config=self.config):
+        for chunk in self.llm.generate_stream(
+            self.messages, tools=self.tools, config=self.config
+        ):
             accumulated.append(chunk)
             yield chunk
         self._ensure_all_messages_are_sized()
-        self.insert_message(LLMMessage(role=MessageRole.Assistant, content="".join(accumulated)))
+        self.insert_message(
+            LLMMessage(role=MessageRole.Assistant, content="".join(accumulated))
+        )
 
     def insert_message(self, message: LLMMessage):
         """
@@ -133,7 +140,9 @@ class ChatSession:
             return SizedLLMMessage(**message.model_dump(), token_length=0)
         else:
             new_message_length = len(self.tokenizer_gateway.encode(message.content))
-            new_message = SizedLLMMessage(**message.model_dump(), token_length=new_message_length)
+            new_message = SizedLLMMessage(
+                **message.model_dump(), token_length=new_message_length
+            )
             return new_message
 
     def _ensure_all_messages_are_sized(self):

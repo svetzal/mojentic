@@ -1,19 +1,34 @@
 import asyncio
 import json
+from collections.abc import Iterator
 from contextlib import closing
-from typing import List, Iterator, Optional, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Optional
 
 import httpx
 import structlog
-from ollama import Client, Options, ChatResponse, Image, ResponseError
+from ollama import ChatResponse, Client, Image, Options, ResponseError
 from pydantic import BaseModel, ValidationError
 
-from mojentic.llm.recovery import Capabilities, RecoveryCall, RecoveryPolicy, preparation_error, recover
 from mojentic.llm.gateways.llm_gateway import LLMGateway
-from mojentic.llm.gateways.models import LLMMessage, LLMToolCall, LLMGatewayResponse
+from mojentic.llm.gateways.models import LLMGatewayResponse, LLMMessage, LLMToolCall
 from mojentic.llm.gateways.ollama_messages_adapter import adapt_messages_to_ollama
-from mojentic.llm.gateways.ollama_stream_events import ollama_metadata, ollama_usage, parse_ollama_stream
-from mojentic.llm.gateways.stream_events import StreamError, StreamErrorReason, StreamEvent
+from mojentic.llm.gateways.ollama_stream_events import (
+    ollama_metadata,
+    ollama_usage,
+    parse_ollama_stream,
+)
+from mojentic.llm.gateways.stream_events import (
+    StreamError,
+    StreamErrorReason,
+    StreamEvent,
+)
+from mojentic.llm.recovery import (
+    Capabilities,
+    RecoveryCall,
+    RecoveryPolicy,
+    preparation_error,
+    recover,
+)
 
 if TYPE_CHECKING:
     from mojentic.llm.completion_config import CompletionConfig, ResponseFormat
@@ -21,7 +36,7 @@ if TYPE_CHECKING:
 logger = structlog.get_logger()
 
 
-def ollama_format(response_format: Optional['ResponseFormat']) -> Optional[Union[str, dict]]:
+def ollama_format(response_format: Optional["ResponseFormat"]) -> str | dict | None:
     """
     Translate a configured response format into the Ollama ``format`` request value.
 
@@ -38,7 +53,11 @@ def ollama_format(response_format: Optional['ResponseFormat']) -> Optional[Union
     """
     if response_format is None or response_format.type == "text":
         return None
-    return response_format.json_schema if response_format.json_schema is not None else "json"
+    return (
+        response_format.json_schema
+        if response_format.json_schema is not None
+        else "json"
+    )
 
 
 class StreamingResponse(BaseModel):
@@ -54,9 +73,10 @@ class StreamingResponse(BaseModel):
     thinking : Optional[str]
         Thinking/reasoning trace from the LLM response.
     """
-    content: Optional[str] = None
-    tool_calls: Optional[List] = None
-    thinking: Optional[str] = None
+
+    content: str | None = None
+    tool_calls: list | None = None
+    thinking: str | None = None
 
 
 class OllamaStreamTransport:
@@ -97,12 +117,22 @@ class OllamaGateway(LLMGateway):
         The transport ``complete_stream_events`` uses. Defaults to one over this gateway's client.
     """
 
-    def __init__(self, host="http://localhost:11434", headers={}, timeout=None,
-                 stream_transport: Optional[OllamaStreamTransport] = None,
-                 recovery_policy: RecoveryPolicy | None = None, recovery_call: RecoveryCall | None = None):
+    def __init__(
+        self,
+        host="http://localhost:11434",
+        headers=None,
+        timeout=None,
+        stream_transport: OllamaStreamTransport | None = None,
+        recovery_policy: RecoveryPolicy | None = None,
+        recovery_call: RecoveryCall | None = None,
+    ):
+        if headers is None:
+            headers = {}
         self.recovery_policy = recovery_policy
         self.recovery_call = recovery_call
-        self._recovery_host = host.rstrip("/") if isinstance(host, str) else "http://localhost:11434"
+        self._recovery_host = (
+            host.rstrip("/") if isinstance(host, str) else "http://localhost:11434"
+        )
         self._recovery_headers = dict(headers or {})
         self._recovery_timeout = timeout
         self.client = Client(host=host, headers=headers, timeout=timeout)
@@ -110,7 +140,7 @@ class OllamaGateway(LLMGateway):
 
     def _extract_options_from_args(self, args):
         # Extract config if present, otherwise use individual kwargs
-        config = args.get('config', None)
+        config = args.get("config", None)
         if config:
             options = Options(
                 temperature=config.temperature,
@@ -122,13 +152,13 @@ class OllamaGateway(LLMGateway):
                 options.num_predict = config.max_tokens
         else:
             options = Options(
-                temperature=args.get('temperature', 1.0),
-                num_ctx=args.get('num_ctx', 32768),
+                temperature=args.get("temperature", 1.0),
+                num_ctx=args.get("num_ctx", 32768),
             )
-            if args.get('num_predict', 0) > 0:
-                options.num_predict = args['num_predict']
-            if 'max_tokens' in args:
-                options.num_predict = args['max_tokens']
+            if args.get("num_predict", 0) > 0:
+                options.num_predict = args["num_predict"]
+            if "max_tokens" in args:
+                options.num_predict = args["max_tokens"]
         return options
 
     def complete(self, **args) -> LLMGatewayResponse:
@@ -171,12 +201,18 @@ class OllamaGateway(LLMGateway):
 
         object = None
 
-        if 'object_model' in args:
+        if "object_model" in args:
             try:
-                object = args['object_model'].model_validate_json(response.message.content)
-            except Exception as e:
-                logger.error("Failed to validate model in", error=str(e), response=response.message.content,
-                             object_model=args['object_model'])
+                object = args["object_model"].model_validate_json(
+                    response.message.content
+                )
+            except ValidationError as e:
+                logger.error(
+                    "Failed to validate model in",
+                    error=str(e),
+                    response=response.message.content,
+                    object_model=args["object_model"],
+                )
 
         return self._completion_response(response, object)
 
@@ -184,25 +220,30 @@ class OllamaGateway(LLMGateway):
         options = self._extract_options_from_args(args)
 
         ollama_args = {
-            'model': args['model'],
-            'messages': adapt_messages_to_ollama(args['messages']),
-            'options': options
+            "model": args["model"],
+            "messages": adapt_messages_to_ollama(args["messages"]),
+            "options": options,
         }
 
         # Handle reasoning effort - if config has reasoning_effort set, enable thinking
-        config = args.get('config', None)
+        config = args.get("config", None)
         if config and config.reasoning_effort is not None:
-            ollama_args['think'] = True
+            ollama_args["think"] = True
             if self.recovery_policy is None:
-                logger.info("Enabling extended thinking for Ollama", reasoning_effort=config.reasoning_effort)
+                logger.info(
+                    "Enabling extended thinking for Ollama",
+                    reasoning_effort=config.reasoning_effort,
+                )
 
-        if 'object_model' in args and args['object_model'] is not None:
-            ollama_args['format'] = args['object_model'].model_json_schema()
-        elif (response_format := ollama_format(config.response_format if config else None)) is not None:
-            ollama_args['format'] = response_format
+        if "object_model" in args and args["object_model"] is not None:
+            ollama_args["format"] = args["object_model"].model_json_schema()
+        elif (
+            response_format := ollama_format(config.response_format if config else None)
+        ) is not None:
+            ollama_args["format"] = response_format
 
-        if 'tools' in args and args['tools'] is not None:
-            ollama_args['tools'] = [t.descriptor for t in args['tools']]
+        if "tools" in args and args["tools"] is not None:
+            ollama_args["tools"] = [t.descriptor for t in args["tools"]]
 
         return ollama_args
 
@@ -210,7 +251,9 @@ class OllamaGateway(LLMGateway):
         """Report recovery support without implying remote cancellation or idempotency."""
         return Capabilities()
 
-    async def complete_with_recovery(self, call: RecoveryCall | None = None, **args) -> LLMGatewayResponse:
+    async def complete_with_recovery(
+        self, call: RecoveryCall | None = None, **args
+    ) -> LLMGatewayResponse:
         """Complete one ordinary or structured request with safe recovery metadata.
 
         Raises
@@ -221,48 +264,78 @@ class OllamaGateway(LLMGateway):
             No recovery policy is configured.
         """
         if self.recovery_policy is None:
-            raise ValueError("configure recovery_policy before using complete_with_recovery")
-        operation = 'structured' if args.get('object_model') is not None else 'ordinary'
+            raise ValueError(
+                "configure recovery_policy before using complete_with_recovery"
+            )
+        operation = "structured" if args.get("object_model") is not None else "ordinary"
         try:
             request = self._completion_request(args)
-            request['options'] = request['options'].model_dump(exclude_none=True)
-            request['stream'] = False
-            for message in request['messages']:
-                if message.get('images'):
-                    message['images'] = [Image(value=image).model_dump(mode='json') for image in message['images']]
-            body = json.dumps(request, ensure_ascii=False, separators=(',', ':'), allow_nan=False).encode('utf-8')
-            headers = self._recovery_headers | {'Content-Type': 'application/json', 'Accept-Encoding': 'identity'}
+            request["options"] = request["options"].model_dump(exclude_none=True)
+            request["stream"] = False
+            for message in request["messages"]:
+                if message.get("images"):
+                    message["images"] = [
+                        Image(value=image).model_dump(mode="json")
+                        for image in message["images"]
+                    ]
+            body = json.dumps(
+                request, ensure_ascii=False, separators=(",", ":"), allow_nan=False
+            ).encode("utf-8")
+            headers = self._recovery_headers | {
+                "Content-Type": "application/json",
+                "Accept-Encoding": "identity",
+            }
         except (ValueError, TypeError, KeyError, OSError) as cause:
             raise preparation_error(cause, operation) from None
         result, report = await recover(
-            self._recovery_host + '/api/chat', body, headers, self._recovery_timeout,
-            lambda frame: self._decode_recovery(frame, args.get('object_model')),
-            self.recovery_policy, call or self.recovery_call or RecoveryCall(),
-            operation)
+            self._recovery_host + "/api/chat",
+            body,
+            headers,
+            self._recovery_timeout,
+            lambda frame: self._decode_recovery(frame, args.get("object_model")),
+            self.recovery_policy,
+            call or self.recovery_call or RecoveryCall(),
+            operation,
+        )
         result.recovery_report = report
-        result.metadata = result.metadata | {'recovery': report.model_dump(mode='json')}
+        result.metadata = result.metadata | {"recovery": report.model_dump(mode="json")}
         return result
 
-    def _decode_recovery(self, frame: object, object_model: type[BaseModel] | None) -> LLMGatewayResponse:
-        if not isinstance(frame, dict) or not isinstance(frame.get('message'), dict):
+    def _decode_recovery(
+        self, frame: object, object_model: type[BaseModel] | None
+    ) -> LLMGatewayResponse:
+        if not isinstance(frame, dict) or not isinstance(frame.get("message"), dict):
             raise TypeError("missing response message")
-        if frame['message'].get('role') != 'assistant':
+        if frame["message"].get("role") != "assistant":
             raise ValueError("invalid response role")
-        if not isinstance(frame['message'].get('content', ''), str):
+        if not isinstance(frame["message"].get("content", ""), str):
             raise TypeError("invalid response content")
         response = ChatResponse.model_validate(frame)
-        object = object_model.model_validate_json(response.message.content) if object_model is not None else None
+        object = (
+            object_model.model_validate_json(response.message.content)
+            if object_model is not None
+            else None
+        )
         return self._completion_response(response, object)
 
-    def _completion_response(self, response: ChatResponse, object: BaseModel | None) -> LLMGatewayResponse:
+    def _completion_response(
+        self, response: ChatResponse, object: BaseModel | None
+    ) -> LLMGatewayResponse:
         tool_calls = []
         if response.message.tool_calls is not None:
-            tool_calls = [LLMToolCall(name=t.function.name,
-                                      arguments={str(k): str(t.function.arguments[k]) for k in t.function.arguments})
-                          for t in response.message.tool_calls]
+            tool_calls = [
+                LLMToolCall(
+                    name=t.function.name,
+                    arguments={
+                        str(k): str(t.function.arguments[k])
+                        for k in t.function.arguments
+                    },
+                )
+                for t in response.message.tool_calls
+            ]
 
         # Extract thinking content if present
-        thinking = getattr(response.message, 'thinking', None)
+        thinking = getattr(response.message, "thinking", None)
 
         frame = response.model_dump()
         return LLMGatewayResponse(
@@ -306,11 +379,11 @@ class OllamaGateway(LLMGateway):
         logger.info("Delegating to Ollama for streaming completion", **args)
 
         ollama_args = self._stream_request(args)
-        ollama_args['stream'] = True
+        ollama_args["stream"] = True
 
         # Enable tool support if tools are provided
-        if 'tools' in args and args['tools'] is not None:
-            ollama_args['tools'] = [t.descriptor for t in args['tools']]
+        if "tools" in args and args["tools"] is not None:
+            ollama_args["tools"] = [t.descriptor for t in args["tools"]]
 
         stream = self.client.chat(**ollama_args)
 
@@ -321,15 +394,16 @@ class OllamaGateway(LLMGateway):
                     yield StreamingResponse(content=chunk.message.content)
 
                 # Yield thinking chunks when they arrive
-                if hasattr(chunk.message, 'thinking') and chunk.message.thinking:
+                if hasattr(chunk.message, "thinking") and chunk.message.thinking:
                     yield StreamingResponse(thinking=chunk.message.thinking)
 
                 # Yield tool calls when they arrive
                 if chunk.message.tool_calls:
                     yield StreamingResponse(tool_calls=chunk.message.tool_calls)
 
-    def complete_stream_events(self, model: str, messages: List[LLMMessage],
-                               config: 'CompletionConfig') -> Iterator[StreamEvent]:
+    def complete_stream_events(
+        self, model: str, messages: list[LLMMessage], config: "CompletionConfig"
+    ) -> Iterator[StreamEvent]:
         """
         Stream one turn as events, with terminal completion evidence.
 
@@ -352,38 +426,48 @@ class OllamaGateway(LLMGateway):
             Content events followed by exactly one terminal event.
         """
         frames = self.stream_transport.stream_frames(
-            self._stream_request({'model': model, 'messages': messages, 'config': config}))
+            self._stream_request(
+                {"model": model, "messages": messages, "config": config}
+            )
+        )
         try:
             with closing(frames):
                 yield from parse_ollama_stream(frames)
         except ResponseError as e:
-            yield StreamError(reason=StreamErrorReason.PROVIDER_ERROR,
-                              detail={"status_code": e.status_code, "error": e.error})
+            yield StreamError(
+                reason=StreamErrorReason.PROVIDER_ERROR,
+                detail={"status_code": e.status_code, "error": e.error},
+            )
         except (json.JSONDecodeError, ValidationError) as e:
-            yield StreamError(reason=StreamErrorReason.INVALID_STREAM_EVENT, detail=str(e))
+            yield StreamError(
+                reason=StreamErrorReason.INVALID_STREAM_EVENT, detail=str(e)
+            )
         except (ConnectionError, httpx.HTTPError) as e:
             yield StreamError(reason=StreamErrorReason.REQUEST_FAILED, detail=str(e))
 
     def _stream_request(self, args: dict) -> dict:
         """Build the chat request shared by both streaming APIs, without tools or the stream flag."""
         request = {
-            'model': args['model'],
-            'messages': adapt_messages_to_ollama(args['messages']),
-            'options': self._extract_options_from_args(args),
+            "model": args["model"],
+            "messages": adapt_messages_to_ollama(args["messages"]),
+            "options": self._extract_options_from_args(args),
         }
 
         # Handle reasoning effort - if config has reasoning_effort set, enable thinking
-        config = args.get('config', None)
+        config = args.get("config", None)
         if config and config.reasoning_effort is not None:
-            request['think'] = True
-            logger.info("Enabling extended thinking for Ollama streaming", reasoning_effort=config.reasoning_effort)
+            request["think"] = True
+            logger.info(
+                "Enabling extended thinking for Ollama streaming",
+                reasoning_effort=config.reasoning_effort,
+            )
 
         response_format = ollama_format(config.response_format if config else None)
         if response_format is not None:
-            request['format'] = response_format
+            request["format"] = response_format
         return request
 
-    def get_available_models(self) -> List[str]:
+    def get_available_models(self) -> list[str]:
         """
         Get the list of available local models, sorted alphabetically.
 
@@ -405,7 +489,9 @@ class OllamaGateway(LLMGateway):
         """
         self.client.pull(model)
 
-    def calculate_embeddings(self, text: str, model: str = "mxbai-embed-large") -> List[float]:
+    def calculate_embeddings(
+        self, text: str, model: str = "mxbai-embed-large"
+    ) -> list[float]:
         """
         Calculate embeddings for the given text using the specified model.
 

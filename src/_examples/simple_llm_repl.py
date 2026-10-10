@@ -18,7 +18,11 @@ class ResponseEvent(Event):
 class ChatAgent(BaseLLMAgent):
     def receive_event(self, event):
         response = self.generate_response(event.text)
-        return [ResponseEvent(source=type(self), correlation_id=event.correlation_id, text=response)]
+        return [
+            ResponseEvent(
+                source=type(self), correlation_id=event.correlation_id, text=response
+            )
+        ]
 
 
 class ChatOutputAgent(BaseAgent):
@@ -31,10 +35,7 @@ llm = LLMBroker("qwen3:14b")
 request_agent = ChatAgent(llm)
 output_agent = ChatOutputAgent()
 
-router = Router({
-    RequestEvent: [request_agent],
-    ResponseEvent: [output_agent]
-})
+router = Router({RequestEvent: [request_agent], ResponseEvent: [output_agent]})
 
 dispatcher = Dispatcher(router)
 

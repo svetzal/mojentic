@@ -5,7 +5,7 @@ This module provides a class for managing a list of tasks with state transitions
 """
 
 from enum import Enum
-from typing import List
+
 from pydantic import BaseModel
 
 
@@ -15,6 +15,7 @@ class TaskStatus(str, Enum):
 
     Tasks follow a state machine that transitions from PENDING through IN_PROGRESS to COMPLETED.
     """
+
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
@@ -24,6 +25,7 @@ class Task(BaseModel):
     """
     Represents a task with an identifier, description, and status.
     """
+
     id: int
     description: str
     status: TaskStatus = TaskStatus.PENDING
@@ -41,7 +43,7 @@ class EphemeralTaskList:
         """
         Initialize an empty task list and ID counter.
         """
-        self._tasks: List[Task] = []
+        self._tasks: list[Task] = []
         self._next_id: int = 1
 
     def _claim_next_id(self) -> int:
@@ -136,7 +138,9 @@ class EphemeralTaskList:
         task = self._get_task(id)
 
         if task.status != TaskStatus.PENDING:
-            raise ValueError(f"Task '{id}' cannot be started because it is not in PENDING status")
+            raise ValueError(
+                f"Task '{id}' cannot be started because it is not in PENDING status"
+            )
 
         task.status = TaskStatus.IN_PROGRESS
         return task
@@ -157,12 +161,14 @@ class EphemeralTaskList:
         task = self._get_task(id)
 
         if task.status != TaskStatus.IN_PROGRESS:
-            raise ValueError(f"Task '{id}' cannot be completed because it is not in IN_PROGRESS status")
+            raise ValueError(
+                f"Task '{id}' cannot be completed because it is not in IN_PROGRESS status"
+            )
 
         task.status = TaskStatus.COMPLETED
         return task
 
-    def list_tasks(self) -> List[Task]:
+    def list_tasks(self) -> list[Task]:
         """
         Get all tasks in the list.
 

@@ -14,11 +14,12 @@ For platform audio device support, integrate a library such as
 ``sounddevice`` or ``pyaudio`` at the boundaries; the realtime
 session interface stays the same.
 """
+
 import asyncio
 import os
 import sys
 import wave
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 import numpy as np
 
@@ -28,13 +29,16 @@ from mojentic.realtime import (
     RealtimeVoiceConfig,
 )
 
-
 CHUNK_FRAMES = 2400  # 100ms at 24kHz
 
 
 async def wav_frames(path: str) -> AsyncIterator[np.ndarray]:
     with wave.open(path, "rb") as wav:
-        if wav.getframerate() != 24000 or wav.getnchannels() != 1 or wav.getsampwidth() != 2:
+        if (
+            wav.getframerate() != 24000
+            or wav.getnchannels() != 1
+            or wav.getsampwidth() != 2
+        ):
             raise ValueError("input WAV must be 24kHz mono 16-bit PCM")
         while True:
             raw = wav.readframes(CHUNK_FRAMES)

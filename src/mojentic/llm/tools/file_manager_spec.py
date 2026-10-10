@@ -1,13 +1,21 @@
 import os
-import tempfile
 import shutil
+import tempfile
 
 import pytest
 
 from mojentic.llm.tools.file_manager import (
-    FilesystemGateway, FileManager, ListFilesTool, ReadFileTool, WriteFileTool,
-    ListAllFilesTool, FindFilesByGlobTool, FindFilesContainingTool, FindLinesMatchingTool,
-    EditFileWithDiffTool, CreateDirectoryTool
+    CreateDirectoryTool,
+    EditFileWithDiffTool,
+    FileManager,
+    FilesystemGateway,
+    FindFilesByGlobTool,
+    FindFilesContainingTool,
+    FindLinesMatchingTool,
+    ListAllFilesTool,
+    ListFilesTool,
+    ReadFileTool,
+    WriteFileTool,
 )
 
 
@@ -51,7 +59,6 @@ def setup_test_files(temp_dir):
 
 
 class DescribeFilesystemGateway:
-
     def should_resolve_path_correctly(self, fs_gateway, temp_dir):
         """
         Given a FilesystemGateway
@@ -87,7 +94,9 @@ class DescribeFilesystemGateway:
         Then it should return all files including those in subdirectories
         """
         all_files = fs_gateway.list_all_files("")
-        assert sorted(all_files) == sorted(["test1.txt", "test2.py", os.path.join("subdir", "test3.txt")])
+        assert sorted(all_files) == sorted(
+            ["test1.txt", "test2.py", os.path.join("subdir", "test3.txt")]
+        )
 
     def should_find_files_by_glob(self, fs_gateway, setup_test_files):
         """
@@ -99,7 +108,9 @@ class DescribeFilesystemGateway:
         assert sorted(txt_files) == sorted(["test1.txt"])
 
         all_txt_files = fs_gateway.find_files_by_glob("", "**/*.txt")
-        assert sorted(all_txt_files) == sorted(["test1.txt", os.path.join("subdir", "test3.txt")])
+        assert sorted(all_txt_files) == sorted(
+            ["test1.txt", os.path.join("subdir", "test3.txt")]
+        )
 
     def should_find_files_containing(self, fs_gateway, setup_test_files):
         """
@@ -111,7 +122,9 @@ class DescribeFilesystemGateway:
         assert files_with_hello == ["test2.py"]
 
         files_with_test = fs_gateway.find_files_containing("", "test file")
-        assert sorted(files_with_test) == sorted(["test1.txt", os.path.join("subdir", "test3.txt")])
+        assert sorted(files_with_test) == sorted(
+            ["test1.txt", os.path.join("subdir", "test3.txt")]
+        )
 
     def should_find_lines_matching(self, fs_gateway, setup_test_files):
         """
@@ -120,7 +133,9 @@ class DescribeFilesystemGateway:
         Then it should return the matching lines with line numbers
         """
         matching_lines = fs_gateway.find_lines_matching("", "test1.txt", "multiple")
-        assert matching_lines == [{"line_number": 2, "content": "It has multiple lines"}]
+        assert matching_lines == [
+            {"line_number": 2, "content": "It has multiple lines"}
+        ]
 
     def should_edit_file_with_diff(self, fs_gateway, setup_test_files):
         """
@@ -157,7 +172,7 @@ class DescribeFilesystemGateway:
         """
         # Create a test file with known content
         test_file_path = os.path.join(setup_test_files, "add_lines_test.txt")
-        with open(test_file_path, 'w') as f:
+        with open(test_file_path, "w") as f:
             f.write("Line 1\nLine 2\nLine 3\n")
 
         # Create a diff that adds a new line after Line 2
@@ -187,7 +202,7 @@ class DescribeFilesystemGateway:
         """
         # Create a test file with known content
         test_file_path = os.path.join(setup_test_files, "remove_lines_test.txt")
-        with open(test_file_path, 'w') as f:
+        with open(test_file_path, "w") as f:
             f.write("Line 1\nLine 2\nLine 3\nLine 4\n")
 
         # Create a diff that removes Line 3
@@ -217,7 +232,7 @@ class DescribeFilesystemGateway:
         """
         # Create a test file with known content
         test_file_path = os.path.join(setup_test_files, "multiple_hunks_test.txt")
-        with open(test_file_path, 'w') as f:
+        with open(test_file_path, "w") as f:
             f.write("Line 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\n")
 
         # Create a diff with multiple hunks
@@ -242,7 +257,9 @@ class DescribeFilesystemGateway:
         with open(test_file_path, "r") as f:
             content = f.read()
 
-        expected = "Line 1\nModified Line 2\nLine 3\nLine 4\nLine 5\nNew Line 5.5\nLine 6\n"
+        expected = (
+            "Line 1\nModified Line 2\nLine 3\nLine 4\nLine 5\nNew Line 5.5\nLine 6\n"
+        )
         assert expected == content
 
     def should_read_file(self, fs_gateway, setup_test_files):
@@ -270,7 +287,6 @@ class DescribeFilesystemGateway:
 
 
 class DescribeFileManager:
-
     def should_list_files_with_extension(self, file_manager, setup_test_files):
         """
         Given a FileManager with test files
@@ -287,7 +303,9 @@ class DescribeFileManager:
         Then it should return all files recursively
         """
         all_files = file_manager.list_all_files("")
-        assert sorted(all_files) == sorted(["test1.txt", "test2.py", os.path.join("subdir", "test3.txt")])
+        assert sorted(all_files) == sorted(
+            ["test1.txt", "test2.py", os.path.join("subdir", "test3.txt")]
+        )
 
     def should_find_files_by_glob(self, file_manager, setup_test_files):
         """
@@ -361,7 +379,6 @@ class DescribeFileManager:
 
 
 class DescribeListFilesTool:
-
     def should_list_files_with_extension(self, setup_test_files):
         """
         Given a ListFilesTool
@@ -389,7 +406,6 @@ class DescribeListFilesTool:
 
 
 class DescribeReadFileTool:
-
     def should_read_file_content(self, setup_test_files):
         """
         Given a ReadFileTool
@@ -417,7 +433,6 @@ class DescribeReadFileTool:
 
 
 class DescribeWriteFileTool:
-
     def should_write_file_content(self, setup_test_files):
         """
         Given a WriteFileTool
@@ -451,7 +466,6 @@ class DescribeWriteFileTool:
 
 
 class DescribeListAllFilesTool:
-
     def should_list_all_files(self, setup_test_files):
         """
         Given a ListAllFilesTool
@@ -461,7 +475,9 @@ class DescribeListAllFilesTool:
         fs = FilesystemGateway(base_path=setup_test_files)
         tool = ListAllFilesTool(fs)
         result = tool.run(path="")
-        assert sorted(result) == sorted(["test1.txt", "test2.py", os.path.join("subdir", "test3.txt")])
+        assert sorted(result) == sorted(
+            ["test1.txt", "test2.py", os.path.join("subdir", "test3.txt")]
+        )
 
     def should_have_correct_descriptor(self):
         """
@@ -478,7 +494,6 @@ class DescribeListAllFilesTool:
 
 
 class DescribeFindFilesByGlobTool:
-
     def should_find_files_by_glob_pattern(self, setup_test_files):
         """
         Given a FindFilesByGlobTool
@@ -506,7 +521,6 @@ class DescribeFindFilesByGlobTool:
 
 
 class DescribeFindFilesContainingTool:
-
     def should_find_files_containing_pattern(self, setup_test_files):
         """
         Given a FindFilesContainingTool
@@ -534,7 +548,6 @@ class DescribeFindFilesContainingTool:
 
 
 class DescribeFindLinesMatchingTool:
-
     def should_find_lines_matching_pattern(self, setup_test_files):
         """
         Given a FindLinesMatchingTool
@@ -563,7 +576,6 @@ class DescribeFindLinesMatchingTool:
 
 
 class DescribeEditFileWithDiffTool:
-
     def should_edit_file_with_diff(self, setup_test_files):
         """
         Given an EditFileWithDiffTool
@@ -604,7 +616,7 @@ class DescribeEditFileWithDiffTool:
 
         # Create a test file with known content
         test_file_path = os.path.join(setup_test_files, "tool_add_lines_test.txt")
-        with open(test_file_path, 'w') as f:
+        with open(test_file_path, "w") as f:
             f.write("Line 1\nLine 2\nLine 3\n")
 
         # Create a diff that adds a new line after Line 2
@@ -637,7 +649,7 @@ class DescribeEditFileWithDiffTool:
 
         # Create a test file with known content
         test_file_path = os.path.join(setup_test_files, "tool_multiple_hunks_test.txt")
-        with open(test_file_path, 'w') as f:
+        with open(test_file_path, "w") as f:
             f.write("Line 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\n")
 
         # Create a diff with multiple hunks
@@ -662,7 +674,9 @@ class DescribeEditFileWithDiffTool:
         with open(test_file_path, "r") as f:
             content = f.read()
 
-        expected = "Line 1\nModified Line 2\nLine 3\nLine 4\nLine 5\nNew Line 5.5\nLine 6\n"
+        expected = (
+            "Line 1\nModified Line 2\nLine 3\nLine 4\nLine 5\nNew Line 5.5\nLine 6\n"
+        )
         assert expected == content
 
     def should_have_correct_descriptor(self):
@@ -682,7 +696,6 @@ class DescribeEditFileWithDiffTool:
 
 
 class DescribeCreateDirectoryTool:
-
     def should_create_directory(self, setup_test_files):
         """
         Given a CreateDirectoryTool
@@ -704,7 +717,9 @@ class DescribeCreateDirectoryTool:
         assert "Successfully" in result
 
         # Verify the nested directories were created
-        assert os.path.isdir(os.path.join(setup_test_files, "nested/directory/structure"))
+        assert os.path.isdir(
+            os.path.join(setup_test_files, "nested/directory/structure")
+        )
 
     def should_have_correct_descriptor(self):
         """
@@ -718,3 +733,32 @@ class DescribeCreateDirectoryTool:
         assert descriptor["type"] == "function"
         assert descriptor["function"]["name"] == "create_directory"
         assert "path" in descriptor["function"]["parameters"]["properties"]
+
+
+class DescribeUnexpectedFilesystemFailures:
+    @pytest.mark.parametrize(
+        "tool_class,method,args",
+        [
+            (ListFilesTool, "ls", (".",)),
+            (ReadFileTool, "read", ("file.txt",)),
+            (WriteFileTool, "write", ("file.txt", "text")),
+            (ListAllFilesTool, "list_all_files", (".",)),
+            (FindFilesByGlobTool, "find_files_by_glob", (".", "*.txt")),
+            (FindFilesContainingTool, "find_files_containing", (".", "text")),
+            (FindLinesMatchingTool, "find_lines_matching", ("file.txt", "text")),
+            (EditFileWithDiffTool, "edit_file_with_diff", ("file.txt", "diff")),
+        ],
+    )
+    def should_propagate_programming_errors_from_the_filesystem_boundary(
+        self, mocker, tool_class, method, args
+    ):
+        gateway = mocker.Mock(spec=FilesystemGateway)
+        failure = TypeError("filesystem programming defect")
+        getattr(gateway, method).side_effect = failure
+        tool = tool_class(FileManager(gateway))
+
+        with pytest.raises(TypeError) as caught:
+            tool.run(*args)
+
+        assert caught.value is failure
+        getattr(gateway, method).assert_called_once()

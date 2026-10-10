@@ -6,10 +6,10 @@ Realtime sends and receives audio as base64-encoded PCM16 (little-endian
 the wire format and :class:`numpy.ndarray` arrays of dtype ``int16`` so
 consumer code never touches base64.
 """
+
 from __future__ import annotations
 
 import base64
-from typing import Union
 
 import numpy as np
 
@@ -32,7 +32,7 @@ def decode_base64_pcm16(b64: str) -> np.ndarray:
     return np.frombuffer(raw, dtype="<i2").copy()
 
 
-def encode_base64_pcm16(frame: Union[np.ndarray, bytes, bytearray]) -> str:
+def encode_base64_pcm16(frame: np.ndarray | bytes | bytearray) -> str:
     """
     Encode PCM samples to a base64 string for the wire.
 

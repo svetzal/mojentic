@@ -6,27 +6,33 @@ Owns the WebSocket, validates server events at the boundary using
 tool orchestration, no audio decoding — those live in the broker /
 session layer.
 """
+
 from __future__ import annotations
 
 import asyncio
 import json
 import os
 import uuid
-from typing import Any, AsyncIterator, Callable, Dict, List, Optional
+from collections.abc import AsyncIterator, Callable
+from typing import Any
 
 import structlog
 
 from mojentic.realtime.config import RealtimeVoiceConfig
 from mojentic.realtime.gateway import RealtimeGatewaySession, RealtimeVoiceGateway
 from mojentic.realtime.schemas import parse_server_event
-from mojentic.realtime.transport import RealtimeTransport, TransportListener, WebSocketTransport
+from mojentic.realtime.transport import (
+    RealtimeTransport,
+    TransportListener,
+    WebSocketTransport,
+)
 
 logger = structlog.get_logger()
 
 DEFAULT_OPENAI_REALTIME_URL = "wss://api.openai.com/v1/realtime"
 
 
-TransportFactory = Callable[[str, Dict[str, str], List[str]], RealtimeTransport]
+TransportFactory = Callable[[str, dict[str, str], list[str]], RealtimeTransport]
 
 
 class _OpenAIRealtimeSession(RealtimeGatewaySession):
@@ -40,11 +46,13 @@ class _OpenAIRealtimeSession(RealtimeGatewaySession):
     def session_id(self) -> str:
         return self._session_id
 
-    def enqueue(self, event: Dict[str, Any]) -> None:
+    def enqueue(self, event: dict[str, Any]) -> None:
         try:
             self._queue.put_nowait(event)
         except asyncio.QueueFull:  # pragma: no cover - default queue is unbounded
-            logger.warning("realtime event queue full; dropping", event_type=event.get("type"))
+            logger.warning(
+                "realtime event queue full; dropping", event_type=event.get("type")
+            )
 
     def signal_end(self) -> None:
         if self._closed:
@@ -53,12 +61,12 @@ class _OpenAIRealtimeSession(RealtimeGatewaySession):
         # Wake any waiter on events() with a sentinel.
         self._queue.put_nowait(_EOS)
 
-    async def send_event(self, event: Dict[str, Any]) -> None:
+    async def send_event(self, event: dict[str, Any]) -> None:
         if self._closed:
             raise RuntimeError("Session is closed")
         await self._transport.send(event)
 
-    async def events(self) -> AsyncIterator[Dict[str, Any]]:
+    async def events(self) -> AsyncIterator[dict[str, Any]]:
         while True:
             item = await self._queue.get()
             if item is _EOS:
@@ -75,7 +83,7 @@ class _OpenAIRealtimeSession(RealtimeGatewaySession):
         return self._closed
 
 
-_EOS: Dict[str, Any] = {"__eos__": True}
+_EOS: dict[str, Any] = {"__eos__": True}
 
 
 class _SessionListener(TransportListener):
@@ -92,22 +100,26 @@ class _SessionListener(TransportListener):
         try:
             raw = json.loads(data)
         except json.JSONDecodeError as err:
-            self._session.enqueue({
-                "type": "error",
-                "error": {"type": "parse_error", "message": str(err)},
-            })
+            self._session.enqueue(
+                {
+                    "type": "error",
+                    "error": {"type": "parse_error", "message": str(err)},
+                }
+            )
             return
         parsed = parse_server_event(raw)
         self._session.enqueue(parsed)
 
-    def on_close(self, reason: str, err: Optional[BaseException] = None) -> None:
+    def on_close(self, reason: str, err: BaseException | None = None) -> None:
         self._session.signal_end()
 
     def on_error(self, err: BaseException) -> None:
-        self._session.enqueue({
-            "type": "error",
-            "error": {"type": "transport_error", "message": str(err)},
-        })
+        self._session.enqueue(
+            {
+                "type": "error",
+                "error": {"type": "transport_error", "message": str(err)},
+            }
+        )
 
 
 class OpenAIRealtimeGateway(RealtimeVoiceGateway):
@@ -121,9 +133,9 @@ class OpenAIRealtimeGateway(RealtimeVoiceGateway):
 
     def __init__(
         self,
-        api_key: Optional[str] = None,
-        base_url: Optional[str] = None,
-        transport_factory: Optional[TransportFactory] = None,
+        api_key: str | None = None,
+        base_url: str | None = None,
+        transport_factory: TransportFactory | None = None,
     ):
         resolved_key = api_key or os.environ.get("OPENAI_API_KEY")
         if not resolved_key:
@@ -132,13 +144,15 @@ class OpenAIRealtimeGateway(RealtimeVoiceGateway):
             )
         self._api_key = resolved_key
         self._base_url = base_url or DEFAULT_OPENAI_REALTIME_URL
-        self._transport_factory: TransportFactory = transport_factory or _default_transport_factory
+        self._transport_factory: TransportFactory = (
+            transport_factory or _default_transport_factory
+        )
 
     async def open(
         self,
         model: str,
         config: RealtimeVoiceConfig,
-        correlation_id: Optional[str] = None,
+        correlation_id: str | None = None,
     ) -> RealtimeGatewaySession:
         # config currently informs only the upcoming session.update; the
         # gateway just opens the socket.
@@ -147,7 +161,7 @@ class OpenAIRealtimeGateway(RealtimeVoiceGateway):
         from urllib.parse import quote
 
         url = f"{self._base_url}?model={quote(model)}"
-        headers: Dict[str, str] = {"Authorization": f"Bearer {self._api_key}"}
+        headers: dict[str, str] = {"Authorization": f"Bearer {self._api_key}"}
         if correlation_id:
             headers["X-Correlation-Id"] = correlation_id
 
@@ -165,6 +179,6 @@ class OpenAIRealtimeGateway(RealtimeVoiceGateway):
 
 
 def _default_transport_factory(
-    url: str, headers: Dict[str, str], protocols: List[str]
+    url: str, headers: dict[str, str], protocols: list[str]
 ) -> RealtimeTransport:
     return WebSocketTransport(url, headers=headers, subprotocols=protocols)

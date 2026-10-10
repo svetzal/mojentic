@@ -1,16 +1,15 @@
 import logging
-from typing import List
 
 from mojentic.agents import IterativeProblemSolver
+from mojentic.llm import ChatSession, LLMBroker
 from mojentic.llm.tools.date_resolver import ResolveDateTool
 from mojentic.llm.tools.llm_tool import LLMTool
-from mojentic.llm import LLMBroker, ChatSession
 
-logging.basicConfig(level=logging.WARN)
+logging.basicConfig(level=logging.WARNING)
 
 
 class IterativeProblemSolverTool(LLMTool):
-    def __init__(self, llm: LLMBroker, tools: List[LLMTool]):
+    def __init__(self, llm: LLMBroker, tools: list[LLMTool]):
         self.llm = llm
         self.tools = tools
 
@@ -34,9 +33,9 @@ class IterativeProblemSolverTool(LLMTool):
                         }
                     },
                     "required": ["problem_to_solve"],
-                    "additionalProperties": False
-                }
-            }
+                    "additionalProperties": False,
+                },
+            },
         }
 
 
@@ -49,7 +48,9 @@ def main():
     # llm = LLMBroker(model="qwq:32b-fp16")
     # llm = LLMBroker(model="qwen3:32b")
 
-    chat_session = ChatSession(llm, tools=[IterativeProblemSolverTool(llm=llm, tools=[ResolveDateTool()])])
+    chat_session = ChatSession(
+        llm, tools=[IterativeProblemSolverTool(llm=llm, tools=[ResolveDateTool()])]
+    )
 
     while True:
         query = input("Query: ")

@@ -3,6 +3,7 @@
 This module provides helper functions for formatting context and tool information
 into human-readable strings for LLM prompts.
 """
+
 from .models.base import CurrentContext
 
 
@@ -28,7 +29,8 @@ def format_current_context(context: CurrentContext) -> str:
         history = "What's been done so far:\n"
         history += "\n".join(
             f"{i + 1}.\n    Thought: {step.thought}\n    Action: {step.action}\n    Observation: {step.observation}"
-            for i, step in enumerate(context.history))
+            for i, step in enumerate(context.history)
+        )
         history += "\n"
 
     return f"Current Context:\n{user_query}{plan}{history}\n"
@@ -47,17 +49,17 @@ def format_available_tools(tools) -> str:
     if tools:
         output += "Tools available:\n"
         for tool in tools:
-            func_descriptor = tool.descriptor['function']
+            func_descriptor = tool.descriptor["function"]
             output += f"- {func_descriptor['name']}: {func_descriptor['description']}\n"
 
             # Add parameter information
-            if 'parameters' in func_descriptor:
-                params = func_descriptor['parameters']
-                if 'properties' in params:
+            if "parameters" in func_descriptor:
+                params = func_descriptor["parameters"]
+                if "properties" in params:
                     output += "  Parameters:\n"
-                    for param_name, param_info in params['properties'].items():
-                        param_desc = param_info.get('description', '')
-                        is_required = param_name in params.get('required', [])
+                    for param_name, param_info in params["properties"].items():
+                        param_desc = param_info.get("description", "")
+                        is_required = param_name in params.get("required", [])
                         req_str = " (required)" if is_required else " (optional)"
                         output += f"    - {param_name}{req_str}: {param_desc}\n"
 

@@ -94,6 +94,30 @@ def retain_wire_evidence(captured):
                 log.write(json.dumps(evidence) + "\n")
 
 
+class DescribeLintValidationBoundary:
+    def should_propagate_validator_programming_errors_after_one_wire_request(self):
+        from pydantic import BaseModel, field_validator
+
+        class Result(BaseModel):
+            answer: str
+
+            @field_validator("answer")
+            @classmethod
+            def validate_answer(cls, value):
+                raise TypeError("validator programming defect")
+
+        with scripted_http([(200, {}, frame('{"answer":"ok"}'))]) as (host, requests):
+            gateway = OllamaGateway(host=host)
+
+            with pytest.raises(TypeError, match="validator programming defect"):
+                gateway.complete(model="test", messages=[], object_model=Result)
+
+            assert len(requests) == 1
+            payload = json.loads(requests[0][1])
+            assert payload["format"] == Result.model_json_schema()
+            assert payload["stream"] is False
+
+
 class DescribeHttpBoundaryCorrection:
     def should_keep_predispatch_expiry_observer_failure_private(self, messages):
         from mojentic.llm.recovery import RecoveryError, RecoveryPolicy

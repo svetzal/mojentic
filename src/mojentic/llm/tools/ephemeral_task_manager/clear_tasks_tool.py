@@ -2,10 +2,10 @@
 Tool for clearing all tasks from the ephemeral task manager.
 """
 
-from typing import Dict
-
+from mojentic.llm.tools.ephemeral_task_manager.ephemeral_task_list import (
+    EphemeralTaskList,
+)
 from mojentic.llm.tools.llm_tool import LLMTool
-from mojentic.llm.tools.ephemeral_task_manager.ephemeral_task_list import EphemeralTaskList
 
 
 class ClearTasksTool(LLMTool):
@@ -22,7 +22,7 @@ class ClearTasksTool(LLMTool):
         """
         self._task_list = task_list
 
-    def run(self) -> Dict[str, str]:
+    def run(self) -> dict[str, str]:
         """
         Remove all tasks from the list.
 
@@ -30,10 +30,7 @@ class ClearTasksTool(LLMTool):
             A dictionary with the result of the operation
         """
         count = self._task_list.clear_tasks()
-        return {
-            "count": str(count),
-            "summary": f"Cleared {count} tasks from the list"
-        }
+        return {"count": str(count), "summary": f"Cleared {count} tasks from the list"}
 
     @property
     def descriptor(self):
@@ -51,7 +48,7 @@ class ClearTasksTool(LLMTool):
                 "parameters": {
                     "type": "object",
                     "properties": {},
-                    "additionalProperties": False
-                }
-            }
+                    "additionalProperties": False,
+                },
+            },
         }

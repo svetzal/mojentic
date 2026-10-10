@@ -1,6 +1,9 @@
 import pytest
 
-from mojentic.llm.tools.ephemeral_task_manager.ephemeral_task_list import EphemeralTaskList, TaskStatus
+from mojentic.llm.tools.ephemeral_task_manager.ephemeral_task_list import (
+    EphemeralTaskList,
+    TaskStatus,
+)
 
 
 @pytest.fixture
@@ -18,7 +21,6 @@ def populated_task_list():
 
 
 class DescribeEphemeralTaskList:
-
     def should_initialize_with_empty_task_list(self, task_list):
         tasks = task_list.list_tasks()
         assert len(tasks) == 0
@@ -78,7 +80,10 @@ class DescribeEphemeralTaskList:
         with pytest.raises(ValueError) as e:
             populated_task_list.start_task(task_id)
 
-        assert f"Task '{task_id}' cannot be started because it is not in PENDING status" in str(e.value)
+        assert (
+            f"Task '{task_id}' cannot be started because it is not in PENDING status"
+            in str(e.value)
+        )
 
     def should_complete_task(self, populated_task_list):
         tasks = populated_task_list.list_tasks()
@@ -92,14 +97,19 @@ class DescribeEphemeralTaskList:
 
         assert completed_task.status == TaskStatus.COMPLETED
 
-    def should_raise_error_when_completing_non_in_progress_task(self, populated_task_list):
+    def should_raise_error_when_completing_non_in_progress_task(
+        self, populated_task_list
+    ):
         tasks = populated_task_list.list_tasks()
         task_id = tasks[0].id
 
         with pytest.raises(ValueError) as excinfo:
             populated_task_list.complete_task(task_id)
 
-        assert f"Task '{task_id}' cannot be completed because it is not in IN_PROGRESS status" in str(excinfo.value)
+        assert (
+            f"Task '{task_id}' cannot be completed because it is not in IN_PROGRESS status"
+            in str(excinfo.value)
+        )
 
     def should_clear_tasks(self, populated_task_list):
         populated_task_list.clear_tasks()

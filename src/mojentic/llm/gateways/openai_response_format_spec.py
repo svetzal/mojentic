@@ -1,5 +1,6 @@
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 
 from mojentic.llm.completion_config import CompletionConfig, ResponseFormat
 from mojentic.llm.gateways.models import LLMMessage, MessageRole
@@ -10,8 +11,10 @@ SCHEMA = {"type": "object", "properties": {"answer": {"type": "string"}}}
 FORMAT_CASES = [
     (ResponseFormat(type="text"), {"type": "text"}),
     (ResponseFormat(type="json_object"), {"type": "json_object"}),
-    (ResponseFormat(type="json_object", json_schema=SCHEMA),
-     {"type": "json_schema", "json_schema": {"name": "response", "schema": SCHEMA}}),
+    (
+        ResponseFormat(type="json_object", json_schema=SCHEMA),
+        {"type": "json_schema", "json_schema": {"name": "response", "schema": SCHEMA}},
+    ),
 ]
 
 
@@ -24,7 +27,7 @@ def mock_openai_client():
 
 @pytest.fixture
 def gateway(mocker, mock_openai_client):
-    mocker.patch('mojentic.llm.gateways.openai.OpenAI', return_value=mock_openai_client)
+    mocker.patch("mojentic.llm.gateways.openai.OpenAI", return_value=mock_openai_client)
     return OpenAIGateway(api_key="test_key")
 
 
@@ -45,7 +48,6 @@ def _completion_response():
 
 
 class DescribeOpenAIResponseFormat:
-
     @pytest.mark.parametrize("response_format,expected", FORMAT_CASES)
     def should_map_each_format_to_openai_request_shape(self, response_format, expected):
         assert openai_response_format(response_format) == expected
@@ -54,36 +56,70 @@ class DescribeOpenAIResponseFormat:
         assert openai_response_format(None) is None
 
     class DescribeStreamingRequests:
-
         @pytest.mark.parametrize("response_format,expected", FORMAT_CASES)
-        def should_forward_configured_format(self, gateway, mock_openai_client, messages,
-                                             response_format, expected):
+        def should_forward_configured_format(
+            self, gateway, mock_openai_client, messages, response_format, expected
+        ):
             config = CompletionConfig(response_format=response_format)
 
-            list(gateway.complete_stream(model="gpt-4o", messages=messages, config=config))
+            list(
+                gateway.complete_stream(
+                    model="gpt-4o", messages=messages, config=config
+                )
+            )
 
-            assert mock_openai_client.chat.completions.create.call_args.kwargs["response_format"] == expected
+            assert (
+                mock_openai_client.chat.completions.create.call_args.kwargs[
+                    "response_format"
+                ]
+                == expected
+            )
 
-        def should_leave_body_unchanged_without_format(self, gateway, mock_openai_client, messages):
-            list(gateway.complete_stream(model="gpt-4o", messages=messages, config=CompletionConfig()))
+        def should_leave_body_unchanged_without_format(
+            self, gateway, mock_openai_client, messages
+        ):
+            list(
+                gateway.complete_stream(
+                    model="gpt-4o", messages=messages, config=CompletionConfig()
+                )
+            )
 
-            assert "response_format" not in mock_openai_client.chat.completions.create.call_args.kwargs
+            assert (
+                "response_format"
+                not in mock_openai_client.chat.completions.create.call_args.kwargs
+            )
 
     class DescribeNonStreamingRequests:
-
         @pytest.mark.parametrize("response_format,expected", FORMAT_CASES)
-        def should_forward_configured_format(self, gateway, mock_openai_client, messages,
-                                             response_format, expected):
-            mock_openai_client.chat.completions.create.return_value = _completion_response()
+        def should_forward_configured_format(
+            self, gateway, mock_openai_client, messages, response_format, expected
+        ):
+            mock_openai_client.chat.completions.create.return_value = (
+                _completion_response()
+            )
             config = CompletionConfig(response_format=response_format)
 
             gateway.complete(model="gpt-4o", messages=messages, config=config)
 
-            assert mock_openai_client.chat.completions.create.call_args.kwargs["response_format"] == expected
+            assert (
+                mock_openai_client.chat.completions.create.call_args.kwargs[
+                    "response_format"
+                ]
+                == expected
+            )
 
-        def should_leave_body_unchanged_without_format(self, gateway, mock_openai_client, messages):
-            mock_openai_client.chat.completions.create.return_value = _completion_response()
+        def should_leave_body_unchanged_without_format(
+            self, gateway, mock_openai_client, messages
+        ):
+            mock_openai_client.chat.completions.create.return_value = (
+                _completion_response()
+            )
 
-            gateway.complete(model="gpt-4o", messages=messages, config=CompletionConfig())
+            gateway.complete(
+                model="gpt-4o", messages=messages, config=CompletionConfig()
+            )
 
-            assert "response_format" not in mock_openai_client.chat.completions.create.call_args.kwargs
+            assert (
+                "response_format"
+                not in mock_openai_client.chat.completions.create.call_args.kwargs
+            )

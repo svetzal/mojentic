@@ -15,6 +15,7 @@ class AsyncDispatcher:
     AsyncDispatcher class is an asynchronous version of the Dispatcher class.
     It uses asyncio and deque for event processing.
     """
+
     def __init__(self, router, shared_working_memory=None, batch_size=5, tracer=None):
         """
         Initialize the AsyncDispatcher.
@@ -39,6 +40,7 @@ class AsyncDispatcher:
 
         # Use null_tracer if no tracer is provided
         from mojentic.tracer import null_tracer
+
         self.tracer = tracer or null_tracer
 
     async def start(self):
@@ -73,7 +75,10 @@ class AsyncDispatcher:
         """
         start_time = asyncio.get_event_loop().time()
         while len(self.event_queue) > 0 or self._in_flight > 0:
-            if timeout is not None and asyncio.get_event_loop().time() - start_time > timeout:
+            if (
+                timeout is not None
+                and asyncio.get_event_loop().time() - start_time > timeout
+            ):
                 return False
             await asyncio.sleep(0.1)
         return True
@@ -104,7 +109,9 @@ class AsyncDispatcher:
                     event = self.event_queue.popleft()
                     logger.debug(f"Processing event: {event}")
                     agents = self.router.get_agents(event)
-                    logger.debug(f"Found {len(agents)} agents for event type {type(event)}")
+                    logger.debug(
+                        f"Found {len(agents)} agents for event type {type(event)}"
+                    )
                     events = []
                     for agent in agents:
                         logger.debug(f"Sending event to agent {agent}")
@@ -115,21 +122,23 @@ class AsyncDispatcher:
                             to_agent=str(type(agent)),
                             event_type=str(type(event).__name__),
                             event_id=event.correlation_id,
-                            source=type(self)
+                            source=type(self),
                         )
 
                         # Process the event through the agent
                         # If the agent is an async agent, await its receive_event method
                         self._in_flight += 1
                         try:
-                            if hasattr(agent, 'receive_event_async'):
+                            if hasattr(agent, "receive_event_async"):
                                 received_events = await agent.receive_event_async(event)
                             else:
                                 received_events = agent.receive_event(event)
                         finally:
                             self._in_flight -= 1
 
-                        logger.debug(f"Agent {agent} returned {len(received_events)} events")
+                        logger.debug(
+                            f"Agent {agent} returned {len(received_events)} events"
+                        )
                         events.extend(received_events)
                     for fe in events:
                         if type(fe) is TerminateEvent:

@@ -8,11 +8,11 @@ date-related query using the ResolveDateTool.
 import logging
 
 from mojentic.agents.iterative_problem_solver import IterativeProblemSolver
-from mojentic.llm.tools.date_resolver import ResolveDateTool
-from mojentic.llm.tools.ask_user_tool import AskUserTool
 from mojentic.llm import LLMBroker
+from mojentic.llm.tools.ask_user_tool import AskUserTool
+from mojentic.llm.tools.date_resolver import ResolveDateTool
 
-logging.basicConfig(level=logging.WARN)
+logging.basicConfig(level=logging.WARNING)
 
 
 def main():
@@ -27,9 +27,7 @@ def main():
 
     # Create the problem solver with necessary tools
     solver = IterativeProblemSolver(
-        llm=llm,
-        available_tools=[AskUserTool(), ResolveDateTool()],
-        max_iterations=5
+        llm=llm, available_tools=[AskUserTool(), ResolveDateTool()], max_iterations=5
     )
 
     # Run the solver and get the result

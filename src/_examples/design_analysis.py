@@ -12,9 +12,7 @@ def complete(prompt: str):
         messages=[
             LLMMessage(
                 content=prompt.strip(),
-                image_paths=[
-                    str(Path.cwd() / "images" / "screen_cap.png")
-                ]
+                image_paths=[str(Path.cwd() / "images" / "screen_cap.png")],
             )
         ],
     )

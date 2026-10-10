@@ -6,13 +6,15 @@ Owns the gateway-session lifetime, demultiplexes raw OpenAI events into
 a vendor-neutral :data:`RealtimeEvent` stream, and drives parallel tool
 execution per response turn.
 """
+
 from __future__ import annotations
 
 import asyncio
 import json
 import time
 import uuid
-from typing import Any, AsyncIterator, Dict, List, Optional
+from collections.abc import AsyncIterator
+from typing import Any, Self
 
 import numpy as np
 import structlog
@@ -78,7 +80,7 @@ _EOS = object()
 # -----------------------------------------------------------------------------
 
 
-def _encode_audio_format(fmt: str) -> Dict[str, Any]:
+def _encode_audio_format(fmt: str) -> dict[str, Any]:
     if fmt == "pcm16":
         return {"type": "audio/pcm", "rate": 24000}
     if fmt == "g711_ulaw":
@@ -88,11 +90,11 @@ def _encode_audio_format(fmt: str) -> Dict[str, Any]:
     raise ValueError(f"Unsupported audio format: {fmt!r}")
 
 
-def _strip_none(obj: Dict[str, Any]) -> Dict[str, Any]:
+def _strip_none(obj: dict[str, Any]) -> dict[str, Any]:
     return {k: v for k, v in obj.items() if v is not None}
 
 
-def _encode_turn_detection(td: TurnDetectionMode) -> Optional[Dict[str, Any]]:
+def _encode_turn_detection(td: TurnDetectionMode) -> dict[str, Any] | None:
     if td == "none":
         return None
     if td == "server_vad":
@@ -100,26 +102,30 @@ def _encode_turn_detection(td: TurnDetectionMode) -> Optional[Dict[str, Any]]:
     if td == "semantic_vad":
         return {"type": "semantic_vad"}
     if isinstance(td, SemanticVadConfig):
-        return _strip_none({
-            "type": "semantic_vad",
-            "eagerness": td.eagerness,
-            "create_response": td.create_response,
-            "interrupt_response": td.interrupt_response,
-        })
+        return _strip_none(
+            {
+                "type": "semantic_vad",
+                "eagerness": td.eagerness,
+                "create_response": td.create_response,
+                "interrupt_response": td.interrupt_response,
+            }
+        )
     if isinstance(td, ServerVadConfig):
-        return _strip_none({
-            "type": "server_vad",
-            "threshold": td.threshold,
-            "prefix_padding_ms": td.prefix_padding_ms,
-            "silence_duration_ms": td.silence_duration_ms,
-            "create_response": td.create_response,
-            "interrupt_response": td.interrupt_response,
-            "idle_timeout_ms": td.idle_timeout_ms,
-        })
+        return _strip_none(
+            {
+                "type": "server_vad",
+                "threshold": td.threshold,
+                "prefix_padding_ms": td.prefix_padding_ms,
+                "silence_duration_ms": td.silence_duration_ms,
+                "create_response": td.create_response,
+                "interrupt_response": td.interrupt_response,
+                "idle_timeout_ms": td.idle_timeout_ms,
+            }
+        )
     raise ValueError(f"Unsupported turn_detection mode: {td!r}")
 
 
-def _encode_tool_choice(choice: Optional[RealtimeToolChoice]) -> Any:
+def _encode_tool_choice(choice: RealtimeToolChoice | None) -> Any:
     if choice is None:
         return "auto"
     if isinstance(choice, str):
@@ -129,7 +135,7 @@ def _encode_tool_choice(choice: Optional[RealtimeToolChoice]) -> Any:
     raise ValueError(f"Unsupported tool_choice: {choice!r}")
 
 
-def build_session_update(config: RealtimeVoiceConfig) -> Dict[str, Any]:
+def build_session_update(config: RealtimeVoiceConfig) -> dict[str, Any]:
     """
     Build a vendor-specific ``session.update`` payload from the
     vendor-neutral config, matching the OpenAI Realtime GA shape.
@@ -148,7 +154,7 @@ def build_session_update(config: RealtimeVoiceConfig) -> Dict[str, Any]:
 
     output_modalities = ["audio"] if "audio" in modalities else ["text"]
 
-    audio_input: Dict[str, Any] = {
+    audio_input: dict[str, Any] = {
         "format": _encode_audio_format(
             config.input_audio_format or REALTIME_DEFAULTS.input_audio_format
         ),
@@ -159,7 +165,7 @@ def build_session_update(config: RealtimeVoiceConfig) -> Dict[str, Any]:
     elif isinstance(config.input_audio_transcription, InputAudioTranscriptionConfig):
         audio_input["transcription"] = config.input_audio_transcription.model_dump()
 
-    audio_output: Dict[str, Any] = {
+    audio_output: dict[str, Any] = {
         "format": _encode_audio_format(
             config.output_audio_format or REALTIME_DEFAULTS.output_audio_format
         ),
@@ -167,11 +173,13 @@ def build_session_update(config: RealtimeVoiceConfig) -> Dict[str, Any]:
     if config.voice is not None:
         audio_output["voice"] = config.voice
 
-    session: Dict[str, Any] = {
+    session: dict[str, Any] = {
         "type": "realtime",
         "output_modalities": output_modalities,
         "audio": {"input": audio_input, "output": audio_output},
-        "tool_choice": _encode_tool_choice(config.tool_choice or REALTIME_DEFAULTS.tool_choice),
+        "tool_choice": _encode_tool_choice(
+            config.tool_choice or REALTIME_DEFAULTS.tool_choice
+        ),
     }
 
     if config.instructions is not None:
@@ -200,30 +208,30 @@ def build_session_update(config: RealtimeVoiceConfig) -> Dict[str, Any]:
 
 
 class _PendingCall:
-    __slots__ = ("call_id", "item_id", "name", "args_buffer", "parsed_args", "done")
+    __slots__ = ("args_buffer", "call_id", "done", "item_id", "name", "parsed_args")
 
-    def __init__(self, call_id: str, name: str, item_id: Optional[str] = None):
+    def __init__(self, call_id: str, name: str, item_id: str | None = None):
         self.call_id = call_id
         self.item_id = item_id
         self.name = name
         self.args_buffer: str = ""
-        self.parsed_args: Optional[Dict[str, Any]] = None
+        self.parsed_args: dict[str, Any] | None = None
         self.done: bool = False
 
 
 class _TurnState:
     __slots__ = (
-        "turn_id",
         "calls",
+        "cancel_event",
+        "cancelled",
         "text_buffer",
         "transcript_buffer",
-        "cancelled",
-        "cancel_event",
+        "turn_id",
     )
 
     def __init__(self, turn_id: str):
         self.turn_id = turn_id
-        self.calls: Dict[str, _PendingCall] = {}
+        self.calls: dict[str, _PendingCall] = {}
         self.text_buffer: str = ""
         self.transcript_buffer: str = ""
         self.cancelled: bool = False
@@ -248,13 +256,13 @@ class RealtimeSession:
         self,
         gateway_session: RealtimeGatewaySession,
         config: RealtimeVoiceConfig,
-        tool_runner: Optional[ToolRunner] = None,
-        tracer: Optional[TracerSystem] = None,
-        correlation_id: Optional[str] = None,
+        tool_runner: ToolRunner | None = None,
+        tracer: TracerSystem | None = None,
+        correlation_id: str | None = None,
     ):
         self._gateway_session = gateway_session
         self._config = config
-        self._tools: List[LLMTool] = list(config.tools or [])
+        self._tools: list[LLMTool] = list(config.tools or [])
         self._tool_runner: ToolRunner = tool_runner or AsyncParallelToolRunner()
         self._tracer = tracer
         self._correlation_id = correlation_id or str(uuid.uuid4())
@@ -264,17 +272,19 @@ class RealtimeSession:
         self._raw_queue: asyncio.Queue = asyncio.Queue()
         self._audio_queue: asyncio.Queue = asyncio.Queue()
 
-        self._current_turn: Optional[_TurnState] = None
-        self._current_response_id: Optional[str] = None
+        self._current_turn: _TurnState | None = None
+        self._current_response_id: str | None = None
         self._pending_batches: set = set()
         self._closed = False
 
         self._emit(SessionOpenedEvent(session_id=gateway_session.session_id))
-        self._pump_task = asyncio.create_task(self._pump(), name="realtime-session-pump")
+        self._pump_task = asyncio.create_task(
+            self._pump(), name="realtime-session-pump"
+        )
 
     # ------------------------------------------------------------------ public
 
-    async def __aenter__(self) -> "RealtimeSession":
+    async def __aenter__(self) -> Self:
         return self
 
     async def __aexit__(self, exc_type, exc, tb) -> None:
@@ -293,7 +303,7 @@ class RealtimeSession:
                 return
             yield item
 
-    async def raw_events(self) -> AsyncIterator[Dict[str, Any]]:
+    async def raw_events(self) -> AsyncIterator[dict[str, Any]]:
         """Raw gateway events for power users / debugging."""
         while True:
             item = await self._raw_queue.get()
@@ -311,14 +321,16 @@ class RealtimeSession:
 
     async def send_text(self, text: str) -> None:
         """Send a text-mode user message and request a response."""
-        await self._gateway_session.send_event({
-            "type": "conversation.item.create",
-            "item": {
-                "type": "message",
-                "role": "user",
-                "content": [{"type": "input_text", "text": text}],
-            },
-        })
+        await self._gateway_session.send_event(
+            {
+                "type": "conversation.item.create",
+                "item": {
+                    "type": "message",
+                    "role": "user",
+                    "content": [{"type": "input_text", "text": text}],
+                },
+            }
+        )
         await self._gateway_session.send_event({"type": "response.create"})
 
     async def send_audio(self, stream) -> None:
@@ -332,10 +344,12 @@ class RealtimeSession:
         async for frame in stream:
             if self._closed:
                 return
-            await self._gateway_session.send_event({
-                "type": "input_audio_buffer.append",
-                "audio": encode_base64_pcm16(frame),
-            })
+            await self._gateway_session.send_event(
+                {
+                    "type": "input_audio_buffer.append",
+                    "audio": encode_base64_pcm16(frame),
+                }
+            )
 
     async def commit_audio(self) -> None:
         """
@@ -352,10 +366,12 @@ class RealtimeSession:
     async def update_instructions(self, instructions: str) -> None:
         """Hot-update assistant instructions mid-session."""
         self._current_instructions = instructions
-        await self._gateway_session.send_event({
-            "type": "session.update",
-            "session": {"instructions": instructions},
-        })
+        await self._gateway_session.send_event(
+            {
+                "type": "session.update",
+                "session": {"instructions": instructions},
+            }
+        )
 
     async def close(self) -> None:
         """Close the session, dispose the socket, and end all event streams."""
@@ -373,10 +389,10 @@ class RealtimeSession:
         self._pump_task.cancel()
         try:
             await self._pump_task
-        except (asyncio.CancelledError, Exception):  # noqa: BLE001
-            pass
+        except (asyncio.CancelledError, Exception):
+            logger.debug("event pump stopped during close", exc_info=True)
 
-    def get_instructions(self) -> Optional[str]:
+    def get_instructions(self) -> str | None:
         """Effective instructions from the most recent ``session.update``."""
         return self._current_instructions
 
@@ -412,38 +428,40 @@ class RealtimeSession:
                 self._end_channels()
                 self._closed = True
 
-    async def _handle_server_event(self, raw: Dict[str, Any]) -> None:
+    async def _handle_server_event(self, raw: dict[str, Any]) -> None:
         event_type = raw.get("type")
         # Dispatch via a small if-elif chain — match/case keeps this readable
         # but pyflakes complains about the discriminant; if/elif is fine here.
         if event_type == "session.created":
             return  # session_opened already emitted on construction
         if event_type == "session.updated":
-            self._emit(SessionUpdatedEvent(
-                config={"instructions": self._current_instructions}
-            ))
+            self._emit(
+                SessionUpdatedEvent(config={"instructions": self._current_instructions})
+            )
             return
         if event_type == "input_audio_buffer.speech_started":
-            self._emit(UserSpeechStartedEvent(
-                at_ms=int(raw.get("audio_start_ms") or _now_ms())
-            ))
+            self._emit(
+                UserSpeechStartedEvent(
+                    at_ms=int(raw.get("audio_start_ms") or _now_ms())
+                )
+            )
             if self._current_turn is not None and not self._current_turn.cancelled:
                 await self._cancel_current_turn("barge_in")
             return
         if event_type == "input_audio_buffer.speech_stopped":
-            self._emit(UserSpeechStoppedEvent(
-                at_ms=int(raw.get("audio_end_ms") or _now_ms())
-            ))
+            self._emit(
+                UserSpeechStoppedEvent(at_ms=int(raw.get("audio_end_ms") or _now_ms()))
+            )
             return
         if event_type == "conversation.item.input_audio_transcription.delta":
-            self._emit(UserTranscriptDeltaEvent(
-                item_id=raw["item_id"], delta=raw["delta"]
-            ))
+            self._emit(
+                UserTranscriptDeltaEvent(item_id=raw["item_id"], delta=raw["delta"])
+            )
             return
         if event_type == "conversation.item.input_audio_transcription.completed":
-            self._emit(UserTranscriptEvent(
-                item_id=raw["item_id"], text=raw["transcript"]
-            ))
+            self._emit(
+                UserTranscriptEvent(item_id=raw["item_id"], text=raw["transcript"])
+            )
             return
         if event_type == "response.created":
             turn_id = raw["response"]["id"]
@@ -453,16 +471,22 @@ class RealtimeSession:
             return
         if event_type == "response.output_item.added":
             item = raw.get("item", {})
-            if item.get("type") == "function_call" and item.get("call_id") and item.get("name"):
+            if (
+                item.get("type") == "function_call"
+                and item.get("call_id")
+                and item.get("name")
+            ):
                 turn = self._current_turn
                 if turn is None:
                     return
                 turn.calls[item["call_id"]] = _PendingCall(
                     call_id=item["call_id"], name=item["name"], item_id=item.get("id")
                 )
-                self._emit(ToolCallStartedEvent(
-                    turn_id=turn.turn_id, call_id=item["call_id"], name=item["name"]
-                ))
+                self._emit(
+                    ToolCallStartedEvent(
+                        turn_id=turn.turn_id, call_id=item["call_id"], name=item["name"]
+                    )
+                )
             return
         if event_type == "response.function_call_arguments.delta":
             call_id = raw["call_id"]
@@ -484,7 +508,9 @@ class RealtimeSession:
             if turn is None:
                 return
             turn.text_buffer += raw["delta"]
-            self._emit(AssistantTextDeltaEvent(turn_id=turn.turn_id, delta=raw["delta"]))
+            self._emit(
+                AssistantTextDeltaEvent(turn_id=turn.turn_id, delta=raw["delta"])
+            )
             return
         if event_type in ("response.text.done", "response.output_text.done"):
             turn = self._current_turn
@@ -492,22 +518,28 @@ class RealtimeSession:
                 return
             self._emit(AssistantTextEvent(turn_id=turn.turn_id, text=raw["text"]))
             return
-        if event_type in ("response.audio_transcript.delta", "response.output_audio_transcript.delta"):
+        if event_type in (
+            "response.audio_transcript.delta",
+            "response.output_audio_transcript.delta",
+        ):
             turn = self._current_turn
             if turn is None:
                 return
             turn.transcript_buffer += raw["delta"]
-            self._emit(AssistantTranscriptDeltaEvent(
-                turn_id=turn.turn_id, delta=raw["delta"]
-            ))
+            self._emit(
+                AssistantTranscriptDeltaEvent(turn_id=turn.turn_id, delta=raw["delta"])
+            )
             return
-        if event_type in ("response.audio_transcript.done", "response.output_audio_transcript.done"):
+        if event_type in (
+            "response.audio_transcript.done",
+            "response.output_audio_transcript.done",
+        ):
             turn = self._current_turn
             if turn is None:
                 return
-            self._emit(AssistantTranscriptEvent(
-                turn_id=turn.turn_id, text=raw["transcript"]
-            ))
+            self._emit(
+                AssistantTranscriptEvent(turn_id=turn.turn_id, text=raw["transcript"])
+            )
             return
         if event_type in ("response.audio.delta", "response.output_audio.delta"):
             turn = self._current_turn
@@ -524,10 +556,12 @@ class RealtimeSession:
             rate_limits = raw.get("rate_limits") or []
             first = rate_limits[0] if rate_limits else {}
             reset_seconds = first.get("reset_seconds") or 0
-            self._emit(RateLimitedEvent(
-                reset_ms=int(round(reset_seconds * 1000)),
-                details={"rate_limits": rate_limits},
-            ))
+            self._emit(
+                RateLimitedEvent(
+                    reset_ms=round(reset_seconds * 1000),
+                    details={"rate_limits": rate_limits},
+                )
+            )
             return
         if event_type == "error":
             err_payload = raw.get("error") or {}
@@ -536,14 +570,16 @@ class RealtimeSession:
             # response already completed — common during barge-in.
             if "no active response" in message.lower():
                 return
-            self._emit(ErrorEvent(
-                error=RuntimeError(message),
-                recoverable=err_payload.get("type") != "session_error",
-            ))
+            self._emit(
+                ErrorEvent(
+                    error=RuntimeError(message),
+                    recoverable=err_payload.get("type") != "session_error",
+                )
+            )
             return
         # Unknown event — only surfaces via raw_events()
 
-    async def _handle_response_done(self, raw: Dict[str, Any]) -> None:
+    async def _handle_response_done(self, raw: dict[str, Any]) -> None:
         response = raw.get("response", {})
         turn = self._current_turn
         if turn is None or turn.turn_id != response.get("id"):
@@ -551,7 +587,7 @@ class RealtimeSession:
             return
 
         usage_in = response.get("usage")
-        usage_out: Optional[TokenUsage] = None
+        usage_out: TokenUsage | None = None
         if usage_in:
             usage_out = TokenUsage(
                 prompt_tokens=usage_in.get("input_tokens"),
@@ -570,7 +606,9 @@ class RealtimeSession:
                 name=f"realtime-tools-{turn.turn_id}",
             )
             self._pending_batches.add(batch_task)
-            batch_task.add_done_callback(lambda t, turn=turn: self._finalize_batch(t, turn))
+            batch_task.add_done_callback(
+                lambda t, turn=turn: self._finalize_batch(t, turn)
+            )
         else:
             self._current_turn = None
             self._current_response_id = None
@@ -587,17 +625,21 @@ class RealtimeSession:
             self._emit(ErrorEvent(error=err, recoverable=True))
 
     async def _run_tool_batch_for_turn(self, turn: _TurnState) -> None:
-        executions: List[ToolCallExecution] = []
+        executions: list[ToolCallExecution] = []
         for call in turn.calls.values():
             if not call.done and not call.args_buffer:
                 continue
             try:
                 args = json.loads(call.args_buffer) if call.args_buffer else {}
             except json.JSONDecodeError as err:
-                self._emit(ToolCallFailedEvent(call_id=call.call_id, name=call.name, error=err))
+                self._emit(
+                    ToolCallFailedEvent(call_id=call.call_id, name=call.name, error=err)
+                )
                 continue
             call.parsed_args = args
-            executions.append(ToolCallExecution(id=call.call_id, name=call.name, args=args))
+            executions.append(
+                ToolCallExecution(id=call.call_id, name=call.name, args=args)
+            )
 
         if not executions:
             return
@@ -612,7 +654,7 @@ class RealtimeSession:
             on_call_complete=lambda outcome: self._on_tool_call_complete(outcome),
         )
 
-        outcomes: List[ToolCallOutcome] = await self._tool_runner.run_batch(
+        outcomes: list[ToolCallOutcome] = await self._tool_runner.run_batch(
             executions, self._tools, ctx
         )
 
@@ -633,30 +675,34 @@ class RealtimeSession:
         policy = self._config.on_interrupt or REALTIME_DEFAULTS.on_interrupt
         to_submit = self._select_outputs_to_submit(turn, outcomes, policy)
 
-        submitted_ids: List[str] = []
+        submitted_ids: list[str] = []
         for outcome in to_submit:
             payload = _serialize_outcome(outcome)
             try:
-                await self._gateway_session.send_event({
-                    "type": "conversation.item.create",
-                    "item": {
-                        "type": "function_call_output",
-                        "call_id": outcome.id,
-                        "output": payload,
-                    },
-                })
+                await self._gateway_session.send_event(
+                    {
+                        "type": "conversation.item.create",
+                        "item": {
+                            "type": "function_call_output",
+                            "call_id": outcome.id,
+                            "output": payload,
+                        },
+                    }
+                )
                 submitted_ids.append(outcome.id)
             except Exception as err:  # noqa: BLE001
                 self._emit(ErrorEvent(error=err, recoverable=True))
 
         if submitted_ids:
-            self._emit(ToolBatchSubmittedEvent(turn_id=turn.turn_id, call_ids=submitted_ids))
+            self._emit(
+                ToolBatchSubmittedEvent(turn_id=turn.turn_id, call_ids=submitted_ids)
+            )
             await self._gateway_session.send_event({"type": "response.create"})
 
     def _on_tool_call_start(self, call: ToolCallExecution) -> None:
-        self._emit(ToolCallDispatchedEvent(
-            call_id=call.id, name=call.name, args=call.args
-        ))
+        self._emit(
+            ToolCallDispatchedEvent(call_id=call.id, name=call.name, args=call.args)
+        )
 
     def _on_tool_call_complete(self, outcome: ToolCallOutcome) -> None:
         if self._tracer is not None:
@@ -670,20 +716,24 @@ class RealtimeSession:
                 correlation_id=self._correlation_id,
             )
         if outcome.ok:
-            self._emit(ToolCallCompletedEvent(
-                call_id=outcome.id, name=outcome.name, result=outcome.result
-            ))
+            self._emit(
+                ToolCallCompletedEvent(
+                    call_id=outcome.id, name=outcome.name, result=outcome.result
+                )
+            )
         else:
-            self._emit(ToolCallFailedEvent(
-                call_id=outcome.id, name=outcome.name, error=outcome.error
-            ))
+            self._emit(
+                ToolCallFailedEvent(
+                    call_id=outcome.id, name=outcome.name, error=outcome.error
+                )
+            )
 
     @staticmethod
     def _select_outputs_to_submit(
         turn: _TurnState,
-        outcomes: List[ToolCallOutcome],
+        outcomes: list[ToolCallOutcome],
         policy: str,
-    ) -> List[ToolCallOutcome]:
+    ) -> list[ToolCallOutcome]:
         if not turn.cancelled:
             return outcomes
         if policy == "submit":

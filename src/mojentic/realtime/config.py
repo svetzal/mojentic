@@ -5,9 +5,10 @@ Mirrors the slice of OpenAI's Realtime session config that ports cleanly
 to other Mojentic implementations. Provider-specific knobs live in
 ``provider_extras``.
 """
+
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -35,22 +36,22 @@ class ServerVadConfig(BaseModel):
     """
 
     type: Literal["server_vad"] = "server_vad"
-    threshold: Optional[float] = None
+    threshold: float | None = None
     """Activation threshold (0.0–1.0). Lower fires on quieter speech."""
 
-    prefix_padding_ms: Optional[int] = None
+    prefix_padding_ms: int | None = None
     """Padding (ms) added to the start of a detected utterance."""
 
-    silence_duration_ms: Optional[int] = None
+    silence_duration_ms: int | None = None
     """Silence (ms) before declaring the user is done speaking."""
 
-    create_response: Optional[bool] = None
+    create_response: bool | None = None
     """Whether VAD should auto-fire a ``response.create`` after the user stops."""
 
-    interrupt_response: Optional[bool] = None
+    interrupt_response: bool | None = None
     """Whether speech mid-response cancels the assistant. Default True."""
 
-    idle_timeout_ms: Optional[int] = None
+    idle_timeout_ms: int | None = None
     """Max silence (ms) before the server idles the session."""
 
 
@@ -61,16 +62,14 @@ class SemanticVadConfig(BaseModel):
     """
 
     type: Literal["semantic_vad"] = "semantic_vad"
-    eagerness: Optional[Literal["low", "medium", "high", "auto"]] = None
-    create_response: Optional[bool] = None
-    interrupt_response: Optional[bool] = None
+    eagerness: Literal["low", "medium", "high", "auto"] | None = None
+    create_response: bool | None = None
+    interrupt_response: bool | None = None
 
 
-TurnDetectionMode = Union[
-    Literal["server_vad", "semantic_vad", "none"],
-    ServerVadConfig,
-    SemanticVadConfig,
-]
+TurnDetectionMode = (
+    Literal["server_vad", "semantic_vad", "none"] | ServerVadConfig | SemanticVadConfig
+)
 """Turn-detection strategy.
 
 - ``"server_vad"`` — energy-threshold VAD; natural phone-call mode.
@@ -86,10 +85,7 @@ class RealtimeToolChoiceFunction(BaseModel):
     name: str
 
 
-RealtimeToolChoice = Union[
-    Literal["auto", "none", "required"],
-    RealtimeToolChoiceFunction,
-]
+RealtimeToolChoice = Literal["auto", "none", "required"] | RealtimeToolChoiceFunction
 
 
 class InputAudioTranscriptionConfig(BaseModel):
@@ -108,48 +104,50 @@ class RealtimeVoiceConfig(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    instructions: Optional[str] = None
+    instructions: str | None = None
     """System-level instructions injected into every assistant turn."""
 
-    voice: Optional[RealtimeVoice] = None
+    voice: RealtimeVoice | None = None
     """Voice id to render assistant audio with."""
 
-    modalities: Optional[List[RealtimeModality]] = None
+    modalities: list[RealtimeModality] | None = None
     """Active modalities. Default ``['audio', 'text']``."""
 
-    input_audio_format: Optional[RealtimeAudioFormat] = None
+    input_audio_format: RealtimeAudioFormat | None = None
     """Encoding of audio frames the client sends. Default ``pcm16``."""
 
-    output_audio_format: Optional[RealtimeAudioFormat] = None
+    output_audio_format: RealtimeAudioFormat | None = None
     """Encoding of audio frames the server returns. Default ``pcm16``."""
 
-    turn_detection: Optional[TurnDetectionMode] = None
+    turn_detection: TurnDetectionMode | None = None
     """Turn-detection strategy. Default ``server_vad``."""
 
-    input_audio_transcription: Optional[Union[InputAudioTranscriptionConfig, Literal[False]]] = None
+    input_audio_transcription: InputAudioTranscriptionConfig | Literal[False] | None = (
+        None
+    )
     """Whisper transcription config for user audio. Pass ``False`` to disable."""
 
-    tools: Optional[List[LLMTool]] = None
+    tools: list[LLMTool] | None = None
     """Tools available to the model in this session."""
 
-    tool_choice: Optional[RealtimeToolChoice] = None
+    tool_choice: RealtimeToolChoice | None = None
     """Tool-selection strategy. Default ``auto``."""
 
-    temperature: Optional[float] = None
+    temperature: float | None = None
 
-    max_response_output_tokens: Optional[int] = None
+    max_response_output_tokens: int | None = None
 
-    on_interrupt: Optional[InterruptOutputPolicy] = None
+    on_interrupt: InterruptOutputPolicy | None = None
     """How to treat tool outputs from interrupted/cancelled responses."""
 
-    provider_extras: Optional[Dict[str, Any]] = Field(default=None)
+    provider_extras: dict[str, Any] | None = Field(default=None)
     """Provider-specific escape hatch — passed through verbatim to the gateway."""
 
 
 class _DefaultsModel(BaseModel):
     """Defaults applied when a field is omitted. Surfaced for inspection."""
 
-    modalities: List[RealtimeModality]
+    modalities: list[RealtimeModality]
     input_audio_format: RealtimeAudioFormat
     output_audio_format: RealtimeAudioFormat
     turn_detection: TurnDetectionMode

@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional, List, Union, Annotated, Literal, Any
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -10,10 +10,11 @@ class MessageRole(Enum):
     """
     The role of the message in the conversation.
     """
-    System = 'system'
-    User = 'user'
-    Assistant = 'assistant'
-    Tool = 'tool'
+
+    System = "system"
+    User = "user"
+    Assistant = "assistant"
+    Tool = "tool"
 
 
 class Annotations(BaseModel):
@@ -57,7 +58,8 @@ class LLMToolCall(BaseModel):
     arguments : dict[str, Any]
         The arguments for the tool call.
     """
-    id: Optional[str] = None
+
+    id: str | None = None
     name: str
     arguments: dict[str, Any]
 
@@ -81,11 +83,12 @@ class LLMMessage(BaseModel):
         OpenAI passes URLs and data URIs through without reading a file.
         Note: You must use an image-capable model to process images.
     """
+
     role: MessageRole = MessageRole.User
-    content: Optional[str] = None
-    object: Optional[BaseModel] = None
-    tool_calls: Optional[List[LLMToolCall]] = None
-    image_paths: Optional[List[str]] = None
+    content: str | None = None
+    object: BaseModel | None = None
+    tool_calls: list[LLMToolCall] | None = None
+    image_paths: list[str] | None = None
 
 
 class LLMGatewayResponse(BaseModel):
@@ -103,13 +106,21 @@ class LLMGatewayResponse(BaseModel):
     thinking : Optional[str]
         Model thinking/reasoning trace (populated by some providers).
     """
-    content: Optional[Union[str, dict[str, str]]] = Field(None, description="The content of the response.")
-    object: Optional[BaseModel] = Field(None, description="Parsed response object")
-    tool_calls: List[LLMToolCall] = Field(default_factory=list,
-                                          description="List of requested tool calls from the LLM.")
-    thinking: Optional[str] = Field(None, description="Model thinking/reasoning trace (populated by some providers)")
-    usage: Optional[dict[str, Any]] = None
-    model: Optional[str] = None
-    finish_reason: Optional[str] = None
+
+    content: str | dict[str, str] | None = Field(
+        None, description="The content of the response."
+    )
+    object: BaseModel | None = Field(None, description="Parsed response object")
+    tool_calls: list[LLMToolCall] = Field(
+        default_factory=list, description="List of requested tool calls from the LLM."
+    )
+    thinking: str | None = Field(
+        None, description="Model thinking/reasoning trace (populated by some providers)"
+    )
+    usage: dict[str, Any] | None = None
+    model: str | None = None
+    finish_reason: str | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
-    recovery_report: RecoveryReport | None = Field(default=None, exclude=True, repr=False)
+    recovery_report: RecoveryReport | None = Field(
+        default=None, exclude=True, repr=False
+    )

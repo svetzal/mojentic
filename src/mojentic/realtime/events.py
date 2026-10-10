@@ -5,9 +5,10 @@ Consumers subscribe to this union rather than raw OpenAI events so the
 same observer code ports cleanly to other realtime providers and other
 Mojentic implementations (TypeScript, Elixir, Rust).
 """
+
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Literal
 
 import numpy as np
 from pydantic import BaseModel, ConfigDict, Field
@@ -16,10 +17,10 @@ from pydantic import BaseModel, ConfigDict, Field
 class TokenUsage(BaseModel):
     """Token usage reported when a response turn completes."""
 
-    prompt_tokens: Optional[int] = None
-    completion_tokens: Optional[int] = None
-    total_tokens: Optional[int] = None
-    extras: Optional[Dict[str, Any]] = None
+    prompt_tokens: int | None = None
+    completion_tokens: int | None = None
+    total_tokens: int | None = None
+    extras: dict[str, Any] | None = None
     """Provider-specific breakdown (e.g. audio vs text tokens)."""
 
 
@@ -35,13 +36,13 @@ class RealtimeItem(BaseModel):
 
     id: str
     type: Literal["message", "function_call", "function_call_output"]
-    role: Optional[Literal["system", "user", "assistant"]] = None
-    text: Optional[str] = None
-    transcript: Optional[str] = None
-    name: Optional[str] = None
-    args: Optional[Dict[str, Any]] = None
-    output: Optional[Any] = None
-    call_id: Optional[str] = None
+    role: Literal["system", "user", "assistant"] | None = None
+    text: str | None = None
+    transcript: str | None = None
+    name: str | None = None
+    args: dict[str, Any] | None = None
+    output: Any | None = None
+    call_id: str | None = None
 
 
 # -----------------------------------------------------------------------------
@@ -62,7 +63,7 @@ class SessionOpenedEvent(_BaseEvent):
 
 class SessionUpdatedEvent(_BaseEvent):
     kind: Literal["session_updated"] = "session_updated"
-    config: Dict[str, Any]
+    config: dict[str, Any]
 
 
 class SessionClosedEvent(_BaseEvent):
@@ -137,7 +138,7 @@ class AssistantAudioDeltaEvent(_BaseEvent):
 class AssistantTurnCompletedEvent(_BaseEvent):
     kind: Literal["assistant_turn_completed"] = "assistant_turn_completed"
     turn_id: str
-    usage: Optional[TokenUsage] = None
+    usage: TokenUsage | None = None
 
 
 class ToolCallStartedEvent(_BaseEvent):
@@ -157,7 +158,7 @@ class ToolCallDispatchedEvent(_BaseEvent):
     kind: Literal["tool_call_dispatched"] = "tool_call_dispatched"
     call_id: str
     name: str
-    args: Dict[str, Any]
+    args: dict[str, Any]
 
 
 class ToolCallCompletedEvent(_BaseEvent):
@@ -179,7 +180,7 @@ class ToolCallFailedEvent(_BaseEvent):
 class ToolBatchSubmittedEvent(_BaseEvent):
     kind: Literal["tool_batch_submitted"] = "tool_batch_submitted"
     turn_id: str
-    call_ids: List[str]
+    call_ids: list[str]
 
 
 class InterruptedEvent(_BaseEvent):
@@ -191,7 +192,7 @@ class InterruptedEvent(_BaseEvent):
 class RateLimitedEvent(_BaseEvent):
     kind: Literal["rate_limited"] = "rate_limited"
     reset_ms: int
-    details: Dict[str, Any]
+    details: dict[str, Any]
 
 
 class ErrorEvent(_BaseEvent):
@@ -202,31 +203,31 @@ class ErrorEvent(_BaseEvent):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
-RealtimeEvent = Union[
-    SessionOpenedEvent,
-    SessionUpdatedEvent,
-    SessionClosedEvent,
-    UserSpeechStartedEvent,
-    UserSpeechStoppedEvent,
-    UserTranscriptDeltaEvent,
-    UserTranscriptEvent,
-    AssistantTurnStartedEvent,
-    AssistantTextDeltaEvent,
-    AssistantTextEvent,
-    AssistantTranscriptDeltaEvent,
-    AssistantTranscriptEvent,
-    AssistantAudioDeltaEvent,
-    AssistantTurnCompletedEvent,
-    ToolCallStartedEvent,
-    ToolCallArgsDeltaEvent,
-    ToolCallDispatchedEvent,
-    ToolCallCompletedEvent,
-    ToolCallFailedEvent,
-    ToolBatchSubmittedEvent,
-    InterruptedEvent,
-    RateLimitedEvent,
-    ErrorEvent,
-]
+RealtimeEvent = (
+    SessionOpenedEvent
+    | SessionUpdatedEvent
+    | SessionClosedEvent
+    | UserSpeechStartedEvent
+    | UserSpeechStoppedEvent
+    | UserTranscriptDeltaEvent
+    | UserTranscriptEvent
+    | AssistantTurnStartedEvent
+    | AssistantTextDeltaEvent
+    | AssistantTextEvent
+    | AssistantTranscriptDeltaEvent
+    | AssistantTranscriptEvent
+    | AssistantAudioDeltaEvent
+    | AssistantTurnCompletedEvent
+    | ToolCallStartedEvent
+    | ToolCallArgsDeltaEvent
+    | ToolCallDispatchedEvent
+    | ToolCallCompletedEvent
+    | ToolCallFailedEvent
+    | ToolBatchSubmittedEvent
+    | InterruptedEvent
+    | RateLimitedEvent
+    | ErrorEvent
+)
 """
 Vendor-neutral event types emitted by :class:`RealtimeSession`.
 

@@ -5,8 +5,9 @@ Pure functions over the raw SSE lines, so the completion rules are testable with
 network. A turn succeeds only when the provider reports ``finish_reason: "stop"`` and
 then sends ``data: [DONE]``.
 """
+
 import json
-from typing import Iterable, Iterator, List, Optional, Tuple
+from collections.abc import Iterable, Iterator
 
 from mojentic.llm.gateways.stream_events import (
     CompletionMetadata,
@@ -19,7 +20,7 @@ from mojentic.llm.gateways.stream_events import (
 
 DONE_MARKER = "[DONE]"
 
-FrameResult = Tuple[List[StreamEvent], CompletionMetadata]
+FrameResult = tuple[list[StreamEvent], CompletionMetadata]
 
 
 def parse_openai_stream(lines: Iterable[str]) -> Iterator[StreamEvent]:
@@ -49,33 +50,41 @@ def parse_openai_stream(lines: Iterable[str]) -> Iterator[StreamEvent]:
         yield from events
         if events and not isinstance(events[-1], StreamContent):
             return
-    yield StreamError(reason=StreamErrorReason.INCOMPLETE_STREAM,
-                      metadata=evidence if evidence != CompletionMetadata() else None)
+    yield StreamError(
+        reason=StreamErrorReason.INCOMPLETE_STREAM,
+        metadata=evidence if evidence != CompletionMetadata() else None,
+    )
 
 
-def sse_data(line: str) -> Optional[str]:
+def sse_data(line: str) -> str | None:
     """Return the value of an SSE ``data`` field, or None for comments, blanks and other fields."""
     if not line.startswith("data:"):
         return None
-    data = line[len("data:"):]
-    return data[1:] if data.startswith(" ") else data
+    data = line.removeprefix("data:")
+    return data.removeprefix(" ")
 
 
 def _done(evidence: CompletionMetadata) -> StreamEvent:
     if evidence.finish_reason == "stop":
         return StreamCompleted(metadata=evidence)
-    return StreamError(reason=StreamErrorReason.INCOMPLETE_COMPLETION, metadata=evidence)
+    return StreamError(
+        reason=StreamErrorReason.INCOMPLETE_COMPLETION, metadata=evidence
+    )
 
 
 def _parse_frame(data: str, evidence: CompletionMetadata) -> FrameResult:
     try:
         frame = json.loads(data)
     except json.JSONDecodeError:
-        return [StreamError(reason=StreamErrorReason.INVALID_STREAM_EVENT, detail=data)], evidence
+        return [
+            StreamError(reason=StreamErrorReason.INVALID_STREAM_EVENT, detail=data)
+        ], evidence
     if not isinstance(frame, dict):
         return [_invalid(data)], evidence
     if "error" in frame:
-        return [StreamError(reason=StreamErrorReason.PROVIDER_ERROR, detail=frame["error"])], evidence
+        return [
+            StreamError(reason=StreamErrorReason.PROVIDER_ERROR, detail=frame["error"])
+        ], evidence
     choices = frame.get("choices")
     if not isinstance(choices, list) or len(choices) > 1:
         return [_invalid(data)], evidence
@@ -91,20 +100,26 @@ def _valid_evidence(frame: dict, choices: list) -> bool:
     fields = [(frame.get("model"), str), (frame.get("usage"), dict)]
     if choices and isinstance(choices[0], dict):
         fields.append((choices[0].get("finish_reason"), str))
-    return all(value is None or isinstance(value, expected) for value, expected in fields)
+    return all(
+        value is None or isinstance(value, expected) for value, expected in fields
+    )
 
 
-def _fold_evidence(evidence: CompletionMetadata, frame: dict, choices: list) -> CompletionMetadata:
+def _fold_evidence(
+    evidence: CompletionMetadata, frame: dict, choices: list
+) -> CompletionMetadata:
     reported = {
         "provider_model": frame.get("model"),
         "usage": frame.get("usage"),
-        "finish_reason": choices[0].get("finish_reason") if choices and isinstance(choices[0], dict) else None,
+        "finish_reason": choices[0].get("finish_reason")
+        if choices and isinstance(choices[0], dict)
+        else None,
     }
     updates = {field: value for field, value in reported.items() if value is not None}
     return evidence.model_copy(update=updates) if updates else evidence
 
 
-def _delta_events(choice: object, data: str) -> List[StreamEvent]:
+def _delta_events(choice: object, data: str) -> list[StreamEvent]:
     delta = choice.get("delta") if isinstance(choice, dict) else None
     if not isinstance(delta, dict):
         return [_invalid(data)]

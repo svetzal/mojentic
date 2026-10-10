@@ -1,5 +1,3 @@
-from typing import List
-
 from mojentic.event import Event
 
 
@@ -9,7 +7,7 @@ class BaseAsyncAgent:
     It provides an async receive method for event processing.
     """
 
-    async def receive_event_async(self, event: Event) -> List[Event]:
+    async def receive_event_async(self, event: Event) -> list[Event]:
         """
         receive_event_async is the method that all async agents must implement.
         It takes an event as input and returns a list of events as output.

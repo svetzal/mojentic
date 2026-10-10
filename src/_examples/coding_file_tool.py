@@ -21,13 +21,27 @@ from pathlib import Path
 from mojentic.agents.iterative_problem_solver import IterativeProblemSolver
 from mojentic.llm.gateways import OpenAIGateway
 from mojentic.llm.llm_broker import LLMBroker
-from mojentic.llm.tools.ephemeral_task_manager import EphemeralTaskList, AppendTaskTool, \
-    ClearTasksTool, CompleteTaskTool, InsertTaskAfterTool, ListTasksTool, PrependTaskTool, \
-    StartTaskTool
+from mojentic.llm.tools.ephemeral_task_manager import (
+    AppendTaskTool,
+    ClearTasksTool,
+    CompleteTaskTool,
+    EphemeralTaskList,
+    InsertTaskAfterTool,
+    ListTasksTool,
+    PrependTaskTool,
+    StartTaskTool,
+)
 from mojentic.llm.tools.file_manager import (
-    ReadFileTool, WriteFileTool, ListFilesTool, ListAllFilesTool,
-    FindFilesByGlobTool, FindFilesContainingTool, FindLinesMatchingTool,
-    EditFileWithDiffTool, CreateDirectoryTool, FilesystemGateway
+    CreateDirectoryTool,
+    EditFileWithDiffTool,
+    FilesystemGateway,
+    FindFilesByGlobTool,
+    FindFilesContainingTool,
+    FindLinesMatchingTool,
+    ListAllFilesTool,
+    ListFilesTool,
+    ReadFileTool,
+    WriteFileTool,
 )
 
 base_dir = Path(__file__).parent.parent.parent.parent / "code-playground3"
@@ -164,7 +178,7 @@ visible).
 have not missed any steps
 - If you've missed or forgotten some steps, add them to the task list and continue
 - When all tasks are complete, and you can think of no more to add, declare yourself finished.
-    """
+    """,
 )
 
 # Define the task

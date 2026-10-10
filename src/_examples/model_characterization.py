@@ -1,6 +1,8 @@
+import logging
 import os
-from mojentic.llm.gateways.openai import OpenAIGateway
+
 from mojentic.llm.gateways.models import LLMMessage, MessageRole
+from mojentic.llm.gateways.openai import OpenAIGateway
 
 
 def check_model_characterization():
@@ -18,7 +20,9 @@ def check_model_characterization():
     # Test messages for chat models
     chat_messages = [
         LLMMessage(role=MessageRole.System, content="You are a helpful assistant."),
-        LLMMessage(role=MessageRole.User, content="What is 2 + 2? Give a brief answer.")
+        LLMMessage(
+            role=MessageRole.User, content="What is 2 + 2? Give a brief answer."
+        ),
     ]
 
     # Test messages for reasoning models (no system message supported)
@@ -31,7 +35,7 @@ def check_model_characterization():
         ("gpt-4o", "chat model"),
         ("gpt-4o-mini", "chat model"),
         ("o1-mini", "reasoning model"),
-        ("o1-preview", "reasoning model")
+        ("o1-preview", "reasoning model"),
     ]
 
     print("Testing model characterization and parameter adaptation:")
@@ -45,27 +49,28 @@ def check_model_characterization():
         print(f"  Classified as reasoning model: {is_reasoning}")
 
         # Use appropriate messages based on model type
-        messages = reasoning_messages if gateway._is_reasoning_model(model) else chat_messages
+        messages = (
+            reasoning_messages if gateway._is_reasoning_model(model) else chat_messages
+        )
 
         # Test parameter adaptation
-        original_args = {
-            'model': model,
-            'messages': messages,
-            'max_tokens': 100
-        }
+        original_args = {"model": model, "messages": messages, "max_tokens": 100}
 
         adapted_args = gateway._adapt_parameters_for_model(model, original_args)
 
-        if 'max_tokens' in adapted_args:
+        if "max_tokens" in adapted_args:
             print(f"  Using parameter: max_tokens = {adapted_args['max_tokens']}")
-        elif 'max_completion_tokens' in adapted_args:
-            print(f"  Using parameter: max_completion_tokens = {adapted_args['max_completion_tokens']}")
+        elif "max_completion_tokens" in adapted_args:
+            print(
+                f"  Using parameter: max_completion_tokens = {adapted_args['max_completion_tokens']}"
+            )
 
         try:
             response = gateway.complete(**adapted_args)
             print(f"  Response: {response.content[:50]}...")
         except Exception as e:
-            print(f"  Error: {str(e)}")
+            logging.getLogger(__name__).exception("Example operation failed")
+            print(f"  Error: {e!s}")
 
     print("\n" + "=" * 60)
     print("Model characterization test completed!")

@@ -1,17 +1,15 @@
-from typing import Optional, TYPE_CHECKING
-
-from parsedatetime import Calendar, VERSION_CONTEXT_STYLE
+from parsedatetime import VERSION_CONTEXT_STYLE, Calendar
 from pytz import timezone
 
 from mojentic.llm.tools.llm_tool import LLMTool
 
 # Avoid circular imports with TYPE_CHECKING
-if TYPE_CHECKING:
-    pass
 
 
 class ResolveDateTool(LLMTool):
-    def run(self, relative_date_found: str, reference_date_in_iso8601: Optional[str] = None) -> dict[str, str]:
+    def run(
+        self, relative_date_found: str, reference_date_in_iso8601: str | None = None
+    ) -> dict[str, str]:
         cal = Calendar(version=VERSION_CONTEXT_STYLE)
 
         if reference_date_in_iso8601:
@@ -19,13 +17,16 @@ class ResolveDateTool(LLMTool):
         else:
             reference_date = None
 
-        resolved_date, parse_status = cal.parseDT(datetimeString=relative_date_found, sourceTime=reference_date,
-                                                  tzinfo=timezone("America/Toronto"))
+        resolved_date, _parse_status = cal.parseDT(
+            datetimeString=relative_date_found,
+            sourceTime=reference_date,
+            tzinfo=timezone("America/Toronto"),
+        )
 
         return {
             "relative_date": relative_date_found,
-            "resolved_date": resolved_date.strftime('%Y-%m-%d'),
-            "summary": f"The date on '{relative_date_found}' is {resolved_date.strftime('%Y-%m-%d')}"
+            "resolved_date": resolved_date.strftime("%Y-%m-%d"),
+            "summary": f"The date on '{relative_date_found}' is {resolved_date.strftime('%Y-%m-%d')}",
         }
 
     @property
@@ -43,7 +44,7 @@ class ResolveDateTool(LLMTool):
                     "properties": {
                         "relative_date_found": {
                             "type": "string",
-                            "description": "The text referencing to a relative date."
+                            "description": "The text referencing to a relative date.",
                         },
                         "reference_date_in_iso8601": {
                             "type": "string",
@@ -51,11 +52,11 @@ class ResolveDateTool(LLMTool):
                                 "The date from which the resolved date should be calculated, in YYYY-MM-DD "
                                 "format. Do not provide if you weren't provided one, I will assume the "
                                 "current date."
-                            )
-                        }
+                            ),
+                        },
                     },
                     "additionalProperties": False,
-                    "required": ["relative_date_found"]
+                    "required": ["relative_date_found"],
                 },
-            }
+            },
         }

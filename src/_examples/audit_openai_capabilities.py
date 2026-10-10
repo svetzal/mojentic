@@ -14,26 +14,36 @@ import json
 import os
 import sys
 import time
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
-from openai import OpenAI, BadRequestError, APIError, RateLimitError
+from openai import APIError, BadRequestError, OpenAI, RateLimitError
 
 from mojentic.llm.gateways.openai_model_registry import OpenAIModelRegistry
 
 # Models that use different API endpoints (not chat-compatible)
 SKIP_PREFIXES = [
-    "tts-", "whisper-", "dall-e-", "text-moderation-",
-    "davinci-", "babbage-", "canary-",
-    "codex-", "computer-",
+    "tts-",
+    "whisper-",
+    "dall-e-",
+    "text-moderation-",
+    "davinci-",
+    "babbage-",
+    "canary-",
+    "codex-",
+    "computer-",
 ]
 SKIP_CONTAINS = [
-    "-realtime-", "-transcribe", "-tts",
+    "-realtime-",
+    "-transcribe",
+    "-tts",
 ]
 
 # Expensive model families to skip in --cheap mode
 EXPENSIVE_FAMILIES = [
-    "o1-pro", "o3-pro", "o3-deep-research", "o4-mini-deep-research",
+    "o1-pro",
+    "o3-pro",
+    "o3-deep-research",
+    "o4-mini-deep-research",
     "gpt-5-codex",
 ]
 
@@ -50,12 +60,10 @@ MINIMAL_TOOL = {
         "description": "Get weather for a city",
         "parameters": {
             "type": "object",
-            "properties": {
-                "city": {"type": "string", "description": "City name"}
-            },
-            "required": ["city"]
-        }
-    }
+            "properties": {"city": {"type": "string", "description": "City name"}},
+            "required": ["city"],
+        },
+    },
 }
 
 
@@ -75,8 +83,12 @@ def is_chat_model_candidate(model_id: str) -> bool:
     """Check if a model is a candidate for chat API probing."""
     model_lower = model_id.lower()
     chat_patterns = [
-        "gpt-3.5", "gpt-4", "gpt-5",
-        "o1", "o3", "o4",
+        "gpt-3.5",
+        "gpt-4",
+        "gpt-5",
+        "o1",
+        "o3",
+        "o4",
         "chatgpt",
     ]
     return any(p in model_lower for p in chat_patterns)
@@ -232,19 +244,21 @@ def probe_vision(client: OpenAI, model_id: str, uses_max_tokens: bool) -> dict:
         rate_limited_call(
             client.chat.completions.create,
             model=model_id,
-            messages=[{
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": "Describe this image in one word."},
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": f"data:image/png;base64,{TINY_PNG_B64}",
-                            "detail": "low"
-                        }
-                    }
-                ]
-            }],
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "Describe this image in one word."},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/png;base64,{TINY_PNG_B64}",
+                                "detail": "low",
+                            },
+                        },
+                    ],
+                }
+            ],
             **token_kwargs,
         )
         result["supports_vision"] = True
@@ -322,7 +336,7 @@ def probe_embedding(client: OpenAI, model_id: str) -> dict:
         return result
 
 
-def probe_model(client: OpenAI, model_id: str, cheap_mode: bool = False) -> Optional[dict]:
+def probe_model(client: OpenAI, model_id: str, cheap_mode: bool = False) -> dict | None:
     """Run all capability probes against a single model."""
     if should_skip_model(model_id):
         return None
@@ -342,7 +356,7 @@ def probe_model(client: OpenAI, model_id: str, cheap_mode: bool = False) -> Opti
             "supports_vision": False,
             "supported_temperatures": None,
             "uses_max_tokens": None,
-            "errors": [embed_result["error"]] if embed_result["error"] else []
+            "errors": [embed_result["error"]] if embed_result["error"] else [],
         }
 
     if not is_chat_model_candidate(model_id):
@@ -361,7 +375,7 @@ def probe_model(client: OpenAI, model_id: str, cheap_mode: bool = False) -> Opti
             "supports_vision": False,
             "supported_temperatures": None,
             "uses_max_tokens": None,
-            "errors": [basic["error"]]
+            "errors": [basic["error"]],
         }
 
     uses_max_tokens = basic["uses_max_tokens"]
@@ -383,8 +397,11 @@ def probe_model(client: OpenAI, model_id: str, cheap_mode: bool = False) -> Opti
     # Test 5: Temperature
     temp_result = probe_temperature(client, model_id, uses_max_tokens)
 
-    errors = [r["error"] for r in [tools_result, stream_result, vision_result, temp_result]
-              if r.get("error")]
+    errors = [
+        r["error"]
+        for r in [tools_result, stream_result, vision_result, temp_result]
+        if r.get("error")
+    ]
 
     return {
         "model_type": model_type,
@@ -393,7 +410,7 @@ def probe_model(client: OpenAI, model_id: str, cheap_mode: bool = False) -> Opti
         "supports_vision": vision_result["supports_vision"],
         "supported_temperatures": temp_result["supported_temperatures"],
         "uses_max_tokens": uses_max_tokens,
-        "errors": errors if errors else []
+        "errors": errors if errors else [],
     }
 
 
@@ -425,31 +442,28 @@ def compare_with_registry(probed_models: dict, registry: OpenAIModelRegistry) ->
         if probed["supports_tools"] != registered_caps.supports_tools:
             changes["supports_tools"] = {
                 "was": registered_caps.supports_tools,
-                "now": probed["supports_tools"]
+                "now": probed["supports_tools"],
             }
 
         # Compare streaming support
         if probed["supports_streaming"] != registered_caps.supports_streaming:
             changes["supports_streaming"] = {
                 "was": registered_caps.supports_streaming,
-                "now": probed["supports_streaming"]
+                "now": probed["supports_streaming"],
             }
 
         # Compare vision support
         if probed["supports_vision"] != registered_caps.supports_vision:
             changes["supports_vision"] = {
                 "was": registered_caps.supports_vision,
-                "now": probed["supports_vision"]
+                "now": probed["supports_vision"],
             }
 
         # Compare temperature support
         reg_temps = registered_caps.supported_temperatures
         probed_temps = probed["supported_temperatures"]
         if reg_temps != probed_temps:
-            changes["supported_temperatures"] = {
-                "was": reg_temps,
-                "now": probed_temps
-            }
+            changes["supported_temperatures"] = {"was": reg_temps, "now": probed_temps}
 
         if changes:
             capability_changes[model_name] = changes
@@ -457,7 +471,7 @@ def compare_with_registry(probed_models: dict, registry: OpenAIModelRegistry) ->
     return {
         "new_models": new_models,
         "removed_models": removed_models,
-        "capability_changes": capability_changes
+        "capability_changes": capability_changes,
     }
 
 
@@ -506,18 +520,18 @@ def main():
 
     # Build report
     report = {
-        "audit_date": datetime.now(timezone.utc).isoformat(),
+        "audit_date": datetime.now(UTC).isoformat(),
         "cheap_mode": cheap_mode,
         "api_models_available": all_models,
         "models_skipped": models_skipped,
         "models_probed": probed_results,
-        "comparison": comparison
+        "comparison": comparison,
     }
 
     # Write report
     report_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-        "openai_model_audit_report.json"
+        "openai_model_audit_report.json",
     )
     with open(report_path, "w") as f:
         json.dump(report, f, indent=2, default=str)
@@ -534,12 +548,16 @@ def main():
         print(f"\nNew models (not in registry): {len(comparison['new_models'])}")
         for m in comparison["new_models"]:
             caps = probed_results.get(m, {})
-            print(f"  + {m} (type={caps.get('model_type', '?')}, "
-                  f"tools={caps.get('supports_tools', '?')}, "
-                  f"stream={caps.get('supports_streaming', '?')})")
+            print(
+                f"  + {m} (type={caps.get('model_type', '?')}, "
+                f"tools={caps.get('supports_tools', '?')}, "
+                f"stream={caps.get('supports_streaming', '?')})"
+            )
 
     if comparison["removed_models"]:
-        print(f"\nRemoved models (in registry, not in API): {len(comparison['removed_models'])}")
+        print(
+            f"\nRemoved models (in registry, not in API): {len(comparison['removed_models'])}"
+        )
         for m in comparison["removed_models"]:
             print(f"  - {m}")
 
@@ -550,7 +568,11 @@ def main():
             for field, diff in changes.items():
                 print(f"      {field}: {diff['was']} -> {diff['now']}")
 
-    if not comparison["new_models"] and not comparison["removed_models"] and not comparison["capability_changes"]:
+    if (
+        not comparison["new_models"]
+        and not comparison["removed_models"]
+        and not comparison["capability_changes"]
+    ):
         print("\nNo discrepancies found - registry is up to date!")
 
 

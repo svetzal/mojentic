@@ -11,35 +11,50 @@ Requirements:
 Usage:
     python tracer_qt_viewer.py
 """
+
+import logging
 import sys
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 try:
-    from PyQt6.QtWidgets import (
-        QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-        QTableWidget, QTableWidgetItem, QTextEdit, QPushButton, QLabel,
-        QHeaderView, QSplitter
-    )
-    from PyQt6.QtCore import Qt, pyqtSignal, QObject, QThread
+    from PyQt6.QtCore import QObject, Qt, QThread, pyqtSignal
     from PyQt6.QtGui import QColor, QFont
+    from PyQt6.QtWidgets import (
+        QApplication,
+        QHBoxLayout,
+        QHeaderView,
+        QLabel,
+        QMainWindow,
+        QPushButton,
+        QSplitter,
+        QTableWidget,
+        QTableWidgetItem,
+        QTextEdit,
+        QVBoxLayout,
+        QWidget,
+    )
 except ImportError:
     print("Error: PyQt6 is required for this example.")
     print("Install it with: pip install PyQt6")
     sys.exit(1)
 
-from mojentic.tracer import TracerSystem, EventStore
-from mojentic.tracer.tracer_events import (
-    TracerEvent, LLMCallTracerEvent, LLMResponseTracerEvent,
-    ToolCallTracerEvent, AgentInteractionTracerEvent
-)
 from mojentic.llm import LLMBroker
-from mojentic.llm.tools.date_resolver import ResolveDateTool
 from mojentic.llm.gateways.models import LLMMessage, MessageRole
+from mojentic.llm.tools.date_resolver import ResolveDateTool
+from mojentic.tracer import EventStore, TracerSystem
+from mojentic.tracer.tracer_events import (
+    AgentInteractionTracerEvent,
+    LLMCallTracerEvent,
+    LLMResponseTracerEvent,
+    ToolCallTracerEvent,
+    TracerEvent,
+)
 
 
 class EventSignaler(QObject):
     """Qt signal emitter for tracer events (needed for thread safety)."""
+
     event_occurred = pyqtSignal(object)
 
 
@@ -67,19 +82,20 @@ class LLMWorker(QThread):
 
             # Create a test query
             messages = [
-                LLMMessage(role=MessageRole.User, content="What is the date next Friday?")
+                LLMMessage(
+                    role=MessageRole.User, content="What is the date next Friday?"
+                )
             ]
 
             # Execute the query (this will generate tracer events)
             response = llm_broker.generate(
-                messages,
-                tools=[date_tool],
-                correlation_id=correlation_id
+                messages, tools=[date_tool], correlation_id=correlation_id
             )
 
             self.finished.emit(response)
 
         except Exception as e:
+            logging.getLogger(__name__).exception("Example operation failed")
             self.error.emit(str(e))
 
 
@@ -136,18 +152,16 @@ class TracerViewer(QMainWindow):
         # Events table
         self.events_table = QTableWidget()
         self.events_table.setColumnCount(5)
-        self.events_table.setHorizontalHeaderLabels([
-            "Time", "Type", "Correlation ID", "Summary", "Duration (ms)"
-        ])
+        self.events_table.setHorizontalHeaderLabels(
+            ["Time", "Type", "Correlation ID", "Summary", "Duration (ms)"]
+        )
         self.events_table.horizontalHeader().setSectionResizeMode(
             3, QHeaderView.ResizeMode.Stretch
         )
         self.events_table.setSelectionBehavior(
             QTableWidget.SelectionBehavior.SelectRows
         )
-        self.events_table.setEditTriggers(
-            QTableWidget.EditTrigger.NoEditTriggers
-        )
+        self.events_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.events_table.itemSelectionChanged.connect(self.show_event_details)
         splitter.addWidget(self.events_table)
 
@@ -173,6 +187,7 @@ class TracerViewer(QMainWindow):
 
     def _setup_tracer(self):
         """Setup the tracer system with callback."""
+
         def on_event_stored(event):
             """Callback when an event is stored."""
             if isinstance(event, TracerEvent):
@@ -189,7 +204,11 @@ class TracerViewer(QMainWindow):
         self.events_table.insertRow(row)
 
         # Time
-        time_str = datetime.fromtimestamp(event.timestamp).strftime("%H:%M:%S.%f")[:-3]
+        time_str = (
+            datetime.fromtimestamp(event.timestamp, tz=UTC)
+            .astimezone()
+            .strftime("%H:%M:%S.%f")[:-3]
+        )
         time_item = QTableWidgetItem(time_str)
         self.events_table.setItem(row, 0, time_item)
 
@@ -222,7 +241,10 @@ class TracerViewer(QMainWindow):
 
         # Duration
         duration = ""
-        if isinstance(event, (LLMResponseTracerEvent, ToolCallTracerEvent)) and event.call_duration_ms:
+        if (
+            isinstance(event, (LLMResponseTracerEvent, ToolCallTracerEvent))
+            and event.call_duration_ms
+        ):
             duration = f"{event.call_duration_ms:.0f}"
         duration_item = QTableWidgetItem(duration)
         self.events_table.setItem(row, 4, duration_item)
@@ -237,7 +259,9 @@ class TracerViewer(QMainWindow):
         if isinstance(event, LLMCallTracerEvent):
             return f"Model: {event.model}, Messages: {len(event.messages)}"
         elif isinstance(event, LLMResponseTracerEvent):
-            content_preview = event.content[:50] + "..." if len(event.content) > 50 else event.content
+            content_preview = (
+                event.content[:50] + "..." if len(event.content) > 50 else event.content
+            )
             return f"Model: {event.model}, Response: {content_preview}"
         elif isinstance(event, ToolCallTracerEvent):
             return f"Tool: {event.tool_name}, Caller: {event.caller or 'N/A'}"
@@ -263,7 +287,9 @@ class TracerViewer(QMainWindow):
         """Format detailed event information."""
         details = []
         details.append(f"Event Type: {type(event).__name__}")
-        details.append(f"Timestamp: {datetime.fromtimestamp(event.timestamp)}")
+        details.append(
+            f"Timestamp: {datetime.fromtimestamp(event.timestamp, tz=UTC).astimezone()}"
+        )
         details.append(f"Correlation ID: {event.correlation_id}")
         details.append(f"Source: {event.source}")
         details.append("")
@@ -277,18 +303,24 @@ class TracerViewer(QMainWindow):
             details.append("Messages:")
             for i, msg in enumerate(event.messages, 1):
                 details.append(f"  {i}. Role: {msg.get('role', 'N/A')}")
-                content = msg.get('content', 'N/A')
+                content = msg.get("content", "N/A")
                 if len(str(content)) > 200:
                     content = str(content)[:200] + "..."
                 details.append(f"     Content: {content}")
             if event.tools:
                 details.append("")
-                details.append(f"Available Tools: {[t.get('name') for t in event.tools]}")
+                details.append(
+                    f"Available Tools: {[t.get('name') for t in event.tools]}"
+                )
 
         elif isinstance(event, LLMResponseTracerEvent):
             details.append("=== LLM Response Details ===")
             details.append(f"Model: {event.model}")
-            details.append(f"Call Duration: {event.call_duration_ms:.2f} ms" if event.call_duration_ms else "N/A")
+            details.append(
+                f"Call Duration: {event.call_duration_ms:.2f} ms"
+                if event.call_duration_ms
+                else "N/A"
+            )
             details.append("")
             details.append("Response Content:")
             details.append(event.content)
@@ -303,8 +335,7 @@ class TracerViewer(QMainWindow):
             details.append(f"Tool Name: {event.tool_name}")
             details.append(f"Caller: {event.caller or 'N/A'}")
             duration_text = (
-                f"{event.call_duration_ms:.2f} ms"
-                if event.call_duration_ms else "N/A"
+                f"{event.call_duration_ms:.2f} ms" if event.call_duration_ms else "N/A"
             )
             details.append(f"Call Duration: {duration_text}")
             details.append("")
@@ -353,7 +384,9 @@ class TracerViewer(QMainWindow):
 
     def _on_query_finished(self, response: str):
         """Handle successful query completion."""
-        self.statusBar().showMessage(f"Test query completed. Response: {response[:50]}...")
+        self.statusBar().showMessage(
+            f"Test query completed. Response: {response[:50]}..."
+        )
         self.test_button.setEnabled(True)
 
     def _on_query_error(self, error_msg: str):
@@ -374,21 +407,21 @@ def main():
     app = QApplication(sys.argv)
 
     # Set application style
-    app.setStyle('Fusion')
+    app.setStyle("Fusion")
 
     window = TracerViewer()
     window.show()
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("Mojentic Tracer - Real-time Event Viewer")
-    print("="*80)
+    print("=" * 80)
     print("\nThe Qt window is now open. You can:")
     print("  1. Click 'Run Test Query' to generate sample tracer events")
     print("  2. Click on any event row to see detailed information")
     print("  3. Click 'Clear Events' to reset the display")
     print("\nThe viewer will show events in real-time as they occur.")
     print("Close the window to exit.")
-    print("="*80 + "\n")
+    print("=" * 80 + "\n")
 
     sys.exit(app.exec())
 

@@ -1,6 +1,6 @@
-from pathlib import Path
-import sys
 import os
+import sys
+from pathlib import Path
 
 from mojentic.llm.message_composers import MessageBuilder
 
@@ -9,7 +9,9 @@ project_root = Path(os.path.dirname(os.path.abspath(__file__))).parent.parent
 
 # Test adding non-existent image
 print("Testing adding non-existent image:")
-non_existent_image = project_root / 'src' / '_examples' / 'images' / 'non_existent_image.jpg'
+non_existent_image = (
+    project_root / "src" / "_examples" / "images" / "non_existent_image.jpg"
+)
 
 try:
     message_builder = MessageBuilder("Testing non-existent image")
@@ -21,7 +23,7 @@ except FileNotFoundError as e:
 
 # Test adding non-existent file
 print("\nTesting adding non-existent file:")
-non_existent_file = project_root / 'src' / '_examples' / 'non_existent_file.py'
+non_existent_file = project_root / "src" / "_examples" / "non_existent_file.py"
 
 try:
     message_builder = MessageBuilder("Testing non-existent file")
@@ -33,7 +35,7 @@ except FileNotFoundError as e:
 
 # Test adding existing image
 print("\nTesting adding existing image:")
-existing_image = project_root / 'src' / '_examples' / 'images' / 'xbox-one.jpg'
+existing_image = project_root / "src" / "_examples" / "images" / "xbox-one.jpg"
 
 try:
     message_builder = MessageBuilder("Testing existing image")

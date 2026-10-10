@@ -1,6 +1,7 @@
 import os
+from collections.abc import Iterator
 from contextlib import closing
-from typing import Iterator, List, Optional, Type, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from urllib.parse import quote
 
 import httpx
@@ -20,7 +21,11 @@ from mojentic.llm.gateways.omlx_protocol import (
 )
 from mojentic.llm.gateways.omlx_stream import drop_keepalive_frames, omlx_stream_chunks
 from mojentic.llm.gateways.openai_stream_events import parse_openai_stream
-from mojentic.llm.gateways.stream_events import StreamError, StreamErrorReason, StreamEvent
+from mojentic.llm.gateways.stream_events import (
+    StreamError,
+    StreamErrorReason,
+    StreamEvent,
+)
 from mojentic.llm.tools.llm_tool import LLMTool
 
 if TYPE_CHECKING:
@@ -45,15 +50,21 @@ class OMLXTransport:
         The underlying httpx transport. Defaults to httpx's network transport.
     """
 
-    def __init__(self, settings: OMLXSettings, http_transport: Optional[httpx.BaseTransport] = None):
-        self._client = httpx.Client(base_url=settings.base_url, headers=settings.headers,
-                                    timeout=settings.timeout, transport=http_transport)
+    def __init__(
+        self, settings: OMLXSettings, http_transport: httpx.BaseTransport | None = None
+    ):
+        self._client = httpx.Client(
+            base_url=settings.base_url,
+            headers=settings.headers,
+            timeout=settings.timeout,
+            transport=http_transport,
+        )
 
     def get(self, path: str) -> httpx.Response:
         """Send ``GET path`` and return the response."""
         return self._checked(self._client.get(path))
 
-    def post(self, path: str, body: Optional[dict] = None) -> httpx.Response:
+    def post(self, path: str, body: dict | None = None) -> httpx.Response:
         """Send ``POST path`` with an optional JSON body and return the response."""
         return self._checked(self._client.post(path, json=body))
 
@@ -99,15 +110,30 @@ class OMLXGateway(LLMGateway):
     and the oMLX error body. ``complete_stream_events`` reports them as ``PROVIDER_ERROR``.
     """
 
-    def __init__(self, host: Optional[str] = None, api_key: Optional[str] = None, timeout: Optional[float] = None,
-                 transport: Optional[OMLXTransport] = None):
-        self.settings = omlx_settings(host=host, api_key=api_key, timeout=timeout, environ=os.environ)
+    def __init__(
+        self,
+        host: str | None = None,
+        api_key: str | None = None,
+        timeout: float | None = None,
+        transport: OMLXTransport | None = None,
+    ):
+        self.settings = omlx_settings(
+            host=host, api_key=api_key, timeout=timeout, environ=os.environ
+        )
         self.transport = transport or OMLXTransport(self.settings)
 
-    def complete(self, model: str, messages: List[LLMMessage], object_model: Optional[Type[BaseModel]] = None,
-                 tools: Optional[List[LLMTool]] = None, config: Optional['CompletionConfig'] = None,
-                 temperature: float = 1.0, num_ctx: int = 32768, max_tokens: int = 16384,
-                 num_predict: int = -1) -> LLMGatewayResponse:
+    def complete(
+        self,
+        model: str,
+        messages: list[LLMMessage],
+        object_model: type[BaseModel] | None = None,
+        tools: list[LLMTool] | None = None,
+        config: Optional["CompletionConfig"] = None,
+        temperature: float = 1.0,
+        num_ctx: int = 32768,
+        max_tokens: int = 16384,
+        num_predict: int = -1,
+    ) -> LLMGatewayResponse:
         """
         Complete one chat turn.
 
@@ -138,29 +164,47 @@ class OMLXGateway(LLMGateway):
             Content, thinking, tool calls, usage, provider model, finish reason and metadata.
             ``content`` is not an answer unless ``finish_reason`` is ``stop``.
         """
-        config = config or _config_from_arguments(temperature, num_ctx, max_tokens, num_predict)
-        body = omlx_chat_body(model, messages, config, tools=tools, object_model=object_model)
+        config = config or _config_from_arguments(
+            temperature, num_ctx, max_tokens, num_predict
+        )
+        body = omlx_chat_body(
+            model, messages, config, tools=tools, object_model=object_model
+        )
         response = self.transport.post("/chat/completions", body)
-        result = omlx_gateway_response(response.json(), self._response_format_warning(model, body, response))
+        result = omlx_gateway_response(
+            response.json(), self._response_format_warning(model, body, response)
+        )
         if object_model is not None:
             result.object = _validated_object(object_model, result.content)
         return result
 
     @staticmethod
-    def _response_format_warning(model: str, body: dict, response: httpx.Response) -> Optional[str]:
+    def _response_format_warning(
+        model: str, body: dict, response: httpx.Response
+    ) -> str | None:
         warnings = response.headers.get_list("warning")
         if not warnings or not requests_structured_output(body):
             return None
         warning = ", ".join(warnings)
-        logger.warning("oMLX did not enforce the requested response format", model=model,
-                       response_format_warning=warning)
+        logger.warning(
+            "oMLX did not enforce the requested response format",
+            model=model,
+            response_format_warning=warning,
+        )
         return warning
 
-    def complete_stream(self, model: str, messages: List[LLMMessage],
-                        object_model: Optional[Type[BaseModel]] = None, tools: Optional[List[LLMTool]] = None,
-                        config: Optional['CompletionConfig'] = None, temperature: float = 1.0,
-                        num_ctx: int = 32768, max_tokens: int = 16384,
-                        num_predict: int = -1) -> Iterator[StreamingResponse]:
+    def complete_stream(
+        self,
+        model: str,
+        messages: list[LLMMessage],
+        object_model: type[BaseModel] | None = None,
+        tools: list[LLMTool] | None = None,
+        config: Optional["CompletionConfig"] = None,
+        temperature: float = 1.0,
+        num_ctx: int = 32768,
+        max_tokens: int = 16384,
+        num_predict: int = -1,
+    ) -> Iterator[StreamingResponse]:
         """
         Stream one chat turn as legacy chunks.
 
@@ -176,15 +220,20 @@ class OMLXGateway(LLMGateway):
             When ``object_model`` is given.
         """
         if object_model is not None:
-            raise NotImplementedError("Streaming with structured output (object_model) is not supported")
-        config = config or _config_from_arguments(temperature, num_ctx, max_tokens, num_predict)
+            raise NotImplementedError(
+                "Streaming with structured output (object_model) is not supported"
+            )
+        config = config or _config_from_arguments(
+            temperature, num_ctx, max_tokens, num_predict
+        )
         body = omlx_chat_body(model, messages, config, tools=tools) | {"stream": True}
         lines = self.transport.stream_lines("/chat/completions", body)
         with closing(lines):
             yield from omlx_stream_chunks(drop_keepalive_frames(lines))
 
-    def complete_stream_events(self, model: str, messages: List[LLMMessage],
-                               config: 'CompletionConfig') -> Iterator[StreamEvent]:
+    def complete_stream_events(
+        self, model: str, messages: list[LLMMessage], config: "CompletionConfig"
+    ) -> Iterator[StreamEvent]:
         """
         Stream one turn as events, with terminal completion evidence.
 
@@ -208,17 +257,23 @@ class OMLXGateway(LLMGateway):
         StreamEvent
             Content events followed by exactly one terminal event.
         """
-        body = omlx_chat_body(model, messages, config) | {"stream": True, "stream_options": {"include_usage": True}}
+        body = omlx_chat_body(model, messages, config) | {
+            "stream": True,
+            "stream_options": {"include_usage": True},
+        }
         lines = self.transport.stream_lines("/chat/completions", body)
         try:
             with closing(lines):
                 yield from parse_openai_stream(drop_keepalive_frames(lines))
         except httpx.HTTPStatusError as e:
-            yield StreamError(reason=StreamErrorReason.PROVIDER_ERROR, detail=omlx_error_detail(e.response))
+            yield StreamError(
+                reason=StreamErrorReason.PROVIDER_ERROR,
+                detail=omlx_error_detail(e.response),
+            )
         except httpx.HTTPError as e:
             yield StreamError(reason=StreamErrorReason.REQUEST_FAILED, detail=str(e))
 
-    def get_available_models(self) -> List[str]:
+    def get_available_models(self) -> list[str]:
         """
         Get the ids of the models the server offers, sorted alphabetically.
 
@@ -227,7 +282,9 @@ class OMLXGateway(LLMGateway):
         List[str]
             The model ids.
         """
-        return sorted(model["id"] for model in self.transport.get("/models").json()["data"])
+        return sorted(
+            model["id"] for model in self.transport.get("/models").json()["data"]
+        )
 
     def load_model(self, model: str) -> None:
         """
@@ -259,7 +316,7 @@ class OMLXGateway(LLMGateway):
         """
         self.transport.post(f"/models/{_path_segment(model)}/unload")
 
-    def calculate_embeddings(self, text: str, model: Optional[str] = None) -> List[float]:
+    def calculate_embeddings(self, text: str, model: str | None = None) -> list[float]:
         """
         Calculate embeddings for the text in one request, with no client-side chunking.
 
@@ -288,19 +345,37 @@ class OMLXGateway(LLMGateway):
         return response.json()["data"][0]["embedding"]
 
 
-def _config_from_arguments(temperature: float, num_ctx: int, max_tokens: int, num_predict: int) -> 'CompletionConfig':
+def _config_from_arguments(
+    temperature: float, num_ctx: int, max_tokens: int, num_predict: int
+) -> "CompletionConfig":
     from mojentic.llm.completion_config import CompletionConfig
-    return CompletionConfig(temperature=temperature, num_ctx=num_ctx, max_tokens=max_tokens, num_predict=num_predict)
+
+    return CompletionConfig(
+        temperature=temperature,
+        num_ctx=num_ctx,
+        max_tokens=max_tokens,
+        num_predict=num_predict,
+    )
 
 
-def _validated_object(object_model: Type[BaseModel], content: Optional[str]) -> Optional[BaseModel]:
+def _validated_object(
+    object_model: type[BaseModel], content: str | None
+) -> BaseModel | None:
     if content is None:
-        logger.error("No response content available for object validation", object_model=object_model)
+        logger.error(
+            "No response content available for object validation",
+            object_model=object_model,
+        )
         return None
     try:
         return object_model.model_validate_json(content)
     except ValueError as e:
-        logger.error("Failed to validate model", error=str(e), response=content, object_model=object_model)
+        logger.error(
+            "Failed to validate model",
+            error=str(e),
+            response=content,
+            object_model=object_model,
+        )
         return None
 
 

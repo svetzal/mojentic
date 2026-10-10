@@ -5,20 +5,17 @@ This module provides infrastructure for categorizing OpenAI models and managing
 their specific parameter requirements and capabilities.
 """
 
-from enum import Enum
-from typing import Dict, Optional, List, TYPE_CHECKING
 from dataclasses import dataclass
+from enum import Enum
 
 import structlog
-
-if TYPE_CHECKING:
-    pass
 
 logger = structlog.get_logger()
 
 
 class ModelType(Enum):
     """Classification of OpenAI model types based on their capabilities and parameters."""
+
     REASONING = "reasoning"  # Models like o1, o3 that use max_completion_tokens
     CHAT = "chat"  # Standard chat models that use max_tokens
     EMBEDDING = "embedding"  # Text embedding models
@@ -28,13 +25,16 @@ class ModelType(Enum):
 @dataclass
 class ModelCapabilities:
     """Defines the capabilities and parameter requirements for a model."""
+
     model_type: ModelType
     supports_tools: bool = True
     supports_streaming: bool = True
     supports_vision: bool = False
-    max_context_tokens: Optional[int] = None
-    max_output_tokens: Optional[int] = None
-    supported_temperatures: Optional[List[float]] = None  # None means all temperatures supported
+    max_context_tokens: int | None = None
+    max_output_tokens: int | None = None
+    supported_temperatures: list[float] | None = (
+        None  # None means all temperatures supported
+    )
     supports_chat_api: bool = True
     supports_completions_api: bool = False
     supports_responses_api: bool = False
@@ -63,8 +63,8 @@ class OpenAIModelRegistry:
     """
 
     def __init__(self):
-        self._models: Dict[str, ModelCapabilities] = {}
-        self._pattern_mappings: Dict[str, ModelType] = {}
+        self._models: dict[str, ModelCapabilities] = {}
+        self._pattern_mappings: dict[str, ModelType] = {}
         self._initialize_default_models()
 
     def _initialize_default_models(self):
@@ -72,17 +72,37 @@ class OpenAIModelRegistry:
 
         # Reasoning Models (o1, o3, o4, gpt-5 series) - Updated 2026-02-04
         reasoning_models = [
-            "o1", "o1-2024-12-17",
-            "o1-pro", "o1-pro-2025-03-19",
-            "o3", "o3-2025-04-16", "o3-deep-research", "o3-deep-research-2025-06-26",
-            "o3-mini", "o3-mini-2025-01-31", "o3-pro", "o3-pro-2025-06-10",
-            "o4-mini", "o4-mini-2025-04-16", "o4-mini-deep-research",
+            "o1",
+            "o1-2024-12-17",
+            "o1-pro",
+            "o1-pro-2025-03-19",
+            "o3",
+            "o3-2025-04-16",
+            "o3-deep-research",
+            "o3-deep-research-2025-06-26",
+            "o3-mini",
+            "o3-mini-2025-01-31",
+            "o3-pro",
+            "o3-pro-2025-06-10",
+            "o4-mini",
+            "o4-mini-2025-04-16",
+            "o4-mini-deep-research",
             "o4-mini-deep-research-2025-06-26",
-            "gpt-5", "gpt-5-2025-08-07", "gpt-5-codex",
-            "gpt-5-mini", "gpt-5-mini-2025-08-07", "gpt-5-nano", "gpt-5-nano-2025-08-07",
-            "gpt-5-pro", "gpt-5-pro-2025-10-06",
-            "gpt-5.1", "gpt-5.1-2025-11-13", "gpt-5.1-chat-latest",
-            "gpt-5.2", "gpt-5.2-2025-12-11", "gpt-5.2-chat-latest"
+            "gpt-5",
+            "gpt-5-2025-08-07",
+            "gpt-5-codex",
+            "gpt-5-mini",
+            "gpt-5-mini-2025-08-07",
+            "gpt-5-nano",
+            "gpt-5-nano-2025-08-07",
+            "gpt-5-pro",
+            "gpt-5-pro-2025-10-06",
+            "gpt-5.1",
+            "gpt-5.1-2025-11-13",
+            "gpt-5.1-chat-latest",
+            "gpt-5.2",
+            "gpt-5.2-2025-12-11",
+            "gpt-5.2-chat-latest",
         ]
 
         for model in reasoning_models:
@@ -92,7 +112,7 @@ class OpenAIModelRegistry:
             is_gpt5_1 = "gpt-5.1" in model
             is_gpt5_2 = "gpt-5.2" in model
             is_gpt5_pro = "gpt-5-pro" in model and not is_gpt5_2
-            is_mini_or_nano = ("mini" in model or "nano" in model)
+            is_mini_or_nano = "mini" in model or "nano" in model
             is_chat_latest = "chat-latest" in model
 
             # ALL reasoning models now support tools and streaming (except gpt-5-pro which is responses-only)
@@ -123,7 +143,9 @@ class OpenAIModelRegistry:
                 supported_temps = [1.0]
 
             # API endpoint support flags
-            is_responses_only = "pro" in model or "deep-research" in model or model == "gpt-5-codex"
+            is_responses_only = (
+                "pro" in model or "deep-research" in model or model == "gpt-5-codex"
+            )
             is_both_endpoint = model in ("gpt-5.1", "gpt-5.1-2025-11-13")
 
             self._models[model] = ModelCapabilities(
@@ -136,38 +158,65 @@ class OpenAIModelRegistry:
                 supported_temperatures=supported_temps,
                 supports_chat_api=not is_responses_only,
                 supports_completions_api=is_both_endpoint,
-                supports_responses_api=is_responses_only
+                supports_responses_api=is_responses_only,
             )
 
         # Chat Models (GPT-4 and GPT-4.1 series) - Updated 2026-02-04
         # Note: Most GPT-5 series moved to reasoning models; gpt-5-chat-latest is chat
         gpt4_and_newer_models = [
             "chatgpt-4o-latest",
-            "gpt-4", "gpt-4-0125-preview", "gpt-4-0613", "gpt-4-1106-preview",
-            "gpt-4-turbo", "gpt-4-turbo-2024-04-09", "gpt-4-turbo-preview",
-            "gpt-4.1", "gpt-4.1-2025-04-14", "gpt-4.1-mini", "gpt-4.1-mini-2025-04-14",
-            "gpt-4.1-nano", "gpt-4.1-nano-2025-04-14",
-            "gpt-4o", "gpt-4o-2024-05-13", "gpt-4o-2024-08-06", "gpt-4o-2024-11-20",
+            "gpt-4",
+            "gpt-4-0125-preview",
+            "gpt-4-0613",
+            "gpt-4-1106-preview",
+            "gpt-4-turbo",
+            "gpt-4-turbo-2024-04-09",
+            "gpt-4-turbo-preview",
+            "gpt-4.1",
+            "gpt-4.1-2025-04-14",
+            "gpt-4.1-mini",
+            "gpt-4.1-mini-2025-04-14",
+            "gpt-4.1-nano",
+            "gpt-4.1-nano-2025-04-14",
+            "gpt-4o",
+            "gpt-4o-2024-05-13",
+            "gpt-4o-2024-08-06",
+            "gpt-4o-2024-11-20",
             "gpt-4o-audio-preview",
-            "gpt-4o-audio-preview-2024-12-17", "gpt-4o-audio-preview-2025-06-03",
-            "gpt-4o-mini", "gpt-4o-mini-2024-07-18",
-            "gpt-4o-mini-audio-preview", "gpt-4o-mini-audio-preview-2024-12-17",
-            "gpt-4o-mini-realtime-preview", "gpt-4o-mini-realtime-preview-2024-12-17",
-            "gpt-4o-mini-search-preview", "gpt-4o-mini-search-preview-2025-03-11",
-            "gpt-4o-mini-transcribe", "gpt-4o-mini-tts",
-            "gpt-4o-realtime-preview", "gpt-4o-realtime-preview-2024-10-01",
-            "gpt-4o-realtime-preview-2024-12-17", "gpt-4o-realtime-preview-2025-06-03",
-            "gpt-4o-search-preview", "gpt-4o-search-preview-2025-03-11",
+            "gpt-4o-audio-preview-2024-12-17",
+            "gpt-4o-audio-preview-2025-06-03",
+            "gpt-4o-mini",
+            "gpt-4o-mini-2024-07-18",
+            "gpt-4o-mini-audio-preview",
+            "gpt-4o-mini-audio-preview-2024-12-17",
+            "gpt-4o-mini-realtime-preview",
+            "gpt-4o-mini-realtime-preview-2024-12-17",
+            "gpt-4o-mini-search-preview",
+            "gpt-4o-mini-search-preview-2025-03-11",
+            "gpt-4o-mini-transcribe",
+            "gpt-4o-mini-tts",
+            "gpt-4o-realtime-preview",
+            "gpt-4o-realtime-preview-2024-10-01",
+            "gpt-4o-realtime-preview-2024-12-17",
+            "gpt-4o-realtime-preview-2025-06-03",
+            "gpt-4o-search-preview",
+            "gpt-4o-search-preview-2025-03-11",
             "gpt-4o-transcribe",
             "gpt-5-chat-latest",
-            "gpt-5-search-api", "gpt-5-search-api-2025-10-14"
+            "gpt-5-search-api",
+            "gpt-5-search-api-2025-10-14",
         ]
 
         for model in gpt4_and_newer_models:
             # Determine capabilities based on model features
             is_chatgpt_latest = model == "chatgpt-4o-latest"
-            is_mini_or_nano = ("mini" in model or "nano" in model)
-            is_audio = "audio" in model or "realtime" in model or "transcribe" in model or "tts" in model
+            is_mini_or_nano = "mini" in model or "nano" in model
+            is_audio = (
+                "audio" in model
+                or "realtime" in model
+                or "transcribe" in model
+                or "tts" in model
+            )
             is_search = "search" in model
             is_gpt41 = "gpt-4.1" in model
             is_gpt5_chat = model == "gpt-5-chat-latest"
@@ -175,10 +224,17 @@ class OpenAIModelRegistry:
             is_nano_base = model == "gpt-4.1-nano"
             # Note: Keep vision=True for gpt-4o models (audit probe limitation with 1x1 PNG)
             # Exclude chatgpt-4o-latest, audio/search/transcribe/tts/realtime variants
-            vision_support = ("gpt-4o" in model and not is_chatgpt_latest and not is_audio and not is_search)
+            vision_support = (
+                "gpt-4o" in model
+                and not is_chatgpt_latest
+                and not is_audio
+                and not is_search
+            )
 
             # Tool support: disabled for audio models, search models, chatgpt-4o-latest, and gpt-4.1-nano
-            supports_tools = not (is_audio or is_search or is_chatgpt_latest or is_nano_base)
+            supports_tools = not (
+                is_audio or is_search or is_chatgpt_latest or is_nano_base
+            )
             # Streaming: disabled for audio models only
             supports_streaming = not is_audio
             # Temperature restrictions for search models
@@ -199,8 +255,12 @@ class OpenAIModelRegistry:
                 output_tokens = 8192
 
             # API endpoint support flags
-            is_both_endpoint = model in ("gpt-4.1-nano", "gpt-4.1-nano-2025-04-14",
-                                         "gpt-4o-mini", "gpt-4o-mini-2024-07-18")
+            is_both_endpoint = model in (
+                "gpt-4.1-nano",
+                "gpt-4.1-nano-2025-04-14",
+                "gpt-4o-mini",
+                "gpt-4o-mini-2024-07-18",
+            )
 
             self._models[model] = ModelCapabilities(
                 model_type=ModelType.CHAT,
@@ -210,18 +270,22 @@ class OpenAIModelRegistry:
                 max_context_tokens=context_tokens,
                 max_output_tokens=output_tokens,
                 supported_temperatures=supported_temps,
-                supports_completions_api=is_both_endpoint
+                supports_completions_api=is_both_endpoint,
             )
 
         # Chat Models (GPT-3.5 series) - Updated 2026-02-04
         gpt35_models = [
-            "gpt-3.5-turbo", "gpt-3.5-turbo-0125", "gpt-3.5-turbo-1106",
-            "gpt-3.5-turbo-16k", "gpt-3.5-turbo-instruct", "gpt-3.5-turbo-instruct-0914"
+            "gpt-3.5-turbo",
+            "gpt-3.5-turbo-0125",
+            "gpt-3.5-turbo-1106",
+            "gpt-3.5-turbo-16k",
+            "gpt-3.5-turbo-instruct",
+            "gpt-3.5-turbo-instruct-0914",
         ]
 
         for model in gpt35_models:
             is_instruct = "instruct" in model
-            context_tokens = 16385 if "16k" not in model else 16385
+            context_tokens = 16385
             self._models[model] = ModelCapabilities(
                 model_type=ModelType.CHAT,
                 supports_tools=not is_instruct,  # Instruct models don't support tools
@@ -230,12 +294,14 @@ class OpenAIModelRegistry:
                 max_context_tokens=context_tokens,
                 max_output_tokens=4096,
                 supports_chat_api=not is_instruct,
-                supports_completions_api=is_instruct
+                supports_completions_api=is_instruct,
             )
 
         # Embedding Models - Updated 2026-02-04
         embedding_models = [
-            "text-embedding-3-large", "text-embedding-3-small", "text-embedding-ada-002"
+            "text-embedding-3-large",
+            "text-embedding-3-small",
+            "text-embedding-ada-002",
         ]
 
         for model in embedding_models:
@@ -244,7 +310,7 @@ class OpenAIModelRegistry:
                 supports_tools=False,
                 supports_streaming=False,
                 supports_vision=False,
-                supports_chat_api=False
+                supports_chat_api=False,
             )
 
         # Legacy & Codex Models - Updated 2026-02-05
@@ -254,7 +320,7 @@ class OpenAIModelRegistry:
             supports_streaming=False,
             supports_vision=False,
             supports_chat_api=False,
-            supports_completions_api=True
+            supports_completions_api=True,
         )
 
         self._models["davinci-002"] = ModelCapabilities(
@@ -263,7 +329,7 @@ class OpenAIModelRegistry:
             supports_streaming=False,
             supports_vision=False,
             supports_chat_api=False,
-            supports_completions_api=True
+            supports_completions_api=True,
         )
 
         self._models["gpt-5.1-codex-mini"] = ModelCapabilities(
@@ -275,7 +341,7 @@ class OpenAIModelRegistry:
             max_output_tokens=32768,
             supported_temperatures=[1.0],
             supports_chat_api=False,
-            supports_completions_api=True
+            supports_completions_api=True,
         )
 
         self._models["codex-mini-latest"] = ModelCapabilities(
@@ -287,7 +353,7 @@ class OpenAIModelRegistry:
             max_output_tokens=32768,
             supported_temperatures=[1.0],
             supports_chat_api=False,
-            supports_responses_api=True
+            supports_responses_api=True,
         )
 
         # GPT-5.4 / GPT-5.5 Reasoning Models - Added 2026-05-21
@@ -318,7 +384,7 @@ class OpenAIModelRegistry:
                 supported_temperatures=[1.0],
                 supports_chat_api=True,
                 supports_completions_api=False,
-                supports_responses_api=True
+                supports_responses_api=True,
             )
 
         # Pattern mappings for unknown models - Updated 2026-05-21
@@ -339,7 +405,7 @@ class OpenAIModelRegistry:
             "gpt-3.5": ModelType.CHAT,
             "chatgpt": ModelType.CHAT,
             "text-embedding": ModelType.EMBEDDING,
-            "text-moderation": ModelType.MODERATION
+            "text-moderation": ModelType.MODERATION,
         }
 
     def get_model_capabilities(self, model_name: str) -> ModelCapabilities:
@@ -368,19 +434,20 @@ class OpenAIModelRegistry:
                     "Using pattern matching for unknown model",
                     model=model_name,
                     pattern=pattern,
-                    inferred_type=model_type.value
+                    inferred_type=model_type.value,
                 )
                 # Return default capabilities for the inferred type
                 return self._get_default_capabilities_for_type(model_type)
 
         # Default to chat model if no pattern matches
         logger.warning(
-            "Unknown model, defaulting to chat model capabilities",
-            model=model_name
+            "Unknown model, defaulting to chat model capabilities", model=model_name
         )
         return self._get_default_capabilities_for_type(ModelType.CHAT)
 
-    def _get_default_capabilities_for_type(self, model_type: ModelType) -> ModelCapabilities:
+    def _get_default_capabilities_for_type(
+        self, model_type: ModelType
+    ) -> ModelCapabilities:
         """Get default capabilities for a model type."""
         if model_type == ModelType.REASONING:
             return ModelCapabilities(
@@ -390,7 +457,7 @@ class OpenAIModelRegistry:
                 supports_vision=False,
                 supports_chat_api=True,
                 supports_completions_api=False,
-                supports_responses_api=False
+                supports_responses_api=False,
             )
         elif model_type == ModelType.CHAT:
             return ModelCapabilities(
@@ -400,7 +467,7 @@ class OpenAIModelRegistry:
                 supports_vision=False,
                 supports_chat_api=True,
                 supports_completions_api=False,
-                supports_responses_api=False
+                supports_responses_api=False,
             )
         elif model_type == ModelType.EMBEDDING:
             return ModelCapabilities(
@@ -410,7 +477,7 @@ class OpenAIModelRegistry:
                 supports_vision=False,
                 supports_chat_api=False,
                 supports_completions_api=False,
-                supports_responses_api=False
+                supports_responses_api=False,
             )
         else:  # MODERATION
             return ModelCapabilities(
@@ -420,7 +487,7 @@ class OpenAIModelRegistry:
                 supports_vision=False,
                 supports_chat_api=False,
                 supports_completions_api=False,
-                supports_responses_api=False
+                supports_responses_api=False,
             )
 
     def is_reasoning_model(self, model_name: str) -> bool:
@@ -440,7 +507,7 @@ class OpenAIModelRegistry:
         capabilities = self.get_model_capabilities(model_name)
         return capabilities.model_type == ModelType.REASONING
 
-    def get_registered_models(self) -> List[str]:
+    def get_registered_models(self) -> list[str]:
         """
         Get a list of all explicitly registered models.
 
@@ -463,7 +530,9 @@ class OpenAIModelRegistry:
             The capabilities of the model.
         """
         self._models[model_name] = capabilities
-        logger.info("Registered new model", model=model_name, type=capabilities.model_type.value)
+        logger.info(
+            "Registered new model", model=model_name, type=capabilities.model_type.value
+        )
 
     def register_pattern(self, pattern: str, model_type: ModelType):
         """

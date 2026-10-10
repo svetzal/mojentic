@@ -11,6 +11,7 @@ the parallel speed-up still applies even from a sync call site. For
 realtime / fully-async use cases, prefer the ``RealtimeVoiceBroker``
 which is async end-to-end.
 """
+
 from mojentic.llm.gateways.models import LLMGatewayResponse, LLMMessage, LLMToolCall
 from mojentic.llm.llm_broker import LLMBroker
 from mojentic.llm.tools.llm_tool import LLMTool
@@ -22,6 +23,7 @@ class _SlowAddTool(LLMTool):
 
     def run(self, a: str = "0", b: str = "0") -> dict:
         import time
+
         time.sleep(0.2)
         return {"sum": float(a) + float(b)}
 
@@ -88,7 +90,11 @@ def _run_with(runner: ToolRunner) -> float:
 
 
 def main() -> None:
-    serial = _run_with(__import__("mojentic.llm.tools.runner", fromlist=["SerialToolRunner"]).SerialToolRunner())
+    serial = _run_with(
+        __import__(
+            "mojentic.llm.tools.runner", fromlist=["SerialToolRunner"]
+        ).SerialToolRunner()
+    )
     parallel = _run_with(AsyncParallelToolRunner(max_concurrency=4))
     print(f"Serial   : {serial * 1000:.0f}ms (3 tools × ~200ms each)")
     print(f"Parallel : {parallel * 1000:.0f}ms (3 tools fanned out)")

@@ -5,7 +5,6 @@ from mojentic.llm.completion_config import CompletionConfig, ResponseFormat
 
 
 class DescribeCompletionConfig:
-
     def should_use_default_values(self):
         config = CompletionConfig()
         assert config.temperature == 1.0
@@ -20,7 +19,7 @@ class DescribeCompletionConfig:
             num_ctx=16384,
             max_tokens=8192,
             num_predict=100,
-            reasoning_effort="high"
+            reasoning_effort="high",
         )
         assert config.temperature == 0.5
         assert config.num_ctx == 16384
@@ -45,7 +44,6 @@ class DescribeCompletionConfig:
 
 
 class DescribeResponseFormat:
-
     def should_default_to_absent_on_config(self):
         config = CompletionConfig()
 

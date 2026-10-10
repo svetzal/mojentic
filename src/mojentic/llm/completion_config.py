@@ -1,4 +1,4 @@
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -20,9 +20,9 @@ class ResponseFormat(BaseModel):
     """
 
     type: Literal["text", "json_object"] = Field(description="Requested output format")
-    json_schema: Optional[Dict[str, Any]] = Field(
+    json_schema: dict[str, Any] | None = Field(
         default=None,
-        description="JSON schema for schema mode; only valid with type 'json_object'"
+        description="JSON schema for schema mode; only valid with type 'json_object'",
     )
 
     @model_validator(mode="after")
@@ -73,30 +73,21 @@ class CompletionConfig(BaseModel):
     """
 
     temperature: float = Field(
-        default=1.0,
-        description="Temperature for sampling (higher = more random)"
+        default=1.0, description="Temperature for sampling (higher = more random)"
     )
-    num_ctx: int = Field(
-        default=32768,
-        description="Number of context tokens"
-    )
-    max_tokens: int = Field(
-        default=16384,
-        description="Maximum tokens to generate"
-    )
+    num_ctx: int = Field(default=32768, description="Number of context tokens")
+    max_tokens: int = Field(default=16384, description="Maximum tokens to generate")
     num_predict: int = Field(
-        default=-1,
-        description="Number of tokens to predict (-1 = no limit)"
+        default=-1, description="Number of tokens to predict (-1 = no limit)"
     )
-    reasoning_effort: Optional[Literal["low", "medium", "high"]] = Field(
-        default=None,
-        description="Reasoning effort level for extended thinking"
+    reasoning_effort: Literal["low", "medium", "high"] | None = Field(
+        default=None, description="Reasoning effort level for extended thinking"
     )
-    max_tool_iterations: Optional[int] = Field(
+    max_tool_iterations: int | None = Field(
         default=10,
-        description="Maximum number of tool-call recursion steps allowed; None means unlimited"
+        description="Maximum number of tool-call recursion steps allowed; None means unlimited",
     )
-    response_format: Optional[ResponseFormat] = Field(
+    response_format: ResponseFormat | None = Field(
         default=None,
-        description="Requested output format; None leaves the provider default"
+        description="Requested output format; None leaves the provider default",
     )

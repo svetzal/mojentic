@@ -18,7 +18,7 @@ def check_ollama_gateway():
         object_model=Feeling,
         temperature=1.0,
         num_ctx=32768,
-        num_predict=-1
+        num_predict=-1,
     )
     print(response)
 
@@ -31,10 +31,7 @@ def check_tools_call():
             #     'role': 'user',
             #     'content': "What is the date on Friday?"
             # },
-            {
-                "role": "user",
-                "content": "What is the date on Friday?"
-            },
+            {"role": "user", "content": "What is the date on Friday?"},
             # {
             #     'role': 'assistant',
             #     'content': '',
@@ -56,22 +53,20 @@ def check_tools_call():
                     "type": "function",
                     "function": {
                         "name": "resolve_date",
-                        "arguments": {
-                            "relative_date_found": "Friday"
-                        }
-                    }
-                }
+                        "arguments": {"relative_date_found": "Friday"},
+                    },
+                },
             },
             # {
             #     "role": "tool",
             #     "content": "{\"relative_date\": \"Friday\", \"resolved_date\": \"2025-01-31\"}"
             # }
             {
-                'role': 'tool',
-                'content': '{"relative_date": "Friday", "resolved_date": "2025-01-31"}',
-            }
+                "role": "tool",
+                "content": '{"relative_date": "Friday", "resolved_date": "2025-01-31"}',
+            },
         ],
-        tools=[ResolveDateTool().descriptor]
+        tools=[ResolveDateTool().descriptor],
     )
     print(response)
     # print(response.message.model_dump_json(indent=2))

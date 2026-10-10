@@ -3,8 +3,8 @@
 This module defines the core data structures used throughout the ReAct
 implementation, including actions, plans, observations, and context.
 """
+
 from enum import Enum
-from typing import List
 
 from pydantic import BaseModel, Field
 
@@ -28,15 +28,12 @@ class ThoughtActionObservation(BaseModel):
 
     thought: str = Field(
         ...,
-        description="The thought process behind the action taken in the current context."
+        description="The thought process behind the action taken in the current context.",
     )
-    action: str = Field(
-        ...,
-        description="The action taken in the current context."
-    )
+    action: str = Field(..., description="The action taken in the current context.")
     observation: str = Field(
         ...,
-        description="The observation made after the action taken in the current context."
+        description="The observation made after the action taken in the current context.",
     )
 
 
@@ -46,9 +43,9 @@ class Plan(BaseModel):
     Contains a list of steps that outline how to approach answering the query.
     """
 
-    steps: List[str] = Field(
+    steps: list[str] = Field(
         [],
-        description="How to answer the query, step by step, each step outlining an action to take."
+        description="How to answer the query, step by step, each step outlining an action to take.",
     )
 
 
@@ -61,18 +58,16 @@ class CurrentContext(BaseModel):
     """
 
     user_query: str = Field(
-        ...,
-        description="The user query to which we are responding."
+        ..., description="The user query to which we are responding."
     )
     plan: Plan = Field(
         Plan(steps=[]),
-        description="The current plan of action for the current context."
+        description="The current plan of action for the current context.",
     )
-    history: List[ThoughtActionObservation] = Field(
+    history: list[ThoughtActionObservation] = Field(
         [],
-        description="The history of actions taken and observations made in the current context."
+        description="The history of actions taken and observations made in the current context.",
     )
     iteration: int = Field(
-        0,
-        description="The number of iterations taken in the current context."
+        0, description="The number of iterations taken in the current context."
     )

@@ -1,4 +1,4 @@
-from typing import List, Optional, Type, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from pydantic import BaseModel
 
@@ -16,15 +16,18 @@ class LLMGateway:
     To create a new gateway, inherit from this class and implement the `complete` method.
     """
 
-    def complete(self,
-                 model: str,
-                 messages: List[LLMMessage],
-                 object_model: Optional[Type[BaseModel]] = None,
-                 tools: Optional[List[LLMTool]] = None,
-                 config: Optional['CompletionConfig'] = None,
-                 temperature: float = 1.0,
-                 num_ctx: int = 32768, max_tokens: int = 16384,
-                 num_predict: int = -1) -> LLMGatewayResponse:
+    def complete(
+        self,
+        model: str,
+        messages: list[LLMMessage],
+        object_model: type[BaseModel] | None = None,
+        tools: list[LLMTool] | None = None,
+        config: Optional["CompletionConfig"] = None,
+        temperature: float = 1.0,
+        num_ctx: int = 32768,
+        max_tokens: int = 16384,
+        num_predict: int = -1,
+    ) -> LLMGatewayResponse:
         """
         Complete the LLM request.
 
@@ -57,7 +60,7 @@ class LLMGateway:
         """
         raise NotImplementedError
 
-    def get_available_models(self) -> List[str]:
+    def get_available_models(self) -> list[str]:
         """
         Get the list of available models.
 
@@ -68,7 +71,7 @@ class LLMGateway:
         """
         raise NotImplementedError
 
-    def calculate_embeddings(self, text: str, model: str = None) -> List[float]:
+    def calculate_embeddings(self, text: str, model: str | None = None) -> list[float]:
         """
         Calculate embeddings for the given text using the specified model.
 

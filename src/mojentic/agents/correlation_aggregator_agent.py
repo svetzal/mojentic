@@ -6,7 +6,9 @@ logger = structlog.get_logger()
 
 
 class BaseAggregatingAgent(BaseAgent):
-    def __init__(self, event_types_needed=[]):
+    def __init__(self, event_types_needed=None):
+        if event_types_needed is None:
+            event_types_needed = []
         super().__init__()
         self.results = {}
         self.event_types_needed = event_types_needed
@@ -24,7 +26,13 @@ class BaseAggregatingAgent(BaseAgent):
 
     def _has_all_needed(self, event):
         self._capture_results_if_needed(event)
-        event_types_captured = [type(e) for e in self.results.get(event.correlation_id, [])]
-        finished = all([event_type in event_types_captured for event_type in self.event_types_needed])
-        logger.debug(f"Captured: {event_types_captured}, Needed: {self.event_types_needed}, Finished: {finished}")
+        event_types_captured = [
+            type(e) for e in self.results.get(event.correlation_id, [])
+        ]
+        finished = all(
+            event_type in event_types_captured for event_type in self.event_types_needed
+        )
+        logger.debug(
+            f"Captured: {event_types_captured}, Needed: {self.event_types_needed}, Finished: {finished}"
+        )
         return finished

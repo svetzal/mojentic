@@ -1,7 +1,5 @@
-from typing import List
-
 from mojentic import Event
-from mojentic.agents import BaseLLMAgent
+from mojentic.agents.base_llm_agent import BaseLLMAgent
 
 
 class AgentEventAdapter:
@@ -12,7 +10,7 @@ class AgentEventAdapter:
     def __init__(self, agent: BaseLLMAgent):
         self.agent = agent
 
-    def receive_event(self, event: Event) -> List[Event]:
+    def receive_event(self, event: Event) -> list[Event]:
         """
         receive_event is called by the event broker when an event is to be received by an agent. The adapter will
         return a list of events determined from the agent's output in response to the received event.

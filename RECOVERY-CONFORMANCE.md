@@ -5,26 +5,22 @@ completion only. It makes no cross-port parity claim. Streaming and other adapte
 remain pending. All tests use scripted loopback HTTP, without live inference,
 provider SDK mocking, session restarts, or external harness writes.
 
-The implementation was compared with exact Rust revision
-`4ca1ed279c02eab37827a1ed07c30e961155ecf3`, specifically its recovery types,
-policy, engine, adapter, and conformance notes. Shared decisions include immutable
-payloads, UUID correlation, bounded full jitter, permanent-status priority over
-body transport failure, observed-before-capture progress, explicit ambiguous-local
-admission, and private typed causes. Rust's streaming and additional provider work
-are not included here. This correction retains the Python increment at
-`b7c6b3d15303bc023c2145bf1cf8dfb713d931f7` rather than rebuilding it.
-Both October 9 intent files and the task-supplied October 10 correction constraints
-govern this work. The binding task supplement and provenance are recorded in
-`.foundry/OCTOBER-10-SUPPLEMENT.md`; a separate external supplement file has not
-been supplied and is not represented as inspected. Git finalization belongs to
-Foundry; no commit, ref update, release or sibling write is part of this run.
+This lint correction starts from Python revision
+`c95d805e617f521c77cc04866b2232c11d0baba8`. The initial worktree was clean;
+`git ls-remote origin refs/heads/main` returned that same revision. The explicit
+Foundry restriction forbids ref changes, so fetch, rebase, commit and push were
+not performed. Finalization belongs to Foundry.
 
-The exact Rust files inspected are retained in `.foundry/reference/rust/`.
-Rust's `engine.rs` checks cancellation/expiry after request capture and lifecycle
-callbacks, retains private response headers, and filters outbound echoes from
-provider IDs. Python now checks those dispatch boundaries and retains private
-headers; conservatively, it omits all provider IDs from safe models, including
-UUIDs. This is an explicit capability difference, not a whole-mission parity claim.
+The October 9 intent files and the current task's correction constraints govern
+this work. The full task-supplied supplement is preserved verbatim with its
+provenance in `.foundry/OCTOBER-10-SUPPLEMENT.md`. That provenance distinguishes
+the supplied task from a separate owner-authored document requested from the user.
+
+The inherited report cited Rust revision
+`4ca1ed279c02eab37827a1ed07c30e961155ecf3`. This lint task does not repeat that
+cross-port inspection or claim to possess its old reference artifacts. Python
+continues to omit provider IDs from safe metadata while retaining explicit private
+headers. New evidence below measures the corrected Python source only.
 
 ## Assertions through actual HTTP/public entrypoints
 
@@ -62,35 +58,70 @@ The following table names executable methods, rather than planned coverage.
 `src/mojentic/llm/recovery_spec.py` additionally verifies overflow-safe exponential
 ceilings, strict positive attempt limits, finite timing controls, modern/obsolete
 HTTP dates, huge invalid Retry-After, frozen policy and excluded callback metadata.
-This run's proof, complete command logs, wire evidence and source hashes are
-retained under `.foundry/`. The authentication probe genuinely rejected the
-preserved implementation (missing captured Authorization), then passed after the
-source change. A fresh reproduction against the preserved source with the expanded
-boundary fixtures yielded 20 failures and 2 passes; the corrected matrix passed
-all 22 cases. This reproduction is not an unavailable historical run artifact.
+## October 10 lint correction and migration impact
 
-Full suite: 624 tests passed. The mandatory `uv run pytest --cov` reports 82%
-coverage of imported files; `uv run pytest` with the configured `--cov=src`
-reports 80% across the source tree, including unimported files. No coverage
-threshold is configured in the project; no gate was lowered. Full Flake8, required selective
-Flake8, Bandit, both unfiltered pip-audit invocations and documentation build passed.
-`uvx pip-audit` used `PIPAPI_PYTHON_LOCATION` to audit the project environment.
-Ruff 0.16.10 passes both changed recovery files; repository-wide `ruff check src`
-fails with 871 findings in existing source. That required gate remains blocked;
-this report does not claim all project gates passed. No dependency was upgraded,
-advisory suppressed or broad formatting/runtime cleanup performed.
+Ruff 0.16.10 initially reported **871 findings** across `src` at the starting
+revision. `.foundry/ruff-before.json` retains every finding;
+`.foundry/ruff-settings.txt` retains all enabled rules and exclusions;
+`.foundry/ruff-version.txt` and `.foundry/baseline-hashes.json` retain the tool
+version and exact original-source hashes. The commands were `uv run ruff
+--version`, `uv run ruff check src --show-settings` and `uv run ruff check src
+--output-format json`, captured through Foundry. Rules, dependency pins, quality
+thresholds, configuration and audit scope were not changed.
 
-Independent review inspected the actual rejecting/corrected logs and corrected
-boundary matrix and reported no blocking defect in that scope (22 passing cases
-initially, then 23 after independently reviewing the expiry-observer correction).
-Its result and complete run logs are retained in `.foundry/independent-review.md`.
-Earlier increment proof/capture logs referenced by the preserved report were not
-present in this worktree and could not be recovered; their contents are not fabricated.
+Mechanical formatting, imports, Python 3.11 annotations and equivalent aliases
+are separated for review in `.foundry/mechanical.patch`. The follow-on changes
+and regressions are in `.foundry/behavior-sensitive.patch`; these two patches
+compose to the source diff. Direct imports from defining modules preserve public
+exports and avoid three import cycles exposed by sorting. Stage snapshots are
+supporting evidence, not commits or claims that an intermediate tree passes gates.
+
+Each behavior-sensitive correction addresses an original lint finding within the
+task's stated owner authorization:
+
+| Finding | Corrected behavior and migration impact | Actual evidence |
+| --- | --- | --- |
+| BLE001 in Ollama structured validation | Catch `ValidationError`; unexpected validator defects propagate instead of becoming an empty structured result. Expected malformed/schema failures keep their fallback. | First proof uses real HTTP: original source fails to raise `TypeError`; corrected source raises after exactly one request, with schema and non-streaming payload assertions. `.foundry/proof.json` and both referenced logs retain exits 1/0. |
+| BLE001 in file/image boundaries | Expected filesystem and value errors retain error results or skipped-image fallbacks. Unexpected programmer errors now propagate; callers relying on swallowing arbitrary exceptions must handle those explicitly. | `.foundry/logs/filesystem-rejecting.log`: nine rejecting cases; corrected log: 52 passes. `.foundry/logs/image-header-baseline.log`: both adapters reject after reading a real local image; corrected log: 19 passes, including missing-image fallbacks. No provider SDK/private-function mocks were added. |
+| BLE001 in OpenAI validation | Catch `ValidationError` only. The public SDK parse path already propagates validator defects; this is compatibility characterization, not a claimed new rejecting case. | Real OpenAI-compatible loopback completion passes on original and corrected source; one HTTP request and the completion path are asserted. |
+| B006 in aggregator/default gateway headers; RUF012 in session messages | Fresh omitted event-type lists prevent cross-agent leakage; explicitly supplied lists retain identity. Gateway omitted/None/empty/explicit headers preserve all three completion paths. Session history remains initialized per instance. Access history on a session instance rather than the removed shared class default. | Aggregator rejection and explicit-list compatibility in `.foundry/logs/defaults-date-rejecting.log`; 12 real HTTP header checks across ordinary, structured and streaming paths pass on both original and corrected source. |
+| DTZ005/DTZ006 | Use an aware instant converted to the local timezone. Default local wall-clock formatting stays unchanged; current-date `%z`/`%Z` now show the offset/name matching the returned timestamp. Tracer display remains local. | Date regression rejects blank offset/name on original source; default format passes before and after. Corrected datetime/aggregator/recovery matrix has 90 passes. |
+| ASYNC230, S110 and retained example catches | Example file reading moves to `asyncio.to_thread`; intentionally broad example failure reporting and close behavior remain, with diagnostic logging. No new lint suppression is used. | Full async/realtime/example collection and suite pass. Active exclusions remain; Ruff removes redundant source `noqa` comments when their rule is already satisfied. |
+
+All **223 existing recovery assertions** are AST-identical to the starting source;
+`.foundry/recovery-assertions.json` records that comparison. Existing HTTP tests
+still assert literal payload bytes, distinct attempts, typed causes, authoritative
+cancellation, privacy and completed-tool execution exactly once. The first proof
+was captured before expanding fixtures/docs or running the full quality suite.
+
+Final gate commands and actual exit codes are recorded in `.foundry/quality.json`;
+full captures remain outside this worktree under
+`/home/svetzal/.foundry/tool-logs/mojentic-py-lint-c3/`. Corrected-source hashes
+are retained in `.foundry/corrected-hashes.json`. Ruff across all `src`, full and
+selective Flake8, tests, tests with coverage, formatter verification, documentation
+build, Bandit, both unfiltered audits and the outdated-package check all exited
+zero; their successful entries and exact logs are retained in that manifest. The final full suite
+passes **656 tests**. Configured `--cov=src` reports **82%** across the source
+tree; the separately requested `uv run pytest --cov` reports **84%** for imported
+files. No coverage threshold is configured, and none was introduced or lowered.
+
+Both audits set `PIPAPI_PYTHON_LOCATION` to this worktree's `.venv/bin/python`.
+`.foundry/environment.json` records its executable, prefix and 96 distributions;
+`.foundry/audit-environment-proof.json` matches all 96 package names and versions
+to the unfiltered verbose audit. The standalone `uvx pip-audit` therefore audits
+the project environment, not its own tool environment or a pip-only interpreter.
+The unfiltered audits found no known vulnerabilities. The outdated-package report
+is retained without changing dependencies or adding advisory suppressions.
+
+Independent review and its final evidence reconciliation are retained in
+`.foundry/independent-review.md`. This report makes no claim that historical
+increment capture files were reconstructed; the rejecting/corrected evidence
+above was actually observed during this task.
 
 ## Pending or deliberately unchanged
 
 - Ollama streaming recovery and partial-stream conformance: pending, explicitly forbidden in this increment.
-- oMLX, OpenAI and Anthropic recovery: pending. Existing adapters are unchanged.
+- oMLX, OpenAI and Anthropic recovery: pending. Lint-only adapter corrections do not add recovery.
 - Native reasoning in outgoing Ollama history: the existing message model/adapter omit it; this increment preserves current payloads and successful native reasoning responses. No new history parity claim.
 - Ordinary finish handling and reasoning-disabled behavior: unchanged.
 - Provider codes and IDs: untrusted values, including UUID-valued request IDs, are omitted from safe metadata; raw headers are explicitly inspectable.

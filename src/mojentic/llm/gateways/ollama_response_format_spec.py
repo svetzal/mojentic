@@ -20,7 +20,7 @@ def mock_ollama_client(mocker):
 
 @pytest.fixture
 def gateway(mocker, mock_ollama_client):
-    mocker.patch('mojentic.llm.gateways.ollama.Client', return_value=mock_ollama_client)
+    mocker.patch("mojentic.llm.gateways.ollama.Client", return_value=mock_ollama_client)
     return OllamaGateway()
 
 
@@ -30,7 +30,6 @@ def messages():
 
 
 class DescribeOllamaResponseFormat:
-
     @pytest.mark.parametrize("response_format,expected", FORMAT_CASES)
     def should_map_json_formats_to_ollama_format(self, response_format, expected):
         assert ollama_format(response_format) == expected
@@ -40,34 +39,42 @@ class DescribeOllamaResponseFormat:
         assert ollama_format(response_format) is None
 
     class DescribeStreamingRequests:
-
         @pytest.mark.parametrize("response_format,expected", FORMAT_CASES)
-        def should_forward_configured_format(self, gateway, mock_ollama_client, messages,
-                                             response_format, expected):
+        def should_forward_configured_format(
+            self, gateway, mock_ollama_client, messages, response_format, expected
+        ):
             mock_ollama_client.chat.return_value = iter([])
             config = CompletionConfig(response_format=response_format)
 
-            list(gateway.complete_stream(model="qwen3", messages=messages, config=config))
+            list(
+                gateway.complete_stream(model="qwen3", messages=messages, config=config)
+            )
 
             assert mock_ollama_client.chat.call_args.kwargs["format"] == expected
 
         @pytest.mark.parametrize("response_format", [None, ResponseFormat(type="text")])
-        def should_leave_body_unchanged_for_text_or_absent(self, gateway, mock_ollama_client, messages,
-                                                           response_format):
+        def should_leave_body_unchanged_for_text_or_absent(
+            self, gateway, mock_ollama_client, messages, response_format
+        ):
             mock_ollama_client.chat.return_value = iter([])
             config = CompletionConfig(response_format=response_format)
 
-            list(gateway.complete_stream(model="qwen3", messages=messages, config=config))
+            list(
+                gateway.complete_stream(model="qwen3", messages=messages, config=config)
+            )
 
             assert "format" not in mock_ollama_client.chat.call_args.kwargs
 
     class DescribeNonStreamingRequests:
-
         @pytest.mark.parametrize("response_format,expected", FORMAT_CASES)
-        def should_forward_configured_format(self, gateway, mock_ollama_client, messages,
-                                             response_format, expected):
+        def should_forward_configured_format(
+            self, gateway, mock_ollama_client, messages, response_format, expected
+        ):
             mock_ollama_client.chat.return_value = ChatResponse(
-                model="qwen3", done=True, message=Message(role="assistant", content="{}"))
+                model="qwen3",
+                done=True,
+                message=Message(role="assistant", content="{}"),
+            )
             config = CompletionConfig(response_format=response_format)
 
             gateway.complete(model="qwen3", messages=messages, config=config)

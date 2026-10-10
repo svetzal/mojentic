@@ -1,14 +1,13 @@
 import time
 
-
+from mojentic.tracer.event_store import EventStore
 from mojentic.tracer.tracer_events import (
+    AgentInteractionTracerEvent,
     LLMCallTracerEvent,
     LLMResponseTracerEvent,
     ToolCallTracerEvent,
-    AgentInteractionTracerEvent
 )
 from mojentic.tracer.tracer_system import TracerSystem
-from mojentic.tracer.event_store import EventStore
 
 
 class DescribeTracerSystem:
@@ -57,7 +56,9 @@ class DescribeTracerSystem:
         # When
         messages = [{"role": "system", "content": "You are a helpful assistant."}]
         correlation_id = "test-correlation-id"
-        tracer_system.record_llm_call("test-model", messages, 0.7, correlation_id=correlation_id)
+        tracer_system.record_llm_call(
+            "test-model", messages, 0.7, correlation_id=correlation_id
+        )
 
         # Then
         events = tracer_system.get_events(event_type=LLMCallTracerEvent)
@@ -82,7 +83,7 @@ class DescribeTracerSystem:
             "test-model",
             "This is a test response",
             call_duration_ms=150.5,
-            correlation_id=correlation_id
+            correlation_id=correlation_id,
         )
 
         # Then
@@ -110,7 +111,7 @@ class DescribeTracerSystem:
             arguments,
             "test result",
             "TestAgent",
-            correlation_id=correlation_id
+            correlation_id=correlation_id,
         )
 
         # Then
@@ -134,11 +135,7 @@ class DescribeTracerSystem:
         # When
         correlation_id = "test-correlation-id"
         tracer_system.record_agent_interaction(
-            "AgentA",
-            "AgentB",
-            "RequestEvent",
-            "12345",
-            correlation_id=correlation_id
+            "AgentA", "AgentB", "RequestEvent", "12345", correlation_id=correlation_id
         )
 
         # Then
@@ -162,9 +159,15 @@ class DescribeTracerSystem:
         # When
         correlation_id = "test-correlation-id"
         tracer_system.record_llm_call("test-model", [], correlation_id=correlation_id)
-        tracer_system.record_llm_response("test-model", "response", correlation_id=correlation_id)
-        tracer_system.record_tool_call("test-tool", {}, "result", correlation_id=correlation_id)
-        tracer_system.record_agent_interaction("AgentA", "AgentB", "Event", correlation_id=correlation_id)
+        tracer_system.record_llm_response(
+            "test-model", "response", correlation_id=correlation_id
+        )
+        tracer_system.record_tool_call(
+            "test-tool", {}, "result", correlation_id=correlation_id
+        )
+        tracer_system.record_agent_interaction(
+            "AgentA", "AgentB", "Event", correlation_id=correlation_id
+        )
 
         # Then
         assert len(tracer_system.get_events()) == 0
@@ -187,7 +190,7 @@ class DescribeTracerSystem:
                 timestamp=now - 100,
                 model="model1",
                 messages=[],
-                correlation_id=correlation_id
+                correlation_id=correlation_id,
             )
         )
         tracer_system.event_store.store(
@@ -196,7 +199,7 @@ class DescribeTracerSystem:
                 timestamp=now - 50,
                 model="model2",
                 messages=[],
-                correlation_id=correlation_id
+                correlation_id=correlation_id,
             )
         )
         tracer_system.event_store.store(
@@ -205,7 +208,7 @@ class DescribeTracerSystem:
                 timestamp=now,
                 model="model3",
                 messages=[],
-                correlation_id=correlation_id
+                correlation_id=correlation_id,
             )
         )
 
@@ -227,12 +230,16 @@ class DescribeTracerSystem:
 
         correlation_id = "test-correlation-id"
         tracer_system.record_llm_call("model1", [], correlation_id=correlation_id)
-        tracer_system.record_tool_call("tool1", {}, "result1", correlation_id=correlation_id)
+        tracer_system.record_tool_call(
+            "tool1", {}, "result1", correlation_id=correlation_id
+        )
         tracer_system.record_llm_call("model2", [], correlation_id=correlation_id)
         tracer_system.record_llm_call("model3", [], correlation_id=correlation_id)
 
         # When
-        result = tracer_system.get_last_n_tracer_events(2, event_type=LLMCallTracerEvent)
+        result = tracer_system.get_last_n_tracer_events(
+            2, event_type=LLMCallTracerEvent
+        )
 
         # Then
         assert len(result) == 2
@@ -271,7 +278,9 @@ class DescribeTracerSystem:
         tracer_system = TracerSystem()
         correlation_id = "test-correlation-id"
         tracer_system.record_llm_call("model1", [], correlation_id=correlation_id)
-        tracer_system.record_tool_call("tool1", {}, "result1", correlation_id=correlation_id)
+        tracer_system.record_tool_call(
+            "tool1", {}, "result1", correlation_id=correlation_id
+        )
         assert len(tracer_system.get_events()) == 2
 
         # When
@@ -282,37 +291,68 @@ class DescribeTracerSystem:
 
 
 class DescribeResponseEvidence:
-
     def should_record_reported_provider_evidence_on_llm_responses(self):
         tracer_system = TracerSystem()
         usage = {"input_tokens": 12, "output_tokens": 4}
 
         tracer_system.record_llm_response(
-            "configured-model", "content", usage=usage, provider_model="provider-model",
-            finish_reason="length", metadata={"request_id": "r1"}, correlation_id="c-1")
+            "configured-model",
+            "content",
+            usage=usage,
+            provider_model="provider-model",
+            finish_reason="length",
+            metadata={"request_id": "r1"},
+            correlation_id="c-1",
+        )
 
         event = tracer_system.get_events(event_type=LLMResponseTracerEvent)[0]
-        assert (event.model, event.usage, event.provider_model, event.finish_reason, event.metadata) == (
-            "configured-model", usage, "provider-model", "length", {"request_id": "r1"})
+        assert (
+            event.model,
+            event.usage,
+            event.provider_model,
+            event.finish_reason,
+            event.metadata,
+        ) == (
+            "configured-model",
+            usage,
+            "provider-model",
+            "length",
+            {"request_id": "r1"},
+        )
 
     def should_leave_evidence_unknown_when_not_reported(self):
         tracer_system = TracerSystem()
 
-        tracer_system.record_llm_response("configured-model", "content", correlation_id="c-1")
+        tracer_system.record_llm_response(
+            "configured-model", "content", correlation_id="c-1"
+        )
 
         event = tracer_system.get_events(event_type=LLMResponseTracerEvent)[0]
-        assert (event.usage, event.provider_model, event.finish_reason, event.metadata) == (None, None, None, None)
+        assert (
+            event.usage,
+            event.provider_model,
+            event.finish_reason,
+            event.metadata,
+        ) == (None, None, None, None)
 
     def should_accept_evidence_on_null_tracer(self):
         from mojentic.tracer import null_tracer
 
-        null_tracer.record_llm_response("m", "c", usage={"x": 1}, provider_model="p",
-                                        finish_reason="stop", metadata={})
+        null_tracer.record_llm_response(
+            "m",
+            "c",
+            usage={"x": 1},
+            provider_model="p",
+            finish_reason="stop",
+            metadata={},
+        )
 
 
 class DescribeTracerPackage:
-
     def should_export_tracer_system_and_event_store(self):
         import mojentic.tracer
 
-        assert (mojentic.tracer.TracerSystem, mojentic.tracer.EventStore) == (TracerSystem, EventStore)
+        assert (mojentic.tracer.TracerSystem, mojentic.tracer.EventStore) == (
+            TracerSystem,
+            EventStore,
+        )

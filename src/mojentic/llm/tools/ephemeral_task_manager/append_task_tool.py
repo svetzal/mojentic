@@ -2,10 +2,10 @@
 Tool for appending a new task to the end of the ephemeral task manager list.
 """
 
-from typing import Dict
-
+from mojentic.llm.tools.ephemeral_task_manager.ephemeral_task_list import (
+    EphemeralTaskList,
+)
 from mojentic.llm.tools.llm_tool import LLMTool
-from mojentic.llm.tools.ephemeral_task_manager.ephemeral_task_list import EphemeralTaskList
 
 
 class AppendTaskTool(LLMTool):
@@ -22,7 +22,7 @@ class AppendTaskTool(LLMTool):
         """
         self._task_list = task_list
 
-    def run(self, description: str) -> Dict[str, str]:
+    def run(self, description: str) -> dict[str, str]:
         """
         Append a new task to the end of the list.
 
@@ -41,13 +41,10 @@ class AppendTaskTool(LLMTool):
                 "id": task.id,
                 "description": task.description,
                 "status": task.status.value,
-                "summary": f"Task '{task.id}' appended successfully"
+                "summary": f"Task '{task.id}' appended successfully",
             }
         except ValueError as e:
-            return {
-                "error": str(e),
-                "summary": f"Failed to append task: {str(e)}"
-            }
+            return {"error": str(e), "summary": f"Failed to append task: {e!s}"}
 
     @property
     def descriptor(self):
@@ -70,11 +67,11 @@ class AppendTaskTool(LLMTool):
                     "properties": {
                         "description": {
                             "type": "string",
-                            "description": "The description of the task"
+                            "description": "The description of the task",
                         }
                     },
                     "required": ["description"],
-                    "additionalProperties": False
-                }
-            }
+                    "additionalProperties": False,
+                },
+            },
         }

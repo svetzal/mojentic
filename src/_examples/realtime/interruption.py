@@ -6,6 +6,7 @@ interrupts it. The session emits an ``InterruptedEvent`` and sends a
 ``response.cancel`` to the gateway. Outputs from any in-flight tool
 calls are dropped per the default ``on_interrupt='drop'`` policy.
 """
+
 import asyncio
 import os
 import sys

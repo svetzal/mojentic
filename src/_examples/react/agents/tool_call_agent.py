@@ -2,7 +2,8 @@
 
 This agent handles the actual execution of tools and captures the results.
 """
-from typing import List
+
+import logging
 
 from mojentic.agents.base_agent import BaseAgent
 from mojentic.event import Event
@@ -19,7 +20,7 @@ class ToolCallAgent(BaseAgent):
     decisioning phase.
     """
 
-    def receive_event(self, event: Event) -> List[Event]:
+    def receive_event(self, event: Event) -> list[Event]:
         """Execute a tool and update the context.
 
         Args:
@@ -41,10 +42,7 @@ class ToolCallAgent(BaseAgent):
             print(f"Arguments: {arguments}")
 
             # Execute the tool using call_tool method
-            result = tool.call_tool(
-                correlation_id=event.correlation_id,
-                **arguments
-            )
+            result = tool.call_tool(correlation_id=event.correlation_id, **arguments)
 
             print(f"Result: {result}")
 
@@ -61,23 +59,29 @@ class ToolCallAgent(BaseAgent):
                 ThoughtActionObservation(
                     thought=event.thought,
                     action=f"Called {tool_name} with {arguments}",
-                    observation=str(result_text)
+                    observation=str(result_text),
                 )
             )
 
             # Continue to decisioning
-            return [InvokeDecisioning(
-                source=type(self),
-                context=event.context,
-                correlation_id=event.correlation_id
-            )]
+            return [
+                InvokeDecisioning(
+                    source=type(self),
+                    context=event.context,
+                    correlation_id=event.correlation_id,
+                )
+            ]
 
         except Exception as e:
+            logging.getLogger(__name__).exception("Example operation failed")
             import traceback
+
             traceback.print_exc()
-            return [FailureOccurred(
-                source=type(self),
-                context=event.context,
-                reason=f"Tool execution failed: {str(e)}",
-                correlation_id=event.correlation_id
-            )]
+            return [
+                FailureOccurred(
+                    source=type(self),
+                    context=event.context,
+                    reason=f"Tool execution failed: {e!s}",
+                    correlation_id=event.correlation_id,
+                )
+            ]

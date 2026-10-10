@@ -1,5 +1,5 @@
 import json
-from typing import Annotated, List, Optional, Type
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 
@@ -16,11 +16,17 @@ class BaseAsyncLLMAgent(BaseAsyncAgent):
     BaseAsyncLLMAgent is an asynchronous version of the BaseLLMAgent.
     It uses an LLM to generate responses asynchronously.
     """
+
     llm: LLMBroker
     behaviour: Annotated[str, "The personality and behavioural traits of the agent."]
 
-    def __init__(self, llm: LLMBroker, behaviour: str = "You are a helpful assistant.",
-                 tools: Optional[List[LLMTool]] = None, response_model: Optional[Type[BaseModel]] = None):
+    def __init__(
+        self,
+        llm: LLMBroker,
+        behaviour: str = "You are a helpful assistant.",
+        tools: list[LLMTool] | None = None,
+        response_model: type[BaseModel] | None = None,
+    ):
         """
         Initialize the BaseAsyncLLMAgent.
 
@@ -85,15 +91,21 @@ class BaseAsyncLLMAgent(BaseAsyncAgent):
         if self.response_model is not None:
             # Use asyncio.to_thread to run the synchronous generate_object method in a separate thread
             import asyncio
-            response = await asyncio.to_thread(self.llm.generate_object, messages, object_model=self.response_model)
+
+            response = await asyncio.to_thread(
+                self.llm.generate_object, messages, object_model=self.response_model
+            )
         else:
             # Use asyncio.to_thread to run the synchronous generate method in a separate thread
             import asyncio
-            response = await asyncio.to_thread(self.llm.generate, messages, tools=self.tools)
+
+            response = await asyncio.to_thread(
+                self.llm.generate, messages, tools=self.tools
+            )
 
         return response
 
-    async def receive_event_async(self, event: Event) -> List[Event]:
+    async def receive_event_async(self, event: Event) -> list[Event]:
         """
         Receive an event and process it asynchronously.
         This method should be overridden by subclasses.
@@ -116,10 +128,19 @@ class BaseAsyncLLMAgentWithMemory(BaseAsyncLLMAgent):
     BaseAsyncLLMAgentWithMemory is an asynchronous version of the BaseLLMAgentWithMemory.
     It uses an LLM to generate responses asynchronously and maintains a shared working memory.
     """
-    instructions: Annotated[str, "The instructions for the agent to follow when receiving events."]
 
-    def __init__(self, llm: LLMBroker, memory: SharedWorkingMemory, behaviour: str, instructions: str,
-                 response_model: BaseModel):
+    instructions: Annotated[
+        str, "The instructions for the agent to follow when receiving events."
+    ]
+
+    def __init__(
+        self,
+        llm: LLMBroker,
+        memory: SharedWorkingMemory,
+        behaviour: str,
+        instructions: str,
+        response_model: BaseModel,
+    ):
         """
         Initialize the BaseAsyncLLMAgentWithMemory.
 
@@ -151,15 +172,19 @@ class BaseAsyncLLMAgentWithMemory(BaseAsyncLLMAgent):
             The initial messages for the LLM
         """
         messages = super()._create_initial_messages()
-        messages.extend([
-            LLMMessage(
-                content=(f"This is what you remember:\n"
-                         f"{json.dumps(self.memory.get_working_memory(), indent=2)}"
-                         f"\n\nRemember anything new you learn by storing it "
-                         f"to your working memory in your response.")
-            ),
-            LLMMessage(role=MessageRole.User, content=self.instructions),
-        ])
+        messages.extend(
+            [
+                LLMMessage(
+                    content=(
+                        f"This is what you remember:\n"
+                        f"{json.dumps(self.memory.get_working_memory(), indent=2)}"
+                        f"\n\nRemember anything new you learn by storing it "
+                        f"to your working memory in your response."
+                    )
+                ),
+                LLMMessage(role=MessageRole.User, content=self.instructions),
+            ]
+        )
         return messages
 
     async def generate_response(self, content):
@@ -176,21 +201,25 @@ class BaseAsyncLLMAgentWithMemory(BaseAsyncLLMAgent):
         BaseModel
             The generated response
         """
+
         class ResponseWithMemory(self.response_model):
-            memory: dict = Field(self.memory.get_working_memory(),
-                                 description="Add anything new that you have learned here.")
+            memory: dict = Field(
+                self.memory.get_working_memory(),
+                description="Add anything new that you have learned here.",
+            )
 
         messages = self._create_initial_messages()
-        messages.extend([
-            LLMMessage(content=content),
-        ])
+        messages.extend(
+            [
+                LLMMessage(content=content),
+            ]
+        )
 
         # Use asyncio.to_thread to run the synchronous generate_object method in a separate thread
         import asyncio
+
         response = await asyncio.to_thread(
-            self.llm.generate_object,
-            messages=messages,
-            object_model=ResponseWithMemory
+            self.llm.generate_object, messages=messages, object_model=ResponseWithMemory
         )
 
         self.memory.merge_to_working_memory(response.memory)

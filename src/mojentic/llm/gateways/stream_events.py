@@ -6,8 +6,9 @@ terminal event: :class:`StreamCompleted` on success or :class:`StreamError` on f
 Nothing follows the terminal event. Content yielded before a :class:`StreamError` is
 evidence of what the provider sent, not a usable result.
 """
+
 from enum import Enum
-from typing import Annotated, Any, Dict, Literal, Optional, Union
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -29,12 +30,13 @@ class CompletionMetadata(BaseModel):
     metadata : Optional[Dict[str, Any]]
         Other provider-reported fields, such as Ollama's durations.
     """
+
     model_config = ConfigDict(frozen=True)
 
-    finish_reason: Optional[str] = None
-    usage: Optional[Dict[str, Any]] = None
-    provider_model: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
+    finish_reason: str | None = None
+    usage: dict[str, Any] | None = None
+    provider_model: str | None = None
+    metadata: dict[str, Any] | None = None
 
 
 class StreamErrorReason(str, Enum):
@@ -58,6 +60,7 @@ class StreamErrorReason(str, Enum):
 
 class StreamContent(BaseModel):
     """Visible assistant content, in the order the provider sent it."""
+
     model_config = ConfigDict(frozen=True)
 
     type: Literal["content"] = "content"
@@ -66,6 +69,7 @@ class StreamContent(BaseModel):
 
 class StreamCompleted(BaseModel):
     """Terminal success: the provider finished the turn with ``stop`` and closed the stream properly."""
+
     model_config = ConfigDict(frozen=True)
 
     type: Literal["completed"] = "completed"
@@ -85,15 +89,18 @@ class StreamError(BaseModel):
     metadata : Optional[CompletionMetadata]
         Completion evidence the provider reported before the failure, when there is any.
     """
+
     model_config = ConfigDict(frozen=True)
 
     type: Literal["error"] = "error"
     reason: StreamErrorReason
-    detail: Optional[Union[str, Dict[str, Any]]] = None
-    metadata: Optional[CompletionMetadata] = None
+    detail: str | dict[str, Any] | None = None
+    metadata: CompletionMetadata | None = None
 
 
-StreamEvent = Annotated[Union[StreamContent, StreamCompleted, StreamError], Field(discriminator="type")]
+StreamEvent = Annotated[
+    StreamContent | StreamCompleted | StreamError, Field(discriminator="type")
+]
 """One event from ``LLMBroker.generate_stream_events``."""
 
-TerminalStreamEvent = Union[StreamCompleted, StreamError]
+TerminalStreamEvent = StreamCompleted | StreamError

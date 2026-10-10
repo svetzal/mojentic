@@ -1,21 +1,24 @@
 import asyncio
-import pytest
-import pytest_asyncio
 from unittest.mock import MagicMock
 
+import pytest
+import pytest_asyncio
+
+from mojentic.agents.base_async_agent import BaseAsyncAgent
 from mojentic.async_dispatcher import AsyncDispatcher
 from mojentic.event import Event, TerminateEvent
-from mojentic.agents.base_async_agent import BaseAsyncAgent
 from mojentic.router import Router
 
 
 class SampleEvent(Event):
     """A simple event for testing."""
+
     message: str
 
 
 class SampleResponseEvent(Event):
     """A response event for testing."""
+
     response: str
 
 
@@ -24,11 +27,13 @@ class AsyncTestAgent(BaseAsyncAgent):
 
     async def receive_event_async(self, event):
         if isinstance(event, SampleEvent):
-            return [SampleResponseEvent(
-                source=type(self),
-                correlation_id=event.correlation_id,
-                response=f"Processed: {event.message}"
-            )]
+            return [
+                SampleResponseEvent(
+                    source=type(self),
+                    correlation_id=event.correlation_id,
+                    response=f"Processed: {event.message}",
+                )
+            ]
         return []
 
 
@@ -44,11 +49,13 @@ class SyncTestAgent:
         self._mock(event)
 
         if isinstance(event, SampleEvent):
-            return [SampleResponseEvent(
-                source=type(self),
-                correlation_id=event.correlation_id,
-                response=f"Processed sync: {event.message}"
-            )]
+            return [
+                SampleResponseEvent(
+                    source=type(self),
+                    correlation_id=event.correlation_id,
+                    response=f"Processed sync: {event.message}",
+                )
+            ]
         return []
 
     def assert_called_once(self):
@@ -166,6 +173,7 @@ async def test_async_dispatcher_with_sync_agent(dispatcher, router, sync_agent):
 @pytest.mark.asyncio
 async def test_async_dispatcher_terminate_event(dispatcher, router):
     """Test that the AsyncDispatcher handles TerminateEvent correctly."""
+
     # Create a mock agent that returns a TerminateEvent
     class TerminateAgent(BaseAsyncAgent):
         async def receive_event_async(self, event):
@@ -245,7 +253,6 @@ async def test_async_dispatcher_correlation_id(dispatcher):
 
 
 class DescribeAsyncDispatcherInFlightTracking:
-
     @pytest.mark.asyncio
     async def should_wait_for_in_flight_agent_followups(self, router):
         first_agent_received = []
@@ -256,11 +263,13 @@ class DescribeAsyncDispatcherInFlightTracking:
                 if isinstance(event, SampleEvent):
                     first_agent_received.append(event)
                     await asyncio.sleep(0.2)
-                    return [SampleResponseEvent(
-                        source=type(self),
-                        correlation_id=event.correlation_id,
-                        response="follow-up"
-                    )]
+                    return [
+                        SampleResponseEvent(
+                            source=type(self),
+                            correlation_id=event.correlation_id,
+                            response="follow-up",
+                        )
+                    ]
                 return []
 
         class ResponseCollectorAgent(BaseAsyncAgent):

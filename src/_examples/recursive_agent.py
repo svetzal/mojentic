@@ -42,7 +42,10 @@ async def demonstrate_async():
     print(f"\nProblem (With Event Handling): {problem2}")
 
     # Set up event handlers for monitoring the solution process
-    from mojentic.agents.simple_recursive_agent import GoalAchievedEvent, IterationCompletedEvent
+    from mojentic.agents.simple_recursive_agent import (
+        GoalAchievedEvent,
+        IterationCompletedEvent,
+    )
 
     # Define event handlers
     def on_iteration_completed(event):
@@ -52,7 +55,9 @@ async def demonstrate_async():
         print(f"  Problem solved after {event.state.iteration} iterations")
 
     # Subscribe to events
-    unsubscribe_iteration = agent.emitter.subscribe(IterationCompletedEvent, on_iteration_completed)
+    unsubscribe_iteration = agent.emitter.subscribe(
+        IterationCompletedEvent, on_iteration_completed
+    )
     unsubscribe_solved = agent.emitter.subscribe(GoalAchievedEvent, on_problem_solved)
 
     # Solve the problem
@@ -67,7 +72,7 @@ async def demonstrate_async():
     print("\nRunning multiple problems concurrently:")
     problems = [
         "What is the Pythagorean theorem?",
-        "Explain the concept of recursion in programming."
+        "Explain the concept of recursion in programming.",
     ]
 
     async def solve_and_print(problem):

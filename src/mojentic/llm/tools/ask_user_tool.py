@@ -24,10 +24,10 @@ class AskUserTool(LLMTool):
                             "description": (
                                 "The question you need the user to answer, or the task you need the user to "
                                 "do for you."
-                            )
+                            ),
                         }
                     },
-                    "required": ["user_request"]
+                    "required": ["user_request"],
                 },
             },
         }

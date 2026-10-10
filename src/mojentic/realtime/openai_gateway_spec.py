@@ -1,6 +1,6 @@
 import asyncio
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import pytest
 
@@ -12,11 +12,11 @@ from mojentic.realtime.transport import RealtimeTransport, TransportListener
 class _StubTransport(RealtimeTransport):
     """Scripted transport used to exercise the gateway without a network."""
 
-    def __init__(self, scripted_messages: Optional[List[Dict[str, Any]]] = None):
+    def __init__(self, scripted_messages: list[dict[str, Any]] | None = None):
         self.connected = False
-        self.sent_payloads: List[Any] = []
+        self.sent_payloads: list[Any] = []
         self.scripted_messages = scripted_messages or []
-        self._listener: Optional[TransportListener] = None
+        self._listener: TransportListener | None = None
         self._closed = False
 
     async def connect(self, listener: TransportListener) -> None:
@@ -59,7 +59,9 @@ class DescribeOpenAIRealtimeGateway:
             )
 
             session = asyncio.run(
-                gateway.open("gpt-realtime", RealtimeVoiceConfig(), correlation_id="cid-1")
+                gateway.open(
+                    "gpt-realtime", RealtimeVoiceConfig(), correlation_id="cid-1"
+                )
             )
 
             assert session.session_id
@@ -76,7 +78,7 @@ class DescribeOpenAIRealtimeGateway:
                 transport_factory=lambda url, headers, protocols: transport,
             )
 
-            async def drain() -> List[Dict[str, Any]]:
+            async def drain() -> list[dict[str, Any]]:
                 session = await gateway.open("gpt-realtime", RealtimeVoiceConfig())
                 events = []
                 async for event in session.events():

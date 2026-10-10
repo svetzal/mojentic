@@ -6,7 +6,6 @@ This script shows how to create and use asynchronous agents with the AsyncDispat
 
 import asyncio
 from pathlib import Path
-from typing import List
 
 from pydantic import BaseModel, Field
 
@@ -50,7 +49,9 @@ class SummaryResponse(BaseModel):
 
 
 class CombinedResponse(BaseModel):
-    combined: str = Field(..., description="The combined result of the analysis and summary")
+    combined: str = Field(
+        ..., description="The combined result of the analysis and summary"
+    )
 
 
 # Define some example agents
@@ -67,10 +68,10 @@ class TextAnalyzerAgent(BaseAsyncLLMAgent):
                 "Your job is to provide a detailed analysis of the given text, "
                 "including key themes, structure, and notable elements."
             ),
-            response_model=AnalysisResponse
+            response_model=AnalysisResponse,
         )
 
-    async def receive_event_async(self, event: Event) -> List[Event]:
+    async def receive_event_async(self, event: Event) -> list[Event]:
         if isinstance(event, TextEvent):
             prompt = f"""
 Please analyze the following text in detail. Consider:
@@ -85,7 +86,13 @@ Text to analyze:
 {event.text[:1000]}... (text truncated for brevity)
 """
             response = await self.generate_response(prompt)
-            return [AnalysisEvent(source=type(self), correlation_id=event.correlation_id, analysis=response.analysis)]
+            return [
+                AnalysisEvent(
+                    source=type(self),
+                    correlation_id=event.correlation_id,
+                    analysis=response.analysis,
+                )
+            ]
         return []
 
 
@@ -102,10 +109,10 @@ class TextSummarizerAgent(BaseAsyncLLMAgent):
                 "Your job is to provide concise, accurate summaries of texts "
                 "while preserving the key information and main points."
             ),
-            response_model=SummaryResponse
+            response_model=SummaryResponse,
         )
 
-    async def receive_event_async(self, event: Event) -> List[Event]:
+    async def receive_event_async(self, event: Event) -> list[Event]:
         if isinstance(event, TextEvent):
             prompt = f"""
 Please provide a concise summary of the following text. The summary should:
@@ -119,7 +126,13 @@ Text to summarize:
 {event.text[:1000]}... (text truncated for brevity)
 """
             response = await self.generate_response(prompt)
-            return [SummaryEvent(source=type(self), correlation_id=event.correlation_id, summary=response.summary)]
+            return [
+                SummaryEvent(
+                    source=type(self),
+                    correlation_id=event.correlation_id,
+                    summary=response.summary,
+                )
+            ]
         return []
 
 
@@ -158,27 +171,30 @@ understanding of the text's content, structure, and significance.
             # Create a temporary LLM agent to generate the response
             messages = [
                 LLMMessage(role=MessageRole.System, content=self.behaviour),
-                LLMMessage(role=MessageRole.User, content=prompt)
+                LLMMessage(role=MessageRole.User, content=prompt),
             ]
 
             # Generate the response
             import asyncio
+
             response_json = await asyncio.to_thread(
                 self.llm.generate_object,
                 messages=messages,
-                object_model=self.response_model
+                object_model=self.response_model,
             )
 
             combined = response_json.combined
 
-            return [CombinedResultEvent(
-                source=type(self),
-                correlation_id=text_event.correlation_id,
-                text=text_event.text,
-                analysis=analysis_event.analysis,
-                summary=summary_event.summary,
-                combined=combined
-            )]
+            return [
+                CombinedResultEvent(
+                    source=type(self),
+                    correlation_id=text_event.correlation_id,
+                    text=text_event.text,
+                    analysis=analysis_event.analysis,
+                    summary=summary_event.summary,
+                    combined=combined,
+                )
+            ]
         return []
 
 
@@ -188,7 +204,7 @@ class ResultOutputAgent(BaseAsyncAgent):
     and emits a TerminateEvent to exit the event loop.
     """
 
-    async def receive_event_async(self, event: Event) -> List[Event]:
+    async def receive_event_async(self, event: Event) -> list[Event]:
         if isinstance(event, CombinedResultEvent):
             # Output the result to the user
             print("\n=== FINAL ANSWER ===")
@@ -196,7 +212,9 @@ class ResultOutputAgent(BaseAsyncAgent):
             print("===================\n")
 
             # Emit a TerminateEvent to exit the event loop
-            return [TerminateEvent(source=type(self), correlation_id=event.correlation_id)]
+            return [
+                TerminateEvent(source=type(self), correlation_id=event.correlation_id)
+            ]
         return []
 
 
@@ -228,8 +246,7 @@ async def main():
     dispatcher = await AsyncDispatcher(router).start()
 
     # Create a text event
-    with open(Path.cwd().parent.parent / "README.md", "r") as f:
-        text = f.read()
+    text = await asyncio.to_thread((Path.cwd().parent.parent / "README.md").read_text)
     event = TextEvent(source=type("ExampleSource", (), {}), text=text)
 
     # Dispatch the event

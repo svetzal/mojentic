@@ -6,21 +6,22 @@ including event handling, async operation, iteration logic, and edge cases.
 """
 
 import asyncio
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
-from unittest.mock import MagicMock, AsyncMock
 
 from mojentic.agents.simple_recursive_agent import (
-    SimpleRecursiveAgent,
+    EventEmitter,
+    GoalAchievedEvent,
+    GoalFailedEvent,
     GoalState,
     GoalSubmittedEvent,
     IterationCompletedEvent,
-    GoalAchievedEvent,
-    GoalFailedEvent,
+    SimpleRecursiveAgent,
     TimeoutEvent,
-    EventEmitter,
 )
-from mojentic.llm.llm_broker import LLMBroker
 from mojentic.llm.chat_session import ChatSession
+from mojentic.llm.llm_broker import LLMBroker
 
 
 @pytest.fixture
@@ -137,7 +138,7 @@ class DescribeSimpleRecursiveAgent:
             llm=mock_llm_broker,
             max_iterations=10,
             available_tools=[mock_tool],
-            system_prompt="Custom prompt"
+            system_prompt="Custom prompt",
         )
 
         assert agent.max_iterations == 10
@@ -159,9 +160,7 @@ class DescribeSimpleRecursiveAgent:
         agent = SimpleRecursiveAgent(llm=mock_llm_broker, max_iterations=3)
 
         # Mock the chat session to return DONE immediately
-        mocker.patch.object(
-            agent.chat, "send", return_value="DONE"
-        )
+        mocker.patch.object(agent.chat, "send", return_value="DONE")
 
         result = await agent.solve("Test problem")
 
@@ -180,9 +179,7 @@ class DescribeSimpleRecursiveAgent:
             "Still working...",
             "DONE",
         ]
-        mocker.patch.object(
-            agent.chat, "send", side_effect=responses
-        )
+        mocker.patch.object(agent.chat, "send", side_effect=responses)
 
         result = await agent.solve("Test problem")
 
@@ -194,9 +191,7 @@ class DescribeSimpleRecursiveAgent:
         agent = SimpleRecursiveAgent(llm=mock_llm_broker, max_iterations=3)
 
         # Mock the chat session to return FAIL
-        mocker.patch.object(
-            agent.chat, "send", return_value="FAIL"
-        )
+        mocker.patch.object(agent.chat, "send", return_value="FAIL")
 
         result = await agent.solve("Impossible problem")
 
@@ -204,16 +199,12 @@ class DescribeSimpleRecursiveAgent:
         assert "FAIL" in result
 
     @pytest.mark.asyncio
-    async def should_handle_max_iterations_reached(
-        self, mock_llm_broker, mocker
-    ):
+    async def should_handle_max_iterations_reached(self, mock_llm_broker, mocker):
         """Test that the agent stops at max_iterations."""
         agent = SimpleRecursiveAgent(llm=mock_llm_broker, max_iterations=2)
 
         # Mock the chat session to never return DONE or FAIL
-        mocker.patch.object(
-            agent.chat, "send", return_value="Still working on it..."
-        )
+        mocker.patch.object(agent.chat, "send", return_value="Still working on it...")
 
         result = await agent.solve("Complex problem")
 
@@ -229,9 +220,7 @@ class DescribeSimpleRecursiveAgent:
             event_received.append(event)
 
         agent.emitter.subscribe(GoalSubmittedEvent, capture_event)
-        mocker.patch.object(
-            agent.chat, "send", return_value="DONE"
-        )
+        mocker.patch.object(agent.chat, "send", return_value="DONE")
 
         await agent.solve("Test problem")
 
@@ -240,9 +229,7 @@ class DescribeSimpleRecursiveAgent:
         assert event_received[0].state.goal == "Test problem"
 
     @pytest.mark.asyncio
-    async def should_emit_iteration_completed_events(
-        self, mock_llm_broker, mocker
-    ):
+    async def should_emit_iteration_completed_events(self, mock_llm_broker, mocker):
         """Test that IterationCompletedEvent is emitted for each iteration."""
         agent = SimpleRecursiveAgent(llm=mock_llm_broker, max_iterations=3)
         events_received = []
@@ -252,9 +239,7 @@ class DescribeSimpleRecursiveAgent:
 
         agent.emitter.subscribe(IterationCompletedEvent, capture_event)
         responses = ["Working...", "Still working...", "DONE"]
-        mocker.patch.object(
-            agent.chat, "send", side_effect=responses
-        )
+        mocker.patch.object(agent.chat, "send", side_effect=responses)
 
         await agent.solve("Test problem")
 
@@ -271,9 +256,7 @@ class DescribeSimpleRecursiveAgent:
             event_received.append(event)
 
         agent.emitter.subscribe(GoalAchievedEvent, capture_event)
-        mocker.patch.object(
-            agent.chat, "send", return_value="DONE"
-        )
+        mocker.patch.object(agent.chat, "send", return_value="DONE")
 
         await agent.solve("Test problem")
 
@@ -290,9 +273,7 @@ class DescribeSimpleRecursiveAgent:
             event_received.append(event)
 
         agent.emitter.subscribe(GoalFailedEvent, capture_event)
-        mocker.patch.object(
-            agent.chat, "send", return_value="FAIL"
-        )
+        mocker.patch.object(agent.chat, "send", return_value="FAIL")
 
         await agent.solve("Impossible problem")
 
@@ -328,8 +309,10 @@ class DescribeSimpleRecursiveAgent:
 
             try:
                 return await asyncio.wait_for(solution_future, timeout=0.1)
-            except asyncio.TimeoutError:
-                timeout_message = "Timeout: Could not solve the problem within 0.1 seconds."
+            except TimeoutError:
+                timeout_message = (
+                    "Timeout: Could not solve the problem within 0.1 seconds."
+                )
                 if not solution_future.done():
                     state.solution = timeout_message
                     state.is_complete = True
@@ -341,9 +324,7 @@ class DescribeSimpleRecursiveAgent:
         assert "Timeout" in result
 
     @pytest.mark.asyncio
-    async def should_use_asyncio_to_thread_for_chat_send(
-        self, mock_llm_broker, mocker
-    ):
+    async def should_use_asyncio_to_thread_for_chat_send(self, mock_llm_broker, mocker):
         """Test that _generate uses asyncio.to_thread for synchronous chat.send."""
         agent = SimpleRecursiveAgent(llm=mock_llm_broker)
 
@@ -422,7 +403,8 @@ class DescribeSimpleRecursiveAgent:
 
     @pytest.mark.asyncio
     async def should_not_false_positive_done_on_prose_with_done_substring(
-            self, mock_llm_broker, mocker):
+        self, mock_llm_broker, mocker
+    ):
         agent = SimpleRecursiveAgent(llm=mock_llm_broker, max_iterations=2)
 
         responses = [
@@ -438,7 +420,8 @@ class DescribeSimpleRecursiveAgent:
 
     @pytest.mark.asyncio
     async def should_not_false_positive_fail_on_prose_with_fail_substring(
-            self, mock_llm_broker, mocker):
+        self, mock_llm_broker, mocker
+    ):
         agent = SimpleRecursiveAgent(llm=mock_llm_broker, max_iterations=2)
 
         responses = [
@@ -454,7 +437,8 @@ class DescribeSimpleRecursiveAgent:
 
     @pytest.mark.asyncio
     async def should_propagate_handler_exceptions_to_solve_caller(
-            self, mock_llm_broker, mocker):
+        self, mock_llm_broker, mocker
+    ):
         agent = SimpleRecursiveAgent(llm=mock_llm_broker, max_iterations=3)
 
         boom = RuntimeError("Handler exploded")

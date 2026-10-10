@@ -1,6 +1,6 @@
-from mojentic.llm.llm_broker import LLMBroker
 from mojentic.llm.gateways.models import LLMMessage
 from mojentic.llm.gateways.ollama import OllamaGateway
+from mojentic.llm.llm_broker import LLMBroker
 from mojentic.llm.tools.date_resolver import ResolveDateTool
 
 
@@ -19,7 +19,7 @@ def main():
     broker = LLMBroker(
         model="qwen3:32b",
         # model="gpt-5",
-        gateway=gateway
+        gateway=gateway,
     )
 
     date_tool = ResolveDateTool()
@@ -39,10 +39,10 @@ def main():
         tools=[date_tool],
         temperature=0.7,
         num_ctx=32768,
-        num_predict=-1
+        num_predict=-1,
     )
     for chunk in stream:
-        print(chunk, end='', flush=True)
+        print(chunk, end="", flush=True)
 
     print("\n\nDone!")
 

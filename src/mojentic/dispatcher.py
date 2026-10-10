@@ -20,6 +20,7 @@ class Dispatcher:
 
         # Use null_tracer if no tracer is provided
         from mojentic.tracer import null_tracer
+
         self.tracer = tracer or null_tracer
 
         logger.debug("Starting event dispatch thread")
@@ -44,7 +45,9 @@ class Dispatcher:
                     event = self.event_queue.pop(0)
                     logger.debug(f"Processing event: {event}")
                     agents = self.router.get_agents(event)
-                    logger.debug(f"Found {len(agents)} agents for event type {type(event)}")
+                    logger.debug(
+                        f"Found {len(agents)} agents for event type {type(event)}"
+                    )
                     events = []
                     for agent in agents:
                         logger.debug(f"Sending event to agent {agent}")
@@ -55,7 +58,7 @@ class Dispatcher:
                             to_agent=str(type(agent)),
                             event_type=str(type(event).__name__),
                             event_id=event.correlation_id,
-                            source=type(self)
+                            source=type(self),
                         )
 
                         # Process the event through the agent

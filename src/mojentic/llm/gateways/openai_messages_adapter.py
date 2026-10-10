@@ -1,7 +1,7 @@
 import base64
 import json
 import os
-from typing import List, Any
+from typing import Any
 
 import structlog
 
@@ -36,7 +36,7 @@ def encode_base64(data: bytes) -> str:
     Returns:
         Base64-encoded string
     """
-    return base64.b64encode(data).decode('utf-8')
+    return base64.b64encode(data).decode("utf-8")
 
 
 def get_image_type(file_path: str) -> str:
@@ -51,21 +51,21 @@ def get_image_type(file_path: str) -> str:
         Image type (e.g., 'jpeg', 'png')
     """
     _, ext = os.path.splitext(file_path)
-    image_type = ext.lstrip('.').lower()
+    image_type = ext.lstrip(".").lower()
 
     # Convert 'jpg' to 'jpeg'
-    if image_type == 'jpg':
-        return 'jpeg'
+    if image_type == "jpg":
+        return "jpeg"
 
     # Use 'jpeg' for unknown extensions, otherwise use the detected type
-    return image_type if image_type in ['jpeg', 'png', 'gif', 'webp'] else 'jpeg'
+    return image_type if image_type in ["jpeg", "png", "gif", "webp"] else "jpeg"
 
 
-def adapt_messages_to_openai(messages: List[LLMMessage]):
-    new_messages: List[dict[str, Any]] = []
+def adapt_messages_to_openai(messages: list[LLMMessage]):
+    new_messages: list[dict[str, Any]] = []
     for m in messages:
         if m.role == MessageRole.System:
-            new_messages.append({'role': 'system', 'content': m.content})
+            new_messages.append({"role": "system", "content": m.content})
         elif m.role == MessageRole.User:
             if m.image_paths is not None and len(m.image_paths) > 0:
                 # Create a content structure with text and images
@@ -75,8 +75,10 @@ def adapt_messages_to_openai(messages: List[LLMMessage]):
 
                 # Keep remote URLs and data URIs; encode local image files.
                 for image_path in m.image_paths:
-                    if image_path.lower().startswith(('data:', 'http://', 'https://')):
-                        content.append({"type": "image_url", "image_url": {"url": image_path}})
+                    if image_path.lower().startswith(("data:", "http://", "https://")):
+                        content.append(
+                            {"type": "image_url", "image_url": {"url": image_path}}
+                        )
                         continue
                     try:
                         # Use our encapsulated methods instead of direct library calls
@@ -84,36 +86,47 @@ def adapt_messages_to_openai(messages: List[LLMMessage]):
                         base64_image = encode_base64(binary_data)
                         image_type = get_image_type(image_path)
 
-                        content.append({
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/{image_type};base64,{base64_image}"
+                        content.append(
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/{image_type};base64,{base64_image}"
+                                },
                             }
-                        })
-                    except Exception as e:
-                        logger.error("Failed to encode image", error=str(e), image_path=image_path)
+                        )
+                    except (OSError, ValueError) as e:
+                        logger.error(
+                            "Failed to encode image",
+                            error=str(e),
+                            image_path=image_path,
+                        )
 
-                new_messages.append({'role': 'user', 'content': content})
+                new_messages.append({"role": "user", "content": content})
             else:
-                new_messages.append({'role': 'user', 'content': m.content})
+                new_messages.append({"role": "user", "content": m.content})
         elif m.role == MessageRole.Assistant:
-            msg = {'role': 'assistant', 'content': m.content or ''}
+            msg = {"role": "assistant", "content": m.content or ""}
             if m.tool_calls is not None:
-                msg['tool_calls'] = [{
-                    'id': call.id,
-                    'type': 'function',
-                    'function': {
-                        'name': call.name,
-                        'arguments': json.dumps(call.arguments)
+                msg["tool_calls"] = [
+                    {
+                        "id": call.id,
+                        "type": "function",
+                        "function": {
+                            "name": call.name,
+                            "arguments": json.dumps(call.arguments),
+                        },
                     }
-                } for call in m.tool_calls]
+                    for call in m.tool_calls
+                ]
             new_messages.append(msg)
         elif m.role == MessageRole.Tool:
-            new_messages.append({
-                'role': 'tool',
-                'content': m.content,
-                'tool_call_id': m.tool_calls[0].id
-            })
+            new_messages.append(
+                {
+                    "role": "tool",
+                    "content": m.content,
+                    "tool_call_id": m.tool_calls[0].id,
+                }
+            )
         else:
             logger.error("Unknown message role", role=m.role)
     return new_messages

@@ -5,7 +5,6 @@ This script shows how to create and use asynchronous LLM agents with the AsyncDi
 """
 
 import asyncio
-from typing import List
 
 from pydantic import BaseModel, Field
 
@@ -24,30 +23,36 @@ class QuestionEvent(Event):
 
 class FactCheckEvent(Event):
     question: str = Field(..., description="The original question")
-    facts: List[str] = Field(..., description="The facts related to the question")
+    facts: list[str] = Field(..., description="The facts related to the question")
 
 
 class AnswerEvent(Event):
     question: str = Field(..., description="The original question")
     answer: str = Field(..., description="The answer to the question")
-    confidence: float = Field(..., description="The confidence level of the answer (0-1)")
+    confidence: float = Field(
+        ..., description="The confidence level of the answer (0-1)"
+    )
 
 
 class FinalAnswerEvent(Event):
     question: str = Field(..., description="The original question")
     answer: str = Field(..., description="The final answer to the question")
-    facts: List[str] = Field(..., description="The facts used to answer the question")
-    confidence: float = Field(..., description="The confidence level of the answer (0-1)")
+    facts: list[str] = Field(..., description="The facts used to answer the question")
+    confidence: float = Field(
+        ..., description="The confidence level of the answer (0-1)"
+    )
 
 
 # Define response models for LLM agents
 class FactCheckResponse(BaseModel):
-    facts: List[str] = Field(..., description="The facts related to the question")
+    facts: list[str] = Field(..., description="The facts related to the question")
 
 
 class AnswerResponse(BaseModel):
     answer: str = Field(..., description="The answer to the question")
-    confidence: float = Field(..., description="The confidence level of the answer (0-1)")
+    confidence: float = Field(
+        ..., description="The confidence level of the answer (0-1)"
+    )
 
 
 # Define some example agents
@@ -55,23 +60,26 @@ class FactCheckerAgent(BaseAsyncLLMAgent):
     """
     An agent that checks facts related to a question.
     """
+
     def __init__(self, llm: LLMBroker):
         super().__init__(
             llm=llm,
             behaviour="You are a fact-checking assistant. Your job is to provide relevant facts about a question.",
-            response_model=FactCheckResponse
+            response_model=FactCheckResponse,
         )
 
-    async def receive_event_async(self, event: Event) -> List[Event]:
+    async def receive_event_async(self, event: Event) -> list[Event]:
         if isinstance(event, QuestionEvent):
             prompt = f"Please provide relevant facts about the following question: {event.question}"
             response = await self.generate_response(prompt)
-            return [FactCheckEvent(
-                source=type(self),
-                correlation_id=event.correlation_id,
-                question=event.question,
-                facts=response.facts
-            )]
+            return [
+                FactCheckEvent(
+                    source=type(self),
+                    correlation_id=event.correlation_id,
+                    question=event.question,
+                    facts=response.facts,
+                )
+            ]
         return []
 
 
@@ -79,24 +87,27 @@ class AnswerGeneratorAgent(BaseAsyncLLMAgent):
     """
     An agent that generates an answer to a question.
     """
+
     def __init__(self, llm: LLMBroker):
         super().__init__(
             llm=llm,
             behaviour="You are a question-answering assistant. Your job is to provide accurate answers to questions.",
-            response_model=AnswerResponse
+            response_model=AnswerResponse,
         )
 
-    async def receive_event_async(self, event: Event) -> List[Event]:
+    async def receive_event_async(self, event: Event) -> list[Event]:
         if isinstance(event, QuestionEvent):
             prompt = f"Please answer the following question: {event.question}"
             response = await self.generate_response(prompt)
-            return [AnswerEvent(
-                source=type(self),
-                correlation_id=event.correlation_id,
-                question=event.question,
-                answer=response.answer,
-                confidence=response.confidence
-            )]
+            return [
+                AnswerEvent(
+                    source=type(self),
+                    correlation_id=event.correlation_id,
+                    question=event.question,
+                    answer=response.answer,
+                    confidence=response.confidence,
+                )
+            ]
         return []
 
 
@@ -104,6 +115,7 @@ class FinalAnswerAgent(AsyncAggregatorAgent):
     """
     An agent that combines facts and answers to produce a final answer.
     """
+
     def __init__(self, llm: LLMBroker):
         super().__init__(event_types_needed=[FactCheckEvent, AnswerEvent])
         self.llm = llm
@@ -119,9 +131,13 @@ class FinalAnswerAgent(AsyncAggregatorAgent):
         return result
 
     async def process_events(self, events):
-        print(f"FinalAnswerAgent processing events: {[type(e).__name__ for e in events]}")
+        print(
+            f"FinalAnswerAgent processing events: {[type(e).__name__ for e in events]}"
+        )
         # Extract the events
-        fact_check_event = next((e for e in events if isinstance(e, FactCheckEvent)), None)
+        fact_check_event = next(
+            (e for e in events if isinstance(e, FactCheckEvent)), None
+        )
         answer_event = next((e for e in events if isinstance(e, AnswerEvent)), None)
 
         if fact_check_event and answer_event:
@@ -141,7 +157,7 @@ class FinalAnswerAgent(AsyncAggregatorAgent):
                 question=fact_check_event.question,
                 answer=answer_event.answer,
                 facts=fact_check_event.facts,
-                confidence=confidence
+                confidence=confidence,
             )
             print(f"FinalAnswerAgent created FinalAnswerEvent: {final_answer_event}")
             self.final_answer_event = final_answer_event
@@ -169,7 +185,10 @@ class FinalAnswerAgent(AsyncAggregatorAgent):
         await self.wait_for_events(correlation_id, timeout)
 
         # Then check if we have a final answer
-        if self.final_answer_event and self.final_answer_event.correlation_id == correlation_id:
+        if (
+            self.final_answer_event
+            and self.final_answer_event.correlation_id == correlation_id
+        ):
             return self.final_answer_event
 
         return None
@@ -214,7 +233,9 @@ async def main():
 
     # Wait for the final answer from the FinalAnswerAgent
     print("Waiting for final answer from FinalAnswerAgent")
-    final_answer_event = await final_answer_agent.get_final_answer(event.correlation_id, timeout=30)
+    final_answer_event = await final_answer_agent.get_final_answer(
+        event.correlation_id, timeout=30
+    )
 
     # Print the final answer
     if final_answer_event:

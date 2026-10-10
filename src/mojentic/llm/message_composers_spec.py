@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 
+from mojentic.llm import FileTypeSensor, MessageBuilder
 from mojentic.llm.gateways.models import LLMMessage, MessageRole
-from mojentic.llm import MessageBuilder, FileTypeSensor
 
 
 @pytest.fixture
@@ -80,7 +80,10 @@ class DescribeMessageBuilder:
             assert message.role == MessageRole.Assistant
 
         def should_build_message_with_image_paths(self, message_builder):
-            message_builder.image_paths = [Path("/path/to/image1.jpg"), Path("/path/to/image2.jpg")]
+            message_builder.image_paths = [
+                Path("/path/to/image1.jpg"),
+                Path("/path/to/image2.jpg"),
+            ]
 
             message = message_builder.build()
 
@@ -96,7 +99,9 @@ class DescribeMessageBuilder:
             assert "test file content" in message.content
             assert "File: /path/to/file.txt" in message.content
 
-        def should_build_message_with_multiple_file_contents(self, message_builder, file_gateway):
+        def should_build_message_with_multiple_file_contents(
+            self, message_builder, file_gateway
+        ):
             file_path1 = Path("/path/to/file1.txt")
             file_path2 = Path("/path/to/file2.txt")
             message_builder.file_paths = [file_path1, file_path2]
@@ -112,9 +117,13 @@ class DescribeMessageBuilder:
         Specifications for the _file_content_partial method
         """
 
-        def should_format_file_content_with_language(self, message_builder, file_gateway, mocker):
+        def should_format_file_content_with_language(
+            self, message_builder, file_gateway, mocker
+        ):
             file_path = Path("/path/to/file.py")
-            mocker.patch.object(message_builder.type_sensor, 'get_language', return_value='python')
+            mocker.patch.object(
+                message_builder.type_sensor, "get_language", return_value="python"
+            )
 
             result = message_builder._file_content_partial(file_path)
 
@@ -125,11 +134,18 @@ class DescribeMessageBuilder:
             assert "```" in result
 
         def should_strip_whitespace_from_file_content(
-            self, message_builder, file_gateway, file_path, whitespace_file_content, mocker
+            self,
+            message_builder,
+            file_gateway,
+            file_path,
+            whitespace_file_content,
+            mocker,
         ):
             # Use the fixtures instead of creating file path and content directly
             file_gateway.read.return_value = whitespace_file_content
-            mocker.patch.object(message_builder.type_sensor, 'get_language', return_value='text')
+            mocker.patch.object(
+                message_builder.type_sensor, "get_language", return_value="text"
+            )
 
             result = message_builder._file_content_partial(file_path)
 
@@ -139,10 +155,11 @@ class DescribeMessageBuilder:
             assert "test file content with whitespace" in result
             assert "```" in result
             # Verify that the content in the code fence doesn't have leading/trailing whitespace
-            lines = result.split('\n')
+            lines = result.split("\n")
             code_fence_start_index = lines.index("```text")
             code_fence_end_index = lines.index("```", code_fence_start_index + 1)
-            code_content = lines[code_fence_start_index + 1:code_fence_end_index]
+            content_start = code_fence_start_index + 1
+            code_content = lines[content_start:code_fence_end_index]
             assert code_content == ["test file content with whitespace"]
 
     class DescribeAddImageMethod:
@@ -180,7 +197,9 @@ class DescribeMessageBuilder:
             assert image_path2 in message_builder.image_paths
             assert result is message_builder  # Returns self for method chaining
 
-        def should_add_all_jpg_images_from_directory(self, message_builder, mocker, tmp_path):
+        def should_add_all_jpg_images_from_directory(
+            self, message_builder, mocker, tmp_path
+        ):
             # Create a temporary directory with test image files
             dir_path = tmp_path / "images"
             dir_path.mkdir()
@@ -237,27 +256,35 @@ class DescribeMessageBuilder:
         Specifications for the load_content method
         """
 
-        def should_load_content_from_file(self, message_builder, file_gateway, file_path):
+        def should_load_content_from_file(
+            self, message_builder, file_gateway, file_path
+        ):
             result = message_builder.load_content(file_path)
 
             file_gateway.read.assert_called_once_with(file_path)
             assert message_builder.content == "test file content"
             assert result is message_builder  # Returns self for method chaining
 
-        def should_convert_string_path_to_path_object(self, message_builder, file_gateway):
+        def should_convert_string_path_to_path_object(
+            self, message_builder, file_gateway
+        ):
             file_path_str = "/path/to/file.txt"
 
             message_builder.load_content(file_path_str)
 
             file_gateway.read.assert_called_once_with(Path(file_path_str))
 
-        def should_raise_error_if_file_not_found(self, message_builder, file_gateway, file_path):
+        def should_raise_error_if_file_not_found(
+            self, message_builder, file_gateway, file_path
+        ):
             file_gateway.exists.return_value = False
 
             with pytest.raises(FileNotFoundError):
                 message_builder.load_content(file_path)
 
-        def should_replace_placeholders_with_template_values(self, message_builder, file_gateway, file_path):
+        def should_replace_placeholders_with_template_values(
+            self, message_builder, file_gateway, file_path
+        ):
             # Set up the file content with placeholders
             file_gateway.read.return_value = "Hello, {name}! Today is {day}."
 
@@ -283,9 +310,9 @@ class DescribeTypeSensor:
         """
         sensor = FileTypeSensor()
 
-        assert sensor.extension_map['py'] == 'python'
-        assert sensor.extension_map['js'] == 'javascript'
-        assert sensor.default_language == 'text'
+        assert sensor.extension_map["py"] == "python"
+        assert sensor.extension_map["js"] == "javascript"
+        assert sensor.default_language == "text"
 
     def should_get_language_for_known_extension(self):
         """
@@ -298,7 +325,7 @@ class DescribeTypeSensor:
 
         language = sensor.get_language(file_path)
 
-        assert language == 'python'
+        assert language == "python"
 
     def should_get_default_language_for_unknown_extension(self):
         """
@@ -311,7 +338,7 @@ class DescribeTypeSensor:
 
         language = sensor.get_language(file_path)
 
-        assert language == 'text'
+        assert language == "text"
 
     def should_add_new_language_mapping(self):
         """
@@ -320,10 +347,10 @@ class DescribeTypeSensor:
         Then it should add the new mapping
         """
         sensor = FileTypeSensor()
-        sensor.add_language('custom', 'customlang')
+        sensor.add_language("custom", "customlang")
 
-        assert sensor.extension_map['custom'] == 'customlang'
+        assert sensor.extension_map["custom"] == "customlang"
 
         file_path = Path("/path/to/file.custom")
         language = sensor.get_language(file_path)
-        assert language == 'customlang'
+        assert language == "customlang"

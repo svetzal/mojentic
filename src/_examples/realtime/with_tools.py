@@ -5,6 +5,7 @@ Exposes :class:`CurrentDateTimeTool` to the model and observes it being
 invoked automatically as part of a text-mode turn. Demonstrates that
 existing Mojentic tools work unchanged in the realtime broker.
 """
+
 import asyncio
 import os
 import sys
@@ -28,8 +29,7 @@ async def main() -> None:
         config=RealtimeVoiceConfig(
             modalities=["text"],
             instructions=(
-                "You have access to tools. Use them as needed and answer "
-                "concisely."
+                "You have access to tools. Use them as needed and answer concisely."
             ),
             turn_detection="none",
             input_audio_transcription=False,
@@ -53,9 +53,7 @@ async def main() -> None:
                 print(f"[error] {event.error}", file=sys.stderr)
                 break
             # End once we have at least one assistant turn after the tool call.
-            if event.kind == "assistant_turn_completed" and any(
-                True for _ in [None]
-            ):
+            if event.kind == "assistant_turn_completed" and any(True for _ in [None]):
                 # naive single-turn termination
                 break
     finally:

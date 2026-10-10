@@ -18,24 +18,29 @@ def ollama_llm(model="qwen3:32b"):
     return llm
 
 
-def check_image_analysis(llm, image_path: Path = None):
+def check_image_analysis(llm, image_path: Path | None = None):
     if image_path is None:
-        image_path = Path.cwd() / 'images' / 'flash_rom.jpg'
-    result = llm.generate(messages=[
-        (LLMMessage(content='What is in this image?',
-                    image_paths=[str(image_path)]))
-    ])
+        image_path = Path.cwd() / "images" / "flash_rom.jpg"
+    result = llm.generate(
+        messages=[
+            (
+                LLMMessage(
+                    content="What is in this image?", image_paths=[str(image_path)]
+                )
+            )
+        ]
+    )
     print(result)
 
 
 models = ["gpt-4o", "gpt-4.1", "o3", "gpt-4.5-preview", "o4-mini"]
 images = [
-    Path.cwd() / 'images' / 'flash_rom.jpg',
-    Path.cwd() / 'images' / 'screen_cap.png',
-    Path.cwd() / 'images' / 'xbox-one.jpg',
+    Path.cwd() / "images" / "flash_rom.jpg",
+    Path.cwd() / "images" / "screen_cap.png",
+    Path.cwd() / "images" / "xbox-one.jpg",
 ]
 
 for image in images:
     for model in models:
-        print(f"Checking {model} with {str(image)}")
+        print(f"Checking {model} with {image!s}")
         check_image_analysis(openai_llm(model=model), image)

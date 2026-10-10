@@ -1,4 +1,5 @@
 import asyncio
+
 import pytest
 
 from mojentic.agents.async_aggregator_agent import AsyncAggregatorAgent
@@ -7,21 +8,25 @@ from mojentic.event import Event
 
 class TestEvent1(Event):
     """A test event type 1."""
+
     message: str
 
 
 class TestEvent2(Event):
     """A test event type 2."""
+
     data: str
 
 
 class TestEvent3(Event):
     """A test event type 3."""
+
     value: int
 
 
 class TestResultEvent(Event):
     """A test result event."""
+
     result: str
 
 
@@ -36,11 +41,13 @@ class TestAsyncAggregator(AsyncAggregatorAgent):
 
         if event1 and event2:
             # Create a result combining the events
-            return [TestResultEvent(
-                source=type(self),
-                correlation_id=event1.correlation_id,
-                result=f"{event1.message} - {event2.data}"
-            )]
+            return [
+                TestResultEvent(
+                    source=type(self),
+                    correlation_id=event1.correlation_id,
+                    result=f"{event1.message} - {event2.data}",
+                )
+            ]
         return []
 
 
@@ -122,7 +129,9 @@ async def test_async_aggregator_wait_for_events(async_aggregator):
     event2 = TestEvent2(source=str, correlation_id="test-id", data="World")
 
     # Start waiting for events in a separate task
-    wait_task = asyncio.create_task(async_aggregator.wait_for_events("test-id", timeout=1))
+    wait_task = asyncio.create_task(
+        async_aggregator.wait_for_events("test-id", timeout=1)
+    )
 
     # Capture the events
     await async_aggregator._capture_results_if_needed(event1)
@@ -189,7 +198,9 @@ async def test_async_aggregator_receive_event_async_wrong_order(test_async_aggre
 
 
 @pytest.mark.asyncio
-async def test_async_aggregator_receive_event_async_different_correlation_ids(test_async_aggregator):
+async def test_async_aggregator_receive_event_async_different_correlation_ids(
+    test_async_aggregator,
+):
     """Test that the AsyncAggregatorAgent handles different correlation_ids correctly."""
     event1_id1 = TestEvent1(source=str, correlation_id="id1", message="Hello")
     event2_id1 = TestEvent2(source=str, correlation_id="id1", data="World")

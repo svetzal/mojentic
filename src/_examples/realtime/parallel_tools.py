@@ -6,6 +6,7 @@ invoke all three. The :class:`AsyncParallelToolRunner` (default for
 the realtime broker) dispatches them concurrently. The example prints
 the per-batch tracer event to make the speed-up observable.
 """
+
 import asyncio
 import os
 import sys

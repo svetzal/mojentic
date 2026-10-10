@@ -24,12 +24,14 @@ class ResponseModel(BaseModel):
 
 class RequestAgent(BaseLLMAgentWithMemory):
     def __init__(self, llm: LLMBroker, memory: SharedWorkingMemory):
-        super().__init__(llm,
-                         memory,
-                         "You are a helpful assistant, and you like to make note of new things"
-                         " that you learn.",
-                         "Answer the user's question, use what you know, and what you remember.",
-                         ResponseModel)
+        super().__init__(
+            llm,
+            memory,
+            "You are a helpful assistant, and you like to make note of new things"
+            " that you learn.",
+            "Answer the user's question, use what you know, and what you remember.",
+            ResponseModel,
+        )
 
     def receive_event(self, event):
         response = self.generate_response(event.text)
@@ -38,30 +40,34 @@ class RequestAgent(BaseLLMAgentWithMemory):
                 source=type(self),
                 correlation_id=event.correlation_id,
                 text=response.text,
-                memory=self.memory.get_working_memory()
+                memory=self.memory.get_working_memory(),
             )
         ]
 
 
-memory = SharedWorkingMemory({
-    "User": {
-        "name": "Stacey",
-        "age": 56,
+memory = SharedWorkingMemory(
+    {
+        "User": {
+            "name": "Stacey",
+            "age": 56,
+        }
     }
-})
+)
 
 llm = LLMBroker("deepseek-r1:70b")
 # llm = LLMBroker("qwen3:32b-instruct-70b-32k")
 request_agent = RequestAgent(llm, memory)
 output_agent = OutputAgent()
 
-router = Router({
-    RequestEvent: [request_agent, output_agent],
-    ResponseEvent: [output_agent]
-})
+router = Router(
+    {RequestEvent: [request_agent, output_agent], ResponseEvent: [output_agent]}
+)
 
 dispatcher = Dispatcher(router)
 dispatcher.dispatch(
-    RequestEvent(source=str,
-                 text="What is my name, and how old am I? And, did you know I have a dog named Boomer, and two cats"
-                      " named Spot and Beau?"))
+    RequestEvent(
+        source=str,
+        text="What is my name, and how old am I? And, did you know I have a dog named Boomer, and two cats"
+        " named Spot and Beau?",
+    )
+)

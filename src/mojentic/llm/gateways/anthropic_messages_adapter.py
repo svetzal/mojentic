@@ -1,6 +1,6 @@
 import base64
 import os
-from typing import List, Any
+from typing import Any
 
 import structlog
 
@@ -9,8 +9,8 @@ from mojentic.llm.gateways.models import LLMMessage, MessageRole
 logger = structlog.get_logger()
 
 
-def adapt_messages_to_anthropic(messages: List[LLMMessage]):
-    new_messages: List[dict[str, Any]] = []
+def adapt_messages_to_anthropic(messages: list[LLMMessage]):
+    new_messages: list[dict[str, Any]] = []
     for m in messages:
         if m.role == MessageRole.System:
             # System messages aren't supported by Anthropic
@@ -26,30 +26,40 @@ def adapt_messages_to_anthropic(messages: List[LLMMessage]):
                 for image_path in m.image_paths:
                     try:
                         with open(image_path, "rb") as image_file:
-                            base64_image = base64.b64encode(image_file.read()).decode('utf-8')
+                            base64_image = base64.b64encode(image_file.read()).decode(
+                                "utf-8"
+                            )
 
                             # Determine image type from file extension
                             _, ext = os.path.splitext(image_path)
-                            image_type = ext.lstrip('.').lower()
-                            if image_type not in ['jpeg', 'jpg', 'png', 'gif', 'webp']:
-                                image_type = 'jpeg'  # Default to jpeg if unknown extension
+                            image_type = ext.lstrip(".").lower()
+                            if image_type not in ["jpeg", "jpg", "png", "gif", "webp"]:
+                                image_type = (
+                                    "jpeg"  # Default to jpeg if unknown extension
+                                )
 
-                            content.append({
-                                "type": "image",
-                                "source": {
-                                    "type": "base64",
-                                    "media_type": f"image/{image_type}",
-                                    "data": base64_image
+                            content.append(
+                                {
+                                    "type": "image",
+                                    "source": {
+                                        "type": "base64",
+                                        "media_type": f"image/{image_type}",
+                                        "data": base64_image,
+                                    },
                                 }
-                            })
-                    except Exception as e:
-                        logger.error("Failed to encode image", error=str(e), image_path=image_path)
+                            )
+                    except (OSError, ValueError) as e:
+                        logger.error(
+                            "Failed to encode image",
+                            error=str(e),
+                            image_path=image_path,
+                        )
 
-                new_messages.append({'role': 'user', 'content': content})
+                new_messages.append({"role": "user", "content": content})
             else:
-                new_messages.append({'role': 'user', 'content': m.content})
+                new_messages.append({"role": "user", "content": m.content})
         elif m.role == MessageRole.Assistant:
-            msg = {'role': 'assistant', 'content': m.content or ''}
+            msg = {"role": "assistant", "content": m.content or ""}
             # if m.tool_calls is not None:
             #     msg['tool_calls'] = [{
             #         'id': m.tool_calls[0].id,

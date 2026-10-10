@@ -1,9 +1,10 @@
 """
 Defines tracer event types for tracking system interactions.
 """
-from typing import Any, Dict, List, Optional
-from datetime import datetime
+
 import uuid
+from datetime import UTC, datetime
+from typing import Any
 
 from pydantic import ConfigDict, Field
 
@@ -17,13 +18,13 @@ class TracerEvent(Event):
     Tracer events are used to track system interactions for observability purposes.
     They are distinct from regular events which are used for agent communication.
     """
+
     timestamp: float = Field(..., description="Timestamp when the event occurred")
     correlation_id: str = Field(
         default_factory=lambda: str(uuid.uuid4()),
         description=(
-            "UUID string that is copied from cause-to-affect "
-            "for tracing events"
-        )
+            "UUID string that is copied from cause-to-affect for tracing events"
+        ),
     )
 
     def printable_summary(self) -> str:
@@ -35,7 +36,11 @@ class TracerEvent(Event):
         str
             A formatted string with the event information.
         """
-        event_time = datetime.fromtimestamp(self.timestamp).strftime("%H:%M:%S.%f")[:-3]
+        event_time = (
+            datetime.fromtimestamp(self.timestamp, tz=UTC)
+            .astimezone()
+            .strftime("%H:%M:%S.%f")[:-3]
+        )
         return f"[{event_time}] {type(self).__name__} (correlation_id: {self.correlation_id})"
 
 
@@ -43,10 +48,15 @@ class LLMCallTracerEvent(TracerEvent):
     """
     Records when an LLM is called with specific messages.
     """
+
     model: str = Field(..., description="The LLM model that was used")
-    messages: List[dict] = Field(..., description="The messages sent to the LLM")
-    temperature: float = Field(1.0, description="The temperature setting used for the call")
-    tools: Optional[List[Dict]] = Field(None, description="The tools available to the LLM, if any")
+    messages: list[dict] = Field(..., description="The messages sent to the LLM")
+    temperature: float = Field(
+        1.0, description="The temperature setting used for the call"
+    )
+    tools: list[dict] | None = Field(
+        None, description="The tools available to the LLM, if any"
+    )
 
     def printable_summary(self) -> str:
         """Return a formatted summary of the LLM call event."""
@@ -55,13 +65,15 @@ class LLMCallTracerEvent(TracerEvent):
 
         if self.messages:
             msg_count = len(self.messages)
-            summary += f"\n   Messages: {msg_count} message{'s' if msg_count != 1 else ''}"
+            summary += (
+                f"\n   Messages: {msg_count} message{'s' if msg_count != 1 else ''}"
+            )
 
         if self.temperature != 1.0:
             summary += f"\n   Temperature: {self.temperature}"
 
         if self.tools:
-            tool_names = [tool.get('name', 'unknown') for tool in self.tools]
+            tool_names = [tool.get("name", "unknown") for tool in self.tools]
             summary += f"\n   Available Tools: {', '.join(tool_names)}"
 
         return summary
@@ -75,14 +87,27 @@ class LLMResponseTracerEvent(TracerEvent):
     gateway reported, unchanged; anything the provider did not report stays None and is
     never estimated.
     """
+
     model: str = Field(..., description="The configured LLM model for the request")
     content: str = Field(..., description="The content of the LLM response")
-    tool_calls: Optional[List[Dict]] = Field(None, description="Any tool calls made by the LLM")
-    call_duration_ms: Optional[float] = Field(None, description="Duration of the LLM call in milliseconds")
-    usage: Optional[Dict[str, Any]] = Field(None, description="Token usage exactly as the provider reported it")
-    provider_model: Optional[str] = Field(None, description="Model name the provider reported")
-    finish_reason: Optional[str] = Field(None, description="Finish reason the provider reported")
-    metadata: Optional[Dict[str, Any]] = Field(None, description="Gateway response metadata")
+    tool_calls: list[dict] | None = Field(
+        None, description="Any tool calls made by the LLM"
+    )
+    call_duration_ms: float | None = Field(
+        None, description="Duration of the LLM call in milliseconds"
+    )
+    usage: dict[str, Any] | None = Field(
+        None, description="Token usage exactly as the provider reported it"
+    )
+    provider_model: str | None = Field(
+        None, description="Model name the provider reported"
+    )
+    finish_reason: str | None = Field(
+        None, description="Finish reason the provider reported"
+    )
+    metadata: dict[str, Any] | None = Field(
+        None, description="Gateway response metadata"
+    )
 
     def printable_summary(self) -> str:
         """Return a formatted summary of the LLM response event."""
@@ -90,12 +115,16 @@ class LLMResponseTracerEvent(TracerEvent):
         summary = f"{base_summary}\n   Model: {self.model}"
 
         if self.content:
-            content_preview = self.content[:100] + "..." if len(self.content) > 100 else self.content
+            content_preview = (
+                self.content[:100] + "..." if len(self.content) > 100 else self.content
+            )
             summary += f"\n   Content: {content_preview}"
 
         if self.tool_calls:
             tool_count = len(self.tool_calls)
-            summary += f"\n   Tool Calls: {tool_count} call{'s' if tool_count != 1 else ''}"
+            summary += (
+                f"\n   Tool Calls: {tool_count} call{'s' if tool_count != 1 else ''}"
+            )
 
         if self.call_duration_ms is not None:
             summary += f"\n   Duration: {self.call_duration_ms:.2f}ms"
@@ -107,11 +136,16 @@ class ToolCallTracerEvent(TracerEvent):
     """
     Records when a tool is called during agent execution.
     """
+
     tool_name: str = Field(..., description="Name of the tool that was called")
-    arguments: Dict[str, Any] = Field(..., description="Arguments provided to the tool")
+    arguments: dict[str, Any] = Field(..., description="Arguments provided to the tool")
     result: Any = Field(..., description="Result returned by the tool")
-    caller: Optional[str] = Field(None, description="Name of the agent or component that called the tool")
-    call_duration_ms: Optional[float] = Field(None, description="Duration of the tool call in milliseconds")
+    caller: str | None = Field(
+        None, description="Name of the agent or component that called the tool"
+    )
+    call_duration_ms: float | None = Field(
+        None, description="Duration of the tool call in milliseconds"
+    )
 
     def printable_summary(self) -> str:
         """Return a formatted summary of the tool call event."""
@@ -123,7 +157,9 @@ class ToolCallTracerEvent(TracerEvent):
 
         if self.result is not None:
             result_str = str(self.result)
-            result_preview = result_str[:100] + "..." if len(result_str) > 100 else result_str
+            result_preview = (
+                result_str[:100] + "..." if len(result_str) > 100 else result_str
+            )
             summary += f"\n   Result: {result_preview}"
 
         if self.caller:
@@ -147,11 +183,17 @@ class ToolBatchTracerEvent(TracerEvent):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     batch_id: str = Field(..., description="Unique id identifying this batch")
-    tool_names: List[str] = Field(..., description="Names of every tool dispatched in the batch")
-    success_count: int = Field(..., description="Number of tools that returned a successful result")
+    tool_names: list[str] = Field(
+        ..., description="Names of every tool dispatched in the batch"
+    )
+    success_count: int = Field(
+        ..., description="Number of tools that returned a successful result"
+    )
     failure_count: int = Field(..., description="Number of tools that failed or raised")
-    call_duration_ms: float = Field(..., description="Wall-clock duration of the batch in milliseconds")
-    caller: Optional[str] = Field(None, description="Component that triggered the batch")
+    call_duration_ms: float = Field(
+        ..., description="Wall-clock duration of the batch in milliseconds"
+    )
+    caller: str | None = Field(None, description="Component that triggered the batch")
 
     def printable_summary(self) -> str:
         base = super().printable_summary()
@@ -170,10 +212,11 @@ class AgentInteractionTracerEvent(TracerEvent):
     """
     Records interactions between agents.
     """
+
     from_agent: str = Field(..., description="Name of the agent sending the event")
     to_agent: str = Field(..., description="Name of the agent receiving the event")
     event_type: str = Field(..., description="Type of event being processed")
-    event_id: Optional[str] = Field(None, description="Unique identifier for the event")
+    event_id: str | None = Field(None, description="Unique identifier for the event")
 
     def printable_summary(self) -> str:
         """Return a formatted summary of the agent interaction event."""

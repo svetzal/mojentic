@@ -2,10 +2,11 @@
 Realtime voice broker — sibling to :class:`mojentic.llm.llm_broker.LLMBroker`
 for duplex voice + tool sessions.
 """
+
 from __future__ import annotations
 
 import uuid
-from typing import Any, Dict, Optional
+from typing import Any
 
 from mojentic.llm.tools.runner import AsyncParallelToolRunner, ToolRunner
 from mojentic.realtime.config import RealtimeVoiceConfig
@@ -30,9 +31,9 @@ class RealtimeVoiceBroker:
         self,
         model: str,
         gateway: RealtimeVoiceGateway,
-        config: Optional[RealtimeVoiceConfig] = None,
-        tracer: Optional[TracerSystem] = None,
-        tool_runner: Optional[ToolRunner] = None,
+        config: RealtimeVoiceConfig | None = None,
+        tracer: TracerSystem | None = None,
+        tool_runner: ToolRunner | None = None,
     ):
         self._model = model
         self._gateway = gateway
@@ -48,9 +49,7 @@ class RealtimeVoiceBroker:
     def gateway(self) -> RealtimeVoiceGateway:
         return self._gateway
 
-    async def connect(
-        self, overrides: Optional[Dict[str, Any]] = None
-    ) -> RealtimeSession:
+    async def connect(self, overrides: dict[str, Any] | None = None) -> RealtimeSession:
         """
         Open a new realtime session.
 
@@ -81,9 +80,9 @@ class RealtimeVoiceBroker:
             raise
         return session
 
-    def _merge_config(self, overrides: Dict[str, Any]) -> RealtimeVoiceConfig:
+    def _merge_config(self, overrides: dict[str, Any]) -> RealtimeVoiceConfig:
         base = self._config.model_dump()
-        merged: Dict[str, Any] = {**base, **overrides}
+        merged: dict[str, Any] = {**base, **overrides}
 
         # Tools are objects, not dump-friendly — re-attach the explicit list.
         merged["tools"] = overrides.get("tools", self._config.tools)

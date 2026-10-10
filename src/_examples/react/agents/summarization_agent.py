@@ -2,7 +2,8 @@
 
 This agent generates the final answer based on accumulated context.
 """
-from typing import List
+
+import logging
 
 from mojentic.agents.base_llm_agent import BaseLLMAgent
 from mojentic.event import Event
@@ -29,11 +30,13 @@ class SummarizationAgent(BaseLLMAgent):
         """
         super().__init__(
             llm,
-            ("You are a helpful assistant who provides clear, "
-             "accurate answers based on the information gathered.")
+            (
+                "You are a helpful assistant who provides clear, "
+                "accurate answers based on the information gathered."
+            ),
         )
 
-    def receive_event(self, event: Event) -> List[Event]:
+    def receive_event(self, event: Event) -> list[Event]:
         """Generate a final answer based on the context.
 
         Args:
@@ -61,12 +64,15 @@ class SummarizationAgent(BaseLLMAgent):
             return []
 
         except Exception as e:
-            return [FailureOccurred(
-                source=type(self),
-                context=event.context,
-                reason=f"Error during summarization: {str(e)}",
-                correlation_id=event.correlation_id
-            )]
+            logging.getLogger(__name__).exception("Example operation failed")
+            return [
+                FailureOccurred(
+                    source=type(self),
+                    context=event.context,
+                    reason=f"Error during summarization: {e!s}",
+                    correlation_id=event.correlation_id,
+                )
+            ]
 
     def prompt(self, event: FinishAndSummarize):
         """Generate the prompt for the summarization LLM.

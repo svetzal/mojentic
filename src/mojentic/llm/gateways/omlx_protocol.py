@@ -5,8 +5,10 @@ oMLX speaks the OpenAI chat completions protocol. These functions build request 
 with no per-model adaptation and map responses exactly as the server reports them, so the
 gateway itself only moves bytes.
 """
+
 import json
-from typing import Dict, List, Mapping, Optional, Type, TYPE_CHECKING
+from collections.abc import Mapping
+from typing import TYPE_CHECKING
 
 import httpx
 from pydantic import BaseModel, ConfigDict
@@ -41,15 +43,20 @@ class OMLXSettings(BaseModel):
     timeout : float
         The timeout in seconds for every request, including model load.
     """
+
     model_config = ConfigDict(frozen=True)
 
     base_url: str
-    headers: Dict[str, str]
+    headers: dict[str, str]
     timeout: float
 
 
-def omlx_settings(host: Optional[str] = None, api_key: Optional[str] = None, timeout: Optional[float] = None,
-                  environ: Optional[Mapping[str, str]] = None) -> OMLXSettings:
+def omlx_settings(
+    host: str | None = None,
+    api_key: str | None = None,
+    timeout: float | None = None,
+    environ: Mapping[str, str] | None = None,
+) -> OMLXSettings:
     """
     Resolve oMLX settings: an explicit value, then the environment, then the default.
 
@@ -74,7 +81,11 @@ def omlx_settings(host: Optional[str] = None, api_key: Optional[str] = None, tim
     host = host or environ.get("OMLX_HOST") or DEFAULT_HOST
     api_key = environ.get("OMLX_API_KEY") if api_key is None else api_key
     if timeout is None:
-        timeout = float(environ["OMLX_TIMEOUT"]) / 1000 if environ.get("OMLX_TIMEOUT") else DEFAULT_TIMEOUT
+        timeout = (
+            float(environ["OMLX_TIMEOUT"]) / 1000
+            if environ.get("OMLX_TIMEOUT")
+            else DEFAULT_TIMEOUT
+        )
     return OMLXSettings(
         base_url=f"{host.rstrip('/')}/v1",
         headers={"Authorization": f"Bearer {api_key}"} if api_key else {},
@@ -82,9 +93,13 @@ def omlx_settings(host: Optional[str] = None, api_key: Optional[str] = None, tim
     )
 
 
-def omlx_chat_body(model: str, messages: List[LLMMessage], config: 'CompletionConfig',
-                   tools: Optional[List[LLMTool]] = None,
-                   object_model: Optional[Type[BaseModel]] = None) -> dict:
+def omlx_chat_body(
+    model: str,
+    messages: list[LLMMessage],
+    config: "CompletionConfig",
+    tools: list[LLMTool] | None = None,
+    object_model: type[BaseModel] | None = None,
+) -> dict:
     """
     Build a chat completions request body with no per-model adaptation.
 
@@ -126,9 +141,17 @@ def omlx_chat_body(model: str, messages: List[LLMMessage], config: 'CompletionCo
     return body
 
 
-def _response_format(config: 'CompletionConfig', object_model: Optional[Type[BaseModel]]) -> Optional[dict]:
+def _response_format(
+    config: "CompletionConfig", object_model: type[BaseModel] | None
+) -> dict | None:
     if object_model is not None:
-        return {"type": "json_schema", "json_schema": {"name": "response", "schema": object_model.model_json_schema()}}
+        return {
+            "type": "json_schema",
+            "json_schema": {
+                "name": "response",
+                "schema": object_model.model_json_schema(),
+            },
+        }
     return openai_response_format(config.response_format)
 
 
@@ -137,7 +160,9 @@ def requests_structured_output(body: dict) -> bool:
     return body.get("response_format", {}).get("type") in STRUCTURED_RESPONSE_FORMATS
 
 
-def omlx_gateway_response(payload: dict, response_format_warning: Optional[str] = None) -> LLMGatewayResponse:
+def omlx_gateway_response(
+    payload: dict, response_format_warning: str | None = None
+) -> LLMGatewayResponse:
     """
     Map a chat completions response to a gateway response, exactly as reported.
 
@@ -166,13 +191,19 @@ def omlx_gateway_response(payload: dict, response_format_warning: Optional[str] 
         usage=payload.get("usage"),
         model=payload.get("model"),
         finish_reason=choice.get("finish_reason"),
-        metadata={"response_format_warning": response_format_warning} if response_format_warning is not None else {},
+        metadata={"response_format_warning": response_format_warning}
+        if response_format_warning is not None
+        else {},
     )
 
 
 def _tool_call(call: dict) -> LLMToolCall:
     function = call["function"]
-    return LLMToolCall(id=call.get("id"), name=function["name"], arguments=json.loads(function["arguments"]))
+    return LLMToolCall(
+        id=call.get("id"),
+        name=function["name"],
+        arguments=json.loads(function["arguments"]),
+    )
 
 
 def omlx_error_detail(response: httpx.Response) -> dict:

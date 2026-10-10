@@ -8,10 +8,10 @@ to display messages to the user without expecting a response.
 import logging
 
 from mojentic.agents.iterative_problem_solver import IterativeProblemSolver
-from mojentic.llm.tools.tell_user_tool import TellUserTool
 from mojentic.llm import LLMBroker
+from mojentic.llm.tools.tell_user_tool import TellUserTool
 
-logging.basicConfig(level=logging.WARN)
+logging.basicConfig(level=logging.WARNING)
 
 
 def main():
@@ -26,9 +26,7 @@ def main():
 
     # Create the problem solver with necessary tools
     solver = IterativeProblemSolver(
-        llm=llm,
-        available_tools=[TellUserTool()],
-        max_iterations=3
+        llm=llm, available_tools=[TellUserTool()], max_iterations=3
     )
 
     # Run the solver and get the result

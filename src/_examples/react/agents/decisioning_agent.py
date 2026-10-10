@@ -2,7 +2,8 @@
 
 This agent evaluates the current context and decides on the next action to take.
 """
-from typing import List
+
+import logging
 
 from pydantic import BaseModel, Field
 
@@ -27,23 +28,20 @@ from ..models.events import (
 class DecisionResponse(BaseModel):
     """Structured response from the decisioning agent."""
 
-    thought: str = Field(
-        ...,
-        description="The reasoning behind the decision"
-    )
+    thought: str = Field(..., description="The reasoning behind the decision")
     next_action: NextAction = Field(
-        ...,
-        description="What should happen next: PLAN, ACT, or FINISH"
+        ..., description="What should happen next: PLAN, ACT, or FINISH"
     )
     tool_name: str | None = Field(
-        None,
-        description="Name of tool to use if next_action is ACT"
+        None, description="Name of tool to use if next_action is ACT"
     )
     tool_arguments: dict = Field(
         default_factory=dict,
-        description=("Arguments for the tool if next_action is ACT. "
-                     "IMPORTANT: Use the exact parameter names from the tool's descriptor. "
-                     "For resolve_date, use 'relative_date_found' not 'date_text'.")
+        description=(
+            "Arguments for the tool if next_action is ACT. "
+            "IMPORTANT: Use the exact parameter names from the tool's descriptor. "
+            "For resolve_date, use 'relative_date_found' not 'date_text'."
+        ),
     )
 
 
@@ -64,13 +62,15 @@ class DecisioningAgent(BaseLLMAgent):
         """
         super().__init__(
             llm,
-            ("You are a careful decision maker, "
-             "weighing the situation and making the best choice "
-             "based on the information available.")
+            (
+                "You are a careful decision maker, "
+                "weighing the situation and making the best choice "
+                "based on the information available."
+            ),
         )
         self.tools = [ResolveDateTool()]
 
-    def receive_event(self, event: Event) -> List[Event]:
+    def receive_event(self, event: Event) -> list[Event]:
         """Process a decisioning event and determine the next action.
 
         Args:
@@ -85,12 +85,14 @@ class DecisioningAgent(BaseLLMAgent):
 
         # Check iteration limit
         if event.context.iteration >= self.MAX_ITERATIONS:
-            return [FailureOccurred(
-                source=type(self),
-                context=event.context,
-                reason=f"Maximum iterations ({self.MAX_ITERATIONS}) exceeded",
-                correlation_id=event.correlation_id
-            )]
+            return [
+                FailureOccurred(
+                    source=type(self),
+                    context=event.context,
+                    reason=f"Maximum iterations ({self.MAX_ITERATIONS}) exceeded",
+                    correlation_id=event.correlation_id,
+                )
+            ]
 
         # Increment iteration counter
         event.context.iteration += 1
@@ -100,68 +102,83 @@ class DecisioningAgent(BaseLLMAgent):
 
         try:
             decision = self.llm.generate_object(
-                [LLMMessage(content=prompt)],
-                object_model=DecisionResponse
+                [LLMMessage(content=prompt)], object_model=DecisionResponse
             )
             print(format_block(f"Decision: {decision}"))
 
             # Route based on decision
             if decision.next_action == NextAction.FINISH:
-                return [FinishAndSummarize(
-                    source=type(self),
-                    context=event.context,
-                    thought=decision.thought,
-                    correlation_id=event.correlation_id
-                )]
+                return [
+                    FinishAndSummarize(
+                        source=type(self),
+                        context=event.context,
+                        thought=decision.thought,
+                        correlation_id=event.correlation_id,
+                    )
+                ]
 
             if decision.next_action == NextAction.ACT:
                 if not decision.tool_name:
-                    return [FailureOccurred(
-                        source=type(self),
-                        context=event.context,
-                        reason="ACT decision made but no tool specified",
-                        correlation_id=event.correlation_id
-                    )]
+                    return [
+                        FailureOccurred(
+                            source=type(self),
+                            context=event.context,
+                            reason="ACT decision made but no tool specified",
+                            correlation_id=event.correlation_id,
+                        )
+                    ]
 
                 # Find the requested tool
                 tool = next(
-                    (t for t in self.tools
-                     if t.descriptor["function"]["name"] == decision.tool_name),
-                    None
+                    (
+                        t
+                        for t in self.tools
+                        if t.descriptor["function"]["name"] == decision.tool_name
+                    ),
+                    None,
                 )
 
                 if not tool:
-                    return [FailureOccurred(
+                    return [
+                        FailureOccurred(
+                            source=type(self),
+                            context=event.context,
+                            reason=f"Tool '{decision.tool_name}' not found",
+                            correlation_id=event.correlation_id,
+                        )
+                    ]
+
+                return [
+                    InvokeToolCall(
                         source=type(self),
                         context=event.context,
-                        reason=f"Tool '{decision.tool_name}' not found",
-                        correlation_id=event.correlation_id
-                    )]
-
-                return [InvokeToolCall(
-                    source=type(self),
-                    context=event.context,
-                    thought=decision.thought,
-                    action=NextAction.ACT,
-                    tool=tool,
-                    tool_arguments=decision.tool_arguments,
-                    correlation_id=event.correlation_id
-                )]
+                        thought=decision.thought,
+                        action=NextAction.ACT,
+                        tool=tool,
+                        tool_arguments=decision.tool_arguments,
+                        correlation_id=event.correlation_id,
+                    )
+                ]
 
             # PLAN action - go back to thinking
-            return [InvokeThinking(
-                source=type(self),
-                context=event.context,
-                correlation_id=event.correlation_id
-            )]
+            return [
+                InvokeThinking(
+                    source=type(self),
+                    context=event.context,
+                    correlation_id=event.correlation_id,
+                )
+            ]
 
         except Exception as e:
-            return [FailureOccurred(
-                source=type(self),
-                context=event.context,
-                reason=f"Error during decision making: {str(e)}",
-                correlation_id=event.correlation_id
-            )]
+            logging.getLogger(__name__).exception("Example operation failed")
+            return [
+                FailureOccurred(
+                    source=type(self),
+                    context=event.context,
+                    reason=f"Error during decision making: {e!s}",
+                    correlation_id=event.correlation_id,
+                )
+            ]
 
     def prompt(self, event: InvokeDecisioning):
         """Generate the prompt for the decision-making LLM.

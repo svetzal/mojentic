@@ -1,4 +1,5 @@
 import asyncio
+
 import structlog
 
 from mojentic.agents.base_async_agent import BaseAsyncAgent
@@ -12,6 +13,7 @@ class AsyncAggregatorAgent(BaseAsyncAgent):
     AsyncAggregatorAgent is an asynchronous version of the BaseAggregatingAgent.
     It aggregates events based on their correlation_id and processes them when all required events are available.
     """
+
     def __init__(self, event_types_needed=None):
         """
         Initialize the AsyncAggregatorAgent.
@@ -58,8 +60,12 @@ class AsyncAggregatorAgent(BaseAsyncAgent):
         self.results[event.correlation_id] = results
 
         # Check if we have all needed events and set the future if we do
-        event_types_captured = [type(e) for e in self.results.get(event.correlation_id, [])]
-        finished = all([event_type in event_types_captured for event_type in self.event_types_needed])
+        event_types_captured = [
+            type(e) for e in self.results.get(event.correlation_id, [])
+        ]
+        finished = all(
+            event_type in event_types_captured for event_type in self.event_types_needed
+        )
 
         if finished and event.correlation_id in self.futures:
             future = self.futures[event.correlation_id]
@@ -80,9 +86,15 @@ class AsyncAggregatorAgent(BaseAsyncAgent):
         bool
             True if all needed event types have been captured, False otherwise
         """
-        event_types_captured = [type(e) for e in self.results.get(event.correlation_id, [])]
-        finished = all([event_type in event_types_captured for event_type in self.event_types_needed])
-        logger.debug(f"Captured: {event_types_captured}, Needed: {self.event_types_needed}, Finished: {finished}")
+        event_types_captured = [
+            type(e) for e in self.results.get(event.correlation_id, [])
+        ]
+        finished = all(
+            event_type in event_types_captured for event_type in self.event_types_needed
+        )
+        logger.debug(
+            f"Captured: {event_types_captured}, Needed: {self.event_types_needed}, Finished: {finished}"
+        )
         return finished
 
     async def wait_for_events(self, correlation_id, timeout=None):
@@ -106,15 +118,22 @@ class AsyncAggregatorAgent(BaseAsyncAgent):
 
         # If we already have all needed events, return them
         if correlation_id in self.results:
-            event_types_captured = [type(e) for e in self.results.get(correlation_id, [])]
-            if all([event_type in event_types_captured for event_type in self.event_types_needed]):
+            event_types_captured = [
+                type(e) for e in self.results.get(correlation_id, [])
+            ]
+            if all(
+                event_type in event_types_captured
+                for event_type in self.event_types_needed
+            ):
                 return self.results[correlation_id]
 
         # Otherwise, wait for the future to be set
         try:
             return await asyncio.wait_for(self.futures[correlation_id], timeout)
-        except asyncio.TimeoutError:
-            logger.warning(f"Timeout waiting for events for correlation_id {correlation_id}")
+        except TimeoutError:
+            logger.warning(
+                f"Timeout waiting for events for correlation_id {correlation_id}"
+            )
             return self.results.get(correlation_id, [])
 
     async def receive_event_async(self, event: Event) -> list:
@@ -135,8 +154,12 @@ class AsyncAggregatorAgent(BaseAsyncAgent):
         await self._capture_results_if_needed(event)
 
         # Then check if we have all needed events
-        event_types_captured = [type(e) for e in self.results.get(event.correlation_id, [])]
-        finished = all([event_type in event_types_captured for event_type in self.event_types_needed])
+        event_types_captured = [
+            type(e) for e in self.results.get(event.correlation_id, [])
+        ]
+        finished = all(
+            event_type in event_types_captured for event_type in self.event_types_needed
+        )
 
         # If we have all needed events, process them
         if finished:

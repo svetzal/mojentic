@@ -9,6 +9,7 @@ Run:
 
     OPENAI_API_KEY=... uv run python src/_examples/realtime/text_mode.py
 """
+
 import asyncio
 import os
 import sys

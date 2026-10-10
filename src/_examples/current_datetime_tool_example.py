@@ -11,8 +11,12 @@ datetime_tool = CurrentDateTimeTool()
 
 # Generate a response with tool assistance
 result = llm.generate(
-    messages=[LLMMessage(content="What time is it right now? Also, what day of the week is it today?")],
-    tools=[datetime_tool]
+    messages=[
+        LLMMessage(
+            content="What time is it right now? Also, what day of the week is it today?"
+        )
+    ],
+    tools=[datetime_tool],
 )
 
 print("LLM Response:")
@@ -20,8 +24,12 @@ print(result)
 
 # You can also try with a custom format string
 result = llm.generate(
-    messages=[LLMMessage(content="Tell me the current date in a friendly format, like 'Monday, January 1, 2023'")],
-    tools=[datetime_tool]
+    messages=[
+        LLMMessage(
+            content="Tell me the current date in a friendly format, like 'Monday, January 1, 2023'"
+        )
+    ],
+    tools=[datetime_tool],
 )
 
 print("\nLLM Response with custom format:")

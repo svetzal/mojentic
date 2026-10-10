@@ -22,10 +22,10 @@ class TellUserTool(LLMTool):
                     "properties": {
                         "message": {
                             "type": "string",
-                            "description": "The important message you want to display to the user."
+                            "description": "The important message you want to display to the user.",
                         }
                     },
-                    "required": ["message"]
+                    "required": ["message"],
                 },
             },
         }

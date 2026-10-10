@@ -5,12 +5,14 @@ The gateway owns I/O against this interface so unit tests can replace
 the live WebSocket with a scripted, deterministic transport. The
 production implementation wraps the ``websockets`` library.
 """
+
 from __future__ import annotations
 
 import asyncio
 import json
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, Protocol, Sequence
+from collections.abc import Sequence
+from typing import Any, Protocol
 
 import structlog
 
@@ -30,7 +32,7 @@ class TransportListener(Protocol):
 
     def on_message(self, data: str) -> None: ...
 
-    def on_close(self, reason: str, err: Optional[BaseException] = None) -> None: ...
+    def on_close(self, reason: str, err: BaseException | None = None) -> None: ...
 
     def on_error(self, err: BaseException) -> None: ...
 
@@ -46,20 +48,16 @@ class RealtimeTransport(ABC):
     """
 
     @abstractmethod
-    async def connect(self, listener: TransportListener) -> None:
-        ...
+    async def connect(self, listener: TransportListener) -> None: ...
 
     @abstractmethod
-    async def send(self, payload: Any) -> None:
-        ...
+    async def send(self, payload: Any) -> None: ...
 
     @abstractmethod
-    async def close(self) -> None:
-        ...
+    async def close(self) -> None: ...
 
     @abstractmethod
-    def is_closed(self) -> bool:
-        ...
+    def is_closed(self) -> bool: ...
 
 
 class WebSocketTransport(RealtimeTransport):
@@ -74,16 +72,16 @@ class WebSocketTransport(RealtimeTransport):
     def __init__(
         self,
         url: str,
-        headers: Optional[Dict[str, str]] = None,
-        subprotocols: Optional[Sequence[str]] = None,
+        headers: dict[str, str] | None = None,
+        subprotocols: Sequence[str] | None = None,
     ):
         self._url = url
         self._headers = headers or {}
         self._subprotocols = list(subprotocols) if subprotocols else None
         self._websocket: Any = None
-        self._listener: Optional[TransportListener] = None
+        self._listener: TransportListener | None = None
         self._closed = False
-        self._pump_task: Optional[asyncio.Task] = None
+        self._pump_task: asyncio.Task | None = None
 
     async def connect(self, listener: TransportListener) -> None:
         if self._websocket is not None:
@@ -98,7 +96,7 @@ class WebSocketTransport(RealtimeTransport):
                 "Install with: pip install websockets"
             ) from exc
 
-        connect_kwargs: Dict[str, Any] = {"additional_headers": self._headers}
+        connect_kwargs: dict[str, Any] = {"additional_headers": self._headers}
         if self._subprotocols:
             connect_kwargs["subprotocols"] = self._subprotocols
 
@@ -137,14 +135,14 @@ class WebSocketTransport(RealtimeTransport):
         if self._websocket is not None:
             try:
                 await self._websocket.close()
-            except Exception:  # noqa: BLE001
+            except Exception:
                 logger.debug("websocket close raised", exc_info=True)
         if self._pump_task is not None:
             self._pump_task.cancel()
             try:
                 await self._pump_task
-            except (asyncio.CancelledError, Exception):  # noqa: BLE001
-                pass
+            except (asyncio.CancelledError, Exception):
+                logger.debug("event pump stopped during close", exc_info=True)
         if self._listener is not None:
             self._listener.on_close("client")
 

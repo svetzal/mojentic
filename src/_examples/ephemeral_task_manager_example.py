@@ -1,25 +1,24 @@
 """
 Example script demonstrating the usage of the ephemeral task manager tools.
 """
+
 import logging
 
 from mojentic.llm import LLMBroker
 from mojentic.llm.gateways.models import LLMMessage
 from mojentic.llm.tools.ephemeral_task_manager import (
-    EphemeralTaskList,
     AppendTaskTool,
-    PrependTaskTool,
-    InsertTaskAfterTool,
-    StartTaskTool,
+    ClearTasksTool,
     CompleteTaskTool,
+    EphemeralTaskList,
+    InsertTaskAfterTool,
     ListTasksTool,
-    ClearTasksTool
+    PrependTaskTool,
+    StartTaskTool,
 )
 from mojentic.llm.tools.tell_user_tool import TellUserTool
 
-logging.basicConfig(
-    level=logging.WARN
-)
+logging.basicConfig(level=logging.WARNING)
 
 # llm = LLMBroker(model="qwen3:30b-a3b-q4_K_M")
 # llm = LLMBroker(model="qwen3:32b")

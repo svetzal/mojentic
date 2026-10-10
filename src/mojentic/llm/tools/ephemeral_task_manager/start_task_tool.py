@@ -2,10 +2,10 @@
 Tool for starting a task in the ephemeral task manager.
 """
 
-from typing import Dict
-
+from mojentic.llm.tools.ephemeral_task_manager.ephemeral_task_list import (
+    EphemeralTaskList,
+)
 from mojentic.llm.tools.llm_tool import LLMTool
-from mojentic.llm.tools.ephemeral_task_manager.ephemeral_task_list import EphemeralTaskList
 
 
 class StartTaskTool(LLMTool):
@@ -24,7 +24,7 @@ class StartTaskTool(LLMTool):
         """
         self._task_list = task_list
 
-    def run(self, id: int) -> Dict[str, str]:
+    def run(self, id: int) -> dict[str, str]:
         """
         Start a task by changing its status from PENDING to IN_PROGRESS.
 
@@ -45,13 +45,10 @@ class StartTaskTool(LLMTool):
                 "id": task.id,
                 "description": task.description,
                 "status": task.status.value,
-                "summary": f"Task '{id}' started successfully"
+                "summary": f"Task '{id}' started successfully",
             }
         except ValueError as e:
-            return {
-                "error": str(e),
-                "summary": f"Failed to start task: {str(e)}"
-            }
+            return {"error": str(e), "summary": f"Failed to start task: {e!s}"}
 
     @property
     def descriptor(self):
@@ -71,11 +68,11 @@ class StartTaskTool(LLMTool):
                     "properties": {
                         "id": {
                             "type": "integer",
-                            "description": "The ID of the task to start"
+                            "description": "The ID of the task to start",
                         }
                     },
                     "required": ["id"],
-                    "additionalProperties": False
-                }
-            }
+                    "additionalProperties": False,
+                },
+            },
         }

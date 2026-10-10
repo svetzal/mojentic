@@ -1,6 +1,6 @@
+import glob
 import os
 import re
-import glob
 
 from mojentic.llm.tools.llm_tool import LLMTool
 
@@ -23,8 +23,10 @@ class FilesystemGateway:
         files = os.listdir(resolved_path)
 
         # Convert the filenames to paths relative to the base_path using list comprehension
-        relative_files = [os.path.relpath(os.path.join(resolved_path, file), self.base_path)
-                          for file in files]
+        relative_files = [
+            os.path.relpath(os.path.join(resolved_path, file), self.base_path)
+            for file in files
+        ]
 
         return relative_files
 
@@ -48,7 +50,9 @@ class FilesystemGateway:
         matching_files = glob.glob(os.path.join(resolved_path, pattern), recursive=True)
 
         # Convert to paths relative to base_path
-        relative_files = [os.path.relpath(file, self.base_path) for file in matching_files]
+        relative_files = [
+            os.path.relpath(file, self.base_path) for file in matching_files
+        ]
         return relative_files
 
     def find_files_containing(self, path: str, pattern: str) -> list[str]:
@@ -61,18 +65,20 @@ class FilesystemGateway:
             for file in files:
                 full_path = os.path.join(root, file)
                 try:
-                    with open(full_path, 'r', errors='ignore') as f:
+                    with open(full_path, "r", errors="ignore") as f:
                         content = f.read()
                         if regex.search(content):
                             relative_path = os.path.relpath(full_path, self.base_path)
                             matching_files.append(relative_path)
-                except (IOError, UnicodeDecodeError):
+                except (OSError, UnicodeDecodeError):
                     # Skip files that can't be read as text
                     pass
 
         return matching_files
 
-    def find_lines_matching(self, path: str, file_name: str, pattern: str) -> list[dict]:
+    def find_lines_matching(
+        self, path: str, file_name: str, pattern: str
+    ) -> list[dict]:
         """Find all lines in a file matching a regex pattern."""
         resolved_path = self._resolve_path(path)
         file_path = os.path.join(resolved_path, file_name)
@@ -80,15 +86,14 @@ class FilesystemGateway:
         regex = re.compile(pattern)
 
         try:
-            with open(file_path, 'r', errors='ignore') as f:
+            with open(file_path, "r", errors="ignore") as f:
                 for i, line in enumerate(f, 1):
                     if regex.search(line):
-                        matching_lines.append({
-                            'line_number': i,
-                            'content': line.rstrip('\n')
-                        })
-        except (IOError, UnicodeDecodeError) as e:
-            raise ValueError(f"Error reading file {file_name}: {str(e)}")
+                        matching_lines.append(
+                            {"line_number": i, "content": line.rstrip("\n")}
+                        )
+        except (OSError, UnicodeDecodeError) as e:
+            raise ValueError(f"Error reading file {file_name}: {e!s}")
 
         return matching_lines
 
@@ -99,27 +104,27 @@ class FilesystemGateway:
 
         try:
             # Read the original content
-            with open(file_path, 'r') as f:
+            with open(file_path, "r") as f:
                 original_content = f.read()
 
             # Check if the original file ends with a newline
-            ends_with_newline = original_content.endswith('\n')
+            ends_with_newline = original_content.endswith("\n")
 
             # Apply the diff using difflib's unified_diff parser
             original_lines = original_content.splitlines()
             patched_content = self._apply_unified_diff(original_lines, diff)
 
             # Preserve the trailing newline if it existed
-            if ends_with_newline and not patched_content.endswith('\n'):
-                patched_content += '\n'
+            if ends_with_newline and not patched_content.endswith("\n"):
+                patched_content += "\n"
 
             # Write the modified content
-            with open(file_path, 'w') as f:
+            with open(file_path, "w") as f:
                 f.write(patched_content)
 
             return f"Successfully applied diff to {file_name}"
-        except Exception as e:
-            raise ValueError(f"Error applying diff to {file_name}: {str(e)}")
+        except (OSError, ValueError) as e:
+            raise ValueError(f"Error applying diff to {file_name}: {e!s}")
 
     def _apply_unified_diff(self, original_lines, diff_text):
         """Apply a unified diff to the original lines."""
@@ -135,17 +140,17 @@ class FilesystemGateway:
             line = diff_lines[i]
 
             # Skip file headers
-            if line.startswith('---') or line.startswith('+++'):
+            if line.startswith(("---", "+++")):
                 i += 1
                 continue
 
             # Parse hunk header
-            if line.startswith('@@'):
+            if line.startswith("@@"):
                 # Format: @@ -start,count +start,count @@
-                match = re.match(r'@@ -(\d+),(\d+) \+(\d+),(\d+) @@', line)
+                match = re.match(r"@@ -(\d+),(\d+) \+(\d+),(\d+) @@", line)
                 if not match:
                     # Try alternative format without counts
-                    match = re.match(r'@@ -(\d+) \+(\d+) @@', line)
+                    match = re.match(r"@@ -(\d+) \+(\d+) @@", line)
                     if match:
                         start_line = int(match.group(1))
                         int(match.group(2))
@@ -163,7 +168,7 @@ class FilesystemGateway:
                 # Extract the hunk content
                 hunk_lines = []
                 i += 1
-                while i < len(diff_lines) and not diff_lines[i].startswith('@@'):
+                while i < len(diff_lines) and not diff_lines[i].startswith("@@"):
                     hunk_lines.append(diff_lines[i])
                     i += 1
 
@@ -174,7 +179,7 @@ class FilesystemGateway:
             i += 1
 
         # Join the result lines into a single string
-        return '\n'.join(result_lines)
+        return "\n".join(result_lines)
 
     def _apply_hunk(self, result_lines, hunk_lines, start_line):
         """Apply a single hunk to the result_lines list."""
@@ -190,21 +195,20 @@ class FilesystemGateway:
         pos = actual_pos
 
         for line in hunk_lines:
-            if line.startswith('-'):
+            if line.startswith("-"):
                 # Remove line
                 if pos < len(result_lines):
                     result_lines.pop(pos)
                     removed += 1
                 # Don't increment pos as we're removing this line
-            elif line.startswith('+'):
+            elif line.startswith("+"):
                 # Add line
                 result_lines.insert(pos, line[1:])
                 pos += 1
                 added += 1
             else:
                 # Context line (unchanged)
-                if line.startswith(' '):
-                    line = line[1:]
+                line = line.removeprefix(" ")
                 pos += 1
 
     def _find_hunk_position(self, result_lines, hunk_lines, start_line):
@@ -212,7 +216,7 @@ class FilesystemGateway:
         # Extract context lines from the beginning of the hunk
         context_lines = []
         for line in hunk_lines:
-            if line.startswith(' '):
+            if line.startswith(" "):
                 context_lines.append(line[1:])
             else:
                 break
@@ -221,7 +225,9 @@ class FilesystemGateway:
             return start_line
 
         # Try to find the context lines in the file
-        for i in range(max(0, start_line - 10), min(len(result_lines), start_line + 10)):
+        for i in range(
+            max(0, start_line - 10), min(len(result_lines), start_line + 10)
+        ):
             if i + len(context_lines) <= len(result_lines):
                 match = True
                 for j, context_line in enumerate(context_lines):
@@ -235,12 +241,12 @@ class FilesystemGateway:
 
     def read(self, path: str, file_name: str) -> str:
         resolved_path = self._resolve_path(path)
-        with open(os.path.join(resolved_path, file_name), 'r') as f:
+        with open(os.path.join(resolved_path, file_name), "r") as f:
             return f.read()
 
     def write(self, path: str, file_name: str, content: str) -> None:
         resolved_path = self._resolve_path(path)
-        with open(os.path.join(resolved_path, file_name), 'w') as f:
+        with open(os.path.join(resolved_path, file_name), "w") as f:
             f.write(content)
 
 
@@ -248,7 +254,7 @@ class FileManager:
     def __init__(self, fs: FilesystemGateway):
         self.fs = fs
 
-    def ls(self, path: str, extension: str = None) -> list[str]:
+    def ls(self, path: str, extension: str | None = None) -> list[str]:
         entries = self.fs.ls(path)
         if extension is None:
             return entries
@@ -266,7 +272,9 @@ class FileManager:
         """Find files containing text matching a regex pattern."""
         return self.fs.find_files_containing(path, pattern)
 
-    def find_lines_matching(self, path: str, file_name: str, pattern: str) -> list[dict]:
+    def find_lines_matching(
+        self, path: str, file_name: str, pattern: str
+    ) -> list[dict]:
         """Find all lines in a file matching a regex pattern."""
         return self.fs.find_lines_matching(path, file_name, pattern)
 
@@ -285,20 +293,20 @@ class ListFilesTool(LLMTool):
     def __init__(self, fs: FilesystemGateway):
         self.fs = fs
 
-    def run(self, path: str, extension: str = None) -> list[str]:
+    def run(self, path: str, extension: str | None = None) -> list[str]:
         try:
             entries = self.fs.ls(path)
             if extension is None:
                 return entries
             return [f for f in entries if f.endswith(extension)]
         except ValueError as e:
-            return f"Error: {str(e)}"
+            return f"Error: {e!s}"
         except FileNotFoundError:
             return f"Error: Directory '{path}' not found"
         except PermissionError:
             return f"Error: Permission denied when accessing directory '{path}'"
-        except Exception as e:
-            return f"Error listing files in '{path}': {str(e)}"
+        except OSError as e:
+            return f"Error listing files in '{path}': {e!s}"
 
     @property
     def descriptor(self):
@@ -320,7 +328,7 @@ class ListFilesTool(LLMTool):
                                 "The path relative to the sandbox root to list files from. For example, '.' for "
                                 "the root directory, 'src' for the src directory, or 'docs/images' for a nested "
                                 "directory."
-                            )
+                            ),
                         },
                         "extension": {
                             "type": "string",
@@ -328,11 +336,11 @@ class ListFilesTool(LLMTool):
                                 "The file extension to filter by (e.g., '.py', '.txt', '.md'). If not provided, "
                                 "all files will be listed. For example, using '.py' will only list Python files "
                                 "in the directory."
-                            )
-                        }
+                            ),
+                        },
                     },
                     "additionalProperties": False,
-                    "required": ["path"]
+                    "required": ["path"],
                 },
             },
         }
@@ -348,17 +356,15 @@ class ReadFileTool(LLMTool):
             directory, file_name = os.path.split(path)
             return self.fs.read(directory, file_name)
         except ValueError as e:
-            return f"Error: {str(e)}"
+            return f"Error: {e!s}"
         except FileNotFoundError:
             return f"Error: File '{path}' not found"
         except PermissionError:
             return f"Error: Permission denied when accessing file '{path}'"
-        except IOError as e:
-            return f"Error reading file '{path}': {str(e)}"
+        except OSError as e:
+            return f"Error reading file '{path}': {e!s}"
         except UnicodeDecodeError:
             return f"Error: File '{path}' contains non-text content that cannot be read as text"
-        except Exception as e:
-            return f"Error reading file '{path}': {str(e)}"
 
     @property
     def descriptor(self):
@@ -379,11 +385,11 @@ class ReadFileTool(LLMTool):
                                 "The full relative path including the filename of the file to read. For example, "
                                 "'README.md' for a file in the root directory, 'src/main.py' for a file in the "
                                 "src directory, or 'docs/images/diagram.png' for a file in a nested directory."
-                            )
+                            ),
                         }
                     },
                     "additionalProperties": False,
-                    "required": ["path"]
+                    "required": ["path"],
                 },
             },
         }
@@ -400,15 +406,13 @@ class WriteFileTool(LLMTool):
             self.fs.write(directory, file_name, content)
             return f"Successfully wrote to {path}"
         except ValueError as e:
-            return f"Error: {str(e)}"
+            return f"Error: {e!s}"
         except FileNotFoundError:
             return f"Error: Directory not found. Cannot write file '{path}'"
         except PermissionError:
             return f"Error: Permission denied when writing to file '{path}'"
-        except IOError as e:
-            return f"Error writing to file '{path}': {str(e)}"
-        except Exception as e:
-            return f"Error writing to file '{path}': {str(e)}"
+        except OSError as e:
+            return f"Error writing to file '{path}': {e!s}"
 
     @property
     def descriptor(self):
@@ -430,7 +434,7 @@ class WriteFileTool(LLMTool):
                                 "For example, 'output.txt' for a file in the root directory, 'src/main.py' for "
                                 "a file in the src directory, or 'docs/images/diagram.png' for a file in a "
                                 "nested directory."
-                            )
+                            ),
                         },
                         "content": {
                             "type": "string",
@@ -438,11 +442,11 @@ class WriteFileTool(LLMTool):
                                 "The content to write to the file. This will completely replace any existing "
                                 "content in the file. For example, 'Hello, world!' for a simple text file, or a "
                                 "JSON string for a configuration file."
-                            )
-                        }
+                            ),
+                        },
                     },
                     "additionalProperties": False,
-                    "required": ["path", "content"]
+                    "required": ["path", "content"],
                 },
             },
         }
@@ -456,13 +460,13 @@ class ListAllFilesTool(LLMTool):
         try:
             return self.fs.list_all_files(path)
         except ValueError as e:
-            return f"Error: {str(e)}"
+            return f"Error: {e!s}"
         except FileNotFoundError:
             return f"Error: Directory '{path}' not found"
         except PermissionError:
             return f"Error: Permission denied when accessing directory '{path}'"
-        except Exception as e:
-            return f"Error listing files recursively in '{path}': {str(e)}"
+        except OSError as e:
+            return f"Error listing files recursively in '{path}': {e!s}"
 
     @property
     def descriptor(self):
@@ -485,11 +489,11 @@ class ListAllFilesTool(LLMTool):
                                 "example, '.' for the root directory and all subdirectories, 'src' for the src "
                                 "directory and all its subdirectories, or 'docs/images' for a nested directory "
                                 "and its subdirectories."
-                            )
+                            ),
                         }
                     },
                     "additionalProperties": False,
-                    "required": ["path"]
+                    "required": ["path"],
                 },
             },
         }
@@ -503,13 +507,13 @@ class FindFilesByGlobTool(LLMTool):
         try:
             return self.fs.find_files_by_glob(path, pattern)
         except ValueError as e:
-            return f"Error: {str(e)}"
+            return f"Error: {e!s}"
         except FileNotFoundError:
             return f"Error: Directory '{path}' not found"
         except PermissionError:
             return f"Error: Permission denied when accessing directory '{path}'"
-        except Exception as e:
-            return f"Error finding files with pattern '{pattern}' in '{path}': {str(e)}"
+        except OSError as e:
+            return f"Error finding files with pattern '{pattern}' in '{path}': {e!s}"
 
     @property
     def descriptor(self):
@@ -531,7 +535,7 @@ class FindFilesByGlobTool(LLMTool):
                                 "The path relative to the sandbox root to search for files from. For example, "
                                 "'.' for the root directory, 'src' for the src directory, or 'docs/images' for a "
                                 "nested directory."
-                            )
+                            ),
                         },
                         "pattern": {
                             "type": "string",
@@ -540,11 +544,11 @@ class FindFilesByGlobTool(LLMTool):
                                 "the specified directory, '**/*.txt' for all text files in the specified directory "
                                 "and any subdirectory, or '**/*test*.py' for all Python files with 'test' in "
                                 "their name in the specified directory and any subdirectory."
-                            )
-                        }
+                            ),
+                        },
                     },
                     "additionalProperties": False,
-                    "required": ["path", "pattern"]
+                    "required": ["path", "pattern"],
                 },
             },
         }
@@ -558,15 +562,17 @@ class FindFilesContainingTool(LLMTool):
         try:
             return self.fs.find_files_containing(path, pattern)
         except ValueError as e:
-            return f"Error: {str(e)}"
+            return f"Error: {e!s}"
         except FileNotFoundError:
             return f"Error: Directory '{path}' not found"
         except PermissionError:
             return f"Error: Permission denied when accessing directory '{path}'"
         except re.error as e:
-            return f"Error: Invalid regex pattern '{pattern}': {str(e)}"
-        except Exception as e:
-            return f"Error finding files containing pattern '{pattern}' in '{path}': {str(e)}"
+            return f"Error: Invalid regex pattern '{pattern}': {e!s}"
+        except OSError as e:
+            return (
+                f"Error finding files containing pattern '{pattern}' in '{path}': {e!s}"
+            )
 
     @property
     def descriptor(self):
@@ -588,7 +594,7 @@ class FindFilesContainingTool(LLMTool):
                                 "The path relative to the sandbox root to search in. For example, '.' for the "
                                 "root directory, 'src' for the src directory, or 'docs/images' for a nested "
                                 "directory."
-                            )
+                            ),
                         },
                         "pattern": {
                             "type": "string",
@@ -597,11 +603,11 @@ class FindFilesContainingTool(LLMTool):
                                 "files containing a main function, 'import\\s+os' to find files importing the os "
                                 "module, or 'TODO|FIXME' to find files containing TODO or FIXME comments. The "
                                 "pattern uses Python's re module syntax."
-                            )
-                        }
+                            ),
+                        },
                     },
                     "additionalProperties": False,
-                    "required": ["path", "pattern"]
+                    "required": ["path", "pattern"],
                 },
             },
         }
@@ -617,19 +623,17 @@ class FindLinesMatchingTool(LLMTool):
             directory, file_name = os.path.split(path)
             return self.fs.find_lines_matching(directory, file_name, pattern)
         except ValueError as e:
-            return f"Error: {str(e)}"
+            return f"Error: {e!s}"
         except FileNotFoundError:
             return f"Error: File '{path}' not found"
         except PermissionError:
             return f"Error: Permission denied when accessing file '{path}'"
         except re.error as e:
-            return f"Error: Invalid regex pattern '{pattern}': {str(e)}"
-        except IOError as e:
-            return f"Error reading file '{path}': {str(e)}"
+            return f"Error: Invalid regex pattern '{pattern}': {e!s}"
+        except OSError as e:
+            return f"Error reading file '{path}': {e!s}"
         except UnicodeDecodeError:
             return f"Error: File '{path}' contains non-text content that cannot be read as text"
-        except Exception as e:
-            return f"Error finding lines matching pattern '{pattern}' in file '{path}': {str(e)}"
 
     @property
     def descriptor(self):
@@ -652,7 +656,7 @@ class FindLinesMatchingTool(LLMTool):
                                 "example, 'README.md' for a file in the root directory, 'src/main.py' for a file "
                                 "in the src directory, or 'docs/images/diagram.png' for a file in a nested "
                                 "directory."
-                            )
+                            ),
                         },
                         "pattern": {
                             "type": "string",
@@ -661,11 +665,11 @@ class FindLinesMatchingTool(LLMTool):
                                 "function definitions, 'class\\s+\\w+' to find all class definitions, or "
                                 "'TODO|FIXME' to find all TODO or FIXME comments. The pattern uses Python's re "
                                 "module syntax."
-                            )
-                        }
+                            ),
+                        },
                     },
                     "additionalProperties": False,
-                    "required": ["path", "pattern"]
+                    "required": ["path", "pattern"],
                 },
             },
         }
@@ -681,17 +685,15 @@ class EditFileWithDiffTool(LLMTool):
             directory, file_name = os.path.split(path)
             return self.fs.edit_file_with_diff(directory, file_name, diff)
         except ValueError as e:
-            return f"Error: {str(e)}"
+            return f"Error: {e!s}"
         except FileNotFoundError:
             return f"Error: File '{path}' not found"
         except PermissionError:
             return f"Error: Permission denied when accessing file '{path}'"
-        except IOError as e:
-            return f"Error accessing file '{path}': {str(e)}"
+        except OSError as e:
+            return f"Error accessing file '{path}': {e!s}"
         except UnicodeDecodeError:
             return f"Error: File '{path}' contains non-text content that cannot be edited as text"
-        except Exception as e:
-            return f"Error applying diff to file '{path}': {str(e)}"
 
     @property
     def descriptor(self):
@@ -714,7 +716,7 @@ class EditFileWithDiffTool(LLMTool):
                                 "The full relative path including the filename of the file to edit. For example, "
                                 "'README.md' for a file in the root directory, 'src/main.py' for a file in the "
                                 "src directory, or 'docs/images/diagram.png' for a file in a nested directory."
-                            )
+                            ),
                         },
                         "diff": {
                             "type": "string",
@@ -725,11 +727,11 @@ class EditFileWithDiffTool(LLMTool):
                                 "removed\n+This line will be added\n This is another context line\n```\n\n"
                                 "The diff should include enough context lines to uniquely identify the section "
                                 "of the file to modify."
-                            )
-                        }
+                            ),
+                        },
                     },
                     "additionalProperties": False,
-                    "required": ["path", "diff"]
+                    "required": ["path", "diff"],
                 },
             },
         }
@@ -749,13 +751,11 @@ class CreateDirectoryTool(LLMTool):
 
             return f"Successfully created directory '{path}'"
         except ValueError as e:
-            return f"Error: {str(e)}"
+            return f"Error: {e!s}"
         except PermissionError:
             return f"Error: Permission denied when creating directory '{path}'"
         except OSError as e:
-            return f"Error creating directory '{path}': {str(e)}"
-        except Exception as e:
-            return f"Error creating directory '{path}': {str(e)}"
+            return f"Error creating directory '{path}': {e!s}"
 
     @property
     def descriptor(self):
@@ -778,11 +778,11 @@ class CreateDirectoryTool(LLMTool):
                                 "'new_folder' for a directory in the root, 'src/new_folder' for a directory in "
                                 "the src directory, or 'docs/images/new_folder' for a nested directory. Parent "
                                 "directories will be created automatically if they don't exist."
-                            )
+                            ),
                         }
                     },
                     "additionalProperties": False,
-                    "required": ["path"]
+                    "required": ["path"],
                 },
             },
         }

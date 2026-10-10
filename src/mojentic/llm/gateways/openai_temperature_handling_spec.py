@@ -1,9 +1,10 @@
-import pytest
 from unittest.mock import MagicMock
 
+import pytest
+
+from mojentic.llm.gateways.models import LLMMessage, MessageRole
 from mojentic.llm.gateways.openai import OpenAIGateway
 from mojentic.llm.gateways.openai_model_registry import get_model_registry
-from mojentic.llm.gateways.models import LLMMessage, MessageRole
 
 
 @pytest.fixture
@@ -12,8 +13,12 @@ def mock_openai_client(mocker):
     mock_client = MagicMock()
     mock_client.chat.completions.create.return_value = MagicMock()
     mock_client.chat.completions.create.return_value.choices = [MagicMock()]
-    mock_client.chat.completions.create.return_value.choices[0].message.content = "Test response"
-    mock_client.chat.completions.create.return_value.choices[0].message.tool_calls = None
+    mock_client.chat.completions.create.return_value.choices[
+        0
+    ].message.content = "Test response"
+    mock_client.chat.completions.create.return_value.choices[
+        0
+    ].message.tool_calls = None
     response = mock_client.chat.completions.create.return_value
     response.usage = None
     response.model = "reported-model"
@@ -24,7 +29,7 @@ def mock_openai_client(mocker):
 @pytest.fixture
 def openai_gateway(mocker, mock_openai_client):
     """Create an OpenAI gateway with mocked client."""
-    mocker.patch('mojentic.llm.gateways.openai.OpenAI', return_value=mock_openai_client)
+    mocker.patch("mojentic.llm.gateways.openai.OpenAI", return_value=mock_openai_client)
     return OpenAIGateway(api_key="test_key")
 
 
@@ -38,7 +43,9 @@ class DescribeOpenAIGatewayTemperatureHandling:
         Specifications for GPT-5 model temperature restrictions.
         """
 
-        def should_automatically_adjust_unsupported_temperature_for_gpt5(self, openai_gateway, mock_openai_client):
+        def should_automatically_adjust_unsupported_temperature_for_gpt5(
+            self, openai_gateway, mock_openai_client
+        ):
             """
             Given a GPT-5 model that only supports temperature=1.0
             When calling complete with temperature=0.1 (unsupported)
@@ -46,17 +53,15 @@ class DescribeOpenAIGatewayTemperatureHandling:
             """
             messages = [LLMMessage(role=MessageRole.User, content="Test message")]
 
-            openai_gateway.complete(
-                model="gpt-5",
-                messages=messages,
-                temperature=0.1
-            )
+            openai_gateway.complete(model="gpt-5", messages=messages, temperature=0.1)
 
             # Verify the API was called with temperature=1.0, not 0.1
             call_args = mock_openai_client.chat.completions.create.call_args
-            assert call_args[1]['temperature'] == 1.0
+            assert call_args[1]["temperature"] == 1.0
 
-        def should_preserve_supported_temperature_for_gpt5(self, openai_gateway, mock_openai_client):
+        def should_preserve_supported_temperature_for_gpt5(
+            self, openai_gateway, mock_openai_client
+        ):
             """
             Given a GPT-5 model that supports temperature=1.0
             When calling complete with temperature=1.0 (supported)
@@ -64,17 +69,15 @@ class DescribeOpenAIGatewayTemperatureHandling:
             """
             messages = [LLMMessage(role=MessageRole.User, content="Test message")]
 
-            openai_gateway.complete(
-                model="gpt-5",
-                messages=messages,
-                temperature=1.0
-            )
+            openai_gateway.complete(model="gpt-5", messages=messages, temperature=1.0)
 
             # Verify the API was called with temperature=1.0
             call_args = mock_openai_client.chat.completions.create.call_args
-            assert call_args[1]['temperature'] == 1.0
+            assert call_args[1]["temperature"] == 1.0
 
-        def should_preserve_any_temperature_for_gpt4o(self, openai_gateway, mock_openai_client):
+        def should_preserve_any_temperature_for_gpt4o(
+            self, openai_gateway, mock_openai_client
+        ):
             """
             Given a GPT-4o model that supports all temperatures
             When calling complete with temperature=0.1
@@ -82,17 +85,15 @@ class DescribeOpenAIGatewayTemperatureHandling:
             """
             messages = [LLMMessage(role=MessageRole.User, content="Test message")]
 
-            openai_gateway.complete(
-                model="gpt-4o",
-                messages=messages,
-                temperature=0.1
-            )
+            openai_gateway.complete(model="gpt-4o", messages=messages, temperature=0.1)
 
             # Verify the API was called with temperature=0.1
             call_args = mock_openai_client.chat.completions.create.call_args
-            assert call_args[1]['temperature'] == 0.1
+            assert call_args[1]["temperature"] == 0.1
 
-        def should_automatically_adjust_unsupported_temperature_for_o1(self, openai_gateway, mock_openai_client):
+        def should_automatically_adjust_unsupported_temperature_for_o1(
+            self, openai_gateway, mock_openai_client
+        ):
             """
             Given an o1 model that only supports temperature=1.0
             When calling complete with temperature=0.1 (unsupported)
@@ -100,17 +101,15 @@ class DescribeOpenAIGatewayTemperatureHandling:
             """
             messages = [LLMMessage(role=MessageRole.User, content="Test message")]
 
-            openai_gateway.complete(
-                model="o1",
-                messages=messages,
-                temperature=0.1
-            )
+            openai_gateway.complete(model="o1", messages=messages, temperature=0.1)
 
             # Verify the API was called with temperature=1.0, not 0.1
             call_args = mock_openai_client.chat.completions.create.call_args
-            assert call_args[1]['temperature'] == 1.0
+            assert call_args[1]["temperature"] == 1.0
 
-        def should_automatically_adjust_unsupported_temperature_for_o4_mini(self, openai_gateway, mock_openai_client):
+        def should_automatically_adjust_unsupported_temperature_for_o4_mini(
+            self, openai_gateway, mock_openai_client
+        ):
             """
             Given an o4-mini model that only supports temperature=1.0
             When calling complete with temperature=0.1 (unsupported)
@@ -118,17 +117,15 @@ class DescribeOpenAIGatewayTemperatureHandling:
             """
             messages = [LLMMessage(role=MessageRole.User, content="Test message")]
 
-            openai_gateway.complete(
-                model="o4-mini",
-                messages=messages,
-                temperature=0.1
-            )
+            openai_gateway.complete(model="o4-mini", messages=messages, temperature=0.1)
 
             # Verify the API was called with temperature=1.0, not 0.1
             call_args = mock_openai_client.chat.completions.create.call_args
-            assert call_args[1]['temperature'] == 1.0
+            assert call_args[1]["temperature"] == 1.0
 
-        def should_automatically_adjust_unsupported_temperature_for_o3_mini(self, openai_gateway, mock_openai_client):
+        def should_automatically_adjust_unsupported_temperature_for_o3_mini(
+            self, openai_gateway, mock_openai_client
+        ):
             """
             Given an o3-mini model that only supports temperature=1.0
             When calling complete with temperature=0.1 (unsupported)
@@ -136,15 +133,11 @@ class DescribeOpenAIGatewayTemperatureHandling:
             """
             messages = [LLMMessage(role=MessageRole.User, content="Test message")]
 
-            openai_gateway.complete(
-                model="o3-mini",
-                messages=messages,
-                temperature=0.1
-            )
+            openai_gateway.complete(model="o3-mini", messages=messages, temperature=0.1)
 
             # Verify the API was called with temperature=1.0, not 0.1
             call_args = mock_openai_client.chat.completions.create.call_args
-            assert call_args[1]['temperature'] == 1.0
+            assert call_args[1]["temperature"] == 1.0
 
 
 class DescribeModelCapabilitiesTemperatureRestrictions:
@@ -194,7 +187,7 @@ class DescribeModelCapabilitiesTemperatureRestrictions:
             "gpt-5-mini",
             "gpt-5-mini-2025-08-07",
             "gpt-5-nano",
-            "gpt-5-nano-2025-08-07"
+            "gpt-5-nano-2025-08-07",
         ]
 
         for model in gpt5_reasoning_models:
@@ -226,8 +219,16 @@ class DescribeModelCapabilitiesTemperatureRestrictions:
         Then they should now support temperature=1.0 only (as of 2026-02-04 audit)
         """
         registry = get_model_registry()
-        o3_models = ["o3", "o3-mini", "o3-pro", "o3-deep-research", "o3-2025-04-16",
-                     "o3-mini-2025-01-31", "o3-pro-2025-06-10", "o3-deep-research-2025-06-26"]
+        o3_models = [
+            "o3",
+            "o3-mini",
+            "o3-pro",
+            "o3-deep-research",
+            "o3-2025-04-16",
+            "o3-mini-2025-01-31",
+            "o3-pro-2025-06-10",
+            "o3-deep-research-2025-06-26",
+        ]
 
         for model in o3_models:
             capabilities = registry.get_model_capabilities(model)

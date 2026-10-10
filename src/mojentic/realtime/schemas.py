@@ -8,9 +8,10 @@ Use ``raw_events()`` on the session for fields outside this schema.
 
 Schema snapshot: OpenAI Realtime API beta circa 2026-05.
 """
+
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
@@ -21,24 +22,24 @@ class _PassthroughModel(BaseModel):
 
 class SessionCreated(_PassthroughModel):
     type: Literal["session.created"]
-    session: Dict[str, Any]
+    session: dict[str, Any]
 
 
 class SessionUpdated(_PassthroughModel):
     type: Literal["session.updated"]
-    session: Dict[str, Any]
+    session: dict[str, Any]
 
 
 class SpeechStarted(_PassthroughModel):
     type: Literal["input_audio_buffer.speech_started"]
-    audio_start_ms: Optional[int] = None
-    item_id: Optional[str] = None
+    audio_start_ms: int | None = None
+    item_id: str | None = None
 
 
 class SpeechStopped(_PassthroughModel):
     type: Literal["input_audio_buffer.speech_stopped"]
-    audio_end_ms: Optional[int] = None
-    item_id: Optional[str] = None
+    audio_end_ms: int | None = None
+    item_id: str | None = None
 
 
 class InputTranscriptionCompleted(_PassthroughModel):
@@ -55,25 +56,25 @@ class InputTranscriptionDelta(_PassthroughModel):
 
 class ResponseCreated(_PassthroughModel):
     type: Literal["response.created"]
-    response: Dict[str, Any]
+    response: dict[str, Any]
 
 
 class ResponseDone(_PassthroughModel):
     type: Literal["response.done"]
-    response: Dict[str, Any]
+    response: dict[str, Any]
 
 
 class OutputItemAdded(_PassthroughModel):
     type: Literal["response.output_item.added"]
     response_id: str
-    output_index: Optional[int] = None
-    item: Dict[str, Any]
+    output_index: int | None = None
+    item: dict[str, Any]
 
 
 class OutputItemDone(_PassthroughModel):
     type: Literal["response.output_item.done"]
     response_id: str
-    item: Dict[str, Any]
+    item: dict[str, Any]
 
 
 class AudioDelta(_PassthroughModel):
@@ -81,7 +82,7 @@ class AudioDelta(_PassthroughModel):
 
     type: Literal["response.audio.delta", "response.output_audio.delta"]
     response_id: str
-    item_id: Optional[str] = None
+    item_id: str | None = None
     delta: str
 
 
@@ -91,7 +92,7 @@ class AudioTranscriptDelta(_PassthroughModel):
         "response.output_audio_transcript.delta",
     ]
     response_id: str
-    item_id: Optional[str] = None
+    item_id: str | None = None
     delta: str
 
 
@@ -101,28 +102,28 @@ class AudioTranscriptDone(_PassthroughModel):
         "response.output_audio_transcript.done",
     ]
     response_id: str
-    item_id: Optional[str] = None
+    item_id: str | None = None
     transcript: str
 
 
 class TextDelta(_PassthroughModel):
     type: Literal["response.text.delta", "response.output_text.delta"]
     response_id: str
-    item_id: Optional[str] = None
+    item_id: str | None = None
     delta: str
 
 
 class TextDone(_PassthroughModel):
     type: Literal["response.text.done", "response.output_text.done"]
     response_id: str
-    item_id: Optional[str] = None
+    item_id: str | None = None
     text: str
 
 
 class FunctionCallArgsDelta(_PassthroughModel):
     type: Literal["response.function_call_arguments.delta"]
     response_id: str
-    item_id: Optional[str] = None
+    item_id: str | None = None
     call_id: str
     delta: str
 
@@ -130,7 +131,7 @@ class FunctionCallArgsDelta(_PassthroughModel):
 class FunctionCallArgsDone(_PassthroughModel):
     type: Literal["response.function_call_arguments.done"]
     response_id: str
-    item_id: Optional[str] = None
+    item_id: str | None = None
     call_id: str
     name: str
     arguments: str
@@ -138,12 +139,12 @@ class FunctionCallArgsDone(_PassthroughModel):
 
 class RateLimitsUpdated(_PassthroughModel):
     type: Literal["rate_limits.updated"]
-    rate_limits: List[Dict[str, Any]]
+    rate_limits: list[dict[str, Any]]
 
 
 class ServerErrorEvent(_PassthroughModel):
     type: Literal["error"]
-    error: Dict[str, Any]
+    error: dict[str, Any]
 
 
 _SCHEMA_REGISTRY = {
@@ -181,7 +182,7 @@ class RawServerEvent(BaseModel):
     type: str = Field(...)
 
 
-def parse_server_event(raw: Any) -> Dict[str, Any]:
+def parse_server_event(raw: Any) -> dict[str, Any]:
     """
     Best-effort parse: returns the validated event as a dict when
     recognised, otherwise the raw payload so callers can still surface

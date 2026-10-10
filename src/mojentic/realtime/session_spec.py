@@ -1,6 +1,7 @@
 import asyncio
 import json
-from typing import Any, AsyncIterator, Dict, List, Optional
+from collections.abc import AsyncIterator
+from typing import Any
 
 from mojentic.llm.tools.llm_tool import LLMTool
 from mojentic.llm.tools.runner import ToolRunContext
@@ -22,7 +23,7 @@ class _ScriptedGatewaySession(RealtimeGatewaySession):
 
     def __init__(self):
         self._session_id = "sess_test"
-        self.sent: List[Dict[str, Any]] = []
+        self.sent: list[dict[str, Any]] = []
         self._queue: asyncio.Queue = asyncio.Queue()
         self._closed = False
         self._send_hook = None
@@ -31,18 +32,18 @@ class _ScriptedGatewaySession(RealtimeGatewaySession):
     def session_id(self) -> str:
         return self._session_id
 
-    async def send_event(self, event: Dict[str, Any]) -> None:
+    async def send_event(self, event: dict[str, Any]) -> None:
         self.sent.append(event)
         if self._send_hook is not None:
             await self._send_hook(event)
 
-    def push(self, raw: Dict[str, Any]) -> None:
+    def push(self, raw: dict[str, Any]) -> None:
         self._queue.put_nowait(raw)
 
     def end(self) -> None:
         self._queue.put_nowait({"__eos__": True})
 
-    async def events(self) -> AsyncIterator[Dict[str, Any]]:
+    async def events(self) -> AsyncIterator[dict[str, Any]]:
         while True:
             item = await self._queue.get()
             if isinstance(item, dict) and item.get("__eos__"):
@@ -92,14 +93,13 @@ class _EchoTool(LLMTool):
 class _SlowAbortableTool(LLMTool):
     """Async tool that obeys the cancel_event in its ctx."""
 
-    async def run(self, value: str = "x", delay_s: float = 0.5, ctx: Optional[ToolRunContext] = None) -> dict:
+    async def run(
+        self, value: str = "x", delay_s: float = 0.5, ctx: ToolRunContext | None = None
+    ) -> dict:
         # Bail early if the runner has already aborted this batch.
         if ctx is not None and ctx.cancelled:
             raise asyncio.CancelledError("ctx cancelled before start")
-        try:
-            await asyncio.sleep(delay_s)
-        except asyncio.CancelledError:
-            raise
+        await asyncio.sleep(delay_s)
         if ctx is not None and ctx.cancelled:
             raise asyncio.CancelledError("ctx cancelled during run")
         return {"value": value}
@@ -113,7 +113,10 @@ class _SlowAbortableTool(LLMTool):
                 "description": "Sleeps then returns",
                 "parameters": {
                     "type": "object",
-                    "properties": {"value": {"type": "string"}, "delay_s": {"type": "number"}},
+                    "properties": {
+                        "value": {"type": "string"},
+                        "delay_s": {"type": "number"},
+                    },
                     "required": [],
                 },
             },
@@ -171,26 +174,36 @@ class DescribeRealtimeSessionTextRoundTrip:
             gateway_session = _ScriptedGatewaySession()
             session = RealtimeSession(gateway_session, config=RealtimeVoiceConfig())
             # Pre-load the entire scripted turn.
-            gateway_session.push({"type": "response.created", "response": {"id": "resp_1"}})
-            gateway_session.push({
-                "type": "response.text.delta",
-                "response_id": "resp_1",
-                "delta": "Hello ",
-            })
-            gateway_session.push({
-                "type": "response.text.delta",
-                "response_id": "resp_1",
-                "delta": "world.",
-            })
-            gateway_session.push({
-                "type": "response.text.done",
-                "response_id": "resp_1",
-                "text": "Hello world.",
-            })
-            gateway_session.push({
-                "type": "response.done",
-                "response": {"id": "resp_1"},
-            })
+            gateway_session.push(
+                {"type": "response.created", "response": {"id": "resp_1"}}
+            )
+            gateway_session.push(
+                {
+                    "type": "response.text.delta",
+                    "response_id": "resp_1",
+                    "delta": "Hello ",
+                }
+            )
+            gateway_session.push(
+                {
+                    "type": "response.text.delta",
+                    "response_id": "resp_1",
+                    "delta": "world.",
+                }
+            )
+            gateway_session.push(
+                {
+                    "type": "response.text.done",
+                    "response_id": "resp_1",
+                    "text": "Hello world.",
+                }
+            )
+            gateway_session.push(
+                {
+                    "type": "response.done",
+                    "response": {"id": "resp_1"},
+                }
+            )
             gateway_session.end()
             kinds = []
             async for ev in session.events():
@@ -215,44 +228,54 @@ class DescribeRealtimeSessionToolBatch:
             gateway_session = _ScriptedGatewaySession()
             session = RealtimeSession(
                 gateway_session,
-                config=RealtimeVoiceConfig(tools=[_EchoTool("alpha"), _EchoTool("beta")]),
+                config=RealtimeVoiceConfig(
+                    tools=[_EchoTool("alpha"), _EchoTool("beta")]
+                ),
             )
             # Script a turn that emits two tool calls before response.done.
             gateway_session.push({"type": "response.created", "response": {"id": "r1"}})
-            gateway_session.push({
-                "type": "response.output_item.added",
-                "response_id": "r1",
-                "item": {
-                    "type": "function_call",
+            gateway_session.push(
+                {
+                    "type": "response.output_item.added",
+                    "response_id": "r1",
+                    "item": {
+                        "type": "function_call",
+                        "call_id": "call_a",
+                        "name": "alpha",
+                        "id": "item_a",
+                    },
+                }
+            )
+            gateway_session.push(
+                {
+                    "type": "response.function_call_arguments.done",
+                    "response_id": "r1",
                     "call_id": "call_a",
                     "name": "alpha",
-                    "id": "item_a",
-                },
-            })
-            gateway_session.push({
-                "type": "response.function_call_arguments.done",
-                "response_id": "r1",
-                "call_id": "call_a",
-                "name": "alpha",
-                "arguments": json.dumps({"value": "1"}),
-            })
-            gateway_session.push({
-                "type": "response.output_item.added",
-                "response_id": "r1",
-                "item": {
-                    "type": "function_call",
+                    "arguments": json.dumps({"value": "1"}),
+                }
+            )
+            gateway_session.push(
+                {
+                    "type": "response.output_item.added",
+                    "response_id": "r1",
+                    "item": {
+                        "type": "function_call",
+                        "call_id": "call_b",
+                        "name": "beta",
+                        "id": "item_b",
+                    },
+                }
+            )
+            gateway_session.push(
+                {
+                    "type": "response.function_call_arguments.done",
+                    "response_id": "r1",
                     "call_id": "call_b",
                     "name": "beta",
-                    "id": "item_b",
-                },
-            })
-            gateway_session.push({
-                "type": "response.function_call_arguments.done",
-                "response_id": "r1",
-                "call_id": "call_b",
-                "name": "beta",
-                "arguments": json.dumps({"value": "2"}),
-            })
+                    "arguments": json.dumps({"value": "2"}),
+                }
+            )
             gateway_session.push({"type": "response.done", "response": {"id": "r1"}})
 
             collected = []
@@ -271,12 +294,18 @@ class DescribeRealtimeSessionToolBatch:
 
         events, sent = asyncio.run(run())
 
-        completed_names = [e.name for e in events if isinstance(e, ToolCallCompletedEvent)]
+        completed_names = [
+            e.name for e in events if isinstance(e, ToolCallCompletedEvent)
+        ]
         assert set(completed_names) == {"alpha", "beta"}
 
         # function_call_output events should be sent before response.create
-        outputs = [s for s in sent if s.get("type") == "conversation.item.create"
-                   and s.get("item", {}).get("type") == "function_call_output"]
+        outputs = [
+            s
+            for s in sent
+            if s.get("type") == "conversation.item.create"
+            and s.get("item", {}).get("type") == "function_call_output"
+        ]
         create_calls = [s for s in sent if s.get("type") == "response.create"]
         assert len(outputs) == 2
         assert len(create_calls) == 1
@@ -295,23 +324,27 @@ class DescribeRealtimeSessionInterruption:
                 config=RealtimeVoiceConfig(tools=[tool], on_interrupt="drop"),
             )
             gateway_session.push({"type": "response.created", "response": {"id": "r1"}})
-            gateway_session.push({
-                "type": "response.output_item.added",
-                "response_id": "r1",
-                "item": {
-                    "type": "function_call",
+            gateway_session.push(
+                {
+                    "type": "response.output_item.added",
+                    "response_id": "r1",
+                    "item": {
+                        "type": "function_call",
+                        "call_id": "c1",
+                        "name": "slow",
+                        "id": "i1",
+                    },
+                }
+            )
+            gateway_session.push(
+                {
+                    "type": "response.function_call_arguments.done",
+                    "response_id": "r1",
                     "call_id": "c1",
                     "name": "slow",
-                    "id": "i1",
-                },
-            })
-            gateway_session.push({
-                "type": "response.function_call_arguments.done",
-                "response_id": "r1",
-                "call_id": "c1",
-                "name": "slow",
-                "arguments": json.dumps({"value": "x", "delay_s": 0.5}),
-            })
+                    "arguments": json.dumps({"value": "x", "delay_s": 0.5}),
+                }
+            )
             gateway_session.push({"type": "response.done", "response": {"id": "r1"}})
 
             interrupted_event = asyncio.Event()
@@ -328,10 +361,12 @@ class DescribeRealtimeSessionInterruption:
 
             # Give the tool batch a beat to start, then barge in.
             await asyncio.sleep(0.05)
-            gateway_session.push({
-                "type": "input_audio_buffer.speech_started",
-                "audio_start_ms": 0,
-            })
+            gateway_session.push(
+                {
+                    "type": "input_audio_buffer.speech_started",
+                    "audio_start_ms": 0,
+                }
+            )
             await asyncio.wait_for(interrupted_event.wait(), timeout=2.0)
             gateway_session.end()
             await reader_task
@@ -345,8 +380,12 @@ class DescribeRealtimeSessionInterruption:
         assert len(cancel_calls) == 1
 
         # 'drop' policy: no function_call_output should be submitted
-        outputs = [s for s in sent if s.get("type") == "conversation.item.create"
-                   and s.get("item", {}).get("type") == "function_call_output"]
+        outputs = [
+            s
+            for s in sent
+            if s.get("type") == "conversation.item.create"
+            and s.get("item", {}).get("type") == "function_call_output"
+        ]
         assert outputs == []
 
         # InterruptedEvent fired with barge_in reason

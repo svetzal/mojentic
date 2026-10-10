@@ -1,17 +1,19 @@
 import time
 
 from mojentic import Event
-from mojentic.tracer.tracer_events import TracerEvent
 from mojentic.tracer.event_store import EventStore
+from mojentic.tracer.tracer_events import TracerEvent
 
 
 class TestEvent(Event):
     """A simple event for testing."""
+
     value: int
 
 
 class TestTracerEvent(TracerEvent):
     """A simple tracer event for testing."""
+
     value: int
 
 
@@ -71,7 +73,9 @@ class DescribeEventStore:
         # Given
         event_store = EventStore()
         now = time.time()
-        event1 = TestTracerEvent(source=DescribeEventStore, timestamp=now - 100, value=1)
+        event1 = TestTracerEvent(
+            source=DescribeEventStore, timestamp=now - 100, value=1
+        )
         event2 = TestTracerEvent(source=DescribeEventStore, timestamp=now - 50, value=2)
         event3 = TestTracerEvent(source=DescribeEventStore, timestamp=now, value=3)
         event_store.store(event1)
@@ -103,7 +107,9 @@ class DescribeEventStore:
         event_store.store(event3)
 
         # When
-        result = event_store.get_events(filter_func=lambda e: isinstance(e, TestEvent) and e.value > 15)
+        result = event_store.get_events(
+            filter_func=lambda e: isinstance(e, TestEvent) and e.value > 15
+        )
 
         # Then
         assert len(result) == 2

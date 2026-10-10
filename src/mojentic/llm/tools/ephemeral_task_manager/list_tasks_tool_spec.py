@@ -2,7 +2,11 @@ from unittest.mock import Mock
 
 import pytest
 
-from mojentic.llm.tools.ephemeral_task_manager.ephemeral_task_list import EphemeralTaskList, Task, TaskStatus
+from mojentic.llm.tools.ephemeral_task_manager.ephemeral_task_list import (
+    EphemeralTaskList,
+    Task,
+    TaskStatus,
+)
 from mojentic.llm.tools.ephemeral_task_manager.list_tasks_tool import ListTasksTool
 
 
@@ -22,7 +26,7 @@ class DescribeListTasksTool:
         mock_tasks = [
             Task(id=1, description="Task 1", status=TaskStatus.PENDING),
             Task(id=2, description="Task 2", status=TaskStatus.IN_PROGRESS),
-            Task(id=3, description="Task 3", status=TaskStatus.COMPLETED)
+            Task(id=3, description="Task 3", status=TaskStatus.COMPLETED),
         ]
         mock_task_list.list_tasks.return_value = mock_tasks
 

@@ -4,7 +4,6 @@ This implementation provides a more declarative approach to problem-solving.
 """
 
 import asyncio
-from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict
 
@@ -17,10 +16,11 @@ class GoalState(BaseModel):
     """
     Represents the state of a problem-solving process.
     """
+
     goal: str
     iteration: int = 0
     max_iterations: int = 5
-    solution: Optional[str] = None
+    solution: str | None = None
     is_complete: bool = False
 
 
@@ -28,6 +28,7 @@ class SolverEvent(BaseModel):
     """
     Base class for solver events.
     """
+
     state: GoalState
 
 
@@ -41,6 +42,7 @@ class IterationCompletedEvent(SolverEvent):
     """
     Event triggered when an iteration of the problem-solving process is completed.
     """
+
     response: str
 
 
@@ -66,6 +68,7 @@ class HandlerErrorEvent(SolverEvent):
     """
     Event triggered when an async event handler raises an unhandled exception.
     """
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     error: Exception
@@ -99,7 +102,9 @@ class EventEmitter:
         if event_type not in self.subscribers:
             self.subscribers[event_type] = []
         self.subscribers[event_type].append(callback)
-        return lambda: self.subscribers[event_type].remove(callback)  # Return unsubscribe function
+        return lambda: self.subscribers[event_type].remove(
+            callback
+        )  # Return unsubscribe function
 
     def _on_task_done(self, task, state):
         """
@@ -134,7 +139,7 @@ class EventEmitter:
             The event to emit to subscribers
         """
         event_type = type(event)
-        state = getattr(event, 'state', None)
+        state = getattr(event, "state", None)
         if event_type in self.subscribers:
             for callback in self.subscribers[event_type]:
                 result = callback(event)
@@ -165,14 +170,20 @@ class SimpleRecursiveAgent:
     chat : ChatSession
         The chat session used for problem-solving interaction
     """
+
     max_iterations: int
     llm: LLMBroker
-    available_tools: List[LLMTool]
+    available_tools: list[LLMTool]
     emitter: EventEmitter
     chat: ChatSession
 
-    def __init__(self, llm: LLMBroker, available_tools: Optional[List[LLMTool]] = None,
-                 max_iterations: int = 5, system_prompt: Optional[str] = None):
+    def __init__(
+        self,
+        llm: LLMBroker,
+        available_tools: list[LLMTool] | None = None,
+        max_iterations: int = 5,
+        system_prompt: str | None = None,
+    ):
         """
         Initialize the SimpleRecursiveAgent.
 
@@ -194,17 +205,19 @@ class SimpleRecursiveAgent:
         self.chat = ChatSession(
             llm=llm,
             system_prompt=(
-                system_prompt or
-                "You are a problem-solving assistant that can solve complex problems step by step. "
+                system_prompt
+                or "You are a problem-solving assistant that can solve complex problems step by step. "
                 "You analyze problems, break them down into smaller parts, and solve them systematically. "
                 "If you cannot solve a problem completely in one step, you make progress and identify what to do next."
             ),
-            tools=self.available_tools
+            tools=self.available_tools,
         )
 
         # Set up event handlers
         self.emitter.subscribe(GoalSubmittedEvent, self._handle_problem_submitted)
-        self.emitter.subscribe(IterationCompletedEvent, self._handle_iteration_completed)
+        self.emitter.subscribe(
+            IterationCompletedEvent, self._handle_iteration_completed
+        )
 
     async def solve(self, problem: str) -> str:
         """
@@ -246,8 +259,10 @@ class SimpleRecursiveAgent:
 
         # Wait for the solution or timeout
         try:
-            return await asyncio.wait_for(solution_future, timeout=300)  # 5 minutes timeout
-        except asyncio.TimeoutError:
+            return await asyncio.wait_for(
+                solution_future, timeout=300
+            )  # 5 minutes timeout
+        except TimeoutError:
             timeout_message = "Timeout: Could not solve the problem within 300 seconds."
             if not solution_future.done():
                 state.solution = timeout_message
@@ -280,12 +295,14 @@ class SimpleRecursiveAgent:
         response = event.response
 
         # Check if the task failed or succeeded
-        if response.strip().upper() == 'FAIL':
-            state.solution = f"Failed to solve after {state.iteration} iterations:\n{response}"
+        if response.strip().upper() == "FAIL":
+            state.solution = (
+                f"Failed to solve after {state.iteration} iterations:\n{response}"
+            )
             state.is_complete = True
             self.emitter.emit(GoalFailedEvent(state=state))
             return
-        elif response.strip().upper() == 'DONE':
+        elif response.strip().upper() == "DONE":
             state.solution = response
             state.is_complete = True
             self.emitter.emit(GoalAchievedEvent(state=state))
@@ -293,7 +310,9 @@ class SimpleRecursiveAgent:
 
         # Check if we've reached the maximum number of iterations
         if state.iteration >= state.max_iterations:
-            state.solution = f"Best solution after {state.max_iterations} iterations:\n{response}"
+            state.solution = (
+                f"Best solution after {state.max_iterations} iterations:\n{response}"
+            )
             state.is_complete = True
             self.emitter.emit(GoalAchievedEvent(state=state))
             return

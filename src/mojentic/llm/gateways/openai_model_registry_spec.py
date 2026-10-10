@@ -3,10 +3,10 @@ Tests for the OpenAI Model Registry system.
 """
 
 from mojentic.llm.gateways.openai_model_registry import (
-    OpenAIModelRegistry,
-    ModelType,
     ModelCapabilities,
-    get_model_registry
+    ModelType,
+    OpenAIModelRegistry,
+    get_model_registry,
 )
 
 
@@ -102,7 +102,7 @@ class DescribeOpenAIModelRegistry:
             model_type=ModelType.REASONING,
             supports_tools=True,
             supports_streaming=True,
-            max_output_tokens=50000
+            max_output_tokens=50000,
         )
 
         registry.register_model("o5-preview", new_capabilities)
@@ -165,7 +165,7 @@ class DescribeOpenAIModelRegistry:
             model_type=ModelType.REASONING,
             supports_tools=False,
             supports_vision=True,
-            max_context_tokens=100000
+            max_context_tokens=100000,
         )
         assert custom_caps.supports_tools is False
         assert custom_caps.supports_vision is True
@@ -322,7 +322,13 @@ class DescribeGPT54And55Models:
         """
         registry = OpenAIModelRegistry()
 
-        for model in ("gpt-5.4", "gpt-5.4-mini", "gpt-5.4-nano", "gpt-5.5", "gpt-5.5-pro"):
+        for model in (
+            "gpt-5.4",
+            "gpt-5.4-mini",
+            "gpt-5.4-nano",
+            "gpt-5.5",
+            "gpt-5.5-pro",
+        ):
             caps = registry.get_model_capabilities(model)
             assert caps.supports_tools is True
             assert caps.supports_streaming is True
@@ -342,14 +348,17 @@ class DescribeGPT54And55Models:
         """
         registry = OpenAIModelRegistry()
 
-        for model in ("gpt-5.3-future", "gpt-5.4-experimental", "gpt-5.5-turbo-preview"):
+        for model in (
+            "gpt-5.3-future",
+            "gpt-5.4-experimental",
+            "gpt-5.5-turbo-preview",
+        ):
             caps = registry.get_model_capabilities(model)
             assert caps.model_type == ModelType.REASONING
             assert caps.get_token_limit_param() == "max_completion_tokens"
 
 
 class DescribeAPIEndpointSupport:
-
     def should_flag_chat_only_model(self):
         registry = OpenAIModelRegistry()
         caps = registry.get_model_capabilities("gpt-4")

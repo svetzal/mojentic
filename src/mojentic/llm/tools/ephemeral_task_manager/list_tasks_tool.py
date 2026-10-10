@@ -2,9 +2,10 @@
 Tool for listing all tasks in the ephemeral task manager.
 """
 
-from typing import Dict, List
-
-from mojentic.llm.tools.ephemeral_task_manager.ephemeral_task_list import EphemeralTaskList, Task
+from mojentic.llm.tools.ephemeral_task_manager.ephemeral_task_list import (
+    EphemeralTaskList,
+    Task,
+)
 from mojentic.llm.tools.llm_tool import LLMTool
 
 
@@ -22,7 +23,7 @@ class ListTasksTool(LLMTool):
         """
         self._task_list = task_list
 
-    def run(self) -> Dict[str, str]:
+    def run(self) -> dict[str, str]:
         """
         Get all tasks in the list.
 
@@ -37,10 +38,10 @@ class ListTasksTool(LLMTool):
         return {
             "count": str(len(tasks)),
             "tasks": task_list_str,
-            "summary": f"Found {len(tasks)} tasks\n\n{task_list_str}"
+            "summary": f"Found {len(tasks)} tasks\n\n{task_list_str}",
         }
 
-    def _format_tasks(self, tasks: List[Task]) -> str:
+    def _format_tasks(self, tasks: list[Task]) -> str:
         """
         Format a list of tasks as a string.
 
@@ -53,8 +54,10 @@ class ListTasksTool(LLMTool):
         if not tasks:
             return "No tasks found."
 
-        result = [f"{task.id}. {task.description} ({task.status.value})"
-                  for i, task in enumerate(tasks)]
+        result = [
+            f"{task.id}. {task.description} ({task.status.value})"
+            for i, task in enumerate(tasks)
+        ]
 
         return "\n".join(result)
 
@@ -74,7 +77,7 @@ class ListTasksTool(LLMTool):
                 "parameters": {
                     "type": "object",
                     "properties": {},
-                    "additionalProperties": False
-                }
-            }
+                    "additionalProperties": False,
+                },
+            },
         }

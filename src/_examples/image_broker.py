@@ -5,9 +5,11 @@ from mojentic.llm.message_composers import MessageBuilder
 
 llm = LLMBroker(model="gemma3:27b")
 
-message = MessageBuilder("What is in this image?") \
-    .add_image(Path.cwd() / 'images' / 'xbox-one.jpg') \
+message = (
+    MessageBuilder("What is in this image?")
+    .add_image(Path.cwd() / "images" / "xbox-one.jpg")
     .build()
+)
 
 result = llm.generate(messages=[message])
 

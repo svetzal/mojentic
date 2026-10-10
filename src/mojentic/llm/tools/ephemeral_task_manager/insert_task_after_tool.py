@@ -2,10 +2,10 @@
 Tool for inserting a new task after an existing task in the ephemeral task manager list.
 """
 
-from typing import Dict
-
+from mojentic.llm.tools.ephemeral_task_manager.ephemeral_task_list import (
+    EphemeralTaskList,
+)
 from mojentic.llm.tools.llm_tool import LLMTool
-from mojentic.llm.tools.ephemeral_task_manager.ephemeral_task_list import EphemeralTaskList
 
 
 class InsertTaskAfterTool(LLMTool):
@@ -22,7 +22,7 @@ class InsertTaskAfterTool(LLMTool):
         """
         self._task_list = task_list
 
-    def run(self, existing_task_id: int, description: str) -> Dict[str, str]:
+    def run(self, existing_task_id: int, description: str) -> dict[str, str]:
         """
         Insert a new task after an existing task.
 
@@ -38,19 +38,22 @@ class InsertTaskAfterTool(LLMTool):
         """
         try:
             # Convert existing_task_id to int if it's a string
-            task_id = int(existing_task_id) if isinstance(existing_task_id, str) else existing_task_id
-            task = self._task_list.insert_task_after(existing_task_id=task_id, description=description)
+            task_id = (
+                int(existing_task_id)
+                if isinstance(existing_task_id, str)
+                else existing_task_id
+            )
+            task = self._task_list.insert_task_after(
+                existing_task_id=task_id, description=description
+            )
             return {
                 "id": task.id,
                 "description": task.description,
                 "status": task.status.value,
-                "summary": f"Task '{task.id}' inserted after task '{existing_task_id}' successfully"
+                "summary": f"Task '{task.id}' inserted after task '{existing_task_id}' successfully",
             }
         except ValueError as e:
-            return {
-                "error": str(e),
-                "summary": f"Failed to insert task: {str(e)}"
-            }
+            return {"error": str(e), "summary": f"Failed to insert task: {e!s}"}
 
     @property
     def descriptor(self):
@@ -73,15 +76,15 @@ class InsertTaskAfterTool(LLMTool):
                     "properties": {
                         "existing_task_id": {
                             "type": "integer",
-                            "description": "The ID of the existing task after which to insert the new task"
+                            "description": "The ID of the existing task after which to insert the new task",
                         },
                         "description": {
                             "type": "string",
-                            "description": "The description of the new task"
-                        }
+                            "description": "The description of the new task",
+                        },
                     },
                     "required": ["existing_task_id", "description"],
-                    "additionalProperties": False
-                }
-            }
+                    "additionalProperties": False,
+                },
+            },
         }

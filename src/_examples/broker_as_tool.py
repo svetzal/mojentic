@@ -1,8 +1,14 @@
 import os
+
 from mojentic.agents.base_llm_agent import BaseLLMAgent
 from mojentic.llm.llm_broker import LLMBroker
 from mojentic.llm.tools.date_resolver import ResolveDateTool
-from mojentic.llm.tools.file_manager import ListFilesTool, ReadFileTool, WriteFileTool, FilesystemGateway
+from mojentic.llm.tools.file_manager import (
+    FilesystemGateway,
+    ListFilesTool,
+    ReadFileTool,
+    WriteFileTool,
+)
 from mojentic.llm.tools.tool_wrapper import ToolWrapper
 
 #
@@ -15,7 +21,7 @@ temporal_specialist = BaseLLMAgent(
     behaviour=(
         "You are a historian and sociologist who focuses on sorting out temporal events, "
         "determining what happened or will happen when."
-    )
+    ),
 )
 
 if not os.path.exists("local"):
@@ -36,7 +42,7 @@ knowledge_specialist = BaseLLMAgent(
         "able to organize elemental ideas and make connections between them. You can list files "
         "to find out where you stored information, read files to review that information, and "
         "write files to store that information for later retrieval."
-    )
+    ),
 )
 
 
@@ -48,7 +54,7 @@ coordinator = BaseLLMAgent(
             temporal_specialist,
             "temporal_specialist",
             "A historian and sociologist who focuses on sorting out temporal events, figuring out "
-            "dates, determining what happened or will happen when."
+            "dates, determining what happened or will happen when.",
         ),
         ToolWrapper(
             knowledge_specialist,
@@ -56,9 +62,9 @@ coordinator = BaseLLMAgent(
             "A knowledge management specialist who focuses on sorting out facts and information, "
             "able to organize elemental ideas and make connections between them. Can list files to "
             "find out where you stored information, read files to review that information, and "
-            "write files to store that information for later retrieval."
+            "write files to store that information for later retrieval.",
         ),
-    ]
+    ],
 )
 
 result = coordinator.generate_response(

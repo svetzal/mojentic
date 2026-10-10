@@ -9,11 +9,12 @@ streamed assistant transcript.
 Generate or supply ``./input.wav`` (24kHz, mono, 16-bit PCM) before
 running.
 """
+
 import asyncio
 import os
 import sys
 import wave
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 import numpy as np
 
@@ -24,14 +25,17 @@ from mojentic.realtime import (
     ServerVadConfig,
 )
 
-
 CHUNK_FRAMES = 2400  # 100ms at 24kHz
 
 
 async def wav_frames(path: str) -> AsyncIterator[np.ndarray]:
     """Yield PCM16 frames from a 24 kHz mono WAV file."""
     with wave.open(path, "rb") as wav:
-        if wav.getframerate() != 24000 or wav.getnchannels() != 1 or wav.getsampwidth() != 2:
+        if (
+            wav.getframerate() != 24000
+            or wav.getnchannels() != 1
+            or wav.getsampwidth() != 2
+        ):
             raise ValueError("input WAV must be 24kHz mono 16-bit PCM")
         while True:
             raw = wav.readframes(CHUNK_FRAMES)

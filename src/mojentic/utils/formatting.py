@@ -3,7 +3,7 @@
 This module provides utility functions for formatting console output in a consistent way.
 """
 
-from colorama import init, Fore, Style
+from colorama import Fore, Style, init
 
 # Initialize colorama
 init()
