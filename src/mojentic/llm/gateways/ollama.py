@@ -199,11 +199,11 @@ class OllamaGateway(LLMGateway):
 
         response: ChatResponse = self.client.chat(**ollama_args)
 
-        object = None
+        structured_object = None
 
         if "object_model" in args:
             try:
-                object = args["object_model"].model_validate_json(
+                structured_object = args["object_model"].model_validate_json(
                     response.message.content
                 )
             except ValidationError as e:
@@ -214,7 +214,7 @@ class OllamaGateway(LLMGateway):
                     object_model=args["object_model"],
                 )
 
-        return self._completion_response(response, object)
+        return self._completion_response(response, structured_object)
 
     def _completion_request(self, args: dict) -> dict:
         options = self._extract_options_from_args(args)

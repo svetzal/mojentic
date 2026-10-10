@@ -50,6 +50,26 @@ class DescribeLintBoundaries:
 
             assert len(requests) == 1
             assert requests[0][0] == "/chat/completions"
+            headers = {key.lower(): value for key, value in requests[0][2].items()}
+            assert headers["authorization"] == "Bearer test-key"
+            payload = json.loads(requests[0][1])
+            assert payload["messages"] == [{"role": "user", "content": "test"}]
+            assert payload["model"] == "gpt-4o"
+            assert payload["stream"] is False
+            assert payload["response_format"] == {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "BrokenResult",
+                    "strict": True,
+                    "schema": {
+                        "properties": {"answer": {"title": "Answer", "type": "string"}},
+                        "required": ["answer"],
+                        "title": "BrokenResult",
+                        "type": "object",
+                        "additionalProperties": False,
+                    },
+                },
+            }
 
     def should_propagate_invalid_path_programming_errors(self):
         class BrokenPath:

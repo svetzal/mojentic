@@ -2,6 +2,7 @@ import pytest
 
 from mojentic.llm.chat_session import ChatSession
 from mojentic.llm.gateways.models import MessageRole
+from mojentic.llm.gateways.tokenizer_gateway import TokenizerGateway
 
 INTENDED_RESPONSE_MESSAGE = "Response message"
 
@@ -37,6 +38,19 @@ class DescribeChatSession:
     """
     Specification for the ChatSession class which handles chat-based interactions and chat history with LLMs.
     """
+
+    def should_expose_history_only_on_session_instances(self, mocker):
+        gateway = mocker.Mock(spec=TokenizerGateway)
+        gateway.encode.return_value = [1]
+        first = ChatSession(llm=object(), tokenizer_gateway=gateway)
+        second = ChatSession(llm=object(), tokenizer_gateway=gateway)
+
+        first.messages.clear()
+
+        assert not hasattr(ChatSession, "messages")
+        assert first.messages == []
+        assert len(second.messages) == 1
+        assert second.messages[0].role == MessageRole.System
 
     class DescribeSessionInitialization:
         """
