@@ -18,6 +18,7 @@ from mojentic.llm.recovery import (
     RecoveryCall,
     RecoveryError,
     RecoveryPolicy,
+    RecoveryProvider,
     RecoveryReport,
     SafeModel,
     Timeout,
@@ -50,7 +51,7 @@ class StreamOutcome(str, Enum):
 class StreamFrameProgress(SafeModel):
     """Validated frame counters; content and reasoning lengths are UTF-8 bytes."""
 
-    provider: Literal["ollama", "omlx"] = "ollama"
+    provider: RecoveryProvider = "ollama"
     done: bool
     content_bytes: int
     reasoning_bytes: int
@@ -66,7 +67,7 @@ class StreamMetrics(SafeModel):
     Ollama throughput requires both reported inputs.
     """
 
-    provider: Literal["ollama", "omlx"] = "ollama"
+    provider: RecoveryProvider = "ollama"
     provider_model: str | None = Field(default=None, exclude=True, repr=False)
     finish_reason: str | None = Field(default=None, exclude=True, repr=False)
     prompt_eval_count: int | None = None

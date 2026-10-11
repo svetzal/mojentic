@@ -1,11 +1,11 @@
-# Opt-in local completion recovery
+# Opt-in completion recovery
 
 Recovery resends one failed provider completion. It preserves encoded request bytes
 and keeps transport attempts separate from broker tool rounds. It never restarts
 a session or executes a previously completed tool again.
 
 Existing callers keep their SDK behavior and errors. Configure `recovery_policy`
-on an `OllamaGateway` or `OMLXGateway` to opt in for `LLMBroker.generate`, `generate_response`,
+on an `OllamaGateway`, `OMLXGateway`, or `OpenAIGateway` to opt in for `LLMBroker.generate`, `generate_response`,
 `generate_object`, `generate_stream`, `ChatSession.send`, and `send_stream`:
 
 ```python
@@ -141,8 +141,10 @@ caller-owned sensitive data.
 | oMLX ordinary and structured completion | Opt-in, typed schema failures and retained format warnings | Unsupported / unsupported / unknown / unsupported |
 | oMLX tool-capable streaming | Opt-in recovery; safe finish plus `[DONE]` required | Unsupported / unsupported / unknown / unsupported |
 | oMLX raw stream events | Existing single-turn API; recovery policy is ignored | Recovery configuration does not enable retries |
-| OpenAI completion | Pending; existing adapter behavior | No recovery claim |
-| Anthropic completion | Pending; existing adapter behavior | No recovery claim |
+| OpenAI ordinary / structured / tool-capable streaming | Opt-in owned HTTP; model controls adapted before immutable encoding | Unsupported / unsupported / unknown / unsupported |
+| OpenAI raw stream events | Existing single-turn API; recovery policy is ignored | Recovery configuration does not enable retries |
+| Anthropic ordinary completion | Opt-in owned HTTP; existing system/user message selection retained | Unsupported / unsupported / unknown / unsupported |
+| Anthropic structured / tools / streaming | Unsupported; schema/tool recovery requests fail before dispatch, no streaming entrypoint | No new provider capability |
 | Embeddings and realtime voice | Outside completion recovery scope | No recovery claim |
 
 The existing `LLMMessage` and Ollama adapter do not represent native reasoning in
@@ -162,7 +164,7 @@ must protect it along with bodies. Cancellation consumers should expect an
 `attempt_failed` event for an active cancelled wire request before `cancelled`.
 Use the report's wire count/history rather than counting request-capture or
 `attempt_started` callbacks, since a callback can prevent dispatch. The legacy
-SDK path, other adapters, and ordinary finish behavior are unchanged. The next
+SDK path and ordinary finish behavior are unchanged. The next
 streaming increment described below adds recovery only to the tool-capable path.
 
 ## Directory tool exception compatibility
@@ -325,3 +327,79 @@ representation; explicit access and successful responses are sensitive. Structur
 format warnings remain in successful response metadata, but the opt-in path does
 not log untrusted warning header values. Private inspection and wire capture retain
 exact response headers and raw bytes, including partial error bodies.
+
+
+## Migrating cloud completions
+
+`OpenAIGateway` accepts the same `recovery_policy` and `recovery_call` options as
+local gateways. `complete` and `complete_stream` route through owned HTTP when a
+policy is present. `LLMBroker.generate`, `generate_response`, `generate_object`
+and `generate_stream`, and `ChatSession.send` and `send_stream` retain their
+existing return types. Asynchronous callers use `complete_with_recovery` or
+`complete_stream_with_recovery`; use `aclosing` around an asynchronous iterator
+when stopping early. A completed tool followed by a failed completion executes
+once, and retrying that completion does not consume another tool round.
+`generate_response` returns tool requests without executing them.
+
+```python
+from mojentic.llm import LLMBroker
+from mojentic.llm.gateways.openai import OpenAIGateway
+from mojentic.llm.recovery import RecoveryPolicy
+
+# API key and endpoint continue to use the gateway's existing environment defaults.
+gateway = OpenAIGateway(recovery_policy=RecoveryPolicy(
+    max_attempts=3, base_delay=0.1, delay_ceiling=5, budget=30,
+))
+broker = LLMBroker("your-openai-model", gateway=gateway)
+# broker.generate(messages) / broker.generate_object(messages, YourModel)
+# broker.generate_stream(messages, tools=your_tools)
+```
+
+Cloud providers may retry eligible failures without an admission hook, matching
+the reviewed Rust OpenAI distinction. Supplying a hook still makes recovery wait
+for its explicit decision. Ollama and oMLX continue requiring explicit admission
+for ambiguous local requests. Admission never confirms remote termination or
+idempotency. A cloud resend can incur another provider request and charge.
+
+OpenAI adapts temperature, token limits, reasoning effort and tool support before
+encoding. Pydantic schemas use the SDK's public strict-schema conversion; the
+response content is validated into the requested model. Structured parsing retains
+the SDK requirement for strict function tools. Schema validation and
+unsafe structured finishes become typed recovery failures with privately
+inspectable original causes. Ordinary finish handling stays unchanged. Streaming
+requires a safe finish and `[DONE]`; once reasoning, content or a tool fragment
+has been observed, interruption never starts another request. A failed capture
+hook can have observed but undelivered semantics. Provider model, usage and
+finish telemetry remain inspectable; missing timing/token counters are not
+invented. Raw `complete_stream_events` / `generate_stream_events` continue their
+single-turn compatibility behavior and ignore the recovery policy.
+
+`AnthropicGateway(api_key=..., recovery_policy=...)` supports ordinary
+`complete` / `complete_with_recovery`, `LLMBroker.generate` / `generate_response`,
+and `ChatSession.send`. Its existing system/user selection and first text-block
+mapping are retained. It has no streaming implementation. Nonempty tools or an
+`object_model`, or a configured JSON output format, produce a pre-dispatch `RecoveryError` whose private cause is
+`NotImplementedError`; `recovery_capabilities()` reports structured and streaming
+recovery as false. This increment adds no Anthropic tool execution or structured
+output capability.
+
+Recovery bypasses both SDKs' HTTP transports. SDK transport customizations do
+not configure the owned recovery connection. It freezes literal UTF-8 bytes once,
+disables hidden retries, redirects and environment proxy discovery, preserves
+connect/write/pool timeout values, and removes the active response read timeout.
+Budget/deadline limits govern recovery decisions rather than total generation
+length. Use a fresh `RecoveryCall` to cancel an operation explicitly.
+
+The opt-in path raises `RecoveryError`, replacing SDK transport/status errors at
+the public completion boundary. Safe errors, reports, lifecycle events and default
+stream serialization omit credentials, payload echoes, provider text and raw
+exception messages. Explicit `inspect_cause`, `inspect_response`, `inspect_headers`
+and `wire_observer` access retain exact sensitive evidence. Protect captures as
+credentials and conversation data. Capture consumers can inspect immutable
+request bytes and actual headers, including authentication; the library never
+stores those captures automatically. See `RECOVERY-CONFORMANCE.md` for executed
+entrypoints, assertion scope and retained external evidence.
+
+The default OpenAI raw stream-event transport disables SDK retries and HTTP redirects,
+so a redirect is reported as an error after one send. Recovery remains disabled
+for these raw event APIs.

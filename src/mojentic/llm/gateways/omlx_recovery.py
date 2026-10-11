@@ -98,13 +98,20 @@ def decode_completion(
 
 
 class _OMLXDecoder(_Decoder):
+    provider = "omlx"
+
     def __init__(self) -> None:
         super().__init__()
         self.fragments = {}
         self.finish = None
 
+    def _is_keepalive(self, frame: dict) -> bool:
+        return self.provider == "omlx" and frame.get("model") == "keepalive"
+
     def observe(self, frame: object, attempt: _Attempt) -> None:
-        if not isinstance(frame, dict) or frame.get("model") == "keepalive":
+        if not isinstance(frame, dict):
+            return
+        if self._is_keepalive(frame):
             return
         choices = frame.get("choices")
         if not isinstance(choices, list):
@@ -136,7 +143,7 @@ class _OMLXDecoder(_Decoder):
             return [], True
         if not isinstance(frame, dict):
             raise TypeError("invalid stream frame")
-        if frame.get("model") == "keepalive":
+        if self._is_keepalive(frame):
             return [], True
         if frame.get("error") is not None:
             raise ValueError("provider stream error")
@@ -180,7 +187,7 @@ class _OMLXDecoder(_Decoder):
             RecoveryStreamEvent(
                 kind="progress",
                 frame_progress=StreamFrameProgress(
-                    provider="omlx",
+                    provider=self.provider,
                     done=False,
                     content_bytes=len(content.encode()),
                     reasoning_bytes=len(thinking.encode()),
@@ -247,7 +254,7 @@ class _OMLXDecoder(_Decoder):
         return RecoveryStreamEvent(
             kind="metrics",
             metrics=StreamMetrics(
-                provider="omlx",
+                provider=self.provider,
                 provider_model=self.evidence.get("model"),
                 finish_reason=self.finish,
                 usage=self.evidence.get("usage"),

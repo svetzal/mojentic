@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- Fixed FileManager sandbox containment to reject sibling directories whose names share the sandbox path prefix. Base and candidate paths are normalized before component-wise comparison.
+
 ## [2.1.0] - 2026-09-30
 
 ### Added
