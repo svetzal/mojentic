@@ -6,7 +6,7 @@ a session or executes a previously completed tool again.
 
 Existing callers keep their SDK behavior and errors. Configure `recovery_policy`
 on an `OllamaGateway` to opt in for `LLMBroker.generate`, `generate_response`,
-`generate_object`, and `ChatSession.send`:
+`generate_object`, `generate_stream`, `ChatSession.send`, and `send_stream`:
 
 ```python
 from mojentic.llm import LLMBroker
@@ -133,10 +133,11 @@ caller-owned sensitive data.
 
 ## Capability boundaries
 
-| Adapter / operation | Recovery in this increment | Remote cancellation / termination / idempotency |
+| Adapter / operation | Recovery in this increment | Remote cancellation / status / termination / idempotency |
 | --- | --- | --- |
-| Ollama ordinary and structured completion | Opt-in, loopback tested | Unsupported / unknown / unsupported |
-| Ollama streaming | Pending; existing streaming behavior | No recovery claim |
+| Ollama ordinary and structured completion | Opt-in, loopback tested | Unsupported / unsupported / unknown / unsupported |
+| Ollama tool-capable streaming | Opt-in recovery; explicit typed terminal outcomes and attempt evidence | Unsupported / unsupported / unknown / unsupported |
+| Ollama raw stream events | Existing single-turn API; tools rejected | Recovery configuration does not enable retries |
 | oMLX completion | Pending; existing adapter behavior | No recovery claim |
 | OpenAI completion | Pending; existing adapter behavior | No recovery claim |
 | Anthropic completion | Pending; existing adapter behavior | No recovery claim |
@@ -145,7 +146,7 @@ caller-owned sensitive data.
 The existing `LLMMessage` and Ollama adapter do not represent native reasoning in
 outgoing history. Recovery preserves the current encoded message history exactly
 and returns native reasoning from successful responses; it does not add native
-history support or change reasoning-disabled behavior. Streaming replay, cross-port
+history support or change reasoning-disabled behavior. Replay after observed semantics, cross-port
 parity, live inference, and experiment efficacy remain unverified and pending.
 See the repository's `RECOVERY-CONFORMANCE.md` for actual assertion mappings.
 
@@ -159,7 +160,8 @@ must protect it along with bodies. Cancellation consumers should expect an
 `attempt_failed` event for an active cancelled wire request before `cancelled`.
 Use the report's wire count/history rather than counting request-capture or
 `attempt_started` callbacks, since a callback can prevent dispatch. The legacy
-SDK path, other adapters, streaming, and ordinary finish behavior are unchanged.
+SDK path, other adapters, and ordinary finish behavior are unchanged. The next
+streaming increment described below adds recovery only to the tool-capable path.
 
 ## Directory tool exception compatibility
 
@@ -181,3 +183,72 @@ reach their application error boundary. The focused regression uses a real
 filesystem gateway and a failing path protocol object; it verifies exception
 identity and no filesystem mutation. This documents the preserved lint-cleanup
 correction and adds no new runtime behavior or completion-recovery guarantee.
+
+
+## Migrating tool-capable streams
+
+Configuring `recovery_policy` now also opts `OllamaGateway.complete_stream`,
+`LLMBroker.generate_stream`, and `ChatSession.send_stream` into recovery of each
+individual completion. The synchronous APIs continue yielding their existing
+chunks or strings. They raise `RecoveryError` on interruption or exhaustion;
+they never commit partial session text as a completed assistant reply. Completed
+tools execute once. Subsequent completion retries preserve that tool's result,
+and transport attempts do not consume additional tool depth.
+
+For native asynchronous consumption, use the additive typed stream API:
+
+```python
+from contextlib import aclosing
+
+from mojentic.llm import LLMMessage, StreamOutcome
+from mojentic.llm.recovery import RecoveryCall
+
+
+async def consume(gateway):
+    call = RecoveryCall()
+    async with aclosing(gateway.complete_stream_with_recovery(
+        call=call, model="your-model", messages=[LLMMessage(content="Hello")]
+    )) as events:
+        async for event in events:
+            if event.kind == "content":
+                print(event.text, end="")
+            elif event.kind == "completed":
+                assert event.outcome is StreamOutcome.SUCCEEDED
+                return event.response
+            elif event.kind == "failed":
+                # report is safe; inspecting error causes or raw bytes is sensitive.
+                raise event.error
+```
+
+Events include content, reasoning, tool fragments, frame progress, terminal
+metrics, and exactly one `completed` or `failed` outcome. Tool fragments are
+observations; only a successful completed response provides executable tool calls.
+Every event carries the logical/attempt identity. `frame_index` starts at one for
+each attempt's decoded frames. `StreamFrameProgress` uses UTF-8 byte lengths;
+`StreamMetrics` preserves Ollama's counter names and nanosecond durations, with
+missing values left `None`. Throughput is calculated only from reported eval
+count and nonzero eval duration. Model and finish strings remain available in
+explicit metrics inspection and the completed response, but are excluded from
+safe metric formatting and serialization because providers can echo secrets.
+Semantic event fields and responses likewise require explicit inspection.
+
+A structurally valid `length` terminal emits frame progress, metrics, then failure.
+It delivers no semantics or completed tools from that frame. Malformed frames
+emit no telemetry. Any observed content, reasoning, or tool fragment prevents
+replay, including when capture fails before delivery. Keepalive-only progress can
+recover after explicit admission. Capture failures remain terminal and retain
+the original exception, raw bytes, private headers, and observed evidence.
+
+The stream owns its HTTP/admission tasks independently of consumer pacing.
+`call.cancel()` closes locally owned resources even while consumption is paused;
+cancellation wins over buffered terminal telemetry and completed responses.
+Close iterators when abandoning consumption. Socket closure is local evidence,
+not proof of remote inference termination. Local cancellation, request status,
+and idempotency capabilities retain the limits in the table above.
+
+`complete_stream_events` and `generate_stream_events` remain single-turn raw
+compatibility APIs and reject tool use. Recovery configuration does not alter
+them. Without a recovery policy, tool-capable SDK streaming retains its existing
+finish handling and provider error types. Native reasoning history that the
+Python message model cannot represent remains an explicit gap; supported outgoing
+reasoning controls, ordinary/structured recovery and finish handling are preserved.

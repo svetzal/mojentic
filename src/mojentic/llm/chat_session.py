@@ -1,4 +1,5 @@
 from collections.abc import Iterator
+from contextlib import ExitStack
 
 from mojentic.llm.completion_config import CompletionConfig
 from mojentic.llm.gateways.models import LLMMessage, MessageRole
@@ -110,11 +111,16 @@ class ChatSession:
         """
         self.insert_message(LLMMessage(role=MessageRole.User, content=query))
         accumulated = []
-        for chunk in self.llm.generate_stream(
+        stream = self.llm.generate_stream(
             self.messages, tools=self.tools, config=self.config
-        ):
-            accumulated.append(chunk)
-            yield chunk
+        )
+        with ExitStack() as resources:
+            close = getattr(stream, "close", None)
+            if close is not None:
+                resources.callback(close)
+            for chunk in stream:
+                accumulated.append(chunk)
+                yield chunk
         self._ensure_all_messages_are_sized()
         self.insert_message(
             LLMMessage(role=MessageRole.Assistant, content="".join(accumulated))

@@ -5,6 +5,7 @@ import time
 import uuid
 import warnings
 from collections.abc import Iterator
+from contextlib import ExitStack
 
 import structlog
 from pydantic import BaseModel
@@ -411,15 +412,19 @@ class LLMBroker:
                 max_tokens=config.max_tokens,
             )
 
-            for chunk in stream:
-                # Handle content chunks
-                if hasattr(chunk, "content") and chunk.content:
-                    accumulated_content += chunk.content
-                    yield chunk.content
+            with ExitStack() as resources:
+                close = getattr(stream, "close", None)
+                if close is not None:
+                    resources.callback(close)
+                for chunk in stream:
+                    # Handle content chunks
+                    if hasattr(chunk, "content") and chunk.content:
+                        accumulated_content += chunk.content
+                        yield chunk.content
 
-                # Handle tool calls if present
-                if hasattr(chunk, "tool_calls") and chunk.tool_calls:
-                    accumulated_tool_calls.extend(chunk.tool_calls)
+                    # Handle tool calls if present
+                    if hasattr(chunk, "tool_calls") and chunk.tool_calls:
+                        accumulated_tool_calls.extend(chunk.tool_calls)
 
             call_duration_ms = (time.time() - start_time) * 1000
 

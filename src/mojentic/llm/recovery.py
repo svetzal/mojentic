@@ -102,7 +102,7 @@ class Failure(SafeModel):
     """Stable classification and evidence for a completed failed wire attempt."""
 
     provider: Literal["ollama"] = "ollama"
-    operation: Literal["ordinary", "structured"]
+    operation: Literal["ordinary", "structured", "streaming"]
     category: Literal[
         "transport",
         "http",
@@ -305,6 +305,7 @@ class Capabilities(SafeModel):
     structured_recovery: bool = True
     streaming_recovery: bool = False
     remote_cancellation: Literal["unsupported"] = "unsupported"
+    request_status: Literal["unsupported"] = "unsupported"
     inference_termination: Literal["unknown"] = "unknown"
     idempotency: Literal["unsupported"] = "unsupported"
     exact_wire_capture: bool = True
@@ -313,7 +314,7 @@ class Capabilities(SafeModel):
 class _Attempt(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     identity: Identity
-    operation: Literal["ordinary", "structured"]
+    operation: Literal["ordinary", "structured", "streaming"]
     progress: Progress = Field(default_factory=Progress)
     status: int | None = None
     request_id: str | None = None
@@ -331,7 +332,7 @@ class _Attempt(BaseModel):
             return "cancelled"
         if self.status in {400, 401, 403}:
             return "permanent"
-        if self.progress.semantic:
+        if self.operation != "streaming" and self.progress.semantic:
             return "semantic_output"
         if self.reason in {
             "capture_failed",
@@ -343,7 +344,14 @@ class _Attempt(BaseModel):
             "budget_exhausted",
         }:
             return self.reason
-        if self.status is not None and 200 <= self.status < 300 and self.raw:
+        if self.progress.semantic:
+            return "semantic_output"
+        if (
+            self.operation != "streaming"
+            and self.status is not None
+            and 200 <= self.status < 300
+            and self.raw
+        ):
             return "uncertain_response"
         return None
 
@@ -457,7 +465,7 @@ class _Recovery:
         self,
         policy: RecoveryPolicy,
         call: RecoveryCall,
-        operation: Literal["ordinary", "structured"],
+        operation: Literal["ordinary", "structured", "streaming"],
     ) -> None:
         self.policy = policy
         self.call = call
@@ -875,7 +883,7 @@ async def recover(
     decode: Callable[[object], Result],
     policy: RecoveryPolicy,
     call: RecoveryCall,
-    operation: Literal["ordinary", "structured"],
+    operation: Literal["ordinary", "structured", "streaming"],
 ) -> tuple[Result, RecoveryReport]:
     """Send immutable encoded bytes with explicit per-wire accounting and admission."""
     return await _Recovery(policy, call, operation).run(
@@ -884,7 +892,7 @@ async def recover(
 
 
 def preparation_error(
-    cause: BaseException, operation: Literal["ordinary", "structured"]
+    cause: BaseException, operation: Literal["ordinary", "structured", "streaming"]
 ) -> RecoveryError:
     """Represent a pre-dispatch failure without inventing a wire attempt."""
     identity = Identity(

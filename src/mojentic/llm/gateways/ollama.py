@@ -1,6 +1,6 @@
 import asyncio
 import json
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
 from contextlib import closing
 from typing import TYPE_CHECKING, Optional
 
@@ -28,6 +28,11 @@ from mojentic.llm.recovery import (
     RecoveryPolicy,
     preparation_error,
     recover,
+)
+from mojentic.llm.recovery_stream import (
+    RecoveryStreamEvent,
+    recover_stream,
+    synchronous_stream,
 )
 
 if TYPE_CHECKING:
@@ -110,7 +115,7 @@ class OllamaGateway(LLMGateway):
     timeout : optional
         The request timeout passed to the Ollama client.
     recovery_policy : RecoveryPolicy, optional
-        Opt in to ordinary/structured request recovery; streaming remains unchanged.
+        Opt in to ordinary, structured, and tool-capable streaming request recovery.
     recovery_call : RecoveryCall, optional
         Cancellation for a synchronous broker/session operation. Use a fresh call per operation.
     stream_transport : OllamaStreamTransport, optional
@@ -249,7 +254,7 @@ class OllamaGateway(LLMGateway):
 
     def recovery_capabilities(self) -> Capabilities:
         """Report recovery support without implying remote cancellation or idempotency."""
-        return Capabilities()
+        return Capabilities(streaming_recovery=True)
 
     async def complete_with_recovery(
         self, call: RecoveryCall | None = None, **args
@@ -376,6 +381,20 @@ class OllamaGateway(LLMGateway):
         Iterator[StreamingResponse]
             An iterator of StreamingResponse objects containing response chunks.
         """
+        if self.recovery_policy is not None:
+            events = synchronous_stream(self.complete_stream_with_recovery(**args))
+            with closing(events):
+                for event in events:
+                    if event.kind == "failed":
+                        raise event.error
+                    if event.kind == "content":
+                        yield StreamingResponse(content=event.text)
+                    elif event.kind == "reasoning":
+                        yield StreamingResponse(thinking=event.text)
+                    elif event.kind == "completed" and event.response.tool_calls:
+                        yield StreamingResponse(tool_calls=event.response.tool_calls)
+            return
+
         logger.info("Delegating to Ollama for streaming completion", **args)
 
         ollama_args = self._stream_request(args)
@@ -400,6 +419,75 @@ class OllamaGateway(LLMGateway):
                 # Yield tool calls when they arrive
                 if chunk.message.tool_calls:
                     yield StreamingResponse(tool_calls=chunk.message.tool_calls)
+
+    async def complete_stream_with_recovery(
+        self, call: RecoveryCall | None = None, **args
+    ) -> AsyncIterator[RecoveryStreamEvent]:
+        """Stream one tool-capable completion with explicit recovery terminal events.
+
+        Consume ``completed`` or ``failed`` to determine the outcome. Closing this
+        iterator closes locally owned HTTP; it does not prove remote termination.
+        Raw ``complete_stream_events`` remains a single-turn compatibility API.
+        """
+        if self.recovery_policy is None:
+            raise ValueError("configure recovery_policy before using recovery streams")
+        try:
+            request = self._stream_request(args)
+            request["options"] = request["options"].model_dump(exclude_none=True)
+            request["stream"] = True
+            if args.get("tools") is not None:
+                request["tools"] = [tool.descriptor for tool in args["tools"]]
+            for message in request["messages"]:
+                if message.get("images"):
+                    message["images"] = [
+                        Image(value=image).model_dump(mode="json")
+                        for image in message["images"]
+                    ]
+            body = json.dumps(
+                request, ensure_ascii=False, separators=(",", ":"), allow_nan=False
+            ).encode("utf-8")
+        except (ValueError, TypeError, KeyError, OSError) as cause:
+            error = preparation_error(cause, "streaming")
+            yield RecoveryStreamEvent(
+                kind="failed",
+                identity=error.report.identity,
+                progress=error.report.progress,
+                report=error.report,
+                error=error,
+                outcome="ineligible",
+            )
+            return
+        headers = self._recovery_headers | {
+            "Content-Type": "application/json",
+            "Accept-Encoding": "identity",
+        }
+        events = recover_stream(
+            self._recovery_host + "/api/chat",
+            body,
+            headers,
+            self._recovery_timeout,
+            self._decode_stream_recovery,
+            self.recovery_policy,
+            call or self.recovery_call or RecoveryCall(),
+        )
+        try:
+            async for event in events:
+                yield event
+        finally:
+            await events.aclose()
+
+    def _decode_stream_recovery(self, frame: dict) -> LLMGatewayResponse:
+        """Preserve native streaming tool arguments without ordinary-path conversion."""
+        response = self._decode_recovery(frame, None)
+        response.tool_calls = [
+            LLMToolCall(
+                id=call.get("id"),
+                name=call["function"]["name"],
+                arguments=call["function"]["arguments"],
+            )
+            for call in frame["message"].get("tool_calls", [])
+        ]
+        return response
 
     def complete_stream_events(
         self, model: str, messages: list[LLMMessage], config: "CompletionConfig"

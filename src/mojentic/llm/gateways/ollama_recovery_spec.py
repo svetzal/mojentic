@@ -931,8 +931,9 @@ class DescribeRecoveryBoundaries:
         assert gateway.recovery_capabilities().model_dump() == {
             "ordinary_recovery": True,
             "structured_recovery": True,
-            "streaming_recovery": False,
+            "streaming_recovery": True,
             "remote_cancellation": "unsupported",
+            "request_status": "unsupported",
             "inference_termination": "unknown",
             "idempotency": "unsupported",
             "exact_wire_capture": True,

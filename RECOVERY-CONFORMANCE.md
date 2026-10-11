@@ -1,8 +1,79 @@
 # Python recovery conformance evidence
 
-This increment covers opt-in Ollama ordinary and structured HTTP completion.
-Streaming and remaining provider alignment stay pending. Tests use scripted
+The current increment covers opt-in Ollama ordinary, structured, and tool-capable
+streaming HTTP completion. Remaining provider alignment stays pending. Tests use scripted
 loopback HTTP and local files; no live inference or experiment restart occurred.
+
+## Tool-capable Ollama streaming increment (c6)
+
+This worker started at clean `49ea5504b1ea3d7a0062105b4ddbab28d1f0d968`.
+Controller synchronization evidence is the Python entry in
+`/home/svetzal/.foundry/operations/mojentic-port-alignment-20261010/status-recovery/receipt.json`:
+the controller fetched and pulled main at `c95d805e617f521c77cc04866b2232c11d0baba8`.
+That commit is an ancestor of this starting HEAD. This is historical controller
+evidence, not a claim of a fresh worker fetch or current remote synchronization.
+Worker HEAD/status observations are read-only; Foundry owns direct-main landing.
+No refs, releases, dependencies, rules, thresholds or suppressions are changed.
+
+The exact Rust comparison is `4ca1ed279c02eab37827a1ed07c30e961155ecf3`,
+including its decoder, engine, public HTTP tests, migration guide, and conformance
+report. Verbatim reference files, hashes, controller receipt, proof, current source
+snapshots, commands, and complete capture logs reside durably in
+`/home/svetzal/.foundry/tool-logs/mojentic-py-stream-c6-fa223f/`.
+Missing historical c3 evidence remains disclosed below; this run does not recover
+or relabel it. Independent source/assertion review is retained with source hashes.
+
+The early proof exercised actual loopback HTTP through `complete_stream`: baseline
+ignored recovery capture and failed to raise. Corrected source retains observed
+UTF-8 content, the exact capture exception and bytes, zero delivery, one wire
+attempt and `attempt_started -> attempt_failed -> interrupted`. The proof was
+established before expanding fixtures, documentation or full gates.
+
+`ollama_stream_recovery_spec.py` exercises public gateway recovery streams,
+compatibility `complete_stream`, broker `generate_stream`, and session `send_stream`.
+Assertion-level evidence includes:
+
+| Case | Assertions at public HTTP boundary |
+| --- | --- |
+| Admitted 503 and Retry-After | Numeric/date/invalid delays use injected wall clock/sleeper; immutable request bytes, actual Basic authorization, reasoning controls and options match received requests. Logical IDs remain stable, attempt IDs distinct and unmasked; excessive minima refuse before admission. |
+| Persistent 504 and admission | Exact wire count and complete bounded history, typed HTTP causes and body bytes; no hook requires admission, reject prevents resend, pending remains pending until cancellation. |
+| Permanent truncated rejection | Each of 400/401/403 retains status, private headers, partial bytes, raw-byte count and original `RemoteProtocolError`, even with transport and selected status eligibility enabled. One send, ineligible. |
+| Semantic interruption | Content/reasoning/tool fragments prevent replay; delivered UTF-8 bytes and tool fragment counts survive the typed interrupted outcome. Capture-failed variants with and without newline retain observed evidence and zero delivery. Valid stop tools retain completed-tool evidence before capture; malformed preceding JSON prevents fabricated completion counts. |
+| Nonsemantic progress | Keepalive bytes and empty JSON progress can recover after admission; raw byte evidence survives, semantics stay absent, per-attempt frame indices restart at one. |
+| Terminal telemetry | Valid length terminal has exact typed progress and metrics, reported counters/durations/throughput, `Progress -> Metrics -> Failed`, no semantic output or completed tools. Malformed fields and tool IDs yield only failure. Missing metrics stay absent; successful response retains reported model/finish/evidence. |
+| Cancellation ownership | Active request test observes local socket EOF; pending hooks/backoff close through deterministic events. Paused progress/metrics and buffered terminal capture yield only cancelled failure thereafter. Actual failed attempt precedes exactly one cancellation; length rejection or simultaneous capture failure retains the original typed failure. No successful completion or completed tools follows. |
+| Tool and session safety | A successful completed tool executes once before a later exhausted or partial completion. Failed recovery evidence survives; session stores no partial completed assistant reply. Successful retries consume wire attempts separately from tool depth; native tool argument types are retained. |
+| Privacy and compatibility | Credentials/payload echoes are absent from default error/event formatting and JSON. Explicit cause/header/body/capture/model inspection retains evidence. Legacy SDK length/error behavior is characterized; raw event APIs still make one send. Generic iterator callers remain supported by optional close ownership. |
+
+Public additions are `complete_stream_with_recovery`, `RecoveryStreamEvent`,
+`StreamOutcome`, `StreamFrameProgress`, and `StreamMetrics`. Existing synchronous
+stream shapes remain compatible; opt-in failures raise typed `RecoveryError`.
+Raw single-turn event APIs retain their reviewed behavior and reject tools.
+Ordinary/structured assertions remain intact except the capability snapshot's
+intended additive `streaming_recovery=True` and explicit unsupported request status. No disabled-reasoning parity or
+ordinary finish change is included. Outgoing native reasoning history remains
+limited by the existing Python message model; no six-port parity is claimed.
+Remote cancellation/status and inference idempotency remain unsupported;
+termination remains unknown. No live inference or benchmark was run.
+
+Final gate commands, exit codes, full log paths/hashes, audit environment proof,
+and independent review are indexed in the durable evidence directory.
+
+| Final gate | Actual result |
+| --- | --- |
+| Full and required selective Flake8; full Ruff; full formatting check | Exit 0; zero lint findings. Added stream engine also passes complexity <= 10. |
+| `uv run pytest` and `uv run pytest --cov` | Both exit 0, 721 tests pass. Explicit coverage is 85%; stream engine 92%. The existing coverage omissions are unchanged; no coverage floor is configured. |
+| `uv run mkdocs build` | Exit 0; existing documentation tool warnings remain visible in the complete log. |
+| `uv run bandit -c .bandit -r src` | Exit 0, no findings; existing policy/exclusions unchanged. |
+| `uv run pip-audit` and `uvx pip-audit` | Both unfiltered audits exit 0, no vulnerabilities. JSON audit inventories match all 96 installed project distributions exactly, without skips; both use this project's interpreter via `PIPAPI_PYTHON_LOCATION`. |
+| `uv pip list --outdated` | Exit 0; informational report retained, no dependency changes. |
+
+Initial formatting/export-lint failures and their corrected reruns remain retained.
+Independent review passed 105 focused streaming/broker/session cases and the final
+57-case streaming suite, and inspected
+source, exact Rust behavior, assertions, privacy, compatibility and capability
+claims. Full project gates above are separate parent verification. Review does
+not prove exhaustive scheduler interleavings or live-provider efficacy.
 
 ## Focused CreateDirectoryTool proof closure (c5)
 
@@ -197,7 +268,7 @@ reconciliation, including the explicit unavailable-provenance limitation.
 
 ## Pending
 
-- Streaming recovery and partial-stream conformance.
+- Other-provider streaming recovery and remaining provider conformance.
 - oMLX, OpenAI and Anthropic recovery/provider alignment.
 - Native reasoning in outgoing Ollama history; existing payload behavior is preserved.
 - Ordinary finish handling and disabled-reasoning parity.
