@@ -244,7 +244,14 @@ class OpenAIGateway(LLMGateway):
                 "content_filter",
             }:
                 raise ValueError("structured completion did not finish safely")
-        return decode_completion(frame, object_model)
+        result = decode_completion(frame)
+        if object_model is not None and not (
+            result.content is None
+            and result.tool_calls
+            and result.finish_reason == "tool_calls"
+        ):
+            result.object = object_model.model_validate_json(result.content)
+        return result
 
     async def complete_with_recovery(
         self, call: RecoveryCall | None = None, **args

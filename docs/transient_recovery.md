@@ -142,6 +142,7 @@ caller-owned sensitive data.
 | oMLX tool-capable streaming | Opt-in recovery; safe finish plus `[DONE]` required | Unsupported / unsupported / unknown / unsupported |
 | oMLX raw stream events | Existing single-turn API; recovery policy is ignored | Recovery configuration does not enable retries |
 | OpenAI ordinary / structured / tool-capable streaming | Opt-in owned HTTP; model controls adapted before immutable encoding | Unsupported / unsupported / unknown / unsupported |
+| oMLX / OpenAI structured streaming | Unsupported; rejected before dispatch | No recovery claim |
 | OpenAI raw stream events | Existing single-turn API; recovery policy is ignored | Recovery configuration does not enable retries |
 | Anthropic ordinary completion | Opt-in owned HTTP; existing system/user message selection retained | Unsupported / unsupported / unknown / unsupported |
 | Anthropic structured / tools / streaming | Unsupported; schema/tool recovery requests fail before dispatch, no streaming entrypoint | No new provider capability |
@@ -364,7 +365,17 @@ idempotency. A cloud resend can incur another provider request and charge.
 OpenAI adapts temperature, token limits, reasoning effort and tool support before
 encoding. Pydantic schemas use the SDK's public strict-schema conversion; the
 response content is validated into the requested model. Structured parsing retains
-the SDK requirement for strict function tools. Schema validation and
+the SDK requirement for strict function tools. A successful tool-only turn with
+`content=None`, `finish_reason="tool_calls"`, and valid tool arguments returns
+`object=None` and preserves the exact tool ID, name and arguments. The caller
+can then execute that tool and continue its conversation. Non-null structured
+content still validates against the schema, even when tools are also returned;
+malformed arguments and unsafe structured finishes remain failures. This
+combined schema/tool shape is supported by `OpenAIGateway.complete` and
+`complete_with_recovery`; `LLMBroker.generate_object` offers no tools, and
+`ChatSession` has no structured-output entrypoint. Ordinary broker/session
+callers retain tool execution across retries without repeating completed tools.
+oMLX structured completion still requires non-null JSON content. Schema validation and
 unsafe structured finishes become typed recovery failures with privately
 inspectable original causes. Ordinary finish handling stays unchanged. Streaming
 requires a safe finish and `[DONE]`; once reasoning, content or a tool fragment
