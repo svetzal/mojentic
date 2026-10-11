@@ -7,14 +7,14 @@ from mojentic.llm.tools.llm_tool import LLMTool
 
 class FilesystemGateway:
     def __init__(self, base_path: str):
-        self.base_path = base_path
+        self.base_path = os.path.abspath(base_path)
 
     def _resolve_path(self, path: str) -> str:
         """Resolve a path relative to the base path."""
         # Ensure the path is within the sandbox
-        resolved_path = os.path.normpath(os.path.join(self.base_path, path))
+        resolved_path = os.path.abspath(os.path.join(self.base_path, path))
         # Verify the path is within the sandbox
-        if not resolved_path.startswith(os.path.normpath(self.base_path)):
+        if os.path.commonpath([self.base_path, resolved_path]) != self.base_path:
             raise ValueError(f"Path {path} attempts to escape the sandbox")
         return resolved_path
 
