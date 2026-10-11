@@ -1,6 +1,7 @@
+import asyncio
 import json
 import os
-from collections.abc import Iterable, Iterator
+from collections.abc import AsyncIterator, Iterable, Iterator
 from contextlib import closing
 from itertools import islice
 from typing import TYPE_CHECKING, Optional
@@ -8,9 +9,16 @@ from typing import TYPE_CHECKING, Optional
 import httpx
 import numpy as np
 import structlog
-from openai import APIConnectionError, APIStatusError, BadRequestError, OpenAI
-from pydantic import ValidationError
+from openai import (
+    APIConnectionError,
+    APIStatusError,
+    BadRequestError,
+    OpenAI,
+    pydantic_function_tool,
+)
+from pydantic import BaseModel, ValidationError
 
+from mojentic.llm.gateways import cloud_recovery
 from mojentic.llm.gateways.llm_gateway import LLMGateway
 from mojentic.llm.gateways.models import LLMGatewayResponse, LLMMessage, LLMToolCall
 from mojentic.llm.gateways.ollama import StreamingResponse
@@ -23,6 +31,8 @@ from mojentic.llm.gateways.stream_events import (
     StreamEvent,
 )
 from mojentic.llm.gateways.tokenizer_gateway import TokenizerGateway
+from mojentic.llm.recovery import Capabilities, RecoveryCall, RecoveryPolicy
+from mojentic.llm.recovery_stream import RecoveryStreamEvent
 
 if TYPE_CHECKING:
     from mojentic.llm.completion_config import CompletionConfig, ResponseFormat
@@ -58,7 +68,7 @@ class OpenAIStreamTransport:
     """
     Sends one streaming chat completions request and yields the raw server-sent-event lines.
 
-    A thin wrapper around the OpenAI client with retries disabled, so each call is exactly
+    A thin wrapper around the OpenAI client with retries and redirects disabled, so each call is exactly
     one HTTP request. Closing the generator closes the HTTP response, which cancels the
     request.
     """
@@ -68,10 +78,17 @@ class OpenAIStreamTransport:
 
     def stream_lines(self, body: dict) -> Iterator[str]:
         """Send ``body`` as one streaming request and yield each response line."""
-        with self._client.chat.completions.with_streaming_response.create(
-            **body
-        ) as response:
+        response = self._client.post(
+            "/chat/completions",
+            cast_to=httpx.Response,
+            body=body,
+            options={"follow_redirects": False},
+            stream=True,
+        )
+        try:
             yield from response.iter_lines()
+        finally:
+            response.close()
 
 
 class OpenAIGateway(LLMGateway):
@@ -88,6 +105,11 @@ class OpenAIGateway(LLMGateway):
         OPENAI_API_ENDPOINT environment variable, or None if not set.
     stream_transport : OpenAIStreamTransport, optional
         The transport ``complete_stream_events`` uses. Defaults to one over this gateway's client.
+    recovery_policy : RecoveryPolicy, optional
+        Opt in for ordinary, structured and tool-capable streaming completion.
+        Owned HTTP bypasses SDK retries and redirects and has no active read timeout.
+    recovery_call : RecoveryCall, optional
+        Cancellation for a synchronous operation. Use a fresh call per operation.
     """
 
     def __init__(
@@ -95,14 +117,198 @@ class OpenAIGateway(LLMGateway):
         api_key: str | None = None,
         base_url: str | None = None,
         stream_transport: OpenAIStreamTransport | None = None,
+        recovery_policy: RecoveryPolicy | None = None,
+        recovery_call: RecoveryCall | None = None,
     ):
         if api_key is None:
             api_key = os.getenv("OPENAI_API_KEY")
         if base_url is None:
             base_url = os.getenv("OPENAI_API_ENDPOINT")
         self.client = OpenAI(api_key=api_key, base_url=base_url)
+        self.recovery_policy = recovery_policy
+        self.recovery_call = recovery_call
         self.model_registry = get_model_registry()
         self.stream_transport = stream_transport or OpenAIStreamTransport(self.client)
+
+    _recovery_provider = "openai"
+
+    @property
+    def _recovery_url(self) -> str:
+        return str(self.client.base_url).rstrip("/") + "/chat/completions"
+
+    def _recovery_headers(self) -> dict[str, str]:
+        headers = {
+            "Authorization": f"Bearer {self.client.api_key}",
+            "Content-Type": "application/json",
+            "Accept-Encoding": "identity",
+        }
+        if self.client.organization:
+            headers["OpenAI-Organization"] = self.client.organization
+        if self.client.project:
+            headers["OpenAI-Project"] = self.client.project
+        return headers
+
+    def recovery_capabilities(self) -> Capabilities:
+        """Report completion recovery; remote inference termination remains unknown."""
+        return Capabilities(streaming_recovery=True)
+
+    def _validate_recovery_args(self, args: dict, streaming: bool) -> None:
+        model = args["model"]
+        if not model or not args.get("messages"):
+            raise ValueError("model and messages are required")
+        if streaming and args.get("object_model") is not None:
+            raise NotImplementedError("structured streaming is unsupported")
+        if streaming:
+            capabilities = self.model_registry.get_model_capabilities(model)
+            if not capabilities.supports_streaming:
+                raise NotImplementedError("model does not support streaming")
+
+    @staticmethod
+    def _recovery_format(args: dict) -> dict | None:
+        object_model = args.get("object_model")
+        if object_model is not None:
+            schema = pydantic_function_tool(object_model)["function"]["parameters"]
+            return {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": object_model.__name__,
+                    "strict": True,
+                    "schema": schema,
+                },
+            }
+        config = args.get("config")
+        return openai_response_format(config.response_format if config else None)
+
+    @staticmethod
+    def _validate_structured_tools(tools: list[dict]) -> None:
+        for descriptor in tools:
+            if descriptor.get("type") != "function":
+                raise ValueError("structured parsing requires function tools")
+            function = descriptor.get("function")
+            if not isinstance(function, dict):
+                raise TypeError("invalid function tool")
+            if function.get("strict") is not True:
+                raise ValueError("structured parsing requires strict function tools")
+
+    def _recovery_body(self, args: dict, streaming: bool) -> bytes:
+        self._validate_recovery_args(args, streaming)
+        config = args.get("config")
+        controls = {
+            "model": args["model"],
+            "tools": args.get("tools"),
+            "temperature": config.temperature
+            if config
+            else args.get("temperature", 1.0),
+            "max_tokens": config.max_tokens
+            if config
+            else args.get("max_tokens", 16384),
+            "reasoning_effort": config.reasoning_effort if config else None,
+        }
+        adapted = self._adapt_parameters_for_model(args["model"], controls)
+        self._validate_model_parameters(args["model"], adapted)
+        payload = {
+            "model": args["model"],
+            "messages": adapt_messages_to_openai(args["messages"]),
+        }
+        payload |= {
+            key: adapted[key]
+            for key in (
+                "temperature",
+                "max_tokens",
+                "max_completion_tokens",
+                "reasoning_effort",
+            )
+            if key in adapted and adapted[key] is not None
+        }
+        if (response_format := self._recovery_format(args)) is not None:
+            payload["response_format"] = response_format
+        if adapted.get("tools") is not None:
+            payload["tools"] = [tool.descriptor for tool in adapted["tools"]]
+        if args.get("object_model") is not None:
+            self._validate_structured_tools(payload.get("tools", []))
+        if streaming:
+            payload |= {"stream": True, "stream_options": {"include_usage": True}}
+        return cloud_recovery.freeze_request(payload)
+
+    @staticmethod
+    def _decode_recovery(
+        frame: object, object_model: type[BaseModel] | None = None
+    ) -> LLMGatewayResponse:
+        from mojentic.llm.gateways.omlx_recovery import decode_completion
+
+        if object_model is not None and isinstance(frame, dict):
+            choices = frame.get("choices")
+            choice = choices[0] if isinstance(choices, list) and choices else {}
+            if isinstance(choice, dict) and choice.get("finish_reason") in {
+                "length",
+                "content_filter",
+            }:
+                raise ValueError("structured completion did not finish safely")
+        result = decode_completion(frame)
+        if object_model is not None and not (
+            result.content is None
+            and result.tool_calls
+            and result.finish_reason == "tool_calls"
+        ):
+            result.object = object_model.model_validate_json(result.content)
+        return result
+
+    async def complete_with_recovery(
+        self, call: RecoveryCall | None = None, **args
+    ) -> LLMGatewayResponse:
+        """Recover an ordinary or structured turn with private typed failure evidence.
+
+        Parameters
+        ----------
+        call : RecoveryCall, optional
+            Cancellation for this operation, overriding the gateway call.
+        **args
+            Model, messages, tools, schema and controls accepted by ``complete``.
+
+        Returns
+        -------
+        LLMGatewayResponse
+            Provider response with a recovery report; tools are returned for the broker.
+
+        Raises
+        ------
+        RecoveryError
+            Completion failed, recovery was refused, or cancellation was requested.
+        ValueError
+            No recovery policy is configured.
+        """
+        return await cloud_recovery.complete(self, call, args)
+
+    async def complete_stream_with_recovery(
+        self, call: RecoveryCall | None = None, **args
+    ) -> AsyncIterator[RecoveryStreamEvent]:
+        """Recover before semantic observation; closing cancels owned HTTP resources.
+
+        Parameters
+        ----------
+        call : RecoveryCall, optional
+            Cancellation for this operation, overriding the gateway call.
+        **args
+            Model, messages, tools and controls accepted by ``complete_stream``.
+            Structured streaming is unsupported and produces a failed terminal event.
+
+        Yields
+        ------
+        RecoveryStreamEvent
+            Progress and provider telemetry followed by one completed or failed outcome.
+            Private semantic fields require explicit inspection for serialization.
+
+        Raises
+        ------
+        ValueError
+            No recovery policy is configured.
+        """
+        events = cloud_recovery.stream(self, call, args)
+        try:
+            async for event in events:
+                yield event
+        finally:
+            await events.aclose()
 
     def _is_reasoning_model(self, model: str) -> bool:
         """
@@ -291,6 +497,8 @@ class OpenAIGateway(LLMGateway):
         LLMGatewayResponse
             The response from the OpenAI service.
         """
+        if self.recovery_policy is not None:
+            return asyncio.run(self.complete_with_recovery(**kwargs))
         # Extract parameters from kwargs with defaults
         model = kwargs.get("model")
         messages = kwargs.get("messages")
@@ -480,6 +688,9 @@ class OpenAIGateway(LLMGateway):
         Iterator[StreamingResponse]
             An iterator of StreamingResponse objects containing response chunks.
         """
+        if self.recovery_policy is not None:
+            yield from cloud_recovery.legacy_chunks(self, kwargs)
+            return
         # Extract parameters from kwargs with defaults
         model = kwargs.get("model")
         messages = kwargs.get("messages")

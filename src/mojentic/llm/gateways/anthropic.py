@@ -1,18 +1,138 @@
+import asyncio
+
 import structlog
 from anthropic import Anthropic
+from pydantic import BaseModel
 
+from mojentic.llm.gateways import cloud_recovery
 from mojentic.llm.gateways.anthropic_messages_adapter import adapt_messages_to_anthropic
 from mojentic.llm.gateways.llm_gateway import LLMGateway
 from mojentic.llm.gateways.models import LLMGatewayResponse, LLMToolCall, MessageRole
+from mojentic.llm.recovery import Capabilities, RecoveryCall, RecoveryPolicy
 
 logger = structlog.get_logger()
 
 
 class AnthropicGateway(LLMGateway):
-    def __init__(self, api_key: str):
-        self.client = Anthropic(api_key=api_key)
+    """Anthropic ordinary completion with optional owned HTTP recovery.
+
+    Parameters
+    ----------
+    api_key : str
+        Anthropic API key.
+    base_url : str, optional
+        Service root; defaults to the SDK's configured endpoint.
+    recovery_policy : RecoveryPolicy, optional
+        Opt in for ordinary completion only. Structured output, streaming and tools
+        remain unsupported. Recovery bypasses SDK retries and redirects.
+    recovery_call : RecoveryCall, optional
+        Cancellation for a synchronous operation. Use a fresh call per operation.
+    """
+
+    def __init__(
+        self,
+        api_key: str,
+        base_url: str | None = None,
+        recovery_policy: RecoveryPolicy | None = None,
+        recovery_call: RecoveryCall | None = None,
+    ):
+        self.client = Anthropic(
+            api_key=api_key, **({"base_url": base_url} if base_url else {})
+        )
+        self.recovery_policy = recovery_policy
+        self.recovery_call = recovery_call
+
+    _recovery_provider = "anthropic"
+
+    @property
+    def _recovery_url(self) -> str:
+        return str(self.client.base_url).rstrip("/") + "/v1/messages"
+
+    def _recovery_headers(self) -> dict[str, str]:
+        return {
+            "x-api-key": self.client.api_key,
+            "anthropic-version": "2023-06-01",
+            "Content-Type": "application/json",
+            "Accept-Encoding": "identity",
+        }
+
+    def recovery_capabilities(self) -> Capabilities:
+        """Report ordinary recovery only; structured output and tools remain unsupported."""
+        return Capabilities(structured_recovery=False, streaming_recovery=False)
+
+    def _recovery_body(self, args: dict, streaming: bool) -> bytes:
+        if streaming or args.get("object_model") is not None or args.get("tools"):
+            raise NotImplementedError(
+                "Anthropic recovery supports ordinary completion only"
+            )
+        config = args.get("config")
+        if config and config.response_format and config.response_format.type != "text":
+            raise NotImplementedError(
+                "Anthropic recovery does not support JSON output formats"
+            )
+        messages = args["messages"]
+        system = [m for m in messages if m.role == MessageRole.System]
+        users = [m for m in messages if m.role == MessageRole.User]
+        payload = {
+            "model": args["model"],
+            "system": " ".join(m.content for m in system) if system else None,
+            "messages": adapt_messages_to_anthropic(users),
+            "temperature": config.temperature
+            if config
+            else args.get("temperature", 1.0),
+            "max_tokens": config.max_tokens
+            if config
+            else args.get("max_tokens", args.get("num_predict", 2000)),
+        }
+        return cloud_recovery.freeze_request(payload)
+
+    @staticmethod
+    def _decode_recovery(
+        frame: object, object_model: type[BaseModel] | None = None
+    ) -> LLMGatewayResponse:
+        from anthropic.types import Message
+
+        response = Message.model_validate(frame)
+        if not response.content or response.content[0].type != "text":
+            raise ValueError("expected ordinary text completion")
+        return LLMGatewayResponse(
+            content=response.content[0].text,
+            usage=response.usage.model_dump(),
+            model=response.model,
+            finish_reason=response.stop_reason,
+        )
+
+    async def complete_with_recovery(
+        self, call: RecoveryCall | None = None, **args
+    ) -> LLMGatewayResponse:
+        """Recover ordinary completion; reject unsupported operations before dispatch.
+
+        Parameters
+        ----------
+        call : RecoveryCall, optional
+            Cancellation for this operation, overriding the gateway call.
+        **args
+            Model, messages and controls accepted by ``complete``.
+
+        Returns
+        -------
+        LLMGatewayResponse
+            Provider text and telemetry with a typed recovery report.
+
+        Raises
+        ------
+        RecoveryError
+            Request failed or was cancelled; unsupported schema/tool requests retain
+            an original ``NotImplementedError`` through private cause inspection.
+        ValueError
+            No recovery policy is configured.
+        """
+        return await cloud_recovery.complete(self, call, args)
 
     def complete(self, **args) -> LLMGatewayResponse:
+
+        if self.recovery_policy is not None:
+            return asyncio.run(self.complete_with_recovery(**args))
 
         messages = args.get("messages")
         config = args.get("config", None)

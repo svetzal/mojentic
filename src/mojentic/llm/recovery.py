@@ -24,6 +24,9 @@ Result = TypeVar("Result")
 Timeout = httpx.Timeout | float | None
 
 
+RecoveryProvider = Literal["ollama", "omlx", "openai", "anthropic"]
+
+
 class SafeModel(BaseModel):
     """Immutable, payload-free public evidence."""
 
@@ -101,7 +104,7 @@ def parse_retry_after(value: str | None, wall: float) -> RetryAfter:
 class Failure(SafeModel):
     """Stable classification and evidence for a completed failed wire attempt."""
 
-    provider: Literal["ollama", "omlx"] = "ollama"
+    provider: RecoveryProvider = "ollama"
     operation: Literal["ordinary", "structured", "streaming"]
     category: Literal[
         "transport",
@@ -315,7 +318,7 @@ class Capabilities(SafeModel):
 class _Attempt(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     identity: Identity
-    provider: Literal["ollama", "omlx"] = "ollama"
+    provider: RecoveryProvider = "ollama"
     operation: Literal["ordinary", "structured", "streaming"]
     progress: Progress = Field(default_factory=Progress)
     status: int | None = None
@@ -389,7 +392,19 @@ class _Attempt(BaseModel):
             frame = json.loads(self.raw)
         except (ValueError, UnicodeDecodeError):
             return
-        if self.provider == "omlx" and isinstance(frame, dict):
+        if self.provider == "anthropic" and isinstance(frame, dict):
+            blocks = frame.get("content")
+            if isinstance(blocks, list):
+                self.progress = self.progress.model_copy(
+                    update={
+                        "observed_content": any(
+                            isinstance(block, dict) and bool(block.get("text"))
+                            for block in blocks
+                        ),
+                    }
+                )
+            return
+        if self.provider in {"omlx", "openai"} and isinstance(frame, dict):
             choices = frame.get("choices")
             frame = choices[0] if isinstance(choices, list) and choices else {}
         if not isinstance(frame, dict) or not isinstance(frame.get("message"), dict):
@@ -402,7 +417,9 @@ class _Attempt(BaseModel):
                 "observed_content": bool(message.get("content")),
                 "observed_reasoning": bool(
                     message.get(
-                        "reasoning_content" if self.provider == "omlx" else "thinking"
+                        "reasoning_content"
+                        if self.provider in {"omlx", "openai"}
+                        else "thinking"
                     )
                 ),
                 "observed_tool_fragments": count,
@@ -644,6 +661,8 @@ class _Recovery:
 
     async def admit(self, attempt: _Attempt, failure: Failure) -> str | None:
         if self.policy.admission is None:
+            if self.provider not in {"ollama", "omlx"}:
+                return None
             self.emit("admission_required", attempt, failure)
             return "admission_required"
         self.emit("admission_pending", attempt, failure)
@@ -910,7 +929,7 @@ async def recover(
 def preparation_error(
     cause: BaseException,
     operation: Literal["ordinary", "structured", "streaming"],
-    provider: Literal["ollama", "omlx"] = "ollama",
+    provider: RecoveryProvider = "ollama",
 ) -> RecoveryError:
     """Represent a pre-dispatch failure without inventing a wire attempt."""
     identity = Identity(

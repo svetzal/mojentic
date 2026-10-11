@@ -1,5 +1,196 @@
 # Python recovery conformance evidence
 
+## Cycle 12: OpenAI strict structured-tool correction
+
+This correction starts at the preserved cycle-11 revision
+`edb15e23701e149552d2dc44641f41e247c6403a`, identified by the controller as
+`foundry-task/mojentic-py-mojentic-py-transient-recovery-v2-c11-b1a244`.
+The controller's [October 11 reconciliation receipt](/home/svetzal/.foundry/reconcile/2026-10-11.md)
+records the missing cycle-11 worktree. Current read-only inspection finds this
+worktree at the preserved revision and main/origin/main at
+`f52f8ecc2784f3301b8e836b985894531220ff22`. These observations do not certify
+fresh controller synchronization or conflict resolution. No worker fetch, ref
+mutation, commit, merge, rebase, push, release or dependency change is performed;
+Foundry must reconcile concurrent trunk arrivals and land the corrected work.
+
+New evidence is retained in
+[/home/svetzal/.foundry/tool-logs/mojentic-py-strict-tools-c12/](/home/svetzal/.foundry/tool-logs/mojentic-py-strict-tools-c12/).
+It includes actual rejecting/passing logs and exit codes, full captures,
+request/response bytes, source revisions and hashes, final gate receipts,
+controller context and independent review. The [proof](/home/svetzal/.foundry/tool-logs/mojentic-py-strict-tools-c12/proof.json),
+[wire captures](/home/svetzal/.foundry/tool-logs/mojentic-py-strict-tools-c12/wire-evidence.json),
+[gate receipts](/home/svetzal/.foundry/tool-logs/mojentic-py-strict-tools-c12/gates/results.json),
+[independent review](/home/svetzal/.foundry/tool-logs/mojentic-py-strict-tools-c12/whole-mission-review.md)
+and [artifact hashes](/home/svetzal/.foundry/tool-logs/mojentic-py-strict-tools-c12/artifact-hashes.json)
+identify this increment's evidence. Earlier sections remain historical
+records; their counts and chronology are not reconstructed or asserted anew.
+The new proof first characterized public SDK `OpenAIGateway.complete` over
+scripted loopback HTTP. That call succeeds with a strict function tool plus
+`object_model=Result`, null content and a `tool_calls` finish. The equivalent
+public `complete_with_recovery` rejected both immediate and 503-then-success
+responses at the preserved source. The correction passes the same response shape.
+Early fixture mistakes and environment setup failures are retained separately
+and are not presented as behavioral rejection proof.
+
+Only OpenAI's `_decode_recovery` changes: shared response/tool validation still
+runs, then JSON model validation is skipped only for null content, a nonempty
+validated tool-call list, and exactly `finish_reason="tool_calls"`. No shared
+oMLX decoder, ordinary finish policy, streaming finalizer or cloud integration
+is rebuilt or changed. oMLX structured null-content tool turns still reject.
+
+| New public specification in `openai_strict_tool_recovery_spec.py` | Assertions |
+| --- | --- |
+| `should_characterize_sdk_public_completion` | Real SDK parse HTTP request includes independently expected schema and strict tool; object stays null; exact ID/name/Paris arguments returned. SDK includes `stream=false` and uses its own key order. |
+| `should_retain_null_object_and_exact_tool_through_public_recovery` | Immediate success and 503 then success; independently literal schema/tool UTF-8 bytes equal actual requests and captures across sends; numeric 503, original HTTPStatusError/status/body and history; stable logical ID, distinct attempt IDs and exact wire counts; exact eight recovery transitions with explicit admission; exact response captures, null object and exact tool fields. |
+| Rejection specifications | Non-strict offered tools produce no send; malformed/non-object tool arguments, invalid non-null schema content, null/empty tools, stop/missing/unknown/length/content_filter null-tool finishes fail without resend and preserve the original cause. |
+| oMLX boundary specifications | Public ordinary tool-only response still succeeds; public structured tool-only null response still fails after one send. Existing ordinary/structured/stream finalization specifications remain intact. |
+| Broker/session specifications | `LLMBroker.generate_response` returns the exact tool without executing it; `generate` and `ChatSession.send` execute once before a later 503 recovers; second-round bytes and tool IDs remain unchanged. Existing completed-tool-executes-once and interrupted/exhausted tests remain unchanged. |
+
+`LLMBroker.generate_object` does not offer tools and `ChatSession` has no
+structured entrypoint, so neither supports a combined schema/tool probe.
+OpenAI and oMLX structured streaming and Anthropic structured/tool/stream
+completion remain unsupported. The migration guide names these limits.
+
+Independent source review and whole-mission assessment compare both mission
+requests and the retained exact Rust revision
+`4ca1ed279c02eab37827a1ed07c30e961155ecf3`; all five Rust source hashes match
+the preserved provenance receipt. Rust's public structured recovery offers no
+tools, so this SDK compatibility correction is not a claim of combined
+schema/tool Rust parity. The review receipt records no blocking source defect.
+Independent focused acceptance passes 246 cases, including all 23 new cases,
+and independently validates actual proof exits, full logs and literal wire evidence.
+The final full suite and explicit `uv run pytest --cov` each pass 1,121 tests;
+explicit coverage is 86%. No coverage floor is configured or changed.
+Final fatal-selection/full Flake8, Ruff, whole-source format checking, Bandit,
+MkDocs, package build, unfiltered project and uvx dependency audits, and outdated
+inventory inspection all pass. Both audits inspect the same 96 project packages,
+with no skips or vulnerabilities. Outdated packages are inventoried without
+updates. Ruff is supplied through `uv run --with ruff` without modifying package
+metadata or the lockfile. An initial import-order finding was corrected; all
+final checks were rerun. Existing MkDocs notices remain in the complete logs.
+
+Remaining whole-mission requirements are explicit: native reasoning in outgoing
+history is unrepresented; supported provider operations remain incomplete as
+listed above; safe validated provider code/request ID fields are not populated;
+ordinary completion reports retain delivered tool counts but leave completed
+tool counts at zero;
+executable six-port/Elixir equivalence is unverified; and harness pin/lock,
+fresh registered experiment, scripted provider integration and harness trace
+persistence are external unverified deliverables. Remote cancellation/status
+and idempotency are unsupported, inference termination unknown. None of the
+fake-provider tests establishes remote termination, efficacy or the original
+504's origin. This increment does not establish whole-mission alignment.
+
+## Cycle 11: cloud completion recovery
+
+This increment starts from the controller-preserved cycle-10 ref
+`foundry-task/mojentic-py-mojentic-py-transient-recovery-v2-c10-e5b443`, at
+`5031dd06d087bf8f0cffb722c7a5efbd6bd8f220`. The October 11 controller ledger
+identifies that cancelled work item's preservation ref; the reconciliation
+receipt is `/home/svetzal/.foundry/reconcile/2026-10-11.md`.
+Read-only inspection finds main and origin/main at
+`f52f8ecc2784f3301b8e836b985894531220ff22`, with common ancestor
+`f51ecdaabb841fea13cba2867b414ab670be1281`. Main's dependency lock updates,
+filesystem containment fix/specifications and changelog entry are preserved.
+The incoming filesystem specifications needed formatting for the unchanged
+whole-source formatter gate; their assertions and behavior are unchanged.
+The worker does not fetch, rebase or modify refs. These observations and the
+controller receipt do not claim a fresh remote fetch; Foundry owns final review
+and direct-main landing.
+
+Stacey's October 11 decision excludes cycle-10's `evidence/cycle-9` additions
+from landing. No archival deliverable is rebuilt. Original cycle-9 captures,
+proof, source hashes and independent review remain externally retained at
+`/home/svetzal/.foundry/evidence/95089e675fb7e7089e236c9841b5c338/7804437f-9e3c-4bce-8d14-89f77810293f/`.
+The immutable preserved commit also retains the excluded additions. Current
+complete captures, proof, source/Rust hashes and source/assertion reassessment
+are retained outside the repository at
+`/home/svetzal/.foundry/tool-logs/mojentic-py-cloud-c11/` and in Foundry's run
+archive. Scratch files are execution evidence, not repository deliverables.
+
+### Proof before expansion
+
+The first real loopback probe runs the preserved OpenAI streaming path with a
+configured capture hook that raises an original `OSError` on a response body.
+The server receives the request and returns semantic content; the preserved
+path delivers it without consulting the hook, rejecting the typed-error and
+zero-delivery assertion. After routing opt-in streaming through owned HTTP,
+the same probe passes: one literal UTF-8 send, observed content, zero delivery,
+original exception identity, exact private response bytes and ordered
+started/failed/interrupted lifecycle. The behavioral proof retains actual
+nonzero/zero exit codes and complete logs. This preceded cloud matrix expansion,
+documentation and full gates. Failed timeout-adaptation fixture iterations and
+all gate failures remain visible in retained captures.
+
+### Executed entrypoints and assertions
+
+`cloud_recovery_spec.py` and `openai_recovery_lifecycle_spec.py` add 177 passing
+loopback cases. The literals are independent byte expectations, not generated
+from production request builders. All inference traffic stays on loopback HTTP.
+
+| Executed specifications | Boundary and assertion scope |
+| --- | --- |
+| `should_recover_503_with_literal_bytes_private_evidence_and_exact_lifecycle` | OpenAI `complete_with_recovery` ordinary/structured and `complete_stream_with_recovery` with/without offered tools; Anthropic ordinary `complete_with_recovery`. Every server send and capture equals literal UTF-8 bytes, including controls, strict schema or tools. Seconds/date/invalid Retry-After, original HTTP status cause, private headers/body, admission context, one retained failure, stable unmasked logical ID, distinct attempt IDs, exact eight transitions/identities/delay and typed terminal responses are asserted. |
+| `should_reuse_frozen_literal_bytes_after_admission_mutates_caller_inputs` | All five operation variants retain identical literal bytes after message text, temperature, token limit and offered tool list are mutated during admission. |
+| `should_freeze_model_specific_controls_and_tool_capabilities` | Reasoning model token parameters, temperature restrictions/retention, reasoning effort and unsupported/supported tools are frozen before dispatch; both real sends and request captures match literal expected bytes. Existing model adaptation methods are unchanged. |
+| `should_refuse_retry_after_limits_before_admission`, `should_bound_504_with_complete_history`, `should_refuse_absent_or_rejected_admission`, `should_admit_cloud_retry_without_weakening_local_admission` | All variants: minimum-delay/budget refusals, two-send bounded 504 history with original causes/bodies and distinct attempt IDs, explicit admission rejection, and cloud retry without a hook. Numeric statuses, exact counts/bytes, transitions and outcomes are asserted. Despite the inherited test name, the cloud refusal parameter is explicit rejection only; absent hooks allow cloud recovery. Existing local admission-required conformance remains in the full suite. |
+| `should_keep_truncated_permanent_status_despite_transport_eligibility`, `should_not_follow_redirects` | All variants: 400/401/403 survive truncated bodies as permanent despite transport eligibility; original `RemoteProtocolError`, private partial bytes and no admission/resend. Redirects produce one actual send with original HTTP status cause. |
+| `should_cancel_an_active_request_and_close_the_owned_socket`, `should_cancel_owned_admission_or_backoff`, `should_keep_admission_pending_until_an_explicit_decision` | All variants: request/admission/backoff cancellation, exact request bytes/counts, original typed causes, pending ownership, no second send, lifecycle ordering and actual socket/task closure. Active generation succeeds past the configured SDK read timeout in `should_leave_active_generation_without_a_fixed_read_timeout`. |
+| OpenAI `DescribeOpenAIStreamSafety`, `DescribeOpenAICaptureEvidence`, paused terminal/consumer tests | Comment-only keepalive recovery resets frame indices; OpenAI model metadata named `keepalive` cannot mask observed content/reasoning/tools (the synthetic marker belongs only to oMLX); observed content/reasoning/tool fragments prevent replay. Capture failure retains observed but undelivered semantics and original cause/bytes. Safe finish plus `[DONE]` completes tools; malformed/incomplete streams fail. Actual usage/model/finish evidence is retained with OpenAI identity; absent provider counters remain absent. Cancellation takes precedence while terminal telemetry is paused, and closing a paused consumer closes its socket without an explicit call cancellation. |
+| OpenAI `DescribeOpenAIPublicCallers` | `LLMBroker.generate`, `generate_response`, `generate_object`, `generate_stream`, `ChatSession.send` and `send_stream` recover through existing synchronous paths. Completed-tool-then-failed-completion cases cover the four tool-executing paths (`generate`, `generate_stream`, `send`, `send_stream`): one tool execution, unchanged caller depth, logical completion depths `[2, 1]`, three wire sends with failed-completion bytes equal, and identities distinguishing tool rounds from retries. `generate_response` returns tool requests without executing them. Raw `generate_stream_events` remains a single 503 or 307 send with policy configured; the default SDK transport disables redirects as well as hidden retries. |
+| `DescribeCloudPrivacy`, preparation/capture cases | Credentials/payload echoes are absent from safe error strings, repr, JSON reports/events and logs. Opt-in request/header/body evidence and typed original causes remain explicitly inspectable. Invalid preparation has no wire request/history; malformed tools and unsafe structured finishes never resend. |
+| `DescribeAnthropicCapabilityBoundary` | Ordinary native, broker `generate`/`generate_response`, and session `send` paths recover. Schema, configured JSON output and nonempty tools reject before HTTP with private original `NotImplementedError`; capabilities report false structured/streaming recovery and streaming methods remain absent. |
+
+### Rust comparison and limits
+
+The exact comparator is Rust
+`4ca1ed279c02eab37827a1ed07c30e961155ecf3`. Its immutable adapter, engine,
+provider types, frames and OpenAI source are retained with Git-object SHA-256
+hashes. OpenAI preserves the SDK strict-function-tool requirement for structured
+parsing; configured JSON output also rejects at Anthropic preparation. Separate
+rejecting/passing boundary regressions retain both corrections. Source checks
+compare the preserved OpenAI adaptation/validation and raw
+stream methods, unchanged Ollama source and unchanged policies/pins with current
+source. A separate boundary reassessment compares literal bytes and assertions
+through public APIs independently of the project fixture. Controller reviewer
+approval remains a separate landing decision.
+
+Rust's `Provider::local()` excludes OpenAI: eligible cloud requests can retry
+without an admission hook, while ambiguous local requests require explicit
+admission. Python preserves Ollama/oMLX admission and adds OpenAI/Anthropic to
+the shared typed provider vocabulary. Explicit cloud admission still waits or
+rejects. The reviewed Rust revision has no Anthropic adapter; no Anthropic parity
+claim is made. Both cloud adapters use owned HTTP with SDK retries, redirects
+and proxy discovery disabled, and no active generation read timeout. Recovery
+limits apply to dispatch/admission/backoff, not total generation duration.
+
+Anthropic retains its existing system/user message selection and first-text-block
+mapping. It still lacks structured generation, streaming and tool execution.
+OpenAI structured streaming remains unsupported. SDK/custom stream transports
+are bypassed by opted-in completion recovery; raw stream-event methods retain
+their existing compatibility boundary. Remote cancellation/status, inference
+termination and idempotency are not established. Ordinary finish handling,
+reasoning-disabled behavior, native reasoning in outgoing history, embeddings,
+realtime, live inference and experiment efficacy are outside this increment.
+
+The full suite passes 1,098 tests; explicit coverage is 86% and final gate
+receipts are retained externally. No coverage floor is configured or changed.
+Full/fatal-selection Flake8, Ruff, whole-source formatting, Bandit, MkDocs,
+unfiltered project and uvx pip-audit, and outdated inventory inspection pass.
+Both audits report no known vulnerabilities. The uvx audit targets the project
+interpreter; its tool/cache directories are writable scratch because the host
+uv tool directory is read-only. Existing MkDocs notices and pip audit cache
+warnings remain in complete logs. The unchanged CI warning-mode Flake8 command exits zero with 169 retained
+legacy diagnostics (13 complexity, 15 one-line-definition and 141 operator
+layout diagnostics); its full output is retained, not reported as zero warnings.
+The new specifications have no operator-layout diagnostics. New recovery helpers
+stay within complexity 10; existing legacy OpenAI complete/stream methods exceed
+that supplemental metric and remain preserved in this correction. Dependencies,
+runtime pins, exclusions, thresholds and advisory suppressions are unchanged
+relative to synchronized main. No release, commit, push or ref mutation occurs
+in this worker.
+
+
 ## Cycle 9: oMLX HTTP 429 coverage at 8b437e4
 
 This correction preserves the landed implementation at

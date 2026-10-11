@@ -188,8 +188,10 @@ This code is Copyright 2025 Mojility, Inc. and is freely provided under the term
 
 ### Opt-in completion recovery
 
-Ollama and oMLX ordinary, structured, and tool-capable streaming completions can use an explicit `RecoveryPolicy`
-through the existing broker and chat session APIs. Retries require caller admission
+Ollama, oMLX and OpenAI ordinary, structured, and tool-capable streaming completions can use an explicit `RecoveryPolicy`
+through the existing broker and chat session APIs. Local retries require caller admission
 when inference termination is unknown. See [the migration guide](docs/transient_recovery.md)
 for bounded delays, cancellation, safe reports, and caller-owned wire capture.
-OpenAI and Anthropic recovery remain pending. Raw stream-event APIs retain single-request behavior.
+Anthropic supports opt-in ordinary completion recovery; structured output, streaming and tools remain unsupported.
+Cloud retries may proceed without an admission hook; local retries still require explicit admission.
+Raw stream-event APIs retain their existing single-request compatibility behavior.

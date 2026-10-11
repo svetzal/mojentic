@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Opt-in transient completion recovery for `OpenAIGateway`: ordinary, structured and tool-capable streaming completions route through owned HTTP when a `recovery_policy` is set. Existing broker and chat session return types are unchanged. Cloud retries may proceed without an admission hook; local retries still require explicit admission.
+- Opt-in ordinary completion recovery for the Anthropic gateway. Structured output, tools and streaming remain unsupported and are refused before dispatch.
+
 ### Security
 
 - Fixed FileManager sandbox containment to reject sibling directories whose names share the sandbox path prefix. Base and candidate paths are normalized before component-wise comparison.
