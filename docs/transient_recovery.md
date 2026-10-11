@@ -92,7 +92,8 @@ that the provider terminated generation.
 ## Reports and explicit wire capture
 
 `generate_response` and the async gateway return a response with a typed
-`recovery_report`. Safe report metadata is also under `response.metadata["recovery"]`.
+`recovery_report`. Ordinary responses also expose safe report metadata under
+`response.metadata["recovery"]`; streaming responses retain `recovery_report`.
 The report includes a final identity/progress and one history entry per failed
 wire attempt. Each history entry has explicit sensitive inspection methods.
 Pre-dispatch failure/cancellation records zero wire attempts and no attempt ID.
@@ -124,9 +125,10 @@ failed request and adds a typed cancellation cause to the terminal failure.
 Recovery uses a dedicated HTTP transport with retries and redirects disabled.
 No SDK or environment proxy retry layer runs underneath it. Provider text,
 credentials, tool arguments, and raw exception text are excluded from safe
-reports and lifecycle serialization. Provider codes and request IDs are omitted,
-including syntactically valid UUIDs: a UUID can echo an outbound credential or
-payload. Raw response headers remain available through `Failure.inspect_headers()`
+reports and lifecycle serialization. Unsupported, malformed and outbound-echoed
+provider codes and request IDs are omitted; validated non-echoed values are retained.
+A syntactically valid UUID can still echo an outbound credential or payload.
+Raw response headers remain available through `Failure.inspect_headers()`
 and `RecoveryError.inspect_headers()`; these methods are explicitly sensitive.
 Successful content, explicit application tracers, and explicit wire capture remain
 caller-owned sensitive data.
@@ -158,9 +160,9 @@ See the repository's `RECOVERY-CONFORMANCE.md` for actual assertion mappings.
 ## Migrating from the preserved first recovery increment
 
 The opt-in APIs and immutable payload policy are retained. Consumers of
-`provider_request_id` must use private header inspection when they need the
-untrusted provider value; client logical/attempt UUIDs remain safe correlation
-metadata. Capture consumers now receive URL Basic authorization as sent and
+`provider_request_id` now receive exact validated provider IDs when supported.
+Use private header inspection for omitted or untrusted values; client logical/attempt
+UUIDs remain separate correlation metadata. Capture consumers now receive URL Basic authorization as sent and
 must protect it along with bodies. Cancellation consumers should expect an
 `attempt_failed` event for an active cancelled wire request before `cancelled`.
 Use the report's wire count/history rather than counting request-capture or
@@ -414,3 +416,41 @@ entrypoints, assertion scope and retained external evidence.
 The default OpenAI raw stream-event transport disables SDK retries and HTTP redirects,
 so a redirect is reported as an error after one send. Recovery remains disabled
 for these raw event APIs.
+
+
+## Validated provider metadata (October 11 correction)
+
+Public failure reports, per-attempt history and lifecycle evidence retain exact
+accepted `provider_request_id` and `provider_code` values. Recovered responses
+retain failed-attempt metadata in `recovery_report.history`; ordinary responses
+also expose the serialized report in `metadata["recovery"]`. Broker and session
+errors propagate the same report. Streaming responses use `recovery_report`.
+
+Ollama, oMLX and OpenAI read `x-request-id`. Anthropic prefers `request-id`,
+falling back to `x-request-id` only when the former header is absent. Only a single
+UUID spelling (canonical, simple hexadecimal, braced or UUID URN), optionally
+prefixed with `req_`, is accepted. Arbitrary IDs, malformed UUIDs and combined or
+duplicate header values are omitted. A valid spelling alone does not establish
+trust: IDs and their unprefixed forms occurring in outbound headers, immutable
+payload bytes, decoded JSON strings or credentials are also omitted. This includes
+URL Basic authentication and explicitly supplied Basic authorization. Matching is
+case insensitive and conservative; legitimate collisions are omitted.
+
+Complete JSON errors expose only recognized `error.code` strings:
+`rate_limit_exceeded`, `server_error`, `invalid_request_error`, `invalid_api_key`,
+`model_not_found`, `insufficient_quota`, and `overloaded_error`. Anthropic prefers
+`error.type`, additionally recognizing `rate_limit_error`, `authentication_error`,
+`permission_error`, `not_found_error`, and `api_error`. Recognized codes echoed
+from outbound data are omitted too. No error-message text becomes public metadata.
+For streaming error frames, extraction occurs before capture or delivery callbacks.
+A truncated body retains numeric status and accepted header metadata; it cannot
+supply a code until a complete error object is available. Permanent statuses still
+prevent retries. This correction does not add unsupported operations.
+
+These safeguards constrain copying provider data into public evidence; they do
+not certify that any provider-supplied UUID is an authentic correlation ID or
+sanitize arbitrary observer code. Explicit `inspect_headers`, `inspect_response`
+and `inspect_cause` retain original sensitive evidence, as does opt-in wire
+capture. Protect those channels separately. Formatted errors, serialized reports
+and lifecycle events omit rejected values. Assertions and external review/capture
+locations are recorded in `RECOVERY-CONFORMANCE.md`.

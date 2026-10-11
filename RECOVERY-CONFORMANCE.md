@@ -1,5 +1,54 @@
 # Python recovery conformance evidence
 
+## Cycle 13: validated provider metadata
+
+This focused correction starts from clean worktree HEAD
+`337566b` containing controller-synchronized `origin/main`
+`a218e00fed5ce40c96064849b504e2d02a4992eb`. The worker inspected these refs
+read-only and did not fetch, modify refs, reconcile prior cloud work, or finalize
+Git. Foundry owns synchronization and landing. Dependencies, lockfile, gates,
+thresholds, exclusions and runtime retry/tool behavior remain unchanged.
+
+The source reference is Rust
+`4ca1ed279c02eab37827a1ed07c30e961155ecf3`, specifically
+`src/llm/recovery/engine.rs` and `types.rs`, obtained read-only from the local
+Rust repository. Its UUID/prefixed-ID recognition, fixed code vocabulary and
+outbound echo rejection guide this correction. Anthropic request-id/error-type
+support and decoded JSON/Basic-credential echo rejection preserve Python's
+binding privacy boundary. Unsupported arbitrary provider strings remain omitted.
+
+`src/mojentic/llm/gateways/provider_metadata_spec.py` exercises real public
+loopback HTTP, with exact accepted values rather than masked or count-only proof:
+
+- Terminal public errors, failed-attempt history and lifecycle evidence retain
+  exact UUID IDs and recognized error codes on Ollama/oMLX/OpenAI ordinary,
+  structured and streaming paths, and Anthropic ordinary completion.
+- Two failed attempts carry distinct IDs/codes through a third successful attempt,
+  attached response history and its JSON serialization; request bytes are equal.
+- UUID and prefixed UUID credential/payload echoes, explicit Basic-password echoes,
+  recognized-code echoes, malformed UUIDs/codes and ambiguous headers are rejected.
+- Safe formatting, serialization and lifecycle evidence exclude rejected values;
+  explicit header/body/cause inspection and opt-in capture retain original evidence.
+- Truncated permanent bodies retain exact header IDs and numeric status, omit
+  incomplete codes, and send once. Complete in-band errors retain recognized codes.
+- Public broker response and session send errors propagate exact accepted metadata
+  for all four providers. Anthropic request-id and error-type are asserted directly.
+
+The early rejecting run observed missing exact IDs through all ten supported
+paths. An additional unsupported Anthropic structured case characterized existing
+zero-dispatch behavior and was removed from the supported-path matrix. The
+corrected probe passed before fixture/documentation expansion. The prior Ollama
+null-only UUID characterization now expects the exact non-echoed UUID; its
+existing credential/payload echo tests remain rejecting assertions.
+
+Complete proof logs, wire captures, exact revisions/source hashes, gate results
+and independent review are retained outside the repository at
+[/home/svetzal/.foundry/tool-logs/mojentic-py-metadata-c13/](/home/svetzal/.foundry/tool-logs/mojentic-py-metadata-c13/).
+The evidence manifest identifies capture hashes and actual exits. The independent
+review caught explicit Basic credential decoding and strict UUID-format validation;
+these were corrected and covered before final review. Historical sections below
+remain records of earlier increments, not claims reconstructed in this cycle.
+
 ## Cycle 12: OpenAI strict structured-tool correction
 
 This correction starts at the preserved cycle-11 revision

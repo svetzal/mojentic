@@ -5,9 +5,12 @@ on ``RecoveryError`` or capture them with the caller-owned wire observer.
 """
 
 import asyncio
+import base64
+import binascii
 import inspect
 import json
 import math
+import re
 import secrets
 import threading
 import time
@@ -15,7 +18,8 @@ from collections.abc import Awaitable, Callable
 from datetime import UTC
 from email.utils import parsedate_to_datetime
 from typing import Literal, TypeVar
-from uuid import uuid4
+from urllib.parse import unquote
+from uuid import UUID, uuid4
 
 import httpx
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
@@ -323,6 +327,8 @@ class _Attempt(BaseModel):
     progress: Progress = Field(default_factory=Progress)
     status: int | None = None
     request_id: str | None = None
+    provider_code: str | None = None
+    _outbound: tuple[bytes, ...] = PrivateAttr(default=())
     retry_after: RetryAfter = Field(default_factory=RetryAfter)
     raw: bytes = Field(default=b"", repr=False)
     headers: tuple[tuple[str, str], ...] = Field(default=(), repr=False)
@@ -331,6 +337,112 @@ class _Attempt(BaseModel):
     reason: str = "transient"
     cause: BaseException | None = Field(default=None, repr=False)
     sent: bool = False
+
+    def bind_request(self, request: httpx.Request) -> None:
+        """Retain immutable outbound spellings solely for rejecting metadata echoes."""
+        strings = []
+
+        def visit(value: object) -> None:
+            if isinstance(value, str):
+                strings.append(value.encode("utf-8"))
+            elif isinstance(value, dict):
+                for key, item in value.items():
+                    visit(key)
+                    visit(item)
+            elif isinstance(value, list):
+                for item in value:
+                    visit(item)
+
+        visit(json.loads(request.content))
+        visit(unquote(request.url.username))
+        visit(unquote(request.url.password))
+        authorization = request.headers.get("authorization", "")
+        scheme, _, encoded = authorization.partition(" ")
+        if scheme.lower() == "basic":
+            try:
+                strings.append(base64.b64decode(encoded, validate=True))
+            except (ValueError, binascii.Error):
+                pass
+        self._outbound = (
+            request.content,
+            *(value for _, value in request.headers.raw),
+            *strings,
+        )
+
+    def accepts_metadata(self, value: str) -> bool:
+        candidates = (value, value.removeprefix("req_"))
+        return not any(
+            candidate.encode("utf-8").lower() in source.lower()
+            for candidate in candidates
+            for source in self._outbound
+        )
+
+    def read_request_id(self, headers: httpx.Headers) -> None:
+        """Accept one UUID header, preserving spelling and omitting outbound echoes."""
+        name = (
+            "request-id"
+            if self.provider == "anthropic" and "request-id" in headers
+            else "x-request-id"
+        )
+        values = headers.get_list(name)
+        if len(values) != 1:
+            return
+        value = values[0]
+        candidate = value.removeprefix("req_")
+        hex_digit = "[0-9a-fA-F]"
+        canonical = f"{hex_digit}{{8}}-{hex_digit}{{4}}-{hex_digit}{{4}}-{hex_digit}{{4}}-{hex_digit}{{12}}"
+        if (
+            re.fullmatch(
+                f"(?:{hex_digit}{{32}}|{canonical}|\\{{{canonical}\\}}|urn:uuid:{canonical})",
+                candidate,
+            )
+            is None
+        ):
+            return
+        try:
+            UUID(candidate)
+        except ValueError:
+            return
+        if self.accepts_metadata(value):
+            self.request_id = value
+
+    def read_error_code(self, frame: object) -> None:
+        """Copy recognized provider codes only from a complete typed error object."""
+        error = frame.get("error") if isinstance(frame, dict) else None
+        if not isinstance(error, dict):
+            return
+        field = "type" if self.provider == "anthropic" and "type" in error else "code"
+        value = error.get(field)
+        recognized = {
+            "rate_limit_exceeded",
+            "server_error",
+            "invalid_request_error",
+            "invalid_api_key",
+            "model_not_found",
+            "insufficient_quota",
+            "overloaded_error",
+        }
+        if self.provider == "anthropic":
+            recognized |= {
+                "rate_limit_error",
+                "authentication_error",
+                "permission_error",
+                "not_found_error",
+                "api_error",
+            }
+        if (
+            isinstance(value, str)
+            and value in recognized
+            and self.accepts_metadata(value)
+        ):
+            self.provider_code = value
+
+    def read_error_body(self) -> None:
+        try:
+            frame = json.loads(self.raw)
+        except (ValueError, UnicodeDecodeError):
+            return
+        self.read_error_code(frame)
 
     def blocked_reason(self) -> str | None:
         if self.category == "cancellation":
@@ -375,6 +487,7 @@ class _Attempt(BaseModel):
             identity=self.identity,
             http_status=self.status,
             provider_request_id=self.request_id,
+            provider_code=self.provider_code,
             retry_after=self.retry_after,
             phase=self.phase,
             progress=self.progress,
@@ -581,6 +694,7 @@ class _Recovery:
                     request
                 )
             )
+        attempt.bind_request(request)
         self.capture(
             WireEvent(
                 kind="request",
@@ -600,9 +714,8 @@ class _Recovery:
         response = await client.send(request, stream=True, auth=httpx.Auth())
         try:
             attempt.status = response.status_code
-            # Even syntactically valid UUIDs can echo outbound secrets. Keep
-            # provider metadata exclusively in explicit private inspection.
             attempt.headers = tuple(response.headers.multi_items())
+            attempt.read_request_id(response.headers)
             attempt.retry_after = parse_retry_after(
                 response.headers.get("retry-after"), self.policy.wall()
             )
@@ -631,6 +744,7 @@ class _Recovery:
                     attempt,
                 )
                 self.check_cancelled()
+            attempt.read_error_body()
             response.raise_for_status()
             try:
                 frame = json.loads(attempt.raw)
@@ -692,6 +806,7 @@ class _Recovery:
     def record_failure(self, attempt: _Attempt, cause: BaseException) -> Failure:
         cause = cause.original if isinstance(cause, _HookError) else cause
         attempt.cause = cause
+        attempt.read_error_body()
         if attempt.reason == "invalid_response":
             attempt.category = "protocol"
         elif isinstance(cause, httpx.TimeoutException):

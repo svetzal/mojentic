@@ -345,6 +345,7 @@ class _StreamRecovery(_Recovery):
     ) -> LLMGatewayResponse:
         self.check_dispatch()
         request = self.build_request(client, url, body, headers)
+        attempt.bind_request(request)
         self.capture(
             WireEvent(
                 kind="request",
@@ -365,6 +366,7 @@ class _StreamRecovery(_Recovery):
         try:
             attempt.status = response.status_code
             attempt.headers = tuple(response.headers.multi_items())
+            attempt.read_request_id(response.headers)
             attempt.retry_after = parse_retry_after(
                 response.headers.get("retry-after"), self.policy.wall()
             )
@@ -406,6 +408,7 @@ class _StreamRecovery(_Recovery):
                     await self.deliver_frame(frame, decoder, attempt)
                     if decoder.terminal:
                         return decode(self.response_frame(decoder))
+            attempt.read_error_body()
             response.raise_for_status()
             if pending:
                 attempt.category, attempt.reason = "protocol", "invalid_response"
@@ -428,6 +431,7 @@ class _StreamRecovery(_Recovery):
             except (ValueError, UnicodeDecodeError):
                 pass
             else:
+                attempt.read_error_code(partial)
                 decoder.observe(partial, attempt)
                 decoder.pending_observed = True
         return parsed, parse_error
@@ -461,6 +465,7 @@ class _StreamRecovery(_Recovery):
                 parse_error = cause
                 decoder.observation_valid = False
                 continue
+            attempt.read_error_code(frame)
             if not already_observed:
                 decoder.observe(frame, attempt)
             frames.append(frame)
@@ -469,6 +474,7 @@ class _StreamRecovery(_Recovery):
     async def deliver_frame(
         self, frame: object, decoder: _Decoder, attempt: _Attempt
     ) -> None:
+        attempt.read_error_code(frame)
         if isinstance(frame, dict) and frame.get("error") is not None:
             attempt.category, attempt.reason = "provider_response", "provider_error"
         events, accepted = decoder.events(frame, attempt)

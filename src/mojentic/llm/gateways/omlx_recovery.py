@@ -329,6 +329,7 @@ class OMLXStreamRecovery(_StreamRecovery):
                 if data is None:
                     continue
                 frame = "[DONE]" if data == b"[DONE]" else json.loads(data)
+                attempt.read_error_code(frame)
                 if not observed:
                     decoder.observe(frame, attempt)
                 frames.append(frame)
@@ -341,6 +342,7 @@ class OMLXStreamRecovery(_StreamRecovery):
             except (ValueError, UnicodeDecodeError):
                 pass
             else:
+                attempt.read_error_code(frame)
                 decoder.observe(frame, attempt)
                 decoder.pending_observed = True
         return frames, error

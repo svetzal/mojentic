@@ -1607,7 +1607,7 @@ class DescribePublicCancellationAndMetadata:
         [
             (
                 "bd38be36-6698-43f1-9d34-7452b980f471",
-                None,
+                "bd38be36-6698-43f1-9d34-7452b980f471",
             ),
             ("credential-payload-echo-secret", None),
         ],
