@@ -50,7 +50,7 @@ class StreamOutcome(str, Enum):
 class StreamFrameProgress(SafeModel):
     """Validated frame counters; content and reasoning lengths are UTF-8 bytes."""
 
-    provider: Literal["ollama"] = "ollama"
+    provider: Literal["ollama", "omlx"] = "ollama"
     done: bool
     content_bytes: int
     reasoning_bytes: int
@@ -59,13 +59,14 @@ class StreamFrameProgress(SafeModel):
 
 
 class StreamMetrics(SafeModel):
-    """Reported Ollama counters and nanosecond durations; missing values stay absent.
+    """Reported provider counters and durations; missing values stay absent.
 
     Model and finish strings are sensitive provider evidence, excluded from default
-    formatting and serialization. Throughput requires both reported inputs.
+    formatting and serialization. oMLX usage retains provider keys privately.
+    Ollama throughput requires both reported inputs.
     """
 
-    provider: Literal["ollama"] = "ollama"
+    provider: Literal["ollama", "omlx"] = "ollama"
     provider_model: str | None = Field(default=None, exclude=True, repr=False)
     finish_reason: str | None = Field(default=None, exclude=True, repr=False)
     prompt_eval_count: int | None = None
@@ -75,6 +76,7 @@ class StreamMetrics(SafeModel):
     prompt_eval_duration: int | None = None
     eval_duration: int | None = None
     tokens_per_second: float | None = None
+    usage: dict[str, object] | None = Field(default=None, exclude=True, repr=False)
 
 
 class RecoveryStreamEvent(BaseModel):
@@ -308,6 +310,9 @@ class _StreamRecovery(_Recovery):
         self.terminal_failure = None
         self.exchange_cause: BaseException | None = None
 
+    def decoder(self) -> _Decoder:
+        return _Decoder()
+
     async def deliver(self, event: RecoveryStreamEvent, attempt: _Attempt) -> None:
         self.check_cancelled()
         acknowledged = asyncio.Event()
@@ -374,7 +379,7 @@ class _StreamRecovery(_Recovery):
                 ),
                 attempt,
             )
-            decoder = _Decoder()
+            decoder = self.decoder()
             async for chunk in response.aiter_raw():
                 self.check_cancelled()
                 attempt.raw += chunk
@@ -513,6 +518,7 @@ class _StreamRecovery(_Recovery):
                         wire_attempt=number,
                     ),
                     operation="streaming",
+                    provider=self.provider,
                 )
                 self.attempt = attempt
                 self.terminal_failure = None
@@ -619,13 +625,15 @@ async def recover_stream(
     decode: Decode,
     policy: RecoveryPolicy,
     call: RecoveryCall,
+    *,
+    _engine_type: type[_StreamRecovery] = _StreamRecovery,
 ) -> AsyncIterator[RecoveryStreamEvent]:
     """Own HTTP and admission tasks even while a consumer is paused.
 
     Closing the iterator cancels local resources; remote termination stays unknown.
     """
     queue = asyncio.Queue()
-    engine = _StreamRecovery(policy, call, queue)
+    engine = _engine_type(policy, call, queue)
 
     producer = asyncio.create_task(engine.produce(url, body, headers, timeout, decode))
     acknowledged = None

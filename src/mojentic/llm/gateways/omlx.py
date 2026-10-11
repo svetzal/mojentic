@@ -1,5 +1,7 @@
+import asyncio
+import json
 import os
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
 from contextlib import closing
 from typing import TYPE_CHECKING, Optional
 from urllib.parse import quote
@@ -25,6 +27,17 @@ from mojentic.llm.gateways.stream_events import (
     StreamError,
     StreamErrorReason,
     StreamEvent,
+)
+from mojentic.llm.recovery import (
+    Capabilities,
+    RecoveryCall,
+    RecoveryPolicy,
+    preparation_error,
+)
+from mojentic.llm.recovery_stream import (
+    RecoveryStreamEvent,
+    recover_stream,
+    synchronous_stream,
 )
 from mojentic.llm.tools.llm_tool import LLMTool
 
@@ -102,12 +115,19 @@ class OMLXGateway(LLMGateway):
         The timeout in seconds for every request, including model load. Defaults to
         ``OMLX_TIMEOUT`` (in milliseconds), then 600 seconds.
     transport : OMLXTransport, optional
-        The transport every request goes through. Defaults to one over the resolved settings.
+        Transport for legacy completions, embeddings and model management. Opt-in
+        completion recovery uses a dedicated owned HTTP transport.
+    recovery_policy : RecoveryPolicy, optional
+        Opt in to ordinary, structured and streaming request recovery. Recovery
+        disables the active response read timeout; other timeout settings remain.
+    recovery_call : RecoveryCall, optional
+        Cancellation for a synchronous operation. Use a fresh call per operation.
 
     Notes
     -----
-    Non-2xx responses raise ``httpx.HTTPStatusError``; ``error.response`` carries the status
-    and the oMLX error body. ``complete_stream_events`` reports them as ``PROVIDER_ERROR``.
+    Legacy non-2xx responses raise ``httpx.HTTPStatusError``. Recovery-enabled
+    completion paths raise typed ``RecoveryError`` with private cause inspection.
+    Raw ``complete_stream_events`` remains single-request and reports provider errors.
     """
 
     def __init__(
@@ -116,11 +136,15 @@ class OMLXGateway(LLMGateway):
         api_key: str | None = None,
         timeout: float | None = None,
         transport: OMLXTransport | None = None,
-    ):
+        recovery_policy: RecoveryPolicy | None = None,
+        recovery_call: RecoveryCall | None = None,
+    ) -> None:
         self.settings = omlx_settings(
             host=host, api_key=api_key, timeout=timeout, environ=os.environ
         )
         self.transport = transport or OMLXTransport(self.settings)
+        self.recovery_policy = recovery_policy
+        self.recovery_call = recovery_call
 
     def complete(
         self,
@@ -164,6 +188,20 @@ class OMLXGateway(LLMGateway):
             Content, thinking, tool calls, usage, provider model, finish reason and metadata.
             ``content`` is not an answer unless ``finish_reason`` is ``stop``.
         """
+        if self.recovery_policy is not None:
+            return asyncio.run(
+                self.complete_with_recovery(
+                    model=model,
+                    messages=messages,
+                    config=config,
+                    tools=tools,
+                    object_model=object_model,
+                    temperature=temperature,
+                    num_ctx=num_ctx,
+                    max_tokens=max_tokens,
+                    num_predict=num_predict,
+                )
+            )
         config = config or _config_from_arguments(
             temperature, num_ctx, max_tokens, num_predict
         )
@@ -177,6 +215,150 @@ class OMLXGateway(LLMGateway):
         if object_model is not None:
             result.object = _validated_object(object_model, result.content)
         return result
+
+    def recovery_capabilities(self) -> Capabilities:
+        """Report supported request recovery and unsupported remote facilities."""
+        return Capabilities(streaming_recovery=True)
+
+    def _recovery_body(self, args: dict, streaming: bool) -> bytes:
+        config = args.get("config") or _config_from_arguments(
+            args.get("temperature", 1.0),
+            args.get("num_ctx", 32768),
+            args.get("max_tokens", 16384),
+            args.get("num_predict", -1),
+        )
+        body = omlx_chat_body(
+            args["model"],
+            args["messages"],
+            config,
+            tools=args.get("tools"),
+            object_model=args.get("object_model"),
+        )
+        if streaming:
+            if args.get("object_model") is not None:
+                raise ValueError("structured streaming is unsupported")
+            body |= {"stream": True, "stream_options": {"include_usage": True}}
+        return json.dumps(
+            body, ensure_ascii=False, separators=(",", ":"), allow_nan=False
+        ).encode("utf-8")
+
+    def _recovery_headers(self) -> dict[str, str]:
+        return self.settings.headers | {
+            "Content-Type": "application/json",
+            "Accept-Encoding": "identity",
+        }
+
+    async def complete_with_recovery(
+        self, call: RecoveryCall | None = None, **args
+    ) -> LLMGatewayResponse:
+        """Recover one ordinary or structured completion, retaining typed failure evidence.
+
+        Recovery bypasses the legacy transport and disables active read timeouts.
+
+        Parameters
+        ----------
+        call : RecoveryCall, optional
+            Cancellation for this operation, overriding the gateway call.
+        **args
+            The model, messages, tools, schema and controls accepted by ``complete``.
+
+        Returns
+        -------
+        LLMGatewayResponse
+            Provider response with a typed recovery report.
+
+        Raises
+        ------
+        RecoveryError
+            Recovery refused, interrupted, cancelled or received an invalid response.
+        ValueError
+            No recovery policy is configured.
+        """
+        from mojentic.llm.gateways.omlx_recovery import OMLXRecovery, decode_completion
+
+        if self.recovery_policy is None:
+            raise ValueError("configure recovery_policy before using recovery")
+        operation = "structured" if args.get("object_model") is not None else "ordinary"
+        try:
+            body = self._recovery_body(args, False)
+        except (ValueError, TypeError, KeyError, OSError) as cause:
+            raise preparation_error(cause, operation, "omlx") from None
+        engine = OMLXRecovery(
+            self.recovery_policy,
+            call or self.recovery_call or RecoveryCall(),
+            operation,
+        )
+        result, report = await engine.run(
+            self.settings.base_url + "/chat/completions",
+            body,
+            self._recovery_headers(),
+            httpx.Timeout(self.settings.timeout, read=None),
+            lambda frame: decode_completion(frame, args.get("object_model")),
+        )
+        result.recovery_report = report
+        result.metadata |= {"recovery": report.model_dump(mode="json")}
+        return result
+
+    async def complete_stream_with_recovery(
+        self, call: RecoveryCall | None = None, **args
+    ) -> AsyncIterator[RecoveryStreamEvent]:
+        """Yield progress and exactly one completed or failed recovery outcome.
+
+        Closing the iterator cancels owned local HTTP; remote termination is unknown.
+        Raw complete_stream_events remains a single-request compatibility API.
+
+        Parameters
+        ----------
+        call : RecoveryCall, optional
+            Cancellation for this operation, overriding the gateway call.
+        **args
+            The model, messages, tools and controls accepted by ``complete_stream``.
+
+        Yields
+        ------
+        RecoveryStreamEvent
+            Provider progress followed by one completed or failed terminal outcome.
+
+        Raises
+        ------
+        ValueError
+            No recovery policy is configured.
+        """
+        from mojentic.llm.gateways.omlx_recovery import (
+            OMLXStreamRecovery,
+            decode_completion,
+        )
+
+        if self.recovery_policy is None:
+            raise ValueError("configure recovery_policy before using recovery")
+        try:
+            body = self._recovery_body(args, True)
+        except (ValueError, TypeError, KeyError, OSError) as cause:
+            error = preparation_error(cause, "streaming", "omlx")
+            yield RecoveryStreamEvent(
+                kind="failed",
+                identity=error.report.identity,
+                progress=error.report.progress,
+                report=error.report,
+                error=error,
+                outcome="ineligible",
+            )
+            return
+        events = recover_stream(
+            self.settings.base_url + "/chat/completions",
+            body,
+            self._recovery_headers(),
+            httpx.Timeout(self.settings.timeout, read=None),
+            decode_completion,
+            self.recovery_policy,
+            call or self.recovery_call or RecoveryCall(),
+            _engine_type=OMLXStreamRecovery,
+        )
+        try:
+            async for event in events:
+                yield event
+        finally:
+            await events.aclose()
 
     @staticmethod
     def _response_format_warning(
@@ -223,6 +405,30 @@ class OMLXGateway(LLMGateway):
             raise NotImplementedError(
                 "Streaming with structured output (object_model) is not supported"
             )
+        if self.recovery_policy is not None:
+            events = synchronous_stream(
+                self.complete_stream_with_recovery(
+                    model=model,
+                    messages=messages,
+                    config=config,
+                    tools=tools,
+                    temperature=temperature,
+                    num_ctx=num_ctx,
+                    max_tokens=max_tokens,
+                    num_predict=num_predict,
+                )
+            )
+            with closing(events):
+                for event in events:
+                    if event.kind == "failed":
+                        raise event.error
+                    if event.kind == "content":
+                        yield StreamingResponse(content=event.text)
+                    elif event.kind == "reasoning":
+                        yield StreamingResponse(thinking=event.text)
+                    elif event.kind == "completed" and event.response.tool_calls:
+                        yield StreamingResponse(tool_calls=event.response.tool_calls)
+            return
         config = config or _config_from_arguments(
             temperature, num_ctx, max_tokens, num_predict
         )

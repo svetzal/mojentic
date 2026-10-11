@@ -1,11 +1,11 @@
-# Opt-in Ollama completion recovery
+# Opt-in local completion recovery
 
 Recovery resends one failed provider completion. It preserves encoded request bytes
 and keeps transport attempts separate from broker tool rounds. It never restarts
 a session or executes a previously completed tool again.
 
 Existing callers keep their SDK behavior and errors. Configure `recovery_policy`
-on an `OllamaGateway` to opt in for `LLMBroker.generate`, `generate_response`,
+on an `OllamaGateway` or `OMLXGateway` to opt in for `LLMBroker.generate`, `generate_response`,
 `generate_object`, `generate_stream`, `ChatSession.send`, and `send_stream`:
 
 ```python
@@ -87,7 +87,7 @@ async def complete(gateway):
 Cancellation closes locally owned HTTP resources, admission, and backoff without
 a later attempt. The opted-in path raises `RecoveryError` with outcome `cancelled`,
 including when its task is cancelled. Closing the request does not establish
-that Ollama terminated generation.
+that the provider terminated generation.
 
 ## Reports and explicit wire capture
 
@@ -138,7 +138,9 @@ caller-owned sensitive data.
 | Ollama ordinary and structured completion | Opt-in, loopback tested | Unsupported / unsupported / unknown / unsupported |
 | Ollama tool-capable streaming | Opt-in recovery; explicit typed terminal outcomes and attempt evidence | Unsupported / unsupported / unknown / unsupported |
 | Ollama raw stream events | Existing single-turn API; tools rejected | Recovery configuration does not enable retries |
-| oMLX completion | Pending; existing adapter behavior | No recovery claim |
+| oMLX ordinary and structured completion | Opt-in, typed schema failures and retained format warnings | Unsupported / unsupported / unknown / unsupported |
+| oMLX tool-capable streaming | Opt-in recovery; safe finish plus `[DONE]` required | Unsupported / unsupported / unknown / unsupported |
+| oMLX raw stream events | Existing single-turn API; recovery policy is ignored | Recovery configuration does not enable retries |
 | OpenAI completion | Pending; existing adapter behavior | No recovery claim |
 | Anthropic completion | Pending; existing adapter behavior | No recovery claim |
 | Embeddings and realtime voice | Outside completion recovery scope | No recovery claim |
@@ -270,3 +272,56 @@ them. Without a recovery policy, tool-capable SDK streaming retains its existing
 finish handling and provider error types. Native reasoning history that the
 Python message model cannot represent remains an explicit gap; supported outgoing
 reasoning controls, ordinary/structured recovery and finish handling are preserved.
+
+## oMLX migration
+
+Use the same policy, admission and cancellation objects with `OMLXGateway`:
+
+```python
+from mojentic.llm.gateways.omlx import OMLXGateway
+
+omlx = OMLXGateway(
+    host="http://localhost:8000",
+    recovery_policy=RecoveryPolicy(max_attempts=3, admission=admit),
+)
+omlx_session = ChatSession(LLMBroker("your-model", gateway=omlx))
+```
+
+`complete`, `complete_with_recovery`, `complete_stream` and
+`complete_stream_with_recovery` support request recovery. Existing broker and
+session APIs use these public completion paths. `generate_response` returns tools
+to its caller; it does not execute a tool loop. Structured streaming remains
+unsupported. `complete_stream_events` and broker `generate_stream_events` retain
+the existing single-request parser, finish rules, error events and no-tool API.
+Their legacy error details can contain provider text; use the recovery entrypoints
+for safe typed errors and recovery-event serialization.
+
+With recovery disabled, the configured transport, timeout, settings/authentication,
+validation behavior and response-format warning logging remain unchanged. Opt-in
+completion recovery uses its own HTTP transport, with hidden retries, redirects
+and environment proxies disabled. Custom `OMLXTransport` instances continue to
+serve legacy, embedding and model-management calls; they are bypassed for opt-in
+completion recovery. No remote cancellation, request-status or idempotency API is
+claimed.
+
+An opt-in oMLX request retains connect/write/pool timeouts but removes the active
+response read timeout. A recovery budget constrains waiting and resending rather
+than healthy generation. Use `RecoveryCall` to cancel active local HTTP ownership.
+This intentional opt-in difference does not alter legacy timeouts or prove remote
+termination. Model loading, unloading, listing and embeddings are outside scope.
+
+Recovery preserves `reasoning_effort`, native returned reasoning, supported message
+history, tool arguments, schema and generation controls. The shared message model
+cannot represent native reasoning in outgoing history; no support is added here.
+Ordinary finish reasons (including `length`) are preserved. Recovering streams
+require `stop` or `tool_calls` followed by `[DONE]`. Observed reasoning, content or
+tool fragments prevent replay even before caller delivery. Keepalive bytes alone
+are raw progress and still require explicit admission before resending.
+
+Reported usage, including nested cache details and timing values, is preserved on
+the completed response and `event.metrics.usage`. Arbitrary provider usage keys,
+model and finish strings are excluded from safe recovery-event serialization and
+representation; explicit access and successful responses are sensitive. Structured
+format warnings remain in successful response metadata, but the opt-in path does
+not log untrusted warning header values. Private inspection and wire capture retain
+exact response headers and raw bytes, including partial error bodies.

@@ -101,7 +101,7 @@ def parse_retry_after(value: str | None, wall: float) -> RetryAfter:
 class Failure(SafeModel):
     """Stable classification and evidence for a completed failed wire attempt."""
 
-    provider: Literal["ollama"] = "ollama"
+    provider: Literal["ollama", "omlx"] = "ollama"
     operation: Literal["ordinary", "structured", "streaming"]
     category: Literal[
         "transport",
@@ -174,7 +174,8 @@ class RecoveryError(Exception):
         self._causes = causes
         self._responses = responses
         super().__init__(
-            f"ollama recovery {report.outcome}; wire attempts={report.identity.wire_attempt}"
+            f"{report.final_failure.provider if report.final_failure else 'ollama'} "
+            f"recovery {report.outcome}; wire attempts={report.identity.wire_attempt}"
         )
 
     def inspect_cause(self, index: int = -1) -> BaseException:
@@ -314,6 +315,7 @@ class Capabilities(SafeModel):
 class _Attempt(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     identity: Identity
+    provider: Literal["ollama", "omlx"] = "ollama"
     operation: Literal["ordinary", "structured", "streaming"]
     progress: Progress = Field(default_factory=Progress)
     status: int | None = None
@@ -364,6 +366,7 @@ class _Attempt(BaseModel):
             )
         reason = blocked or ("transient" if eligible else "permanent")
         failure = Failure(
+            provider=self.provider,
             operation=self.operation,
             category=self.category,
             identity=self.identity,
@@ -386,6 +389,9 @@ class _Attempt(BaseModel):
             frame = json.loads(self.raw)
         except (ValueError, UnicodeDecodeError):
             return
+        if self.provider == "omlx" and isinstance(frame, dict):
+            choices = frame.get("choices")
+            frame = choices[0] if isinstance(choices, list) and choices else {}
         if not isinstance(frame, dict) or not isinstance(frame.get("message"), dict):
             return
         message = frame["message"]
@@ -394,7 +400,11 @@ class _Attempt(BaseModel):
         self.progress = self.progress.model_copy(
             update={
                 "observed_content": bool(message.get("content")),
-                "observed_reasoning": bool(message.get("thinking")),
+                "observed_reasoning": bool(
+                    message.get(
+                        "reasoning_content" if self.provider == "omlx" else "thinking"
+                    )
+                ),
                 "observed_tool_fragments": count,
                 "completed_tool_calls": count if frame.get("done") is True else 0,
             }
@@ -461,6 +471,8 @@ async def _guard(
 
 
 class _Recovery:
+    provider = "ollama"
+
     def __init__(
         self,
         policy: RecoveryPolicy,
@@ -742,7 +754,9 @@ class _Recovery:
                     attempt_id=str(uuid4()),
                     wire_attempt=number,
                 )
-                attempt = _Attempt(identity=identity, operation=self.operation)
+                attempt = _Attempt(
+                    identity=identity, operation=self.operation, provider=self.provider
+                )
                 try:
                     result = await _guard(
                         self.exchange(client, url, body, headers, attempt, decode),
@@ -894,13 +908,16 @@ async def recover(
 
 
 def preparation_error(
-    cause: BaseException, operation: Literal["ordinary", "structured", "streaming"]
+    cause: BaseException,
+    operation: Literal["ordinary", "structured", "streaming"],
+    provider: Literal["ollama", "omlx"] = "ollama",
 ) -> RecoveryError:
     """Represent a pre-dispatch failure without inventing a wire attempt."""
     identity = Identity(
         logical_request_id=str(uuid4()), attempt_id=None, wire_attempt=0
     )
     failure = Failure(
+        provider=provider,
         operation=operation,
         category="protocol",
         identity=identity,

@@ -1,5 +1,95 @@
 # Python recovery conformance evidence
 
+## oMLX provider increment at d8ad832
+
+This increment adds opt-in oMLX ordinary, structured and tool-capable streaming
+completion recovery from `d8ad832deb786415eb89adeae27325c809d9c828`.
+It does not establish whole-mission or coordinated-port conformance. Historical
+Ollama evidence and missing-artifact disclosures below remain preserved.
+
+The starting tree was clean. Worker Git operations were read-only: HEAD and
+`refs/remotes/origin/main` both named the starting revision; `git ls-remote origin
+refs/heads/main` returned that same revision during implementation. The retained
+controller receipt records earlier fetch/pull at `c95d805`, an ancestor; it does
+not certify current controller synchronization. Foundry must reconcile arrivals,
+stop on conflicts, review and land directly on main. No worker ref mutation,
+release, dependency change or live inference was performed.
+
+The comparison uses retained Rust source for exactly
+`4ca1ed279c02eab37827a1ed07c30e961155ecf3`, especially `frames.rs`,
+`engine.rs` and `types.rs`, together with both normative root documents. The
+October 10 supplement was recovered from the controller's Python definition JSON
+and preserved verbatim in the evidence archive. Prior missing historical evidence
+remains disclosed; this does not reconstruct old stages.
+
+Durable evidence is under
+`/home/svetzal/.foundry/tool-logs/mojentic-py-omlx-c8/`: early rejecting/passing
+proof and source, complete foundry captures, loopback wire records, exact source
+and Rust hashes, controller receipt/supplement, and independent source review.
+The first rejecting probe exposed the absent public recovery API; its corrected
+run asserted content observation before capture-hook failure at actual loopback
+HTTP, zero delivered content, original typed cause, exact partial bytes, one wire
+request, and started/failed/interrupted lifecycle order. Additional probe results
+and gates are recorded in the archive without relabeling failed fixture runs.
+
+| Acceptance evidence in `omlx_recovery_spec.py` | Public boundary and assertions |
+| --- | --- |
+| `should_recover_503_with_stable_exact_semantic_bytes_and_lifecycle` | Ordinary, structured and streaming gateway calls; seconds/date/invalid Retry-After, deterministic clock/jitter/sleep, literal independently specified history/tools/schema/control bytes, bearer authentication, same logical ID, distinct attempt IDs, exact sends and lifecycle |
+| `should_refuse_retry_after_outside_limits`, `should_bound_504_exhaustion_without_success` | All three operations; delay ceiling/budget refusal and bounded status/cause/history without success |
+| `should_keep_truncated_permanent_status_even_with_transport_eligibility` | 400/401/403 across all three operations; numeric status, original `RemoteProtocolError`, seven exact partial bytes, headers/history, no resend despite caller-selected eligibility |
+| `should_require_admission_for_ambiguous_local_failure`, `should_leave_admission_pending_until_explicit_allow` | Ambiguous truncated 200: absent/rejected/allowed admission; pending decisions send nothing until explicit allow |
+| `should_require_admission_after_keepalive_and_reset_frame_indices` | Keepalive-only EOF retains raw bytes without semantics, then admitted recovery resets frame indices |
+| `should_interrupt_observed_semantics_without_replay`, `should_reject_malformed_or_unfinished_sse_without_retry` | Content/reasoning/tool interruption; malformed SSE, unfinished frame and marker without safe finish; no successful completion or replay |
+| `should_retain_all_observed_channels_before_capture_failure` | All three operations and observed channels; private bytes and typed capture cause before delivery, zero delivered progress, no second request |
+| `should_never_follow_redirects` | Redirects stay one actual request; recovery HTTP transport has retries=0 and redirects/proxy discovery disabled |
+| `should_preserve_terminal_telemetry_and_reject_length`, fixture usage tests | Reported counters/model/finish/nested cache and float usage preserved; rejected finish emits telemetry then failure, never completed tools |
+| `should_cancel_pending_admission_and_backoff_without_a_new_request`, active request and paused telemetry tests | All applicable operations; owned tasks/socket close promptly, actual attempt failed before one cancelled event, terminal failure precedence, no success |
+| `should_recover_through_broker_and_session` | `generate`, `generate_response`, `generate_object`, `generate_stream`, `send`, `send_stream` recover through real HTTP |
+| `should_execute_completed_tool_once_before_typed_subsequent_failure` | Broker/session ordinary and streaming loops execute once, preserve tool result/history and depth, retry only the next completion, propagate typed cause |
+| `should_keep_echoed_secrets_out_of_safe_errors_events_and_logs`, usage privacy test | Credential/payload echoes absent from safe strings/serialization/logs/events; caller capture retains actual authentication and response headers/body |
+| `should_validate_schema_and_preserve_format_warning`, invalid schema tests | Successful structured format warning metadata and typed Pydantic failure; ordinary finish unchanged |
+| `should_keep_invalid_control_errors_typed_and_private_before_dispatch` | Ordinary/streaming invalid controls: zero requests, no attempt identity/history, safe summary and original private validation cause |
+| Existing `omlx_spec`, `omlx_stream_spec`, `omlx_protocol_spec` plus raw event test | Legacy success/failure/settings/authentication/schema/keepalive/tools retained; raw broker event path stays single-request with policy configured |
+
+Recovery support: oMLX `complete` / `complete_with_recovery` and
+`complete_stream` / `complete_stream_with_recovery`. `recovery_capabilities()`
+reports unsupported remote cancellation/status/idempotency and unknown inference
+termination. Structured streaming, embeddings/model management, native reasoning
+in outgoing history, OpenAI and Anthropic recovery remain unsupported or outside
+this increment. Raw `complete_stream_events` / `generate_stream_events` preserve
+the reviewed Rust single-turn compatibility boundary. Healthy oMLX generation has
+no active read timeout under opt-in recovery; connect/write/pool settings remain.
+See the migration guide for the custom-transport and warning-log differences.
+
+The final source passes all discovered gates: full Ruff and formatting, full
+Flake8 and the required fatal-error selection, pytest and explicit coverage,
+MkDocs, Bandit, both unfiltered dependency audits and outdated-package inspection.
+Both test commands pass 876 tests. Explicit coverage is 85% overall and 90%
+for the oMLX decoder. The default configured run reports 84%; no coverage floor
+is configured or changed. Exact complete gate logs are indexed in the archive. The uvx audit uses `PIPAPI_PYTHON_LOCATION` to inspect
+this project's interpreter; its normalized inventory matches all 96 installed
+distributions, without skips or vulnerabilities. The outdated check lists
+available upgrades; none were applied. Existing MkDocs migration notices and
+read-only host audit cache warnings remain visible in full captures.
+
+Independent review resolved eight findings and separately ran 20 malformed-field,
+resource-close and actual-fixture checks plus nine exact-byte 503 cases. Review
+covers the final source and exact Rust provider files as well as the engine.
+Controller reconciliation and landing remain pending.
+
+The original early proof is retained unchanged as `early-proof.json` in the
+archive. A supplementary proof then exercised the exact starting oMLX source
+loaded from its immutable Git object at real HTTP: legacy streaming delivered
+content and failed the zero-delivery/typed-error assertion; corrected streaming
+retained observation, private bytes and original hook cause, delivered nothing,
+made one request, and emitted started/failed/interrupted in order. Both actual
+exit codes and full logs are retained in the current proof archive. Existing
+thresholds, pins, Ruff rules, Flake8 scope, Bandit exclusions/skips and coverage
+omissions are unchanged. No advisory suppression or allowlist was added.
+
+## Retained preceding evidence
+
+
 The current increment covers opt-in Ollama ordinary, structured, and tool-capable
 streaming HTTP completion. Remaining provider alignment stays pending. Tests use scripted
 loopback HTTP and local files; no live inference or experiment restart occurred.
