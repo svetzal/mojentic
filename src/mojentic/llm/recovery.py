@@ -759,6 +759,9 @@ class _Recovery:
                 if attempt.reason != "provider_error":
                     attempt.category, attempt.reason = "protocol", "invalid_response"
                 raise
+            attempt.progress = attempt.progress.model_copy(
+                update={"completed_tool_calls": len(result.tool_calls)}
+            )
             return result
         finally:
             await response.aclose()

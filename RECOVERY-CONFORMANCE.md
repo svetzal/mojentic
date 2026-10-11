@@ -1,5 +1,10 @@
 # Python recovery conformance evidence
 
+Successful non-stream recovery responses from OpenAI, Ollama and oMLX report
+`completed_tool_calls` as the number of validated tool calls in the response.
+The attached recovery report and `attempt_succeeded` lifecycle event carry the
+same count. Public broker tool rounds execute each completed tool exactly once.
+
 ## Cycle 13: validated provider metadata
 
 This focused correction starts from clean worktree HEAD
