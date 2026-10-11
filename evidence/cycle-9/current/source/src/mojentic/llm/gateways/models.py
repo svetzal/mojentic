@@ -1,0 +1,126 @@
+from enum import Enum
+from typing import Annotated, Any, Literal
+
+from pydantic import BaseModel, Field
+
+from mojentic.llm.recovery import RecoveryReport
+
+
+class MessageRole(Enum):
+    """
+    The role of the message in the conversation.
+    """
+
+    System = "system"
+    User = "user"
+    Assistant = "assistant"
+    Tool = "tool"
+
+
+class Annotations(BaseModel):
+    audience: list[MessageRole] | None = None
+    priority: Annotated[float, Field(ge=0.0, le=1.0)] | None = None
+
+
+class TextContent(BaseModel):
+    """Text content for a message."""
+
+    type: Literal["text"]
+    text: str
+    """The text content of the message."""
+    annotations: Annotations | None = None
+
+
+class ImageContent(BaseModel):
+    """Image content for a message."""
+
+    type: Literal["image"]
+    data: str
+    """The base64-encoded image data."""
+    mimeType: str
+    """
+    The MIME type of the image. Different providers may support different
+    image types.
+    """
+    annotations: Annotations | None = None
+
+
+class LLMToolCall(BaseModel):
+    """
+    A tool call to be made available to the LLM.
+
+    Attributes
+    ----------
+    id : Optional[str]
+        The identifier of the tool call.
+    name : str
+        The name of the tool call.
+    arguments : dict[str, Any]
+        The arguments for the tool call.
+    """
+
+    id: str | None = None
+    name: str
+    arguments: dict[str, Any]
+
+
+class LLMMessage(BaseModel):
+    """
+    A message to be sent to the LLM. These would accumulate during a chat session with an LLM.
+
+    Attributes
+    ----------
+    role : MessageRole
+        The role of the message in the conversation.
+    content : Optional[str]
+        The content of the message.
+    object : Optional[BaseModel]
+        The object representation of the message.
+    tool_calls : Optional[List[LLMToolCall]]
+        A list of tool calls to be made available to the LLM.
+    image_paths : Optional[List[str]]
+        Local image paths, HTTP(S) URLs or data URIs to include with the message.
+        OpenAI passes URLs and data URIs through without reading a file.
+        Note: You must use an image-capable model to process images.
+    """
+
+    role: MessageRole = MessageRole.User
+    content: str | None = None
+    object: BaseModel | None = None
+    tool_calls: list[LLMToolCall] | None = None
+    image_paths: list[str] | None = None
+
+
+class LLMGatewayResponse(BaseModel):
+    """
+    The response from the LLM gateway, abstracting you from the quirks of a specific LLM.
+
+    Attributes
+    ----------
+    content : Optional[Union[str, dict[str, str]]]
+        The content of the response.
+    object : Optional[BaseModel]
+        Parsed response object.
+    tool_calls : List[LLMToolCall]
+        List of requested tool calls from the LLM.
+    thinking : Optional[str]
+        Model thinking/reasoning trace (populated by some providers).
+    """
+
+    content: str | dict[str, str] | None = Field(
+        None, description="The content of the response."
+    )
+    object: BaseModel | None = Field(None, description="Parsed response object")
+    tool_calls: list[LLMToolCall] = Field(
+        default_factory=list, description="List of requested tool calls from the LLM."
+    )
+    thinking: str | None = Field(
+        None, description="Model thinking/reasoning trace (populated by some providers)"
+    )
+    usage: dict[str, Any] | None = None
+    model: str | None = None
+    finish_reason: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    recovery_report: RecoveryReport | None = Field(
+        default=None, exclude=True, repr=False
+    )

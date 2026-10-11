@@ -1,0 +1,3 @@
+uv: exit 0
+stdout: .foundry/logs/gates/docs/1948-1791687994644524590.stdout.log
+stderr: .foundry/logs/gates/docs/1948-1791687994644524590.stderr.log

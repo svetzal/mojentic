@@ -1,0 +1,75 @@
+import structlog
+from anthropic import Anthropic
+
+from mojentic.llm.gateways.anthropic_messages_adapter import adapt_messages_to_anthropic
+from mojentic.llm.gateways.llm_gateway import LLMGateway
+from mojentic.llm.gateways.models import LLMGatewayResponse, LLMToolCall, MessageRole
+
+logger = structlog.get_logger()
+
+
+class AnthropicGateway(LLMGateway):
+    def __init__(self, api_key: str):
+        self.client = Anthropic(api_key=api_key)
+
+    def complete(self, **args) -> LLMGatewayResponse:
+
+        messages = args.get("messages")
+        config = args.get("config", None)
+
+        # Extract temperature and max_tokens from config if provided
+        if config:
+            temperature = config.temperature
+            max_tokens = config.max_tokens
+            # Note: reasoning_effort not supported by Anthropic yet
+            if config.reasoning_effort is not None:
+                logger.warning(
+                    "Anthropic gateway does not yet support reasoning_effort parameter",
+                    reasoning_effort=config.reasoning_effort,
+                )
+        else:
+            temperature = args.get("temperature", 1.0)
+            max_tokens = args.get("max_tokens", args.get("num_predict", 2000))
+
+        system_messages = [m for m in messages if m.role == MessageRole.System]
+        user_messages = [m for m in messages if m.role == MessageRole.User]
+
+        anthropic_args = {
+            "model": args["model"],
+            "system": " ".join([m.content for m in system_messages])
+            if system_messages
+            else None,
+            "messages": adapt_messages_to_anthropic(user_messages),
+        }
+
+        response = self.client.messages.create(
+            **anthropic_args,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            # thinking={
+            #     "type": "enabled",
+            #     "budget_tokens": 32768,
+            # }
+        )
+
+        object = None
+        tool_calls: list[LLMToolCall] = []
+
+        return LLMGatewayResponse(
+            content=response.content[0].text,
+            object=object,
+            tool_calls=tool_calls,
+            usage=response.usage.model_dump() if response.usage is not None else None,
+            model=response.model,
+            finish_reason=response.stop_reason,
+        )
+
+    def get_available_models(self) -> list[str]:
+        return sorted([m.id for m in self.client.models.list()])
+
+    def calculate_embeddings(
+        self, text: str, model: str = "voyage-3-large"
+    ) -> list[float]:
+        raise NotImplementedError(
+            "The Anthropic API does not support embedding generation."
+        )

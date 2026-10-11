@@ -1,0 +1,811 @@
+import json
+import os
+from collections.abc import Iterable, Iterator
+from contextlib import closing
+from itertools import islice
+from typing import TYPE_CHECKING, Optional
+
+import httpx
+import numpy as np
+import structlog
+from openai import APIConnectionError, APIStatusError, BadRequestError, OpenAI
+from pydantic import ValidationError
+
+from mojentic.llm.gateways.llm_gateway import LLMGateway
+from mojentic.llm.gateways.models import LLMGatewayResponse, LLMMessage, LLMToolCall
+from mojentic.llm.gateways.ollama import StreamingResponse
+from mojentic.llm.gateways.openai_messages_adapter import adapt_messages_to_openai
+from mojentic.llm.gateways.openai_model_registry import ModelType, get_model_registry
+from mojentic.llm.gateways.openai_stream_events import parse_openai_stream
+from mojentic.llm.gateways.stream_events import (
+    StreamError,
+    StreamErrorReason,
+    StreamEvent,
+)
+from mojentic.llm.gateways.tokenizer_gateway import TokenizerGateway
+
+if TYPE_CHECKING:
+    from mojentic.llm.completion_config import CompletionConfig, ResponseFormat
+
+logger = structlog.get_logger()
+
+
+def openai_response_format(response_format: Optional["ResponseFormat"]) -> dict | None:
+    """
+    Translate a configured response format into the OpenAI ``response_format`` request value.
+
+    Parameters
+    ----------
+    response_format : Optional[ResponseFormat]
+        The configured format, or None for the provider default.
+
+    Returns
+    -------
+    Optional[dict]
+        The request value, or None when the request must stay unchanged.
+    """
+    if response_format is None:
+        return None
+    if response_format.json_schema is not None:
+        return {
+            "type": "json_schema",
+            "json_schema": {"name": "response", "schema": response_format.json_schema},
+        }
+    return {"type": response_format.type}
+
+
+class OpenAIStreamTransport:
+    """
+    Sends one streaming chat completions request and yields the raw server-sent-event lines.
+
+    A thin wrapper around the OpenAI client with retries disabled, so each call is exactly
+    one HTTP request. Closing the generator closes the HTTP response, which cancels the
+    request.
+    """
+
+    def __init__(self, client: OpenAI):
+        self._client = client.with_options(max_retries=0)
+
+    def stream_lines(self, body: dict) -> Iterator[str]:
+        """Send ``body`` as one streaming request and yield each response line."""
+        with self._client.chat.completions.with_streaming_response.create(
+            **body
+        ) as response:
+            yield from response.iter_lines()
+
+
+class OpenAIGateway(LLMGateway):
+    """
+    This class is a gateway to the OpenAI LLM service.
+
+    Parameters
+    ----------
+    api_key : str, optional
+        The OpenAI API key to use. If not provided, defaults to the value of the
+        OPENAI_API_KEY environment variable.
+    base_url : str, optional
+        The base URL for the OpenAI API. If not provided, defaults to the value of the
+        OPENAI_API_ENDPOINT environment variable, or None if not set.
+    stream_transport : OpenAIStreamTransport, optional
+        The transport ``complete_stream_events`` uses. Defaults to one over this gateway's client.
+    """
+
+    def __init__(
+        self,
+        api_key: str | None = None,
+        base_url: str | None = None,
+        stream_transport: OpenAIStreamTransport | None = None,
+    ):
+        if api_key is None:
+            api_key = os.getenv("OPENAI_API_KEY")
+        if base_url is None:
+            base_url = os.getenv("OPENAI_API_ENDPOINT")
+        self.client = OpenAI(api_key=api_key, base_url=base_url)
+        self.model_registry = get_model_registry()
+        self.stream_transport = stream_transport or OpenAIStreamTransport(self.client)
+
+    def _is_reasoning_model(self, model: str) -> bool:
+        """
+        Determine if a model is a reasoning model that requires max_completion_tokens.
+
+        Parameters
+        ----------
+        model : str
+            The model name to classify.
+
+        Returns
+        -------
+        bool
+            True if the model is a reasoning model, False if it's a chat model.
+        """
+        return self.model_registry.is_reasoning_model(model)
+
+    def _adapt_parameters_for_model(self, model: str, args: dict) -> dict:
+        """
+        Adapt parameters based on the model type and capabilities.
+
+        Parameters
+        ----------
+        model : str
+            The model name.
+        args : dict
+            The original arguments.
+
+        Returns
+        -------
+        dict
+            The adapted arguments with correct parameter names for the model type.
+        """
+        adapted_args = args.copy()
+        capabilities = self.model_registry.get_model_capabilities(model)
+
+        logger.debug(
+            "Adapting parameters for model",
+            model=model,
+            model_type=capabilities.model_type.value,
+            supports_tools=capabilities.supports_tools,
+            supports_streaming=capabilities.supports_streaming,
+        )
+
+        # Handle token limit parameter conversion
+        if "max_tokens" in adapted_args:
+            token_param = capabilities.get_token_limit_param()
+            if token_param != "max_tokens":
+                # Convert max_tokens to max_completion_tokens for reasoning models
+                adapted_args[token_param] = adapted_args.pop("max_tokens")
+                logger.info(
+                    "Converted token limit parameter for model",
+                    model=model,
+                    from_param="max_tokens",
+                    to_param=token_param,
+                    value=adapted_args[token_param],
+                )
+
+        # Validate tool usage for models that don't support tools
+        if (
+            "tools" in adapted_args
+            and adapted_args["tools"]
+            and not capabilities.supports_tools
+        ):
+            logger.warning(
+                "Model does not support tools, removing tool configuration",
+                model=model,
+                num_tools=len(adapted_args["tools"]),
+            )
+            adapted_args["tools"] = None  # Set to None instead of removing the key
+
+        # Handle temperature restrictions for specific models
+        if "temperature" in adapted_args:
+            temperature = adapted_args["temperature"]
+
+            # Check if model supports temperature parameter at all
+            if capabilities.supported_temperatures == []:
+                # Model doesn't support temperature parameter at all - remove it
+                logger.warning(
+                    "Model does not support temperature parameter at all",
+                    model=model,
+                    requested_temperature=temperature,
+                )
+                adapted_args.pop("temperature", None)
+            elif not capabilities.supports_temperature(temperature):
+                # Model supports temperature but not this specific value - use default
+                default_temp = 1.0
+                logger.warning(
+                    "Model does not support requested temperature, using default",
+                    model=model,
+                    requested_temperature=temperature,
+                    default_temperature=default_temp,
+                    supported_temperatures=capabilities.supported_temperatures,
+                )
+                adapted_args["temperature"] = default_temp
+
+        # Handle reasoning_effort for reasoning models
+        if (
+            "reasoning_effort" in adapted_args
+            and adapted_args["reasoning_effort"] is not None
+        ):
+            if capabilities.model_type == ModelType.REASONING:
+                # Keep reasoning_effort for reasoning models
+                logger.info(
+                    "Adding reasoning_effort parameter for reasoning model",
+                    model=model,
+                    reasoning_effort=adapted_args["reasoning_effort"],
+                )
+            else:
+                # Warn and remove for non-reasoning models
+                logger.warning(
+                    "Model does not support reasoning_effort, ignoring parameter",
+                    model=model,
+                    requested_reasoning_effort=adapted_args["reasoning_effort"],
+                )
+                adapted_args.pop("reasoning_effort", None)
+
+        return adapted_args
+
+    def _validate_model_parameters(self, model: str, args: dict) -> None:
+        """
+        Validate that the parameters are compatible with the model.
+
+        Parameters
+        ----------
+        model : str
+            The model name.
+        args : dict
+            The arguments to validate.
+        """
+        capabilities = self.model_registry.get_model_capabilities(model)
+
+        # Warning for tools on reasoning models that don't support them
+        if (
+            capabilities.model_type == ModelType.REASONING
+            and not capabilities.supports_tools
+            and "tools" in args
+            and args["tools"]
+        ):
+            logger.warning(
+                "Reasoning model may not support tools",
+                model=model,
+                num_tools=len(args["tools"]),
+            )
+
+        # Validate token limits (check both possible parameter names)
+        token_value = args.get("max_tokens") or args.get("max_completion_tokens")
+        if (
+            token_value
+            and capabilities.max_output_tokens
+            and token_value > capabilities.max_output_tokens
+        ):
+            logger.warning(
+                "Requested token limit exceeds model maximum",
+                model=model,
+                requested=token_value,
+                max_allowed=capabilities.max_output_tokens,
+            )
+
+    def complete(self, **kwargs) -> LLMGatewayResponse:
+        """
+        Complete the LLM request by delegating to the OpenAI service.
+
+        Keyword Arguments
+        ----------------
+        model : str
+            The name of the model to use.
+        messages : List[LLMMessage]
+            A list of messages to send to the LLM.
+        object_model : Optional[Type[BaseModel]]
+            The model to use for validating the response.
+        tools : Optional[List[LLMTool]]
+            A list of tools to use with the LLM. If a tool call is requested, the tool will be called and the output
+            will be included in the response.
+        temperature : float, optional
+            The temperature to use for the response. Defaults to 1.0.
+        num_ctx : int, optional
+            The number of context tokens to use. Defaults to 32768.
+        max_tokens : int, optional
+            The maximum number of tokens to generate. Defaults to 16384.
+        num_predict : int, optional
+            The number of tokens to predict. Defaults to no limit.
+
+        Returns
+        -------
+        LLMGatewayResponse
+            The response from the OpenAI service.
+        """
+        # Extract parameters from kwargs with defaults
+        model = kwargs.get("model")
+        messages = kwargs.get("messages")
+        object_model = kwargs.get("object_model", None)
+        tools = kwargs.get("tools", None)
+        config = kwargs.get("config", None)
+
+        # Use config if provided, otherwise use individual kwargs
+        if config:
+            temperature = config.temperature
+            num_ctx = config.num_ctx
+            max_tokens = config.max_tokens
+            num_predict = config.num_predict
+            reasoning_effort = config.reasoning_effort
+        else:
+            temperature = kwargs.get("temperature", 1.0)
+            num_ctx = kwargs.get("num_ctx", 32768)
+            max_tokens = kwargs.get("max_tokens", 16384)
+            num_predict = kwargs.get("num_predict", -1)
+            reasoning_effort = None
+
+        if not model:
+            raise ValueError("'model' parameter is required")
+        if not messages:
+            raise ValueError("'messages' parameter is required")
+
+        # Convert parameters to dict for processing
+        args = {
+            "model": model,
+            "messages": messages,
+            "object_model": object_model,
+            "tools": tools,
+            "temperature": temperature,
+            "num_ctx": num_ctx,
+            "max_tokens": max_tokens,
+            "num_predict": num_predict,
+            "reasoning_effort": reasoning_effort,
+        }
+
+        # Adapt parameters based on model type
+        try:
+            adapted_args = self._adapt_parameters_for_model(model, args)
+        except ValidationError as e:
+            logger.error(
+                "Failed to adapt parameters for model", model=model, error=str(e)
+            )
+            raise
+
+        # Validate parameters after adaptation
+        self._validate_model_parameters(model, adapted_args)
+
+        openai_args = {
+            "model": adapted_args["model"],
+            "messages": adapt_messages_to_openai(adapted_args["messages"]),
+        }
+
+        # Add temperature if specified
+        if "temperature" in adapted_args:
+            openai_args["temperature"] = adapted_args["temperature"]
+
+        completion = self.client.chat.completions.create
+
+        if adapted_args["object_model"] is not None:
+            completion = self.client.beta.chat.completions.parse
+            openai_args["response_format"] = adapted_args["object_model"]
+        elif (
+            response_format := openai_response_format(
+                config.response_format if config else None
+            )
+        ) is not None:
+            openai_args["response_format"] = response_format
+
+        if adapted_args.get("tools") is not None:
+            openai_args["tools"] = [t.descriptor for t in adapted_args["tools"]]
+
+        # Handle both max_tokens (for chat models) and max_completion_tokens (for reasoning models)
+        if "max_tokens" in adapted_args:
+            openai_args["max_tokens"] = adapted_args["max_tokens"]
+        elif "max_completion_tokens" in adapted_args:
+            openai_args["max_completion_tokens"] = adapted_args["max_completion_tokens"]
+
+        # Add reasoning_effort if present in adapted args
+        if (
+            "reasoning_effort" in adapted_args
+            and adapted_args["reasoning_effort"] is not None
+        ):
+            openai_args["reasoning_effort"] = adapted_args["reasoning_effort"]
+
+        logger.debug(
+            "Making OpenAI API call",
+            model=openai_args["model"],
+            has_tools="tools" in openai_args,
+            has_object_model="response_format" in openai_args,
+            has_reasoning_effort="reasoning_effort" in openai_args,
+            token_param="max_completion_tokens"
+            if "max_completion_tokens" in openai_args
+            else "max_tokens",
+        )
+
+        try:
+            response = completion(**openai_args)
+        except BadRequestError as e:
+            # Enhanced error handling for parameter issues
+            if "max_tokens" in str(e) and "max_completion_tokens" in str(e):
+                logger.error(
+                    "Parameter error detected - model may require different token parameter",
+                    model=model,
+                    error=str(e),
+                    suggestion="This model may be a reasoning model requiring max_completion_tokens",
+                )
+            raise
+        except ValidationError as e:
+            logger.error("OpenAI API call failed", model=model, error=str(e))
+            raise
+
+        object = None
+        tool_calls: list[LLMToolCall] = []
+
+        if adapted_args.get("object_model") is not None:
+            try:
+                response_content = response.choices[0].message.content
+                if response_content is not None:
+                    object = adapted_args["object_model"].model_validate_json(
+                        response_content
+                    )
+                else:
+                    logger.error(
+                        "No response content available for object validation",
+                        object_model=adapted_args["object_model"],
+                    )
+            except ValidationError as e:
+                response_content = (
+                    response.choices[0].message.content
+                    if response.choices
+                    else "No response content"
+                )
+                logger.error(
+                    "Failed to validate model",
+                    error=str(e),
+                    response=response_content,
+                    object_model=adapted_args["object_model"],
+                )
+
+        if response.choices[0].message.tool_calls is not None:
+            for t in response.choices[0].message.tool_calls:
+                arguments = json.loads(t.function.arguments)
+                tool_call = LLMToolCall(
+                    id=t.id, name=t.function.name, arguments=arguments
+                )
+                tool_calls.append(tool_call)
+
+        return LLMGatewayResponse(
+            content=response.choices[0].message.content,
+            object=object,
+            tool_calls=tool_calls,
+            usage=response.usage.model_dump() if response.usage is not None else None,
+            model=response.model,
+            finish_reason=response.choices[0].finish_reason,
+        )
+
+    def complete_stream(self, **kwargs) -> Iterator[StreamingResponse]:
+        """
+        Stream the LLM response from OpenAI service.
+
+        OpenAI streams tool call arguments incrementally, so we need to accumulate them
+        and yield complete tool calls only when the stream finishes.
+
+        Keyword Arguments
+        ----------------
+        model : str
+            The name of the model to use.
+        messages : List[LLMMessage]
+            A list of messages to send to the LLM.
+        tools : Optional[List[LLMTool]]
+            A list of tools to use with the LLM. Tool calls will be accumulated and yielded when complete.
+        temperature : float, optional
+            The temperature to use for the response. Defaults to 1.0.
+        num_ctx : int, optional
+            The number of context tokens to use. Defaults to 32768.
+        max_tokens : int, optional
+            The maximum number of tokens to generate. Defaults to 16384.
+        num_predict : int, optional
+            The number of tokens to predict. Defaults to no limit.
+
+        Returns
+        -------
+        Iterator[StreamingResponse]
+            An iterator of StreamingResponse objects containing response chunks.
+        """
+        # Extract parameters from kwargs with defaults
+        model = kwargs.get("model")
+        messages = kwargs.get("messages")
+        object_model = kwargs.get("object_model", None)
+        tools = kwargs.get("tools", None)
+        config = kwargs.get("config", None)
+
+        # Use config if provided, otherwise use individual kwargs
+        if config:
+            temperature = config.temperature
+            num_ctx = config.num_ctx
+            max_tokens = config.max_tokens
+            num_predict = config.num_predict
+            reasoning_effort = config.reasoning_effort
+        else:
+            temperature = kwargs.get("temperature", 1.0)
+            num_ctx = kwargs.get("num_ctx", 32768)
+            max_tokens = kwargs.get("max_tokens", 16384)
+            num_predict = kwargs.get("num_predict", -1)
+            reasoning_effort = None
+
+        if not model:
+            raise ValueError("'model' parameter is required")
+        if not messages:
+            raise ValueError("'messages' parameter is required")
+
+        # Convert parameters to dict for processing
+        args = {
+            "model": model,
+            "messages": messages,
+            "object_model": object_model,
+            "tools": tools,
+            "temperature": temperature,
+            "num_ctx": num_ctx,
+            "max_tokens": max_tokens,
+            "num_predict": num_predict,
+            "reasoning_effort": reasoning_effort,
+        }
+
+        # Adapt parameters based on model type
+        try:
+            adapted_args = self._adapt_parameters_for_model(model, args)
+        except ValidationError as e:
+            logger.error(
+                "Failed to adapt parameters for model", model=model, error=str(e)
+            )
+            raise
+
+        # Validate parameters after adaptation
+        self._validate_model_parameters(model, adapted_args)
+
+        # Check if model supports streaming
+        capabilities = self.model_registry.get_model_capabilities(model)
+        if not capabilities.supports_streaming:
+            raise NotImplementedError(f"Model {model} does not support streaming")
+
+        # Structured output doesn't work with streaming
+        if adapted_args["object_model"] is not None:
+            raise NotImplementedError(
+                "Streaming with structured output (object_model) is not supported"
+            )
+
+        openai_args = self._stream_body(adapted_args, config)
+
+        logger.debug(
+            "Making OpenAI streaming API call",
+            model=openai_args["model"],
+            has_tools="tools" in openai_args,
+            has_reasoning_effort="reasoning_effort" in openai_args,
+            token_param="max_completion_tokens"
+            if "max_completion_tokens" in openai_args
+            else "max_tokens",
+        )
+
+        try:
+            stream = self.client.chat.completions.create(**openai_args)
+        except BadRequestError as e:
+            if "max_tokens" in str(e) and "max_completion_tokens" in str(e):
+                logger.error(
+                    "Parameter error detected - model may require different token parameter",
+                    model=model,
+                    error=str(e),
+                    suggestion="This model may be a reasoning model requiring max_completion_tokens",
+                )
+            raise
+        except ValidationError as e:
+            logger.error("OpenAI streaming API call failed", model=model, error=str(e))
+            raise
+
+        # Accumulate tool calls as they stream in
+        # OpenAI streams tool arguments incrementally, indexed by tool call index
+        tool_calls_accumulator: dict[int, dict] = {}
+
+        for chunk in stream:
+            if not chunk.choices:
+                continue
+
+            delta = chunk.choices[0].delta
+            finish_reason = chunk.choices[0].finish_reason
+
+            # Yield content chunks as they arrive
+            if delta.content:
+                yield StreamingResponse(content=delta.content)
+
+            # Accumulate tool call chunks
+            if delta.tool_calls:
+                for tool_call_delta in delta.tool_calls:
+                    index = tool_call_delta.index
+
+                    # Initialize accumulator for this tool call if needed
+                    if index not in tool_calls_accumulator:
+                        tool_calls_accumulator[index] = {
+                            "id": None,
+                            "name": None,
+                            "arguments": "",
+                        }
+
+                    # First chunk has id and name
+                    if tool_call_delta.id:
+                        tool_calls_accumulator[index]["id"] = tool_call_delta.id
+
+                    if tool_call_delta.function.name:
+                        tool_calls_accumulator[index]["name"] = (
+                            tool_call_delta.function.name
+                        )
+
+                    # All chunks may have argument fragments
+                    if tool_call_delta.function.arguments:
+                        tool_calls_accumulator[index]["arguments"] += (
+                            tool_call_delta.function.arguments
+                        )
+
+            # When stream is complete, yield accumulated tool calls
+            if finish_reason == "tool_calls" and tool_calls_accumulator:
+                # Parse and yield complete tool calls
+                complete_tool_calls = []
+                for index in sorted(tool_calls_accumulator.keys()):
+                    tc = tool_calls_accumulator[index]
+                    try:
+                        # Parse the accumulated JSON arguments
+                        arguments = json.loads(tc["arguments"])
+
+                        tool_call = LLMToolCall(
+                            id=tc["id"], name=tc["name"], arguments=arguments
+                        )
+                        complete_tool_calls.append(tool_call)
+                    except json.JSONDecodeError as e:
+                        logger.error(
+                            "Failed to parse tool call arguments",
+                            tool_name=tc["name"],
+                            arguments=tc["arguments"],
+                            error=str(e),
+                        )
+
+                if complete_tool_calls:
+                    # Convert to the format expected by ollama's tool calls for compatibility
+                    # We need to create mock objects that match ollama's structure
+                    from types import SimpleNamespace
+
+                    ollama_format_calls = []
+                    for tc in complete_tool_calls:
+                        ollama_format_calls.append(
+                            SimpleNamespace(
+                                id=tc.id,  # Include ID for proper OpenAI message formatting
+                                function=SimpleNamespace(
+                                    name=tc.name, arguments=tc.arguments
+                                ),
+                            )
+                        )
+                    yield StreamingResponse(tool_calls=ollama_format_calls)
+
+    def _stream_body(self, adapted_args: dict, config) -> dict:
+        """Build the chat completions body shared by both streaming APIs."""
+        openai_args = {
+            "model": adapted_args["model"],
+            "messages": adapt_messages_to_openai(adapted_args["messages"]),
+            "stream": True,
+        }
+
+        response_format = openai_response_format(
+            config.response_format if config else None
+        )
+        if response_format is not None:
+            openai_args["response_format"] = response_format
+
+        # Add temperature if specified
+        if "temperature" in adapted_args:
+            openai_args["temperature"] = adapted_args["temperature"]
+
+        if adapted_args.get("tools") is not None:
+            openai_args["tools"] = [t.descriptor for t in adapted_args["tools"]]
+
+        # Handle both max_tokens (for chat models) and max_completion_tokens (for reasoning models)
+        if "max_tokens" in adapted_args:
+            openai_args["max_tokens"] = adapted_args["max_tokens"]
+        elif "max_completion_tokens" in adapted_args:
+            openai_args["max_completion_tokens"] = adapted_args["max_completion_tokens"]
+
+        # Add reasoning_effort if present in adapted args
+        if (
+            "reasoning_effort" in adapted_args
+            and adapted_args["reasoning_effort"] is not None
+        ):
+            openai_args["reasoning_effort"] = adapted_args["reasoning_effort"]
+        return openai_args
+
+    def complete_stream_events(
+        self, model: str, messages: list[LLMMessage], config: "CompletionConfig"
+    ) -> Iterator[StreamEvent]:
+        """
+        Stream one turn as events, with terminal completion evidence.
+
+        Sends one streaming request with no tools, no retries and
+        ``stream_options: {"include_usage": true}``. The turn completes only when the
+        provider reports ``finish_reason: "stop"`` and then sends ``data: [DONE]``.
+        Closing the generator closes the HTTP request.
+
+        Parameters
+        ----------
+        model : str
+            The name of the model to use.
+        messages : List[LLMMessage]
+            The messages to send.
+        config : CompletionConfig
+            Configuration for the request.
+
+        Yields
+        ------
+        StreamEvent
+            Content events followed by exactly one terminal event.
+        """
+        if not self.model_registry.get_model_capabilities(model).supports_streaming:
+            yield StreamError(
+                reason=StreamErrorReason.STREAM_EVENTS_UNSUPPORTED,
+                detail=f"Model {model} does not support streaming",
+            )
+            return
+        body = self._stream_body(
+            self._adapted_stream_args(model, messages, config), config
+        )
+        body["stream_options"] = {"include_usage": True}
+        lines = self.stream_transport.stream_lines(body)
+        try:
+            with closing(lines):
+                yield from parse_openai_stream(lines)
+        except APIStatusError as e:
+            yield StreamError(
+                reason=StreamErrorReason.PROVIDER_ERROR,
+                detail={"status_code": e.status_code, "error": e.body},
+            )
+        except (APIConnectionError, httpx.HTTPError) as e:
+            yield StreamError(reason=StreamErrorReason.REQUEST_FAILED, detail=str(e))
+
+    def _adapted_stream_args(
+        self, model: str, messages: list[LLMMessage], config: "CompletionConfig"
+    ) -> dict:
+        args = {
+            "model": model,
+            "messages": messages,
+            "object_model": None,
+            "tools": None,
+            "temperature": config.temperature,
+            "num_ctx": config.num_ctx,
+            "max_tokens": config.max_tokens,
+            "num_predict": config.num_predict,
+            "reasoning_effort": config.reasoning_effort,
+        }
+        adapted_args = self._adapt_parameters_for_model(model, args)
+        self._validate_model_parameters(model, adapted_args)
+        return adapted_args
+
+    def get_available_models(self) -> list[str]:
+        """
+        Get the list of available OpenAI models, sorted alphabetically.
+
+        Returns
+        -------
+        list[str]
+            The list of available models, sorted alphabetically.
+        """
+        return sorted([m.id for m in self.client.models.list()])
+
+    def calculate_embeddings(
+        self, text: str, model: str = "text-embedding-3-large"
+    ) -> list[float]:
+        """
+        Calculate embeddings for the given text using the specified OpenAI model.
+
+        Parameters
+        ----------
+        text : str
+            The text to calculate embeddings for.
+        model : str, optional
+            The name of the OpenAI embeddings model to use. Defaults to "text-embedding-3-large".
+
+        Returns
+        -------
+        list
+            The mean of the part embeddings, weighted by each part's token count and normalized to length 1.
+        """
+        logger.debug("calculate_embeddings", text=text, model=model)
+
+        chunks = list(self._chunked_tokens(text, 8191))
+        embeddings = [
+            self.client.embeddings.create(model=model, input=chunk).data[0].embedding
+            for chunk in chunks
+        ]
+        lengths = [len(chunk) for chunk in chunks]
+
+        average = np.average(embeddings, axis=0, weights=lengths)
+        average = average / np.linalg.norm(average)
+        average = average.tolist()
+
+        return average
+
+    def _batched(self, iterable: Iterable, n: int):
+        """Batch data into tuples of length n. The last batch may be shorter."""
+        # batched('ABCDEFG', 3) --> ABC DEF G
+        if n < 1:
+            raise ValueError("n must be at least one")
+        it = iter(iterable)
+        while batch := tuple(islice(it, n)):
+            yield batch
+
+    def _chunked_tokens(self, text, chunk_length):
+        tokenizer = TokenizerGateway()
+        tokens = tokenizer.encode(text)
+        chunks_iterator = self._batched(tokens, chunk_length)
+        yield from chunks_iterator

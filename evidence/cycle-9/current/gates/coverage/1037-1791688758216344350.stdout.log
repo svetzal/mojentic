@@ -1,0 +1,1684 @@
+[1m============================= test session starts ==============================[0m
+platform linux -- Python 3.13.15, pytest-9.1.1, pluggy-1.6.0
+rootdir: /home/svetzal/.foundry/worktrees/mojentic-py/mojentic-py-transient-recovery-v2-c10-e5b443
+configfile: pytest.ini
+testpaths: src
+plugins: anyio-4.15.1, spec-6.1.0, asyncio-1.4.0, mock-3.16.0, cov-7.1.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collected 915 items
+
+src/mojentic/agents/correlation_aggregator_agent_spec.py:
+
+Describe Aggregator Defaults:
+[32m  ✓ Should isolate default event types between agents[0m
+[32m  ✓ Should preserve explicit event type list identity[0m
+
+src/mojentic/agents/simple_recursive_agent_spec.py:
+
+Describe Event Emitter:
+[32m  ✓ Should allow subscribing to events[0m
+[32m  ✓ Should allow unsubscribing from events[0m
+[32m  ✓ Should emit events to subscribers[0m
+[32m  ✓ Should handle async callbacks[0m
+
+Describe Goal State:
+[32m  ✓ Should initialize with defaults[0m
+[32m  ✓ Should allow custom max iterations[0m
+
+Describe Simple Recursive Agent:
+[32m  ✓ Should initialize with required parameters[0m
+[32m  ✓ Should initialize with custom parameters[0m
+[32m  ✓ Should have event handlers registered[0m
+[32m  ✓ Should solve problem with immediate success[0m
+[32m  ✓ Should solve problem with multiple iterations[0m
+[32m  ✓ Should handle explicit failure[0m
+[32m  ✓ Should handle max iterations reached[0m
+[32m  ✓ Should emit goal submitted event[0m
+[32m  ✓ Should emit iteration completed events[0m
+[32m  ✓ Should emit goal achieved event[0m
+[32m  ✓ Should emit goal failed event[0m
+[32m  ✓ Should handle timeout[0m
+[32m  ✓ Should use asyncio to thread for chat send[0m
+[32m  ✓ Should handle case insensitive done keyword[0m
+[32m  ✓ Should handle case insensitive fail keyword[0m
+[32m  ✓ Should include goal in prompt[0m
+[32m  ✓ Should increment iteration count[0m
+[32m  ✓ Should not false positive done on prose with done substring[0m
+[32m  ✓ Should not false positive fail on prose with fail substring[0m
+[32m  ✓ Should propagate handler exceptions to solve caller[0m
+
+src/mojentic/async_dispatcher_spec.py:
+
+Describe Async Dispatcher In Flight Tracking:
+[32m  ✓ Should wait for in flight agent followups[0m
+
+src/mojentic/context/shared_working_memory_spec.py:
+
+Describe Shared Working Memory:
+
+  Describe Get Working Memory:
+[32m    ✓ Should return deep copy protecting top level[0m
+[32m    ✓ Should return deep copy protecting nested[0m
+[32m    ✓ Should return empty dict when initialized with no args[0m
+
+  Describe Merge To Working Memory:
+[32m    ✓ Should merge top level keys[0m
+[32m    ✓ Should overwrite existing key on merge[0m
+
+src/mojentic/llm/chat_session_spec.py:
+
+Describe Chat Session:
+[32m  ✓ Should expose history only on session instances[0m
+
+  Describe Message Handling:
+[32m    ✓ Should respond to user query with llm response[0m
+[32m      When sending a user query[0m
+[32m      Then it should return the LLM's response[0m
+
+  Describe Message Roles:
+[32m    ✓ Should assign correct message roles[0m
+[32m      When examining message roles[0m
+[32m      Then they should be correctly assigned[0m
+
+  Describe Session Initialization:
+[32m    ✓ Should initialize with system message in history[0m
+[32m      When it is initialized[0m
+[32m      Then it should contain only the system message[0m
+
+  Describe Session Management:
+[32m    ✓ Should grow message history to three when first user message sent[0m
+[32m    ✓ Should respect context capacity[0m
+[32m      When sending multiple messages[0m
+[32m      Then the message count should not exceed the capacity[0m
+[32m    ✓ Should maintain newest messages[0m
+[32m      When sending new messages[0m
+[32m      Then it should keep only the most recent message and response[0m
+
+  Describe Streaming Send:
+[32m    ✓ Should yield content chunks[0m
+[32m    ✓ Should grow message history after stream consumed[0m
+[32m    ✓ Should record full assembled response in history[0m
+[32m    ✓ Should record user message in history[0m
+[32m    ✓ Should respect context capacity[0m
+
+src/mojentic/llm/completion_config_spec.py:
+
+Describe Completion Config:
+[32m  ✓ Should use default values[0m
+[32m  ✓ Should accept custom values[0m
+[32m  ✓ Should accept valid reasoning effort levels[0m
+[32m  ✓ Should reject invalid reasoning effort levels[0m
+[32m  ✓ Should accept none reasoning effort[0m
+
+Describe Response Format:
+[32m  ✓ Should default to absent on config[0m
+[32m  ✓ Should accept text format[0m
+[32m  ✓ Should accept json object without schema[0m
+[32m  ✓ Should accept json object with schema[0m
+[32m  ✓ Should reject schema on text format[0m
+[32m  ✓ Should reject unknown format type[0m
+
+src/mojentic/llm/gateways/anthropic_spec.py:
+
+Describe Anthropic Gateway:
+
+  Describe Response Evidence:
+[32m    ✓ Should report provider evidence on completion[0m
+
+src/mojentic/llm/gateways/lint_boundary_spec.py:
+
+Describe Image Adapter Failures:
+[32m  ✓ Should propagate path programming errors after reading a real image[openai][0m
+[32m  ✓ Should propagate path programming errors after reading a real image[anthropic][0m
+[32m  ✓ Should preserve unreadable image text fallback[openai][0m
+[32m  ✓ Should preserve unreadable image text fallback[anthropic][0m
+
+Describe Lint Boundaries:
+[32m  ✓ Should propagate openai validator defects after one http request[0m
+[32m  ✓ Should propagate invalid path programming errors[0m
+[32m  ✓ Should preserve unreadable file binary fallback[0m
+
+Describe Ollama Header Compatibility:
+[32m  ✓ Should preserve headers through every completion path[ordinary completion-ok-headers 0-None][0m
+[32m  ✓ Should preserve headers through every completion path[ordinary completion-ok-headers 1-None][0m
+[32m  ✓ Should preserve headers through every completion path[ordinary completion-ok-headers 2-None][0m
+[32m  ✓ Should preserve headers through every completion path[ordinary completion-ok-headers 3-present][0m
+[32m  ✓ Should preserve headers through every completion path[structured completion-{"answer":"ok"}-headers 0-None][0m
+[32m  ✓ Should preserve headers through every completion path[structured completion-{"answer":"ok"}-headers 1-None][0m
+[32m  ✓ Should preserve headers through every completion path[structured completion-{"answer":"ok"}-headers 2-None][0m
+[32m  ✓ Should preserve headers through every completion path[structured completion-{"answer":"ok"}-headers 3-present][0m
+[32m  ✓ Should preserve headers through every completion path[streaming completion-ok-headers 0-None][0m
+[32m  ✓ Should preserve headers through every completion path[streaming completion-ok-headers 1-None][0m
+[32m  ✓ Should preserve headers through every completion path[streaming completion-ok-headers 2-None][0m
+[32m  ✓ Should preserve headers through every completion path[streaming completion-ok-headers 3-present][0m
+
+src/mojentic/llm/gateways/ollama_messages_adapter_spec.py:
+
+Describe Ollama Messages Adapter:
+
+  Describe Simple Messages:
+[32m    ✓ Should adapt system message[0m
+[32m      When adapting to Ollama format[0m
+[32m      Then it should convert to the correct format[0m
+[32m    ✓ Should adapt user message[0m
+[32m      When adapting to Ollama format[0m
+[32m      Then it should convert to the correct format[0m
+[32m    ✓ Should adapt user message with image paths[0m
+[32m      When adapting to Ollama format[0m
+[32m      Then it should convert to the correct format with images key[0m
+[32m    ✓ Should adapt assistant message[0m
+[32m      When adapting to Ollama format[0m
+[32m      Then it should convert to the correct format[0m
+
+  Describe Tool Messages:
+[32m    ✓ Should adapt assistant message with tool call[0m
+[32m      When adapting to Ollama format[0m
+[32m      Then it should convert the message and tool call to the correct format[0m
+[32m    ✓ Should adapt tool response message[0m
+[32m      When adapting to Ollama format[0m
+[32m      Then it should convert to the correct format with string content[0m
+
+src/mojentic/llm/gateways/ollama_recovery_spec.py:
+
+Describe Http Boundary Correction:
+[32m  ✓ Should keep predispatch expiry observer failure private[0m
+[32m  ✓ Should capture the authenticated request actually sent[gateway][0m
+[32m  ✓ Should capture the authenticated request actually sent[generate][0m
+[32m  ✓ Should capture the authenticated request actually sent[generate response][0m
+[32m  ✓ Should capture the authenticated request actually sent[generate object][0m
+[32m  ✓ Should capture the authenticated request actually sent[session][0m
+[32m  ✓ Should make callback cancellation authoritative[request][0m
+[32m  ✓ Should make callback cancellation authoritative[attempt started][0m
+[32m  ✓ Should make callback cancellation authoritative[headers][0m
+[32m  ✓ Should make callback cancellation authoritative[body][0m
+[32m  ✓ Should make callback cancellation authoritative[attempt succeeded][0m
+[32m  ✓ Should refuse callback expiry without phantom retry[admission allowed][0m
+[32m  ✓ Should refuse callback expiry without phantom retry[delay scheduled][0m
+[32m  ✓ Should refuse callback expiry without phantom retry[retry started][0m
+[32m  ✓ Should refuse callback expiry without phantom retry[request][0m
+[32m  ✓ Should refuse callback expiry without phantom retry[attempt started][0m
+[32m  ✓ Should keep uuid shaped secret echoes private[credentials][0m
+[32m  ✓ Should keep uuid shaped secret echoes private[payload][0m
+[32m  ✓ Should cancel at admission and backoff callbacks without resending[attempt failed][0m
+[32m  ✓ Should cancel at admission and backoff callbacks without resending[admission pending][0m
+[32m  ✓ Should cancel at admission and backoff callbacks without resending[admission allowed][0m
+[32m  ✓ Should cancel at admission and backoff callbacks without resending[delay scheduled][0m
+[32m  ✓ Should cancel at admission and backoff callbacks without resending[retry started][0m
+
+Describe Lint Validation Boundary:
+[32m  ✓ Should propagate validator programming errors after one wire request[0m
+
+Describe Public Cancellation And Metadata:
+[32m  ✓ Should cancel a synchronous chat session during admission[0m
+[32m  ✓ Should expose only validated provider request ids[bd 38 be 36-6698-43 f 1-9 d 34-7452 b 980 f 471-None][0m
+[32m  ✓ Should expose only validated provider request ids[credential-payload-echo-secret-None][0m
+[32m  ✓ Should structure invalid image preparation without a wire attempt[0m
+
+Describe Public Recovery Proof:
+[32m  ✓ Should retain observed semantics before failed capture without replay[0m
+
+Describe Recovery Boundaries:
+[32m  ✓ Should recover admitted 503 with identical bytes[generate][0m
+[32m  ✓ Should recover admitted 503 with identical bytes[generate response][0m
+[32m  ✓ Should recover admitted 503 with identical bytes[generate object][0m
+[32m  ✓ Should recover admitted 503 with identical bytes[send][0m
+[32m  ✓ Should exhaust 504 with complete typed history and private echoes[0m
+[32m  ✓ Should never replay permanent status even when body transport fails[False-400][0m
+[32m  ✓ Should never replay permanent status even when body transport fails[False-401][0m
+[32m  ✓ Should never replay permanent status even when body transport fails[False-403][0m
+[32m  ✓ Should never replay permanent status even when body transport fails[True-400][0m
+[32m  ✓ Should never replay permanent status even when body transport fails[True-401][0m
+[32m  ✓ Should never replay permanent status even when body transport fails[True-403][0m
+[32m  ✓ Should reject malformed provider responses without replay[][0m
+[32m  ✓ Should reject malformed provider responses without replay[{][0m
+[32m  ✓ Should reject malformed provider responses without replay[[]][0m
+[32m  ✓ Should reject malformed provider responses without replay[{}][0m
+[32m  ✓ Should reject malformed provider responses without replay[{"error":"secret"}][0m
+[32m  ✓ Should reject malformed provider responses without replay[{"message":{"role":"assistant","content":42}}][0m
+[32m  ✓ Should preserve structured validation cause[0m
+[32m  ✓ Should require explicit permission for ambiguous local 503[None-admission required-transitions 0][0m
+[32m  ✓ Should require explicit permission for ambiguous local 503[reject-admission rejected-transitions 1][0m
+[32m  ✓ Should honor retry after without shortening minima[2-seconds-2-succeeded-None][0m
+[32m  ✓ Should honor retry after without shortening minima[Thu, 01 Jan 1970 00:16:42 GMT-date-2-succeeded-None][0m
+[32m  ✓ Should honor retry after without shortening minima[Thu, 01 Jan 1970 00:16:39 GMT-date-0.5-succeeded-None][0m
+[32m  ✓ Should honor retry after without shortening minima[invalid-secret-invalid-0.5-succeeded-None][0m
+[32m  ✓ Should honor retry after without shortening minima[None-absent-0.5-succeeded-None][0m
+[32m  ✓ Should honor retry after without shortening minima[31-seconds-None-delay ceiling-None][0m
+[32m  ✓ Should honor retry after without shortening minima[2-seconds-None-budget exhausted-1][0m
+[32m  ✓ Should not follow redirects or count hidden attempts[0m
+[32m  ✓ Should preserve legacy success and one send by default[0m
+[32m  ✓ Should expose success history and truthful capabilities[0m
+
+Describe Recovery Cancellation:
+[32m  ✓ Should leave admission pending until allowed[0m
+[32m  ✓ Should cancel pending waits and never resend[admission-expected 0][0m
+[32m  ✓ Should cancel pending waits and never resend[backoff-expected 1][0m
+[32m  ✓ Should cancel active request retaining headers and raw progress[0m
+[32m  ✓ Should cancel before dispatch without inventing wire attempt[0m
+[32m  ✓ Should expire budget while admission is pending[0m
+
+Describe Recovery Edge Evidence:
+[32m  ✓ Should require admission after an actual read timeout[None-admission required-1][0m
+[32m  ✓ Should require admission after an actual read timeout[reject-admission rejected-1][0m
+[32m  ✓ Should require admission after an actual read timeout[allow-succeeded-2][0m
+[32m  ✓ Should reject after a pending admission without another wire attempt[0m
+[32m  ✓ Should prohibit replay of each observed semantic kind when capture fails[message 0][0m
+[32m  ✓ Should prohibit replay of each observed semantic kind when capture fails[message 1][0m
+[32m  ✓ Should prohibit replay of each observed semantic kind when capture fails[message 2][0m
+[32m  ✓ Should stop on capture failure without inventing wire history[request-0][0m
+[32m  ✓ Should stop on capture failure without inventing wire history[headers-1][0m
+[32m  ✓ Should stop on capture failure without inventing wire history[body-1][0m
+[32m  ✓ Should keep observer exceptions private and prohibit replay[attempt started][0m
+[32m  ✓ Should keep observer exceptions private and prohibit replay[attempt failed][0m
+[32m  ✓ Should keep observer exceptions private and prohibit replay[exhausted][0m
+[32m  ✓ Should keep observer exceptions private and prohibit replay[attempt succeeded][0m
+[32m  ✓ Should freeze images and controls once before admission[0m
+[32m  ✓ Should allow active generation to finish after recovery deadline[0m
+[32m  ✓ Should refuse admission that consumed the recovery budget[0m
+[32m  ✓ Should make native task cancellation authoritative[0m
+
+Describe Recovery Tool Safety:
+[32m  ✓ Should execute tool once and recover only the subsequent completion[generate][0m
+[32m  ✓ Should execute tool once and recover only the subsequent completion[send][0m
+[32m  ✓ Should preserve tool depth limit across recovered completions[0m
+
+src/mojentic/llm/gateways/ollama_response_format_spec.py:
+
+Describe Ollama Response Format:
+[32m  ✓ Should map json formats to ollama format[response format 0-json][0m
+[32m  ✓ Should map json formats to ollama format[response format 1-expected 1][0m
+[32m  ✓ Should omit format for text or absent[None][0m
+[32m  ✓ Should omit format for text or absent[response format 1][0m
+
+  Describe Non Streaming Requests:
+[32m    ✓ Should forward configured format[response format 0-json][0m
+[32m    ✓ Should forward configured format[response format 1-expected 1][0m
+
+  Describe Streaming Requests:
+[32m    ✓ Should forward configured format[response format 0-json][0m
+[32m    ✓ Should forward configured format[response format 1-expected 1][0m
+[32m    ✓ Should leave body unchanged for text or absent[None][0m
+[32m    ✓ Should leave body unchanged for text or absent[response format 1][0m
+
+src/mojentic/llm/gateways/ollama_spec.py:
+
+Describe Ollama Gateway:
+
+  Describe Response Evidence:
+[32m    ✓ Should report provider evidence on completion[0m
+[32m    ✓ Should leave usage unknown when counts are not reported[0m
+
+Describe Stream Events:
+[32m  ✓ Should send one streaming request without tools[0m
+[32m  ✓ Should parse the provider stream into events[0m
+[32m  ✓ Should close the request after the terminal event[0m
+[32m  ✓ Should report provider error responses[0m
+[32m  ✓ Should report undecodable frames as invalid[0m
+[32m  ✓ Should report connection failure as request failed[0m
+
+src/mojentic/llm/gateways/ollama_stream_eof_spec.py:
+
+Describe Ollama Stream EOF:
+[32m  ✓ Should reject unfinished frame after complete keepalive[0][0m
+[32m  ✓ Should reject unfinished frame after complete keepalive[10][0m
+[32m  ✓ Should block unfinished frame even with admission[{"done":-False-False-0-0-0-Value Error][0m
+[32m  ✓ Should block unfinished frame even with admission[{"done":-False-False-0-0-10-Remote Protocol Error][0m
+[32m  ✓ Should block unfinished frame even with admission[{"model": "test", "done": true, "done reason": "stop", "message": {"role": "assistant", "content": "unfinished"}}-True-False-0-0-0-Value Error][0m
+[32m  ✓ Should block unfinished frame even with admission[{"model": "test", "done": true, "done reason": "stop", "message": {"role": "assistant", "content": "unfinished"}}-True-False-0-0-10-Remote Protocol Error][0m
+[32m  ✓ Should block unfinished frame even with admission[{"model": "test", "done": true, "done reason": "stop", "message": {"role": "assistant", "content": "", "thinking": "\u 00 e 9", "tool calls": [{"function": {"name": "counter", "arguments": {}}}]}}-False-True-1-1-0-Value Error][0m
+[32m  ✓ Should block unfinished frame even with admission[{"model": "test", "done": true, "done reason": "stop", "message": {"role": "assistant", "content": "", "thinking": "\u 00 e 9", "tool calls": [{"function": {"name": "counter", "arguments": {}}}]}}-False-True-1-1-10-Remote Protocol Error][0m
+[32m  ✓ Should recover clean keepalive eof after admission[0m
+[32m  ✓ Should require admission and bound keepalive eof history[0-None-admission required-1][0m
+[32m  ✓ Should require admission and bound keepalive eof history[0-reject-admission rejected-1][0m
+[32m  ✓ Should require admission and bound keepalive eof history[0-allow-attempts exhausted-3][0m
+[32m  ✓ Should require admission and bound keepalive eof history[10-None-admission required-1][0m
+[32m  ✓ Should require admission and bound keepalive eof history[10-reject-admission rejected-1][0m
+[32m  ✓ Should require admission and bound keepalive eof history[10-allow-attempts exhausted-3][0m
+
+Describe Shared EOF Classification Safety:
+[32m  ✓ Should preserve permanent status for ordinary and structured requests[0-HTTP Status Error-400-False][0m
+[32m  ✓ Should preserve permanent status for ordinary and structured requests[0-HTTP Status Error-400-True][0m
+[32m  ✓ Should preserve permanent status for ordinary and structured requests[0-HTTP Status Error-401-False][0m
+[32m  ✓ Should preserve permanent status for ordinary and structured requests[0-HTTP Status Error-401-True][0m
+[32m  ✓ Should preserve permanent status for ordinary and structured requests[0-HTTP Status Error-403-False][0m
+[32m  ✓ Should preserve permanent status for ordinary and structured requests[0-HTTP Status Error-403-True][0m
+[32m  ✓ Should preserve permanent status for ordinary and structured requests[10-Remote Protocol Error-400-False][0m
+[32m  ✓ Should preserve permanent status for ordinary and structured requests[10-Remote Protocol Error-400-True][0m
+[32m  ✓ Should preserve permanent status for ordinary and structured requests[10-Remote Protocol Error-401-False][0m
+[32m  ✓ Should preserve permanent status for ordinary and structured requests[10-Remote Protocol Error-401-True][0m
+[32m  ✓ Should preserve permanent status for ordinary and structured requests[10-Remote Protocol Error-403-False][0m
+[32m  ✓ Should preserve permanent status for ordinary and structured requests[10-Remote Protocol Error-403-True][0m
+
+Describe Stream EOF Callers:
+[32m  ✓ Should propagate clean keepalive eof admission[None-admission required-1-broker][0m
+[32m  ✓ Should propagate clean keepalive eof admission[None-admission required-1-session][0m
+[32m  ✓ Should propagate clean keepalive eof admission[reject-admission rejected-1-broker][0m
+[32m  ✓ Should propagate clean keepalive eof admission[reject-admission rejected-1-session][0m
+[32m  ✓ Should propagate clean keepalive eof admission[allow-succeeded-2-broker][0m
+[32m  ✓ Should propagate clean keepalive eof admission[allow-succeeded-2-session][0m
+[32m  ✓ Should propagate unfinished frames without tool execution[{"done":-0-broker][0m
+[32m  ✓ Should propagate unfinished frames without tool execution[{"done":-0-session][0m
+[32m  ✓ Should propagate unfinished frames without tool execution[{"done":-10-broker][0m
+[32m  ✓ Should propagate unfinished frames without tool execution[{"done":-10-session][0m
+[32m  ✓ Should propagate unfinished frames without tool execution[{"model": "test", "done": true, "done reason": "stop", "message": {"role": "assistant", "content": "", "tool calls": [{"function": {"name": "counter", "arguments": {}}}]}}-0-broker][0m
+[32m  ✓ Should propagate unfinished frames without tool execution[{"model": "test", "done": true, "done reason": "stop", "message": {"role": "assistant", "content": "", "tool calls": [{"function": {"name": "counter", "arguments": {}}}]}}-0-session][0m
+[32m  ✓ Should propagate unfinished frames without tool execution[{"model": "test", "done": true, "done reason": "stop", "message": {"role": "assistant", "content": "", "tool calls": [{"function": {"name": "counter", "arguments": {}}}]}}-10-broker][0m
+[32m  ✓ Should propagate unfinished frames without tool execution[{"model": "test", "done": true, "done reason": "stop", "message": {"role": "assistant", "content": "", "tool calls": [{"function": {"name": "counter", "arguments": {}}}]}}-10-session][0m
+
+src/mojentic/llm/gateways/ollama_stream_events_spec.py:
+
+Describe Parse Ollama Stream:
+[32m  ✓ Should yield content then completed on done with stop[0m
+[32m  ✓ Should yield content carried on the final frame before completing[0m
+[32m  ✓ Should report incomplete completion when done reason is length[0m
+[32m  ✓ Should leave usage unknown when counts are missing[0m
+[32m  ✓ Should leave provider metadata unknown when durations are missing[0m
+[32m  ✓ Should report incomplete stream when frames end without done[0m
+[32m  ✓ Should preserve all evidence when the stream ends without done[0m
+[32m  ✓ Should preserve earlier usage on a sparse terminal frame[0m
+[32m  ✓ Should require done reason on the terminal frame itself[0m
+[32m  ✓ Should reject non boolean terminal markers[false][0m
+[32m  ✓ Should reject non boolean terminal markers[true][0m
+[32m  ✓ Should reject non boolean terminal markers[1][0m
+[32m  ✓ Should reject non boolean terminal markers[done 3][0m
+[32m  ✓ Should reject non boolean terminal markers[done 4][0m
+[32m  ✓ Should reject malformed evidence or message[model-value 0][0m
+[32m  ✓ Should reject malformed evidence or message[done reason-value 1][0m
+[32m  ✓ Should reject malformed evidence or message[message-value 2][0m
+[32m  ✓ Should reject tool calls[0m
+[32m  ✓ Should report provider error frames[0m
+[32m  ✓ Should report non text content as invalid[0m
+[32m  ✓ Should report non object frames as invalid[0m
+[32m  ✓ Should stop reading after the terminal event[0m
+[32m  ✓ Should leave incomplete stream evidence null when none arrived[0m
+[32m  ✓ Should treat a done frame without done reason as incomplete completion[0m
+
+src/mojentic/llm/gateways/ollama_stream_recovery_spec.py:
+
+Describe Ollama Stream Recovery:
+[32m  ✓ Should retain observed semantics when capture fails without delivery[0m
+
+Describe Stream Caller Safety:
+[32m  ✓ Should execute completed tool once and preserve subsequent failure[exhaustion-broker][0m
+[32m  ✓ Should execute completed tool once and preserve subsequent failure[exhaustion-session][0m
+[32m  ✓ Should execute completed tool once and preserve subsequent failure[partial-broker][0m
+[32m  ✓ Should execute completed tool once and preserve subsequent failure[partial-session][0m
+[32m  ✓ Should keep retry accounting separate from tool depth[0m
+[32m  ✓ Should characterize retries disabled legacy stream[0m
+[32m  ✓ Should keep raw event api single turn with recovery configured[0m
+
+Describe Stream Cancellation:
+[32m  ✓ Should cancel pending decisions and delays preserving failed attempt[admission][0m
+[32m  ✓ Should cancel pending decisions and delays preserving failed attempt[backoff][0m
+[32m  ✓ Should cancel terminal telemetry while consumer is paused[1-stop-cancellation-Cancelled Error][0m
+[32m  ✓ Should cancel terminal telemetry while consumer is paused[1-length-protocol-Value Error][0m
+[32m  ✓ Should cancel terminal telemetry while consumer is paused[2-stop-cancellation-Cancelled Error][0m
+[32m  ✓ Should cancel terminal telemetry while consumer is paused[2-length-protocol-Value Error][0m
+[32m  ✓ Should cancel buffered terminal capture before any delivery[0m
+[32m  ✓ Should close active request on cancellation[0m
+
+Describe Stream Privacy And Capture:
+[32m  ✓ Should retain observed evidence on capture failure without replay[-semantic 0][0m
+[32m  ✓ Should retain observed evidence on capture failure without replay[-semantic 1][0m
+[32m  ✓ Should retain observed evidence on capture failure without replay[-semantic 2][0m
+[32m  ✓ Should retain observed evidence on capture failure without replay[\n-semantic 0][0m
+[32m  ✓ Should retain observed evidence on capture failure without replay[\n-semantic 1][0m
+[32m  ✓ Should retain observed evidence on capture failure without replay[\n-semantic 2][0m
+[32m  ✓ Should hide provider metadata echoes without losing explicit evidence[0m
+[32m  ✓ Should classify provider errors without exposing body text[0m
+[32m  ✓ Should capture failures before semantics with truthful wire counts[request-0][0m
+[32m  ✓ Should capture failures before semantics with truthful wire counts[headers-1][0m
+[32m  ✓ Should fail when success observer raises without delivering completion[0m
+[32m  ✓ Should preserve native streaming tool argument types[0m
+[32m  ✓ Should record capture failure before cancel when both occur[0m
+[32m  ✓ Should reject expired budget before dispatch[0m
+[32m  ✓ Should close local resources when iterator is closed[0m
+[32m  ✓ Should reset frame indices after nonsemantic progress retry[0m
+[32m  ✓ Should retain valid completed tool evidence when terminal capture fails[-1][0m
+[32m  ✓ Should retain valid completed tool evidence when terminal capture fails[invalid\n-0][0m
+
+Describe Stream Telemetry:
+[32m  ✓ Should emit exact length terminal progress metrics then failure[0m
+[32m  ✓ Should emit no fabricated telemetry for malformed frames[fields 0][0m
+[32m  ✓ Should emit no fabricated telemetry for malformed frames[fields 1][0m
+[32m  ✓ Should emit no fabricated telemetry for malformed frames[fields 2][0m
+[32m  ✓ Should emit no fabricated telemetry for malformed frames[fields 3][0m
+[32m  ✓ Should emit no fabricated telemetry for malformed frames[fields 4][0m
+[32m  ✓ Should emit no fabricated telemetry for malformed frames[fields 5][0m
+[32m  ✓ Should emit no fabricated telemetry for malformed frames[fields 6][0m
+[32m  ✓ Should preserve only reported completion evidence[0m
+
+Describe Streaming Wire Evidence:
+[32m  ✓ Should recover 503 with exact authenticated bytes and identity[2-seconds-2][0m
+[32m  ✓ Should recover 503 with exact authenticated bytes and identity[Thu, 01 Jan 1970 00:00:03 GMT-date-3][0m
+[32m  ✓ Should recover 503 with exact authenticated bytes and identity[invalid-invalid-0][0m
+[32m  ✓ Should bound persistent 504 history[None-admission required-1][0m
+[32m  ✓ Should bound persistent 504 history[allow-attempts exhausted-3][0m
+[32m  ✓ Should refuse excessive retry after without admitting[0m
+[32m  ✓ Should retain truncated permanent status and transport cause[400][0m
+[32m  ✓ Should retain truncated permanent status and transport cause[401][0m
+[32m  ✓ Should retain truncated permanent status and transport cause[403][0m
+[32m  ✓ Should interrupt after semantic delivery without replay[message 0-delivered content][0m
+[32m  ✓ Should interrupt after semantic delivery without replay[message 1-delivered reasoning][0m
+[32m  ✓ Should interrupt after semantic delivery without replay[message 2-delivered tool fragments][0m
+[32m  ✓ Should allow keepalive only transport recovery[0m
+[32m  ✓ Should reject admission without resending[0m
+
+src/mojentic/llm/gateways/omlx_429_recovery_spec.py:
+
+Describe OMLX 429 Recovery:
+[32m  ✓ Should recover 429 only after admission with exact wire evidence[seconds-minimum-ordinary][0m
+[32m  ✓ Should recover 429 only after admission with exact wire evidence[seconds-minimum-structured][0m
+[32m  ✓ Should recover 429 only after admission with exact wire evidence[seconds-minimum-streaming][0m
+[32m  ✓ Should recover 429 only after admission with exact wire evidence[seconds-jitter-ordinary][0m
+[32m  ✓ Should recover 429 only after admission with exact wire evidence[seconds-jitter-structured][0m
+[32m  ✓ Should recover 429 only after admission with exact wire evidence[seconds-jitter-streaming][0m
+[32m  ✓ Should recover 429 only after admission with exact wire evidence[date-minimum-ordinary][0m
+[32m  ✓ Should recover 429 only after admission with exact wire evidence[date-minimum-structured][0m
+[32m  ✓ Should recover 429 only after admission with exact wire evidence[date-minimum-streaming][0m
+[32m  ✓ Should recover 429 only after admission with exact wire evidence[date-jitter-ordinary][0m
+[32m  ✓ Should recover 429 only after admission with exact wire evidence[date-jitter-structured][0m
+[32m  ✓ Should recover 429 only after admission with exact wire evidence[date-jitter-streaming][0m
+[32m  ✓ Should recover 429 only after admission with exact wire evidence[past-date-ordinary][0m
+[32m  ✓ Should recover 429 only after admission with exact wire evidence[past-date-structured][0m
+[32m  ✓ Should recover 429 only after admission with exact wire evidence[past-date-streaming][0m
+[32m  ✓ Should recover 429 only after admission with exact wire evidence[invalid-ordinary][0m
+[32m  ✓ Should recover 429 only after admission with exact wire evidence[invalid-structured][0m
+[32m  ✓ Should recover 429 only after admission with exact wire evidence[invalid-streaming][0m
+[32m  ✓ Should recover 429 only after admission with exact wire evidence[absent-ordinary][0m
+[32m  ✓ Should recover 429 only after admission with exact wire evidence[absent-structured][0m
+[32m  ✓ Should recover 429 only after admission with exact wire evidence[absent-streaming][0m
+[32m  ✓ Should refuse 429 minimum outside limits without another send[delay-ceiling-ordinary][0m
+[32m  ✓ Should refuse 429 minimum outside limits without another send[delay-ceiling-structured][0m
+[32m  ✓ Should refuse 429 minimum outside limits without another send[delay-ceiling-streaming][0m
+[32m  ✓ Should refuse 429 minimum outside limits without another send[budget-ordinary][0m
+[32m  ✓ Should refuse 429 minimum outside limits without another send[budget-structured][0m
+[32m  ✓ Should refuse 429 minimum outside limits without another send[budget-streaming][0m
+[32m  ✓ Should refuse 429 minimum outside limits without another send[remaining-before-admission-ordinary][0m
+[32m  ✓ Should refuse 429 minimum outside limits without another send[remaining-before-admission-structured][0m
+[32m  ✓ Should refuse 429 minimum outside limits without another send[remaining-before-admission-streaming][0m
+[32m  ✓ Should refuse 429 minimum outside limits without another send[remaining-after-admission-ordinary][0m
+[32m  ✓ Should refuse 429 minimum outside limits without another send[remaining-after-admission-structured][0m
+[32m  ✓ Should refuse 429 minimum outside limits without another send[remaining-after-admission-streaming][0m
+[32m  ✓ Should refuse eligible 429 without admission[required-ordinary][0m
+[32m  ✓ Should refuse eligible 429 without admission[required-structured][0m
+[32m  ✓ Should refuse eligible 429 without admission[required-streaming][0m
+[32m  ✓ Should refuse eligible 429 without admission[rejected-ordinary][0m
+[32m  ✓ Should refuse eligible 429 without admission[rejected-structured][0m
+[32m  ✓ Should refuse eligible 429 without admission[rejected-streaming][0m
+
+src/mojentic/llm/gateways/omlx_protocol_spec.py:
+
+Describe OMLX Chat Body:
+[32m  ✓ Should send model messages temperature and max tokens[0m
+[32m  ✓ Should never send max completion tokens for a name the openai registry calls reasoning[0m
+[32m  ✓ Should not send context or prediction lengths[0m
+[32m  ✓ Should forward reasoning effort unchanged for any model name[0m
+[32m  ✓ Should omit reasoning effort when not set[0m
+[32m  ✓ Should send tools as the openai gateway does[0m
+[32m  ✓ Should omit tools when none are given[0m
+[32m  ✓ Should adapt messages through the openai adapter[0m
+[32m  ✓ Should forward the configured response format[response format 0-expected 0][0m
+[32m  ✓ Should forward the configured response format[response format 1-expected 1][0m
+[32m  ✓ Should forward the configured response format[response format 2-expected 2][0m
+[32m  ✓ Should leave the response format out when not configured[0m
+[32m  ✓ Should request the object model schema as json schema[0m
+
+Describe OMLX Error Detail:
+[32m  ✓ Should carry the status and the error object[0m
+[32m  ✓ Should carry a body that is not json as text[0m
+
+Describe OMLX Gateway Response:
+[32m  ✓ Should map reasoning content to thinking[0m
+[32m  ✓ Should leave thinking empty when the response has none[0m
+[32m  ✓ Should keep usage exactly as reported[0m
+[32m  ✓ Should report the provider model and finish reason[0m
+[32m  ✓ Should parse tool calls[0m
+[32m  ✓ Should keep truncated content where the provider put it[0m
+[32m  ✓ Should have empty metadata without a warning[0m
+[32m  ✓ Should record a response format warning in metadata[0m
+
+Describe OMLX Settings:
+[32m  ✓ Should default to localhost with the v 1 prefix[0m
+[32m  ✓ Should use the environment when no host is given[0m
+[32m  ✓ Should prefer an explicit host over the environment[0m
+[32m  ✓ Should not double a trailing slash on the host[0m
+[32m  ✓ Should send no authorization header without a key[0m
+[32m  ✓ Should send a bearer header with the environment key[0m
+[32m  ✓ Should prefer an explicit key over the environment[0m
+[32m  ✓ Should treat an empty key as no key[0m
+[32m  ✓ Should allow an explicit empty key to override the environment[0m
+[32m  ✓ Should default the timeout[0m
+[32m  ✓ Should read the timeout from the environment in milliseconds[0m
+[32m  ✓ Should default to ten minutes[0m
+[32m  ✓ Should prefer an explicit timeout over the environment[0m
+
+Describe Structured Output Requested:
+[32m  ✓ Should recognize json object and json schema requests[body 0-False][0m
+[32m  ✓ Should recognize json object and json schema requests[body 1-False][0m
+[32m  ✓ Should recognize json object and json schema requests[body 2-True][0m
+[32m  ✓ Should recognize json object and json schema requests[body 3-True][0m
+
+src/mojentic/llm/gateways/omlx_recovery_spec.py:
+
+Describe OMLX Cancellation:
+[32m  ✓ Should cancel pending admission and backoff without a new request[admission-ordinary][0m
+[32m  ✓ Should cancel pending admission and backoff without a new request[admission-structured][0m
+[32m  ✓ Should cancel pending admission and backoff without a new request[admission-streaming][0m
+[32m  ✓ Should cancel pending admission and backoff without a new request[backoff-ordinary][0m
+[32m  ✓ Should cancel pending admission and backoff without a new request[backoff-structured][0m
+[32m  ✓ Should cancel pending admission and backoff without a new request[backoff-streaming][0m
+[32m  ✓ Should leave admission pending until explicit allow[ordinary][0m
+[32m  ✓ Should leave admission pending until explicit allow[structured][0m
+[32m  ✓ Should leave admission pending until explicit allow[streaming][0m
+[32m  ✓ Should cancel while terminal telemetry consumption is paused[1-stop-cancellation][0m
+[32m  ✓ Should cancel while terminal telemetry consumption is paused[1-length-protocol][0m
+[32m  ✓ Should cancel while terminal telemetry consumption is paused[2-stop-cancellation][0m
+[32m  ✓ Should cancel while terminal telemetry consumption is paused[2-length-protocol][0m
+[32m  ✓ Should cancel active request and close local socket[ordinary][0m
+[32m  ✓ Should cancel active request and close local socket[structured][0m
+[32m  ✓ Should cancel active request and close local socket[streaming][0m
+
+Describe OMLX Capture Evidence:
+[32m  ✓ Should retain all observed channels before capture failure[content-observed content-ordinary][0m
+[32m  ✓ Should retain all observed channels before capture failure[content-observed content-structured][0m
+[32m  ✓ Should retain all observed channels before capture failure[content-observed content-streaming][0m
+[32m  ✓ Should retain all observed channels before capture failure[reasoning content-observed reasoning-ordinary][0m
+[32m  ✓ Should retain all observed channels before capture failure[reasoning content-observed reasoning-structured][0m
+[32m  ✓ Should retain all observed channels before capture failure[reasoning content-observed reasoning-streaming][0m
+[32m  ✓ Should retain all observed channels before capture failure[tool calls-observed tool fragments-ordinary][0m
+[32m  ✓ Should retain all observed channels before capture failure[tool calls-observed tool fragments-structured][0m
+[32m  ✓ Should retain all observed channels before capture failure[tool calls-observed tool fragments-streaming][0m
+[32m  ✓ Should preserve actual fixture usage and supported thinking and tools[stream thinking.sse][0m
+[32m  ✓ Should preserve actual fixture usage and supported thinking and tools[stream tool call.sse][0m
+
+Describe OMLX Malformed Tool Fields:
+[32m  ✓ Should reject false non array tool fields[value 0-ordinary][0m
+[32m  ✓ Should reject false non array tool fields[value 0-structured][0m
+[32m  ✓ Should reject false non array tool fields[value 0-streaming][0m
+[32m  ✓ Should reject false non array tool fields[-ordinary][0m
+[32m  ✓ Should reject false non array tool fields[-structured][0m
+[32m  ✓ Should reject false non array tool fields[-streaming][0m
+[32m  ✓ Should reject false non array tool fields[0-ordinary][0m
+[32m  ✓ Should reject false non array tool fields[0-structured][0m
+[32m  ✓ Should reject false non array tool fields[0-streaming][0m
+[32m  ✓ Should reject false non array tool fields[False-ordinary][0m
+[32m  ✓ Should reject false non array tool fields[False-structured][0m
+[32m  ✓ Should reject false non array tool fields[False-streaming][0m
+[32m  ✓ Should reject false non object tool functions[][0m
+[32m  ✓ Should reject false non object tool functions[0][0m
+[32m  ✓ Should reject false non object tool functions[False][0m
+
+Describe OMLX Preparation Privacy:
+[32m  ✓ Should keep invalid control errors typed and private before dispatch[ordinary][0m
+[32m  ✓ Should keep invalid control errors typed and private before dispatch[streaming][0m
+
+Describe OMLX Privacy And Validation:
+[32m  ✓ Should keep echoed secrets out of safe errors events and logs[ordinary][0m
+[32m  ✓ Should keep echoed secrets out of safe errors events and logs[structured][0m
+[32m  ✓ Should keep echoed secrets out of safe errors events and logs[streaming][0m
+[32m  ✓ Should preserve full actual provider usage without serializing untrusted keys[0m
+[32m  ✓ Should propagate typed invalid completion without another request[payload 0][0m
+[32m  ✓ Should propagate typed invalid completion without another request[payload 1][0m
+[32m  ✓ Should propagate typed invalid completion without another request[payload 2][0m
+[32m  ✓ Should validate schema and preserve format warning[0m
+[32m  ✓ Should reject invalid schema with typed cause[0m
+
+Describe OMLX Public Callers:
+[32m  ✓ Should recover through broker and session[generate][0m
+[32m  ✓ Should recover through broker and session[generate response][0m
+[32m  ✓ Should recover through broker and session[generate object][0m
+[32m  ✓ Should recover through broker and session[generate stream][0m
+[32m  ✓ Should recover through broker and session[send][0m
+[32m  ✓ Should recover through broker and session[send stream][0m
+[32m  ✓ Should execute completed tool once before typed subsequent failure[generate][0m
+[32m  ✓ Should execute completed tool once before typed subsequent failure[generate stream][0m
+[32m  ✓ Should execute completed tool once before typed subsequent failure[send][0m
+[32m  ✓ Should execute completed tool once before typed subsequent failure[send stream][0m
+[32m  ✓ Should leave raw event api single request with recovery configured[0m
+
+Describe OMLX Recovery:
+[32m  ✓ Should observe content before failing capture without replay[0m
+
+Describe OMLX Stream Safety:
+[32m  ✓ Should interrupt observed semantics without replay[delta 0-observed content][0m
+[32m  ✓ Should interrupt observed semantics without replay[delta 1-observed reasoning][0m
+[32m  ✓ Should interrupt observed semantics without replay[delta 2-observed tool fragments][0m
+[32m  ✓ Should reject malformed or unfinished sse without retry[data: {broken}\n\n][0m
+[32m  ✓ Should reject malformed or unfinished sse without retry[data: {"choices":[]}][0m
+[32m  ✓ Should reject malformed or unfinished sse without retry[data: [DONE]\n\n][0m
+[32m  ✓ Should require admission after keepalive and reset frame indices[0m
+[32m  ✓ Should preserve terminal telemetry and reject length[stop-completed][0m
+[32m  ✓ Should preserve terminal telemetry and reject length[length-failed][0m
+[32m  ✓ Should complete fragmented tools once after safe terminal marker[0m
+
+Describe OMLX Wire Recovery:
+[32m  ✓ Should recover 503 with stable exact semantic bytes and lifecycle[2-seconds-2-ordinary][0m
+[32m  ✓ Should recover 503 with stable exact semantic bytes and lifecycle[2-seconds-2-structured][0m
+[32m  ✓ Should recover 503 with stable exact semantic bytes and lifecycle[2-seconds-2-streaming][0m
+[32m  ✓ Should recover 503 with stable exact semantic bytes and lifecycle[Thu, 01 Jan 1970 00:00:03 GMT-date-3-ordinary][0m
+[32m  ✓ Should recover 503 with stable exact semantic bytes and lifecycle[Thu, 01 Jan 1970 00:00:03 GMT-date-3-structured][0m
+[32m  ✓ Should recover 503 with stable exact semantic bytes and lifecycle[Thu, 01 Jan 1970 00:00:03 GMT-date-3-streaming][0m
+[32m  ✓ Should recover 503 with stable exact semantic bytes and lifecycle[invalid-invalid-0.5-ordinary][0m
+[32m  ✓ Should recover 503 with stable exact semantic bytes and lifecycle[invalid-invalid-0.5-structured][0m
+[32m  ✓ Should recover 503 with stable exact semantic bytes and lifecycle[invalid-invalid-0.5-streaming][0m
+[32m  ✓ Should refuse retry after outside limits[policy args 0-delay ceiling-ordinary][0m
+[32m  ✓ Should refuse retry after outside limits[policy args 0-delay ceiling-structured][0m
+[32m  ✓ Should refuse retry after outside limits[policy args 0-delay ceiling-streaming][0m
+[32m  ✓ Should refuse retry after outside limits[policy args 1-budget exhausted-ordinary][0m
+[32m  ✓ Should refuse retry after outside limits[policy args 1-budget exhausted-structured][0m
+[32m  ✓ Should refuse retry after outside limits[policy args 1-budget exhausted-streaming][0m
+[32m  ✓ Should bound 504 exhaustion without success[ordinary][0m
+[32m  ✓ Should bound 504 exhaustion without success[structured][0m
+[32m  ✓ Should bound 504 exhaustion without success[streaming][0m
+[32m  ✓ Should keep truncated permanent status even with transport eligibility[400-ordinary][0m
+[32m  ✓ Should keep truncated permanent status even with transport eligibility[400-structured][0m
+[32m  ✓ Should keep truncated permanent status even with transport eligibility[400-streaming][0m
+[32m  ✓ Should keep truncated permanent status even with transport eligibility[401-ordinary][0m
+[32m  ✓ Should keep truncated permanent status even with transport eligibility[401-structured][0m
+[32m  ✓ Should keep truncated permanent status even with transport eligibility[401-streaming][0m
+[32m  ✓ Should keep truncated permanent status even with transport eligibility[403-ordinary][0m
+[32m  ✓ Should keep truncated permanent status even with transport eligibility[403-structured][0m
+[32m  ✓ Should keep truncated permanent status even with transport eligibility[403-streaming][0m
+[32m  ✓ Should require admission for ambiguous local failure[None-admission required-1-ordinary][0m
+[32m  ✓ Should require admission for ambiguous local failure[None-admission required-1-structured][0m
+[32m  ✓ Should require admission for ambiguous local failure[None-admission required-1-streaming][0m
+[32m  ✓ Should require admission for ambiguous local failure[reject-admission rejected-1-ordinary][0m
+[32m  ✓ Should require admission for ambiguous local failure[reject-admission rejected-1-structured][0m
+[32m  ✓ Should require admission for ambiguous local failure[reject-admission rejected-1-streaming][0m
+[32m  ✓ Should require admission for ambiguous local failure[allow-succeeded-2-ordinary][0m
+[32m  ✓ Should require admission for ambiguous local failure[allow-succeeded-2-structured][0m
+[32m  ✓ Should require admission for ambiguous local failure[allow-succeeded-2-streaming][0m
+[32m  ✓ Should never follow redirects[ordinary][0m
+[32m  ✓ Should never follow redirects[structured][0m
+[32m  ✓ Should never follow redirects[streaming][0m
+
+src/mojentic/llm/gateways/omlx_spec.py:
+
+Describe OMLX Gateway:
+
+  Describe Complete:
+[32m    ✓ Should post the chat body to chat completions[0m
+[32m    ✓ Should build the config from keyword arguments when none is given[0m
+[32m    ✓ Should map reasoning content to thinking[0m
+[32m    ✓ Should leave thinking empty when thinking is disabled[0m
+[32m    ✓ Should report length with content unchanged[0m
+[32m    ✓ Should parse a tool call[0m
+[32m    ✓ Should propagate a provider error with its status and body[0m
+
+  Describe Complete Stream:
+[32m    ✓ Should stream without usage options[0m
+[32m    ✓ Should yield the content then one complete tool call from the fixture[0m
+[32m    ✓ Should yield thinking chunks[0m
+[32m    ✓ Should drop keepalive frames[0m
+[32m    ✓ Should refuse structured output[0m
+
+  Describe Complete Stream Events:
+[32m    ✓ Should send one streaming request with usage and no tools[0m
+[32m    ✓ Should complete the thinking fixture with content only[0m
+[32m    ✓ Should report the length fixture as an incomplete completion[0m
+[32m    ✓ Should report the tool call fixture as unexpected tool calls[0m
+[32m    ✓ Should end a keepalive only stream as incomplete with no provider model[0m
+[32m    ✓ Should report an error status as a provider error[0m
+[32m    ✓ Should report a connection failure as request failed[0m
+[32m    ✓ Should close the request when the consumer stops early[0m
+[32m    ✓ Should trace the real provider model through the broker[0m
+
+  Describe Configuration:
+[32m    ✓ Should default to localhost with no key[0m
+[32m    ✓ Should read the environment[0m
+[32m    ✓ Should prefer explicit values over the environment[0m
+[32m    ✓ Should build a transport over the resolved settings[0m
+
+  Describe Embeddings:
+[32m    ✓ Should post the model and text once and return the first embedding[0m
+[32m    ✓ Should reject a missing or empty model before any request[None][0m
+[32m    ✓ Should reject a missing or empty model before any request[][0m
+[32m    ✓ Should reject a missing or empty model before any request[ ][0m
+[32m    ✓ Should report a chat model as a provider error[0m
+
+  Describe Models:
+[32m    ✓ Should list model ids sorted[0m
+[32m    ✓ Should list the fixture model[0m
+[32m    ✓ Should reject blank model ids without a request[-load model][0m
+[32m    ✓ Should reject blank model ids without a request[-unload model][0m
+[32m    ✓ Should reject blank model ids without a request[ -load model][0m
+[32m    ✓ Should reject blank model ids without a request[ -unload model][0m
+[32m    ✓ Should reject blank model ids without a request[\t\n-load model][0m
+[32m    ✓ Should reject blank model ids without a request[\t\n-unload model][0m
+[32m    ✓ Should load a model and return nothing[0m
+[32m    ✓ Should unload a model and return nothing[0m
+[32m    ✓ Should percent encode the model id as one path segment[0m
+[32m    ✓ Should report unloading a model that is not loaded as a provider error[0m
+
+  Describe Structured Output:
+[32m    ✓ Should request the object schema and validate the content[0m
+[32m    ✓ Should leave the object empty when the content does not validate[chat thinking.json][0m
+[32m    ✓ Should leave the object empty when the content does not validate[chat tool call.json][0m
+[32m    ✓ Should record and log a warning header on a structured request[0m
+[32m    ✓ Should join several warning headers[0m
+[32m    ✓ Should record a warning for a configured json format[0m
+[32m    ✓ Should ignore a warning header without a structured request[None][0m
+[32m    ✓ Should ignore a warning header without a structured request[response format 1][0m
+
+  Describe Tool Round Trip:
+[32m    ✓ Should send the tool result back and return the final answer[0m
+
+Describe OMLX Gateway Over The Real Http Layer:
+[32m  ✓ Should list models from a json response[0m
+[32m  ✓ Should complete from a json response with a warning header[0m
+[32m  ✓ Should load and unload from json responses[0m
+[32m  ✓ Should report a json error response as a provider error[0m
+[32m  ✓ Should stream events from an event stream response[0m
+[32m  ✓ Should report a streamed error response with its status and body[0m
+
+Describe OMLX Transport:
+[32m  ✓ Should prefix paths with the base url[0m
+[32m  ✓ Should send a bearer header with a key[0m
+[32m  ✓ Should send no authorization header without a key[0m
+[32m  ✓ Should raise an error status with its body[0m
+[32m  ✓ Should yield the lines of a stream[0m
+[32m  ✓ Should yield whole lines when a frame is split across body chunks[0m
+[32m  ✓ Should keep a percent encoded model id as one path segment[0m
+[32m  ✓ Should raise an error status on a stream with its body read[0m
+
+src/mojentic/llm/gateways/omlx_stream_spec.py:
+
+Describe Drop Keepalive Frames:
+[32m  ✓ Should drop frames whose model is keepalive[0m
+[32m  ✓ Should remove the keepalive frame from every fixture stream[0m
+[32m  ✓ Should keep frames from the real model[0m
+[32m  ✓ Should pass comments and undecodable frames through to the parser[0m
+
+Describe OMLX Stream Chunks:
+[32m  ✓ Should yield reasoning content as thinking and content as content[0m
+[32m  ✓ Should yield one complete tool call from the fixture[0m
+[32m  ✓ Should accumulate tool call arguments sent in fragments[0m
+[32m  ✓ Should skip a tool call whose arguments are not json[0m
+[32m  ✓ Should ignore usage frames without choices[0m
+[32m  ✓ Should stop reading at the done marker[0m
+
+src/mojentic/llm/gateways/openai_message_adapter_spec.py:
+
+Describe Open AI Messages Adapter:
+
+  Describe Simple Messages:
+[32m    ✓ Should adapt system message[0m
+[32m      When adapting to OpenAI format[0m
+[32m      Then it should convert to the correct format[0m
+[32m    ✓ Should adapt user message[0m
+[32m      When adapting to OpenAI format[0m
+[32m      Then it should convert to the correct format[0m
+[32m    ✓ Should adapt assistant message[0m
+[32m      When adapting to OpenAI format[0m
+[32m      Then it should convert to the correct format[0m
+[32m    ✓ Should preserve image urls without reading files[https://example.com/photo.png][0m
+[32m    ✓ Should preserve image urls without reading files[http://example.com/photo.png][0m
+[32m    ✓ Should preserve image urls without reading files[data:image/png;base 64,a G Vsb G 8=][0m
+[32m    ✓ Should preserve image urls without reading files[HTTPS://example.com/photo.png][0m
+[32m    ✓ Should preserve image urls without reading files[DATA:image/png;base 64,a G Vsb G 8=][0m
+[32m    ✓ Should adapt user message with image paths[0m
+[32m      When adapting to OpenAI format[0m
+[32m      Then it should convert to the correct format with structured content array[0m
+
+  Describe Tool Messages:
+[32m    ✓ Should adapt assistant message with tool call[0m
+[32m      When adapting to OpenAI format[0m
+[32m      Then it should convert the message and tool call to the correct format[0m
+[32m    ✓ Should adapt tool response message[0m
+[32m      When adapting to OpenAI format[0m
+[32m      Then it should convert to the correct format with tool call ID[0m
+
+src/mojentic/llm/gateways/openai_model_registry_spec.py:
+
+Describe API Endpoint Support:
+[32m  ✓ Should flag chat only model[0m
+[32m  ✓ Should flag both endpoint model[0m
+[32m  ✓ Should flag completions only model[0m
+[32m  ✓ Should flag responses only model[0m
+[32m  ✓ Should flag legacy completions model[0m
+[32m  ✓ Should flag embedding model with no endpoints[0m
+[32m  ✓ Should flag codex mini latest as responses only[0m
+[32m  ✓ Should flag gpt 51 as both chat and completions[0m
+[32m  ✓ Should include endpoint flags in default capabilities[0m
+
+Describe GPT 54 And 55 Models:
+[32m  ✓ Should register all gpt 54 and gpt 55 models as reasoning[0m
+[32m    When checking their classification[0m
+[32m    Then all should be reasoning models with the correct token windows[0m
+[32m  ✓ Should expose common capabilities for gpt 54 and gpt 55 models[0m
+[32m    When checking their capabilities[0m
+[32m    Then all should support tools, streaming, vision, and the expected APIs[0m
+[32m  ✓ Should pattern match unknown gpt 54 and gpt 55 variants as reasoning[0m
+[32m    When getting their capabilities[0m
+[32m    Then they should resolve to reasoning models via pattern matching[0m
+
+Describe Open AI Model Registry:
+[32m  ✓ Should initialize with default models[0m
+[32m    When initialized[0m
+[32m    Then it should contain default models for all major OpenAI model families[0m
+[32m  ✓ Should identify reasoning models correctly[0m
+[32m    When checking if they are reasoning models[0m
+[32m    Then it should correctly classify known reasoning models[0m
+[32m  ✓ Should use pattern matching for unknown models[0m
+[32m    When getting model capabilities[0m
+[32m    Then it should infer the correct model type[0m
+[32m  ✓ Should return correct token limit parameters[0m
+[32m    When getting their token limit parameters[0m
+[32m    Then it should return the correct parameter name[0m
+[32m  ✓ Should allow registering new models[0m
+[32m    When registering it in the registry[0m
+[32m    Then it should be available for lookup[0m
+[32m  ✓ Should allow registering new patterns[0m
+[32m    When registering it in the registry[0m
+[32m    Then it should be used for unknown models matching the pattern[0m
+[32m  ✓ Should handle completely unknown models[0m
+[32m    When getting model capabilities[0m
+[32m    Then it should default to chat model capabilities[0m
+[32m  ✓ Should provide global registry instance[0m
+[32m    When called multiple times[0m
+[32m    Then it should return the same instance[0m
+[32m  ✓ Should handle model capabilities dataclass correctly[0m
+[32m    When created with different parameters[0m
+[32m    Then it should handle defaults and customizations correctly[0m
+[32m  ✓ Should have correct model type enum values[0m
+[32m    When accessing its values[0m
+[32m    Then it should have all expected model types[0m
+[32m  ✓ Should support tools and streaming for all reasoning models[0m
+[32m    When checking their capabilities[0m
+[32m    Then all should support tools and streaming except gpt-5-pro[0m
+[32m  ✓ Should support temperature 1 0 only for most reasoning models[0m
+[32m    When checking temperature support[0m
+[32m    Then most should support only temperature=1.0, except gpt-5.1/5.2 base models[0m
+[32m  ✓ Should disable tools for specific chat models[0m
+[32m    When checking tool support[0m
+[32m    Then specific models should have tools disabled[0m
+
+src/mojentic/llm/gateways/openai_response_format_spec.py:
+
+Describe Open AI Response Format:
+[32m  ✓ Should map each format to openai request shape[response format 0-expected 0][0m
+[32m  ✓ Should map each format to openai request shape[response format 1-expected 1][0m
+[32m  ✓ Should map each format to openai request shape[response format 2-expected 2][0m
+[32m  ✓ Should map absent format to none[0m
+
+  Describe Non Streaming Requests:
+[32m    ✓ Should forward configured format[response format 0-expected 0][0m
+[32m    ✓ Should forward configured format[response format 1-expected 1][0m
+[32m    ✓ Should forward configured format[response format 2-expected 2][0m
+[32m    ✓ Should leave body unchanged without format[0m
+
+  Describe Streaming Requests:
+[32m    ✓ Should forward configured format[response format 0-expected 0][0m
+[32m    ✓ Should forward configured format[response format 1-expected 1][0m
+[32m    ✓ Should forward configured format[response format 2-expected 2][0m
+[32m    ✓ Should leave body unchanged without format[0m
+
+src/mojentic/llm/gateways/openai_spec.py:
+
+Describe Open AI Embeddings:
+[32m  ✓ Should weight parts by token count before normalizing[0m
+
+Describe Open AI Gateway:
+
+  Describe Initialization:
+[32m    ✓ Should initialize with api key[0m
+[32m    ✓ Should initialize with api key and base url[0m
+[32m    ✓ Should read api key from environment variable[0m
+[32m    ✓ Should read base url from environment variable[0m
+[32m    ✓ Should read both from environment variables[0m
+[32m    ✓ Should prefer explicit api key over environment variable[0m
+[32m    ✓ Should prefer explicit base url over environment variable[0m
+[32m    ✓ Should use none when no endpoint specified[0m
+
+Describe Stream Events:
+[32m  ✓ Should send one streaming request with usage and no tools[0m
+[32m  ✓ Should parse the provider stream into events[0m
+[32m  ✓ Should close the request after the terminal event[0m
+[32m  ✓ Should report http error status as provider error[0m
+[32m  ✓ Should report transport failure as request failed[0m
+[32m  ✓ Should report models without streaming as unsupported without a request[0m
+
+src/mojentic/llm/gateways/openai_stream_events_spec.py:
+[32m  ✓ Should reject malformed provider evidence with one terminal error[model-value 0][0m
+[32m  ✓ Should reject malformed provider evidence with one terminal error[usage-value 1][0m
+[32m  ✓ Should reject malformed provider evidence with one terminal error[finish reason-value 2][0m
+
+Describe Parse Open AI Stream:
+[32m  ✓ Should yield content then completed after stop and done[0m
+[32m  ✓ Should report incomplete completion when done follows length[0m
+[32m  ✓ Should report incomplete completion when done arrives without finish reason[0m
+[32m  ✓ Should report incomplete stream when lines end without done[0m
+[32m  ✓ Should reject tool call deltas[0m
+[32m  ✓ Should reject legacy function call deltas[0m
+[32m  ✓ Should report provider error frames[0m
+[32m  ✓ Should report malformed frames as invalid[0m
+[32m  ✓ Should report frames without choices as invalid[0m
+[32m  ✓ Should report non text content as invalid[0m
+[32m  ✓ Should ignore comments and other sse fields[0m
+[32m  ✓ Should accept data fields without a space[0m
+[32m  ✓ Should stop reading after the terminal event[0m
+[32m  ✓ Should leave incomplete stream evidence null when none arrived[0m
+
+src/mojentic/llm/gateways/openai_temperature_handling_spec.py:
+
+Describe Model Capabilities Temperature Restrictions:
+[32m  ✓ Should identify gpt 5 temperature restrictions[0m
+[32m    When checking GPT-5 model capabilities[0m
+[32m    Then it should indicate temperature=1.0 is supported and temperature=0.1 is not[0m
+[32m  ✓ Should allow all temperatures for gpt 4 o[0m
+[32m    When checking GPT-4o model capabilities[0m
+[32m    Then it should indicate all temperature values are supported[0m
+[32m  ✓ Should identify all gpt 5 variants temperature restrictions[0m
+[32m    When checking GPT-5 reasoning variant models[0m
+[32m    Then they should have temperature restrictions to 1.0 only[0m
+[32m    Note: gpt-5-chat-latest is a CHAT model and supports all temperatures[0m
+[32m  ✓ Should identify o 1 series temperature restrictions[0m
+[32m    When checking o1 series models[0m
+[32m    Then they should have temperature restrictions to 1.0 only[0m
+[32m    Note: o1-mini removed from API as of 2026-02-04 audit[0m
+[32m  ✓ Should identify o 3 series temperature restrictions[0m
+[32m    When checking o3 series models[0m
+[32m    Then they should now support temperature=1.0 only (as of 2026-02-04 audit)[0m
+[32m  ✓ Should identify o 4 series temperature restrictions[0m
+[32m    When checking o4 series models[0m
+[32m    Then they should have temperature restrictions to 1.0 only[0m
+
+Describe Open AI Gateway Temperature Handling:
+
+  Describe GPT 5 Temperature Restrictions:
+[32m    ✓ Should automatically adjust unsupported temperature for gpt 5[0m
+[32m      When calling complete with temperature=0.1 (unsupported)[0m
+[32m      Then it should automatically adjust to temperature=1.0[0m
+[32m    ✓ Should preserve supported temperature for gpt 5[0m
+[32m      When calling complete with temperature=1.0 (supported)[0m
+[32m      Then it should preserve the temperature value[0m
+[32m    ✓ Should preserve any temperature for gpt 4 o[0m
+[32m      When calling complete with temperature=0.1[0m
+[32m      Then it should preserve the original temperature value[0m
+[32m    ✓ Should automatically adjust unsupported temperature for o 1[0m
+[32m      When calling complete with temperature=0.1 (unsupported)[0m
+[32m      Then it should automatically adjust to temperature=1.0[0m
+[32m    ✓ Should automatically adjust unsupported temperature for o 4 mini[0m
+[32m      When calling complete with temperature=0.1 (unsupported)[0m
+[32m      Then it should automatically adjust to temperature=1.0[0m
+[32m    ✓ Should automatically adjust unsupported temperature for o 3 mini[0m
+[32m      When calling complete with temperature=0.1 (unsupported)[0m
+[32m      Then it should automatically adjust to temperature=1.0[0m
+
+src/mojentic/llm/gateways/openai_tool_roundtrip_spec.py:
+[32m  ✓ Should preserve json argument types and provider metadata[0m
+[32m  ✓ Should keep both parallel tool call ids in the broker follow up[openai-ordinary][0m
+[32m  ✓ Should keep both parallel tool call ids in the broker follow up[openai-streaming][0m
+[32m  ✓ Should keep both parallel tool call ids in the broker follow up[omlx-ordinary][0m
+[32m  ✓ Should keep both parallel tool call ids in the broker follow up[omlx-streaming][0m
+
+Describe Open AI Streaming Tool Call Round Trip:
+[32m  ✓ Should carry streamed tool call id into follow up request[0m
+
+Describe Open AI Tool Calling Round Trip:
+[32m  ✓ Should include get weather in first request tools[0m
+[32m  ✓ Should invoke get weather tool with paris[0m
+[32m  ✓ Should include correct assistant tool call in second request[0m
+[32m  ✓ Should include correct tool role message in second request[0m
+[32m  ✓ Should return final text from second response[0m
+
+src/mojentic/llm/gateways/structured_boundary_spec.py:
+
+Describe Structured Boundary:
+[32m  ✓ Should propagate validator defects through the public broker[0m
+[32m  ✓ Should propagate validator defects with exact authenticated request[0m
+
+src/mojentic/llm/llm_broker_spec.py:
+
+Describe LLM Broker:
+
+  Describe Completion Config Support:
+[32m    ✓ Should pass config to gateway in generate[0m
+[32m    ✓ Should build config from kwargs when not provided[0m
+[32m    ✓ Should emit deprecation warning when both config and kwargs provided[0m
+[32m    ✓ Should pass config to gateway in generate object[0m
+[32m    ✓ Should pass config to gateway in generate stream[0m
+
+  Describe Max Tool Iterations:
+[32m    ✓ Should raise when tool calls exceed max iterations in generate[0m
+[32m    ✓ Should raise when tool calls exceed max iterations in generate stream[0m
+[32m    ✓ Should pass custom max iterations[0m
+
+  Describe Message Generation:
+[32m    ✓ Should generate simple response for user message[0m
+[32m    ✓ Should handle tool calls during generation[0m
+
+  Describe Object Generation:
+[32m    ✓ Should generate simple model[0m
+[32m    ✓ Should generate nested model[0m
+[32m    ✓ Should generate complex model[0m
+
+  Describe Streaming Generation:
+[32m    ✓ Should stream simple response[0m
+[32m    ✓ Should handle tool calls during streaming[0m
+[32m    ✓ Should raise error if gateway does not support streaming[0m
+
+Describe Missing Correlation Id:
+[32m  ✓ Should trace generate under one generated correlation id[0m
+[32m  ✓ Should trace generate response under one generated correlation id[0m
+[32m  ✓ Should trace generate object under one generated correlation id[0m
+[32m  ✓ Should trace generate stream under one generated correlation id[0m
+[32m  ✓ Should trace generate stream events under one generated correlation id[0m
+[32m  ✓ Should keep a supplied correlation id[0m
+
+Describe Native Response:
+[32m  ✓ Should return native calls without executing them[0m
+[32m  ✓ Should return unknown tool error to model[0m
+[32m  ✓ Should allow explicitly unlimited tool rounds[0m
+[32m  ✓ Should preserve one assistant batch and all cancelled receipts[0m
+
+Describe Response Evidence In Traces:
+[32m  ✓ Should record gateway evidence unchanged for ordinary responses[0m
+[32m  ✓ Should record null usage when gateway reports none[0m
+[32m  ✓ Should record gateway evidence for structured responses[0m
+
+Describe Stream Events:
+[32m  ✓ Should relay gateway events in order[0m
+[32m  ✓ Should force zero tool iterations[0m
+[32m  ✓ Should end with an incomplete stream error when the gateway stops early[0m
+[32m  ✓ Should yield nothing after the terminal event[0m
+[32m  ✓ Should report unsupported gateways without a request[0m
+[32m  ✓ Should trace the call and the response with reported usage[0m
+[32m  ✓ Should trace failure evidence with the content so far[0m
+[32m  ✓ Should trace the call but no response when the consumer stops early[0m
+[32m  ✓ Should close the http request when the consumer stops early[0m
+
+src/mojentic/llm/message_composers_spec.py:
+
+Describe Message Builder:
+
+  Describe Add Image Method:
+[32m    ✓ Should add image path to list[0m
+[32m    ✓ Should convert string path to path object[0m
+
+  Describe Add Images Method:
+[32m    ✓ Should add multiple specific images[0m
+[32m    ✓ Should add all jpg images from directory[0m
+[32m    ✓ Should add images matching glob pattern[0m
+
+  Describe Build Method:
+[32m    ✓ Should build message with content[0m
+[32m    ✓ Should build message with role[0m
+[32m    ✓ Should build message with image paths[0m
+[32m    ✓ Should build message with file content[0m
+[32m    ✓ Should build message with multiple file contents[0m
+
+  Describe File Content Partial:
+[32m    ✓ Should format file content with language[0m
+[32m    ✓ Should strip whitespace from file content[0m
+
+  Describe Initialization:
+[32m    ✓ Should initialize with default values[0m
+[32m      When it is initialized[0m
+[32m      Then it should have default values set[0m
+
+  Describe Load Content Method:
+[32m    ✓ Should load content from file[0m
+[32m    ✓ Should convert string path to path object[0m
+[32m    ✓ Should raise error if file not found[0m
+[32m    ✓ Should replace placeholders with template values[0m
+
+Describe Type Sensor:
+[32m  ✓ Should initialize with default mappings[0m
+[32m    When it is initialized[0m
+[32m    Then it should have default mappings[0m
+[32m  ✓ Should get language for known extension[0m
+[32m    When get_language is called with a known extension[0m
+[32m    Then it should return the correct language[0m
+[32m  ✓ Should get default language for unknown extension[0m
+[32m    When get_language is called with an unknown extension[0m
+[32m    Then it should return the default language[0m
+[32m  ✓ Should add new language mapping[0m
+[32m    When add_language is called[0m
+[32m    Then it should add the new mapping[0m
+
+src/mojentic/llm/recovery_spec.py:
+
+Describe Recovery Policy:
+[32m  ✓ Should bound exponential jitter without overflow[1-0.5][0m
+[32m  ✓ Should bound exponential jitter without overflow[2-1][0m
+[32m  ✓ Should bound exponential jitter without overflow[3-1.5][0m
+[32m  ✓ Should bound exponential jitter without overflow[100000-1.5][0m
+[32m  ✓ Should reject invalid recovery policy[kwargs 0][0m
+[32m  ✓ Should reject invalid recovery policy[kwargs 1][0m
+[32m  ✓ Should reject invalid recovery policy[kwargs 2][0m
+[32m  ✓ Should reject invalid recovery policy[kwargs 3][0m
+[32m  ✓ Should reject invalid recovery policy[kwargs 4][0m
+[32m  ✓ Should reject invalid recovery policy[kwargs 5][0m
+[32m  ✓ Should reject invalid recovery policy[kwargs 6][0m
+[32m  ✓ Should reject invalid recovery policy[kwargs 7][0m
+[32m  ✓ Should parse retry after without serializing untrusted text[None-absent-None][0m
+[32m  ✓ Should parse retry after without serializing untrusted text[-1-invalid-None][0m
+[32m  ✓ Should parse retry after without serializing untrusted text[1.5-invalid-None][0m
+[32m  ✓ Should parse retry after without serializing untrusted text[secret-invalid-None][0m
+[32m  ✓ Should parse retry after without serializing untrusted text[0-seconds-0][0m
+[32m  ✓ Should parse retry after without serializing untrusted text[12-seconds-12][0m
+[32m  ✓ Should parse retry after without serializing untrusted text[Thursday, 01-Jan-70 00:16:42 GMT-date-2][0m
+[32m  ✓ Should parse retry after without serializing untrusted text[Thu Jan  1 00:16:42 1970-date-2][0m
+[32m  ✓ Should parse retry after without serializing untrusted text[Thu, 01 Jan 1970 00:16:39 GMT-date-0][0m
+[32m  ✓ Should parse retry after without serializing untrusted text[99999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999-invalid-None][0m
+[32m  ✓ Should keep callback secrets out of policy serialization and repr[0m
+
+src/mojentic/llm/tools/create_directory_boundary_spec.py:
+
+Describe Create Directory Boundary:
+[32m  ✓ Should preserve unexpected path failure without filesystem mutation[0m
+[32m  ✓ Should create nested directories and accept existing directory[0m
+[32m  ✓ Should return sandbox error without creating outside directory[0m
+[32m  ✓ Should return os error without replacing existing file[0m
+[32m  ✓ Should return permission error from path boundary without mutation[0m
+
+src/mojentic/llm/tools/current_datetime_spec.py:
+
+Describe Current Date Time Tool:
+[32m  ✓ Should format local offset and name from the returned instant[0m
+[32m  ✓ Should preserve default local wall clock format[0m
+
+src/mojentic/llm/tools/date_resolver_spec.py:
+
+Describe Resolve Date Tool:
+[32m  ✓ Should resolve date without reference[0m
+[32m    When resolving "next Friday" without a reference date provided[0m
+[32m    Then it should return some resolved date (which will change whenever this test is run)[0m
+[32m  ✓ Should resolve date with reference[0m
+[32m    When resolving "next Friday" with a reference date of 2023-10-01[0m
+[32m    Then it should return 2023-10-06[0m
+
+src/mojentic/llm/tools/ephemeral_task_manager/append_task_tool_spec.py:
+
+Describe Append Task Tool:
+[32m  ✓ Should call append task with description[0m
+[32m  ✓ Should handle error when append task fails[0m
+
+src/mojentic/llm/tools/ephemeral_task_manager/clear_tasks_tool_spec.py:
+
+Describe Clear Tasks Tool:
+[32m  ✓ Should call clear tasks[0m
+[32m  ✓ Should handle empty list[0m
+
+src/mojentic/llm/tools/ephemeral_task_manager/complete_task_tool_spec.py:
+
+Describe Complete Task Tool:
+[32m  ✓ Should call complete task with correct id[0m
+[32m  ✓ Should convert string id to int[0m
+[32m  ✓ Should handle error when complete task fails[0m
+
+src/mojentic/llm/tools/ephemeral_task_manager/ephemeral_task_list_spec.py:
+
+Describe Ephemeral Task List:
+[32m  ✓ Should initialize with empty task list[0m
+[32m  ✓ Should append task[0m
+[32m  ✓ Should prepend task[0m
+[32m  ✓ Should insert task after[0m
+[32m  ✓ Should raise error when inserting after nonexistent task[0m
+[32m  ✓ Should start task[0m
+[32m  ✓ Should raise error when starting non pending task[0m
+[32m  ✓ Should complete task[0m
+[32m  ✓ Should raise error when completing non in progress task[0m
+[32m  ✓ Should clear tasks[0m
+[32m  ✓ Should maintain task ids across operations[0m
+
+src/mojentic/llm/tools/ephemeral_task_manager/insert_task_after_tool_spec.py:
+
+Describe Insert Task After Tool:
+[32m  ✓ Should call insert task after with correct parameters[0m
+[32m  ✓ Should convert string task id to int[0m
+[32m  ✓ Should handle error when insert task after fails[0m
+
+src/mojentic/llm/tools/ephemeral_task_manager/list_tasks_tool_spec.py:
+
+Describe List Tasks Tool:
+[32m  ✓ Should call list tasks[0m
+[32m  ✓ Should handle empty list[0m
+
+src/mojentic/llm/tools/ephemeral_task_manager/prepend_task_tool_spec.py:
+
+Describe Prepend Task Tool:
+[32m  ✓ Should call prepend task with description[0m
+[32m  ✓ Should handle error when prepend task fails[0m
+
+src/mojentic/llm/tools/ephemeral_task_manager/start_task_tool_spec.py:
+
+Describe Start Task Tool:
+[32m  ✓ Should call start task with correct id[0m
+[32m  ✓ Should convert string id to int[0m
+[32m  ✓ Should handle error when start task fails[0m
+
+src/mojentic/llm/tools/file_manager_spec.py:
+
+Describe Create Directory Tool:
+[32m  ✓ Should create directory[0m
+[32m    When running with a path[0m
+[32m    Then it should create the directory[0m
+[32m  ✓ Should have correct descriptor[0m
+[32m    When accessing its descriptor[0m
+[32m    Then it should have the correct structure[0m
+
+Describe Edit File With Diff Tool:
+[32m  ✓ Should edit file with diff[0m
+[32m    When running with a path and diff[0m
+[32m    Then it should apply the diff to the file[0m
+[32m  ✓ Should edit file with diff adding lines[0m
+[32m    When running with a path and diff that adds lines[0m
+[32m    Then it should add the lines while preserving the rest of the content[0m
+[32m  ✓ Should edit file with diff multiple hunks[0m
+[32m    When running with a path and diff that contains multiple hunks[0m
+[32m    Then it should apply all changes correctly[0m
+[32m  ✓ Should have correct descriptor[0m
+[32m    When accessing its descriptor[0m
+[32m    Then it should have the correct structure[0m
+
+Describe File Manager:
+[32m  ✓ Should list files with extension[0m
+[32m    When listing files with a specific extension[0m
+[32m    Then it should return only files with that extension[0m
+[32m  ✓ Should list all files[0m
+[32m    When listing all files[0m
+[32m    Then it should return all files recursively[0m
+[32m  ✓ Should find files by glob[0m
+[32m    When finding files by glob pattern[0m
+[32m    Then it should return files matching the pattern[0m
+[32m  ✓ Should find files containing[0m
+[32m    When finding files containing a pattern[0m
+[32m    Then it should return files with content matching the pattern[0m
+[32m  ✓ Should find lines matching[0m
+[32m    When finding lines matching a pattern in a file[0m
+[32m    Then it should return the matching lines with line numbers[0m
+[32m  ✓ Should edit file with diff[0m
+[32m    When editing a file with a diff[0m
+[32m    Then it should apply the changes correctly[0m
+[32m  ✓ Should read file[0m
+[32m    When reading a file[0m
+[32m    Then it should return the file content[0m
+[32m  ✓ Should write file[0m
+[32m    When writing to a file[0m
+[32m    Then it should update the file content[0m
+
+Describe Filesystem Gateway:
+[32m  ✓ Should resolve path correctly[0m
+[32m    When resolving a path[0m
+[32m    Then it should correctly join with the base path[0m
+[32m  ✓ Should prevent path traversal[0m
+[32m    When resolving a path that attempts to escape the sandbox[0m
+[32m    Then it should raise a ValueError[0m
+[32m  ✓ Should list files[0m
+[32m    When listing files in the root directory[0m
+[32m    Then it should return the correct list of files[0m
+[32m  ✓ Should list all files recursively[0m
+[32m    When listing all files recursively[0m
+[32m    Then it should return all files including those in subdirectories[0m
+[32m  ✓ Should find files by glob[0m
+[32m    When finding files by glob pattern[0m
+[32m    Then it should return files matching the pattern[0m
+[32m  ✓ Should find files containing[0m
+[32m    When finding files containing a pattern[0m
+[32m    Then it should return files with content matching the pattern[0m
+[32m  ✓ Should find lines matching[0m
+[32m    When finding lines matching a pattern in a file[0m
+[32m    Then it should return the matching lines with line numbers[0m
+[32m  ✓ Should edit file with diff[0m
+[32m    When editing a file with a diff[0m
+[32m    Then it should apply the changes correctly[0m
+[32m  ✓ Should edit file with diff adding lines[0m
+[32m    When editing a file with a diff that adds lines[0m
+[32m    Then it should add the lines while preserving the rest of the content[0m
+[32m  ✓ Should edit file with diff removing lines[0m
+[32m    When editing a file with a diff that removes lines[0m
+[32m    Then it should remove the lines while preserving the rest of the content[0m
+[32m  ✓ Should edit file with diff multiple hunks[0m
+[32m    When editing a file with a diff that contains multiple hunks[0m
+[32m    Then it should apply all changes correctly[0m
+[32m  ✓ Should read file[0m
+[32m    When reading a file[0m
+[32m    Then it should return the file content[0m
+[32m  ✓ Should write file[0m
+[32m    When writing to a file[0m
+[32m    Then it should update the file content[0m
+
+Describe Find Files By Glob Tool:
+[32m  ✓ Should find files by glob pattern[0m
+[32m    When running with a glob pattern[0m
+[32m    Then it should return files matching the pattern[0m
+[32m  ✓ Should have correct descriptor[0m
+[32m    When accessing its descriptor[0m
+[32m    Then it should have the correct structure[0m
+
+Describe Find Files Containing Tool:
+[32m  ✓ Should find files containing pattern[0m
+[32m    When running with a regex pattern[0m
+[32m    Then it should return files containing text matching the pattern[0m
+[32m  ✓ Should have correct descriptor[0m
+[32m    When accessing its descriptor[0m
+[32m    Then it should have the correct structure[0m
+
+Describe Find Lines Matching Tool:
+[32m  ✓ Should find lines matching pattern[0m
+[32m    When running with a path and regex pattern[0m
+[32m    Then it should return lines matching the pattern with line numbers[0m
+[32m  ✓ Should have correct descriptor[0m
+[32m    When accessing its descriptor[0m
+[32m    Then it should have the correct structure[0m
+
+Describe List All Files Tool:
+[32m  ✓ Should list all files[0m
+[32m    When running[0m
+[32m    Then it should return all files recursively[0m
+[32m  ✓ Should have correct descriptor[0m
+[32m    When accessing its descriptor[0m
+[32m    Then it should have the correct structure[0m
+
+Describe List Files Tool:
+[32m  ✓ Should list files with extension[0m
+[32m    When running with an extension[0m
+[32m    Then it should return files with that extension[0m
+[32m  ✓ Should have correct descriptor[0m
+[32m    When accessing its descriptor[0m
+[32m    Then it should have the correct structure[0m
+
+Describe Read File Tool:
+[32m  ✓ Should read file content[0m
+[32m    When running with a path[0m
+[32m    Then it should return the file content[0m
+[32m  ✓ Should have correct descriptor[0m
+[32m    When accessing its descriptor[0m
+[32m    Then it should have the correct structure[0m
+
+Describe Unexpected Filesystem Failures:
+[32m  ✓ Should propagate programming errors from the filesystem boundary[List Files Tool-ls-args 0][0m
+[32m  ✓ Should propagate programming errors from the filesystem boundary[Read File Tool-read-args 1][0m
+[32m  ✓ Should propagate programming errors from the filesystem boundary[Write File Tool-write-args 2][0m
+[32m  ✓ Should propagate programming errors from the filesystem boundary[List All Files Tool-list all files-args 3][0m
+[32m  ✓ Should propagate programming errors from the filesystem boundary[Find Files By Glob Tool-find files by glob-args 4][0m
+[32m  ✓ Should propagate programming errors from the filesystem boundary[Find Files Containing Tool-find files containing-args 5][0m
+[32m  ✓ Should propagate programming errors from the filesystem boundary[Find Lines Matching Tool-find lines matching-args 6][0m
+[32m  ✓ Should propagate programming errors from the filesystem boundary[Edit File With Diff Tool-edit file with diff-args 7][0m
+
+Describe Write File Tool:
+[32m  ✓ Should write file content[0m
+[32m    When running with a path and content[0m
+[32m    Then it should write the content to the file[0m
+[32m  ✓ Should have correct descriptor[0m
+[32m    When accessing its descriptor[0m
+[32m    Then it should have the correct structure[0m
+
+src/mojentic/llm/tools/llm_tool_spec.py:
+
+Describe LLM Tool:
+
+  Describe Call Tool:
+[32m    ✓ Should convert dict result to json string[0m
+[32m    ✓ Should handle string result directly[0m
+[32m    ✓ Should pass kwargs to run method[0m
+
+src/mojentic/llm/tools/runner_spec.py:
+
+Describe Async Parallel Tool Runner:
+
+  Describe Cancellation:
+[32m    ✓ Should skip pending calls when context cancelled before start[0m
+
+  Describe Concurrency:
+[32m    ✓ Should dispatch calls in parallel[0m
+[32m    ✓ Should respect max concurrency[0m
+[32m    ✓ Should preserve input order in outcomes[0m
+
+  Describe Validation:
+[32m    ✓ Should reject non positive concurrency[0m
+
+Describe Serial Tool Runner:
+
+  Describe Batch Execution:
+[32m    ✓ Should preserve input order[0m
+[32m    ✓ Should return empty for no calls[0m
+[32m    ✓ Should mark outcome as failed when tool raises[0m
+[32m    ✓ Should mark outcome as failed when tool not found[0m
+
+  Describe Hooks:
+[32m    ✓ Should invoke start and complete hooks in order[0m
+
+src/mojentic/llm/tools/tool_wrapper_spec.py:
+
+Describe Tool Wrapper:
+
+  Describe Tool Descriptor:
+[32m    ✓ Should generate proper function descriptor[0m
+[32m      When requesting its descriptor[0m
+[32m      Then it should return properly formatted function description[0m
+
+  Describe Tool Execution:
+[32m    ✓ Should properly execute tool with input[0m
+[32m      When running it with input[0m
+[32m      Then it should properly delegate to the agent's LLM[0m
+
+src/mojentic/realtime/codec_spec.py:
+
+Describe Pcm 16 Codec:
+
+  Describe Decode:
+[32m    ✓ Should produce writable array[0m
+
+  Describe Round Trip:
+[32m    ✓ Should round trip numpy int 16 array[0m
+[32m    ✓ Should round trip bytes input[0m
+
+src/mojentic/realtime/openai_gateway_spec.py:
+
+Describe Open AI Realtime Gateway:
+
+  Describe Construction:
+[32m    ✓ Should require api key[0m
+[32m    ✓ Should accept explicit api key[0m
+
+  Describe Open:
+[32m    ✓ Should open session with unique id[0m
+[32m    ✓ Should route events to session queue[0m
+[32m    ✓ Should surface malformed messages as errors[0m
+
+src/mojentic/realtime/schemas_spec.py:
+
+Describe Parse Server Event:
+
+  Describe Known Events:
+[32m    ✓ Should validate session created[0m
+[32m    ✓ Should preserve unknown fields[0m
+[32m    ✓ Should normalize output audio delta alias[0m
+
+  Describe Unknown Events:
+[32m    ✓ Should pass through unknown types[0m
+[32m    ✓ Should return unknown marker for typeless payload[0m
+[32m    ✓ Should fall back to raw when known type fails validation[0m
+
+src/mojentic/realtime/session_spec.py:
+
+Describe Build Session Update:
+[32m  ✓ Should emit realtime ga shape[0m
+[32m  ✓ Should include function tools[0m
+
+Describe Realtime Session Interruption:
+[32m  ✓ Should cancel in flight tool on barge in[0m
+
+Describe Realtime Session Text Round Trip:
+[32m  ✓ Should emit session opened immediately[0m
+[32m  ✓ Should normalize text turn into kind events[0m
+
+Describe Realtime Session Tool Batch:
+[32m  ✓ Should dispatch parallel tools and submit outputs[0m
+
+Describe Realtime Voice Broker:
+[32m  ✓ Should initialise session with session update[0m
+[32m  ✓ Should merge overrides over broker config[0m
+
+src/mojentic/tracer/event_store_spec.py:
+
+Describe Event Store:
+[32m  ✓ Should store an event[0m
+[32m    When asked to store the event[0m
+[32m    Then the event should be stored[0m
+[32m  ✓ Should filter events by type[0m
+[32m    When filtered by a specific type[0m
+[32m    Then only events of that type should be returned[0m
+[32m  ✓ Should filter tracer events by time range[0m
+[32m    When filtered by time range[0m
+[32m    Then only events within that time range should be returned[0m
+[32m  ✓ Should apply custom filter function[0m
+[32m    When filtered with a custom filter function[0m
+[32m    Then only events matching the filter should be returned[0m
+[32m  ✓ Should clear events[0m
+[32m    When the event store is cleared[0m
+[32m    Then all events should be removed[0m
+[32m  ✓ Should get last n events[0m
+[32m    When requesting the last N events[0m
+[32m    Then only the most recent N events should be returned[0m
+[32m  ✓ Should get last n events by type[0m
+[32m    When requesting the last N events of a specific type[0m
+[32m    Then only the most recent N events of that type should be returned[0m
+[32m  ✓ Should call callback when storing event[0m
+[32m    When an event is stored[0m
+[32m    Then the callback should be called with the event[0m
+
+src/mojentic/tracer/tracer_events_spec.py:
+
+Describe Tracer Events:
+[32m  ✓ Should create base tracer event[0m
+[32m  ✓ Should create llm call tracer event[0m
+[32m  ✓ Should create llm response tracer event[0m
+[32m  ✓ Should create tool call tracer event[0m
+[32m  ✓ Should create agent interaction tracer event[0m
+
+src/mojentic/tracer/tracer_system_spec.py:
+
+Describe Response Evidence:
+[32m  ✓ Should record reported provider evidence on llm responses[0m
+[32m  ✓ Should leave evidence unknown when not reported[0m
+[32m  ✓ Should accept evidence on null tracer[0m
+
+Describe Tracer Package:
+[32m  ✓ Should export tracer system and event store[0m
+
+Describe Tracer System:
+[32m  ✓ Should initialize with default event store[0m
+[32m    When initializing a tracer system[0m
+[32m    Then it should create a default event store[0m
+[32m  ✓ Should initialize with provided event store[0m
+[32m    When initializing a tracer system with it[0m
+[32m    Then it should use the provided event store[0m
+[32m  ✓ Should record llm call[0m
+[32m    When recording an LLM call[0m
+[32m    Then it should store an LLMCallTracerEvent[0m
+[32m  ✓ Should record llm response[0m
+[32m    When recording an LLM response[0m
+[32m    Then it should store an LLMResponseTracerEvent[0m
+[32m  ✓ Should record tool call[0m
+[32m    When recording a tool call[0m
+[32m    Then it should store a ToolCallTracerEvent[0m
+[32m  ✓ Should record agent interaction[0m
+[32m    When recording an agent interaction[0m
+[32m    Then it should store an AgentInteractionTracerEvent[0m
+[32m  ✓ Should not record when disabled[0m
+[32m    When recording events[0m
+[32m    Then no events should be stored[0m
+[32m  ✓ Should filter events by time range[0m
+[32m    When filtered by time range[0m
+[32m    Then only events within that time range should be returned[0m
+[32m  ✓ Should get last n tracer events[0m
+[32m    When requesting the last N tracer events of a specific type[0m
+[32m    Then only the most recent N events of that type should be returned[0m
+[32m  ✓ Should enable and disable[0m
+[32m    When enabling and disabling it[0m
+[32m    Then its enabled state should change accordingly[0m
+[32m  ✓ Should clear events[0m
+[32m    When clearing events[0m
+[32m    Then all events should be removed[0m
+
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.13.15-final-0 _______________
+
+Name                                                                      Stmts   Miss  Cover
+---------------------------------------------------------------------------------------------
+src/mojentic/__init__.py                                                     15      2    87%
+src/mojentic/agents/__init__.py                                              10      0   100%
+src/mojentic/agents/agent_event_adapter.py                                    7      2    71%
+src/mojentic/agents/async_aggregator_agent.py                                51     38    25%
+src/mojentic/agents/async_llm_agent.py                                       55     33    40%
+src/mojentic/agents/base_agent.py                                             4      1    75%
+src/mojentic/agents/base_async_agent.py                                       4      1    75%
+src/mojentic/agents/base_llm_agent.py                                        49     29    41%
+src/mojentic/agents/correlation_aggregator_agent.py                          24     11    54%
+src/mojentic/agents/iterative_problem_solver.py                              30     20    33%
+src/mojentic/agents/output_agent.py                                           6      2    67%
+src/mojentic/agents/simple_recursive_agent.py                               118      7    94%
+src/mojentic/async_dispatcher.py                                             64      3    95%
+src/mojentic/context/__init__.py                                              0      0   100%
+src/mojentic/context/shared_working_memory.py                                10      0   100%
+src/mojentic/dispatcher.py                                                   48     36    25%
+src/mojentic/event.py                                                         6      0   100%
+src/mojentic/llm/__init__.py                                                 13      0   100%
+src/mojentic/llm/chat_session.py                                             58      1    98%
+src/mojentic/llm/completion_config.py                                        18      0   100%
+src/mojentic/llm/gateways/__init__.py                                        10      0   100%
+src/mojentic/llm/gateways/anthropic.py                                       30      5    83%
+src/mojentic/llm/gateways/anthropic_messages_adapter.py                      34      9    74%
+src/mojentic/llm/gateways/embeddings_gateway.py                              13      6    54%
+src/mojentic/llm/gateways/file_gateway.py                                    20     10    50%
+src/mojentic/llm/gateways/llm_gateway.py                                     11      3    73%
+src/mojentic/llm/gateways/models.py                                          44      0   100%
+src/mojentic/llm/gateways/ollama.py                                         207     23    89%
+src/mojentic/llm/gateways/ollama_messages_adapter.py                         22      1    95%
+src/mojentic/llm/gateways/ollama_stream_events.py                            54      0   100%
+src/mojentic/llm/gateways/omlx.py                                           161      5    97%
+src/mojentic/llm/gateways/omlx_protocol.py                                   56      0   100%
+src/mojentic/llm/gateways/omlx_recovery.py                                  206     21    90%
+src/mojentic/llm/gateways/omlx_stream.py                                     59      0   100%
+src/mojentic/llm/gateways/openai.py                                         285     59    79%
+src/mojentic/llm/gateways/openai_messages_adapter.py                         50      5    90%
+src/mojentic/llm/gateways/openai_model_registry.py                          139      3    98%
+src/mojentic/llm/gateways/openai_stream_events.py                            69      2    97%
+src/mojentic/llm/gateways/stream_events.py                                   41      0   100%
+src/mojentic/llm/gateways/tokenizer_gateway.py                               12      2    83%
+src/mojentic/llm/llm_broker.py                                              202     12    94%
+src/mojentic/llm/message_composers.py                                        96     26    73%
+src/mojentic/llm/recovery.py                                                517     24    95%
+src/mojentic/llm/recovery_stream.py                                         391     19    95%
+src/mojentic/llm/registry/__init__.py                                         0      0   100%
+src/mojentic/llm/registry/llm_registry.py                                    49     17    65%
+src/mojentic/llm/tools/__init__.py                                            3      0   100%
+src/mojentic/llm/tools/current_datetime.py                                   10      1    90%
+src/mojentic/llm/tools/date_resolver.py                                      14      0   100%
+src/mojentic/llm/tools/ephemeral_task_manager/__init__.py                     9      0   100%
+src/mojentic/llm/tools/ephemeral_task_manager/append_task_tool.py            14      1    93%
+src/mojentic/llm/tools/ephemeral_task_manager/clear_tasks_tool.py            11      1    91%
+src/mojentic/llm/tools/ephemeral_task_manager/complete_task_tool.py          15      1    93%
+src/mojentic/llm/tools/ephemeral_task_manager/ephemeral_task_list.py         63      1    98%
+src/mojentic/llm/tools/ephemeral_task_manager/insert_task_after_tool.py      15      1    93%
+src/mojentic/llm/tools/ephemeral_task_manager/list_tasks_tool.py             17      1    94%
+src/mojentic/llm/tools/ephemeral_task_manager/prepend_task_tool.py           14      1    93%
+src/mojentic/llm/tools/ephemeral_task_manager/start_task_tool.py             15      1    93%
+src/mojentic/llm/tools/file_manager.py                                      343     54    84%
+src/mojentic/llm/tools/llm_tool.py                                           26      2    92%
+src/mojentic/llm/tools/runner.py                                            142     12    92%
+src/mojentic/llm/tools/tool_wrapper.py                                       15      0   100%
+src/mojentic/realtime/__init__.py                                             8      0   100%
+src/mojentic/realtime/broker.py                                              41      6    85%
+src/mojentic/realtime/codec.py                                               11      0   100%
+src/mojentic/realtime/config.py                                              69      0   100%
+src/mojentic/realtime/events.py                                             116      0   100%
+src/mojentic/realtime/gateway.py                                              7      0   100%
+src/mojentic/realtime/openai_gateway.py                                      90     11    88%
+src/mojentic/realtime/schemas.py                                            101      0   100%
+src/mojentic/realtime/session.py                                            393    126    68%
+src/mojentic/realtime/transport.py                                           71     54    24%
+src/mojentic/router.py                                                       11      0   100%
+src/mojentic/tracer/__init__.py                                               4      0   100%
+src/mojentic/tracer/event_store.py                                           29      0   100%
+src/mojentic/tracer/null_tracer.py                                           20      2    90%
+src/mojentic/tracer/tracer_events.py                                         95     48    49%
+src/mojentic/tracer/tracer_system.py                                         60      8    87%
+---------------------------------------------------------------------------------------------
+TOTAL                                                                      5220    770    85%
+[32m============================= [32m[1m915 passed[0m[32m in 19.73s[0m[32m =============================[0m

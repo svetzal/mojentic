@@ -1,0 +1,9 @@
+{
+  "kind": "direct",
+  "reason": "The objective is durable evidence retention without runtime or fixture changes. This acceptance probe verifies every original artifact against its manifest hash and compares the final retained HTTP 429 specification byte-for-byte with delivered trunk.",
+  "corrected": {
+    "command": "UV_CACHE_DIR=/tmp/mojentic-cycle10-uv-cache foundry capture --log-dir .foundry/logs/final-retention-proof -- uv run python evidence/cycle-9/current/retention-probe.py",
+    "exit_code": 0,
+    "log": ".foundry/logs/final-retention-proof/3-1791688924719468142.stdout.log"
+  }
+}

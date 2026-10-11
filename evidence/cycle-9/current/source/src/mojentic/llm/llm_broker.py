@@ -1,0 +1,818 @@
+import asyncio
+import inspect
+import json
+import time
+import uuid
+import warnings
+from collections.abc import Iterator
+from contextlib import ExitStack
+
+import structlog
+from pydantic import BaseModel
+
+from mojentic.llm.completion_config import CompletionConfig
+from mojentic.llm.gateways.llm_gateway import LLMGateway
+from mojentic.llm.gateways.models import (
+    LLMGatewayResponse,
+    LLMMessage,
+    LLMToolCall,
+    MessageRole,
+)
+from mojentic.llm.gateways.ollama import OllamaGateway
+from mojentic.llm.gateways.stream_events import (
+    StreamContent,
+    StreamError,
+    StreamErrorReason,
+    StreamEvent,
+    TerminalStreamEvent,
+)
+from mojentic.llm.gateways.tokenizer_gateway import TokenizerGateway
+from mojentic.llm.tools.runner import (
+    SerialToolRunner,
+    ToolRunContext,
+    ToolRunner,
+)
+from mojentic.tracer.tracer_system import TracerSystem
+
+logger = structlog.get_logger()
+
+
+class MaxToolIterationsExceededError(Exception):
+    """Raised when tool calls exceed the maximum allowed iterations."""
+
+
+class LLMBroker:
+    """
+    This class is responsible for managing interaction with a Large Language Model. It abstracts
+    the user
+    from the specific mechanics of the LLM and provides a common interface for generating responses.
+    """
+
+    adapter: LLMGateway
+    tokenizer: TokenizerGateway
+    model: str
+    tracer: TracerSystem | None
+    tool_runner: ToolRunner
+
+    def __init__(
+        self,
+        model: str,
+        gateway: LLMGateway | None = None,
+        tokenizer: TokenizerGateway | None = None,
+        tracer: TracerSystem | None = None,
+        tool_runner: ToolRunner | None = None,
+        tool_context: ToolRunContext | None = None,
+    ):
+        """
+        Create an instance of the LLMBroker.
+
+        Parameters
+        ----------
+        model
+            The name of the model to use.
+        gateway
+            The gateway to use for communication with the LLM. If None, a gateway is created that
+            will utilize a local
+            Ollama server.
+        tokenizer
+            The gateway to use for tokenization. This is used to log approximate token counts for
+            the LLM calls. If
+            None, tiktoken's `cl100k_base` tokenizer is used.
+        tracer
+            Optional tracer system to record LLM calls and responses.
+        tool_runner
+            Strategy for executing tool calls returned by the LLM. Defaults to
+            :class:`SerialToolRunner` for backward compatibility. Pass
+            :class:`AsyncParallelToolRunner` (used by the realtime broker) or a
+            custom :class:`ToolRunner` to change concurrency policy.
+        """
+        self.model = model
+
+        # Use null_tracer if no tracer is provided
+        from mojentic.tracer import null_tracer
+
+        self.tracer = tracer or null_tracer
+
+        if tokenizer is None:
+            self.tokenizer = TokenizerGateway()
+        else:
+            self.tokenizer = tokenizer
+        if gateway is None:
+            self.adapter = OllamaGateway()
+        else:
+            self.adapter = gateway
+
+        self.tool_runner = tool_runner or SerialToolRunner()
+        self.tool_context = tool_context
+
+    def generate(
+        self,
+        messages: list[LLMMessage],
+        tools=None,
+        config: CompletionConfig | None = None,
+        temperature: float | None = None,
+        num_ctx: int | None = None,
+        num_predict: int | None = None,
+        max_tokens: int | None = None,
+        correlation_id: str | None = None,
+    ) -> str:
+        """
+        Generate a text response from the LLM.
+
+        Parameters
+        ----------
+        messages : LLMMessage
+            A list of messages to send to the LLM.
+        tools : List[Tool]
+            A list of tools to use with the LLM. If a tool call is requested, the tool will be
+            called and the output
+            will be included in the response.
+        config : Optional[CompletionConfig]
+            Configuration object for LLM completion (recommended). If provided with individual
+            kwargs, a DeprecationWarning is emitted.
+        temperature : Optional[float]
+            The temperature to use for the response. Deprecated: use config.
+        num_ctx : Optional[int]
+            The number of context tokens to use. Deprecated: use config.
+        num_predict : Optional[int]
+            The number of tokens to predict. Deprecated: use config.
+        max_tokens : Optional[int]
+            The maximum number of tokens to generate. Deprecated: use config.
+        correlation_id : str
+            UUID string that is copied from cause-to-affect for tracing events. A new UUID is
+            generated when omitted.
+
+        Returns
+        -------
+        str
+            The response from the LLM.
+
+        Raises
+        ------
+        MaxToolIterationsExceededError
+            If tool calls exceed config.max_tool_iterations.
+        """
+        # Handle config vs individual kwargs
+        if config is not None and any(
+            param is not None
+            for param in [temperature, num_ctx, num_predict, max_tokens]
+        ):
+            warnings.warn(
+                "Both config and individual kwargs provided. Using config and ignoring kwargs. "
+                "Individual kwargs are deprecated, use config=CompletionConfig(...) instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        elif config is None:
+            # Build config from individual kwargs
+            config = CompletionConfig(
+                temperature=temperature if temperature is not None else 1.0,
+                num_ctx=num_ctx if num_ctx is not None else 32768,
+                num_predict=num_predict if num_predict is not None else -1,
+                max_tokens=max_tokens if max_tokens is not None else 16384,
+            )
+
+        correlation_id = _ensure_correlation_id(correlation_id)
+        while True:
+            if (
+                config.max_tool_iterations is not None
+                and config.max_tool_iterations <= 0
+            ):
+                raise MaxToolIterationsExceededError(
+                    f"Tool call iterations exceeded the maximum budget for model '{self.model}'. "
+                    f"Increase config.max_tool_iterations to allow more rounds."
+                )
+            result = self.generate_response(messages, tools, config, correlation_id)
+            if not result.tool_calls or tools is None:
+                return result.content
+            paired = self._dispatch_tool_batch(
+                result.tool_calls,
+                tools,
+                caller="LLMBroker",
+                correlation_id=correlation_id,
+            )
+            messages.append(
+                LLMMessage(
+                    role=MessageRole.Assistant,
+                    content=result.content,
+                    tool_calls=result.tool_calls,
+                )
+            )
+            messages.extend(
+                LLMMessage(
+                    role=MessageRole.Tool,
+                    content=self._serialize_outcome(outcome),
+                    tool_calls=[call],
+                )
+                for call, outcome in paired
+            )
+            config = config.model_copy(
+                update={
+                    "max_tool_iterations": _next_iteration(config.max_tool_iterations)
+                }
+            )
+
+    def generate_response(
+        self,
+        messages: list[LLMMessage],
+        tools=None,
+        config: CompletionConfig | None = None,
+        correlation_id: str | None = None,
+    ) -> LLMGatewayResponse:
+        """Return one native model response without executing tools or changing history.
+
+        The caller assembles context and decides when to dispatch returned calls.
+        Provider failures propagate; no retry or tool iteration occurs here. A new
+        correlation ID is generated when none is supplied.
+        """
+        config = config or CompletionConfig()
+        correlation_id = _ensure_correlation_id(correlation_id)
+        approximate_tokens = len(
+            self.tokenizer.encode(self._content_to_count(messages))
+        )
+        logger.info(f"Requesting llm response with approx {approximate_tokens} tokens")
+
+        # Convert messages to serializable dict for audit
+        messages_for_tracer = [m.model_dump() for m in messages]
+
+        # Record LLM call in tracer
+        tools_for_tracer = (
+            [{"name": t.name, "description": t.description} for t in tools]
+            if tools
+            else None
+        )
+        self.tracer.record_llm_call(
+            self.model,
+            messages_for_tracer,
+            config.temperature,
+            tools=tools_for_tracer,
+            source=type(self),
+            correlation_id=correlation_id,
+        )
+
+        # Measure call duration for audit
+        start_time = time.time()
+
+        result: LLMGatewayResponse = self.adapter.complete(
+            model=self.model,
+            messages=messages,
+            tools=tools,
+            config=config,
+            temperature=config.temperature,
+            num_ctx=config.num_ctx,
+            num_predict=config.num_predict,
+            max_tokens=config.max_tokens,
+        )
+
+        call_duration_ms = (time.time() - start_time) * 1000
+
+        # Record LLM response in tracer
+        tool_calls_for_tracer = (
+            [tc.model_dump() for tc in result.tool_calls] if result.tool_calls else None
+        )
+        self.tracer.record_llm_response(
+            self.model,
+            result.content,
+            tool_calls=tool_calls_for_tracer,
+            call_duration_ms=call_duration_ms,
+            source=type(self),
+            correlation_id=correlation_id,
+            **_response_evidence(result),
+        )
+
+        return result
+
+    def generate_stream(
+        self,
+        messages: list[LLMMessage],
+        tools=None,
+        config: CompletionConfig | None = None,
+        temperature: float | None = None,
+        num_ctx: int | None = None,
+        num_predict: int | None = None,
+        max_tokens: int | None = None,
+        correlation_id: str | None = None,
+    ) -> Iterator[str]:
+        """
+        Generate a streaming text response from the LLM.
+
+        This method mirrors generate() but yields content chunks as they arrive from the LLM,
+        providing a better user experience for long-running requests. When tool calls are
+        detected, tools are executed and the LLM is called recursively, with the new response
+        also being streamed.
+
+        Parameters
+        ----------
+        messages : List[LLMMessage]
+            A list of messages to send to the LLM.
+        tools : List[Tool]
+            A list of tools to use with the LLM. If a tool call is requested, the tool will be
+            called and the output will be included in the response.
+        config : Optional[CompletionConfig]
+            Configuration object for LLM completion (recommended). If provided with individual
+            kwargs, a DeprecationWarning is emitted.
+        temperature : Optional[float]
+            The temperature to use for the response. Deprecated: use config.
+        num_ctx : Optional[int]
+            The number of context tokens to use. Deprecated: use config.
+        num_predict : Optional[int]
+            The number of tokens to predict. Deprecated: use config.
+        max_tokens : Optional[int]
+            The maximum number of tokens to generate. Deprecated: use config.
+        correlation_id : str
+            UUID string that is copied from cause-to-affect for tracing events. A new UUID is
+            generated when omitted.
+
+        Yields
+        ------
+        str
+            Content chunks as they arrive from the LLM.
+
+        Raises
+        ------
+        MaxToolIterationsExceededError
+            If tool calls exceed config.max_tool_iterations.
+        """
+        # Handle config vs individual kwargs
+        if config is not None and any(
+            param is not None
+            for param in [temperature, num_ctx, num_predict, max_tokens]
+        ):
+            warnings.warn(
+                "Both config and individual kwargs provided. Using config and ignoring kwargs. "
+                "Individual kwargs are deprecated, use config=CompletionConfig(...) instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        elif config is None:
+            # Build config from individual kwargs
+            config = CompletionConfig(
+                temperature=temperature if temperature is not None else 1.0,
+                num_ctx=num_ctx if num_ctx is not None else 32768,
+                num_predict=num_predict if num_predict is not None else -1,
+                max_tokens=max_tokens if max_tokens is not None else 16384,
+            )
+
+        correlation_id = _ensure_correlation_id(correlation_id)
+        while True:
+            if (
+                config.max_tool_iterations is not None
+                and config.max_tool_iterations <= 0
+            ):
+                raise MaxToolIterationsExceededError(
+                    f"Tool call iterations exceeded the maximum budget for model '{self.model}'. "
+                    f"Increase config.max_tool_iterations to allow more recursion."
+                )
+            # Check if gateway supports streaming
+            if not hasattr(self.adapter, "complete_stream"):
+                raise NotImplementedError(
+                    f"Gateway {type(self.adapter).__name__} does not support streaming"
+                )
+
+            approximate_tokens = len(
+                self.tokenizer.encode(self._content_to_count(messages))
+            )
+            logger.info(
+                f"Requesting streaming llm response with approx {approximate_tokens} tokens"
+            )
+
+            # Convert messages to serializable dict for audit
+            messages_for_tracer = [m.model_dump() for m in messages]
+
+            # Record LLM call in tracer
+            tools_for_tracer = (
+                [{"name": t.name, "description": t.description} for t in tools]
+                if tools
+                else None
+            )
+            self.tracer.record_llm_call(
+                self.model,
+                messages_for_tracer,
+                config.temperature,
+                tools=tools_for_tracer,
+                source=type(self),
+                correlation_id=correlation_id,
+            )
+
+            # Measure call duration for audit
+            start_time = time.time()
+
+            # Accumulate content and tool calls from stream
+            accumulated_content = ""
+            accumulated_tool_calls = []
+
+            stream = self.adapter.complete_stream(
+                model=self.model,
+                messages=messages,
+                tools=tools,
+                config=config,
+                temperature=config.temperature,
+                num_ctx=config.num_ctx,
+                num_predict=config.num_predict,
+                max_tokens=config.max_tokens,
+            )
+
+            with ExitStack() as resources:
+                close = getattr(stream, "close", None)
+                if close is not None:
+                    resources.callback(close)
+                for chunk in stream:
+                    # Handle content chunks
+                    if hasattr(chunk, "content") and chunk.content:
+                        accumulated_content += chunk.content
+                        yield chunk.content
+
+                    # Handle tool calls if present
+                    if hasattr(chunk, "tool_calls") and chunk.tool_calls:
+                        accumulated_tool_calls.extend(chunk.tool_calls)
+
+            call_duration_ms = (time.time() - start_time) * 1000
+
+            # Record LLM response in tracer
+            tool_calls_for_tracer = (
+                [
+                    tc.model_dump() if hasattr(tc, "model_dump") else tc
+                    for tc in accumulated_tool_calls
+                ]
+                if accumulated_tool_calls
+                else None
+            )
+            self.tracer.record_llm_response(
+                self.model,
+                accumulated_content,
+                tool_calls=tool_calls_for_tracer,
+                call_duration_ms=call_duration_ms,
+                source=type(self),
+                correlation_id=correlation_id,
+            )
+
+            # Process tool calls if any were accumulated
+            if accumulated_tool_calls and tools is not None:
+                logger.info("Tool call requested in streaming response")
+                normalized_calls = [
+                    self._normalize_streamed_tool_call(tc)
+                    for tc in accumulated_tool_calls
+                ]
+                paired = self._dispatch_tool_batch(
+                    normalized_calls,
+                    tools,
+                    caller="LLMBroker.generate_stream",
+                    correlation_id=correlation_id,
+                )
+
+                messages.append(
+                    LLMMessage(
+                        role=MessageRole.Assistant,
+                        content=accumulated_content,
+                        tool_calls=normalized_calls,
+                    )
+                )
+                messages.extend(
+                    LLMMessage(
+                        role=MessageRole.Tool,
+                        content=self._serialize_outcome(outcome),
+                        tool_calls=[call],
+                    )
+                    for call, outcome in paired
+                )
+                config = config.model_copy(
+                    update={
+                        "max_tool_iterations": _next_iteration(
+                            config.max_tool_iterations
+                        )
+                    }
+                )
+            else:
+                return
+
+    def generate_stream_events(
+        self,
+        messages: list[LLMMessage],
+        config: CompletionConfig | None = None,
+        correlation_id: str | None = None,
+    ) -> Iterator[StreamEvent]:
+        """
+        Stream one model turn as events that end with terminal completion evidence.
+
+        Use this when incomplete output must never be mistaken for a result. The stream
+        yields :class:`StreamContent` events and ends with exactly one terminal event:
+        :class:`StreamCompleted` when the provider finished the turn normally, or
+        :class:`StreamError` otherwise. Content yielded before a :class:`StreamError` is
+        evidence of what the provider sent, not a usable result.
+
+        The broker sends one request with no tools, forces zero tool iterations and never
+        retries. Call ``close()`` on the generator to cancel the HTTP request. Use
+        ``contextlib.closing`` around a loop that may break early. A retained generator
+        stays open after ``break``. A gateway without
+        ``complete_stream_events`` yields a single ``STREAM_EVENTS_UNSUPPORTED`` error
+        without sending a request.
+
+        Parameters
+        ----------
+        messages : List[LLMMessage]
+            The messages to send.
+        config : Optional[CompletionConfig]
+            Configuration for the request. ``max_tool_iterations`` is forced to zero.
+        correlation_id : Optional[str]
+            UUID string that is copied from cause-to-affect for tracing events. A new UUID is
+            generated when omitted.
+
+        Yields
+        ------
+        StreamEvent
+            Content events followed by exactly one terminal event.
+        """
+        complete_stream_events = getattr(self.adapter, "complete_stream_events", None)
+        if complete_stream_events is None:
+            yield StreamError(
+                reason=StreamErrorReason.STREAM_EVENTS_UNSUPPORTED,
+                detail=type(self.adapter).__name__,
+            )
+            return
+
+        config = (config or CompletionConfig()).model_copy(
+            update={"max_tool_iterations": 0}
+        )
+        correlation_id = _ensure_correlation_id(correlation_id)
+        self.tracer.record_llm_call(
+            self.model,
+            [m.model_dump() for m in messages],
+            config.temperature,
+            tools=None,
+            source=type(self),
+            correlation_id=correlation_id,
+        )
+        start_time = time.time()
+        content = ""
+        events = iter(
+            complete_stream_events(model=self.model, messages=messages, config=config)
+        )
+        try:
+            for event in events:
+                if isinstance(event, StreamContent):
+                    content += event.text
+                    yield event
+                    continue
+                self._record_stream_events_response(
+                    content, event, start_time, correlation_id
+                )
+                yield event
+                return
+            terminal = StreamError(reason=StreamErrorReason.INCOMPLETE_STREAM)
+            self._record_stream_events_response(
+                content, terminal, start_time, correlation_id
+            )
+            yield terminal
+        finally:
+            close = getattr(events, "close", None)
+            if close is not None:
+                close()
+
+    def _record_stream_events_response(
+        self,
+        content: str,
+        terminal: TerminalStreamEvent,
+        start_time: float,
+        correlation_id: str | None,
+    ) -> None:
+        evidence = terminal.metadata
+        self.tracer.record_llm_response(
+            self.model,
+            content,
+            call_duration_ms=(time.time() - start_time) * 1000,
+            source=type(self),
+            correlation_id=correlation_id,
+            usage=evidence.usage if evidence else None,
+            provider_model=evidence.provider_model if evidence else None,
+            finish_reason=evidence.finish_reason if evidence else None,
+            metadata=evidence.metadata if evidence else None,
+        )
+
+    @staticmethod
+    def _normalize_streamed_tool_call(tool_call):
+        """Convert raw provider tool-call payloads into LLMToolCall objects."""
+        if isinstance(tool_call, LLMToolCall):
+            return tool_call
+        call = tool_call if hasattr(tool_call, "name") else tool_call.function
+        return LLMToolCall(
+            id=getattr(tool_call, "id", None), name=call.name, arguments=call.arguments
+        )
+
+    def _dispatch_tool_batch(self, tool_calls, tools, caller, correlation_id):
+        """
+        Execute a batch of tool calls through the configured tool_runner.
+
+        Returns a list of ``(tool_call, outcome)`` pairs in input order for
+        every requested call, including unknown names and errors.
+        Per-call tracer events are emitted for every outcome.
+        """
+        from mojentic.llm.tools.runner import ToolCallExecution as _ToolCallExecution
+
+        dispatched = list(tool_calls)
+        executions = [
+            _ToolCallExecution(
+                id=getattr(call, "id", None) or f"call-{idx}",
+                name=call.name,
+                args=call.arguments,
+            )
+            for idx, call in enumerate(dispatched)
+        ]
+
+        if not executions:
+            return []
+
+        context = (
+            self.tool_context.model_copy(
+                update={"correlation_id": correlation_id, "source": caller}
+            )
+            if self.tool_context is not None
+            else None
+        )
+        outcomes = self.tool_runner.run_batch(executions, tools, context)
+        if inspect.isawaitable(outcomes):
+            outcomes = _run_async_outcomes(outcomes)
+        paired = list(zip(dispatched, outcomes))
+        for tool_call, outcome in paired:
+            self.tracer.record_tool_call(
+                tool_call.name,
+                tool_call.arguments,
+                outcome.result if outcome.ok else {"error": str(outcome.error)},
+                caller=caller,
+                call_duration_ms=outcome.duration_ms,
+                source=type(self),
+                correlation_id=correlation_id,
+            )
+            if outcome.ok:
+                logger.info("Function output", output=outcome.result)
+            else:
+                logger.warning(
+                    "Tool execution failed",
+                    function=tool_call.name,
+                    error=str(outcome.error),
+                )
+        return paired
+
+    @staticmethod
+    def _serialize_outcome(outcome) -> str:
+        if outcome.ok:
+            return json.dumps(outcome.result)
+        return json.dumps({"error": str(outcome.error)})
+
+    def _content_to_count(self, messages: list[LLMMessage]):
+        content = ""
+        for message in messages:
+            if message.content:
+                content += message.content
+        return content
+
+    def generate_object(
+        self,
+        messages: list[LLMMessage],
+        object_model: type[BaseModel],
+        config: CompletionConfig | None = None,
+        temperature: float | None = None,
+        num_ctx: int | None = None,
+        num_predict: int | None = None,
+        max_tokens: int | None = None,
+        correlation_id: str | None = None,
+    ) -> BaseModel:
+        """
+        Generate a structured response from the LLM and return it as an object.
+
+        Parameters
+        ----------
+        messages : List[LLMMessage]
+            A list of messages to send to the LLM.
+        object_model : BaseModel
+            The class of the model to use for the structured response data.
+        config : Optional[CompletionConfig]
+            Configuration object for LLM completion (recommended). If provided with individual
+            kwargs, a DeprecationWarning is emitted.
+        temperature : Optional[float]
+            The temperature to use for the response. Deprecated: use config.
+        num_ctx : Optional[int]
+            The number of context tokens to use. Deprecated: use config.
+        num_predict : Optional[int]
+            The number of tokens to predict. Deprecated: use config.
+        max_tokens : Optional[int]
+            The maximum number of tokens to generate. Deprecated: use config.
+        correlation_id : str
+            UUID string that is copied from cause-to-affect for tracing events. A new UUID is
+            generated when omitted.
+
+        Returns
+        -------
+        BaseModel
+            An instance of the model class provided containing the structured response data.
+        """
+        # Handle config vs individual kwargs
+        if config is not None and any(
+            param is not None
+            for param in [temperature, num_ctx, num_predict, max_tokens]
+        ):
+            warnings.warn(
+                "Both config and individual kwargs provided. Using config and ignoring kwargs. "
+                "Individual kwargs are deprecated, use config=CompletionConfig(...) instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        elif config is None:
+            # Build config from individual kwargs
+            config = CompletionConfig(
+                temperature=temperature if temperature is not None else 1.0,
+                num_ctx=num_ctx if num_ctx is not None else 32768,
+                num_predict=num_predict if num_predict is not None else -1,
+                max_tokens=max_tokens if max_tokens is not None else 16384,
+            )
+        correlation_id = _ensure_correlation_id(correlation_id)
+        approximate_tokens = len(
+            self.tokenizer.encode(self._content_to_count(messages))
+        )
+        logger.info(f"Requesting llm response with approx {approximate_tokens} tokens")
+
+        # Convert messages to serializable dict for audit
+        messages_for_tracer = [m.model_dump() for m in messages]
+
+        # Record LLM call in tracer
+        self.tracer.record_llm_call(
+            self.model,
+            messages_for_tracer,
+            config.temperature,
+            tools=None,
+            source=type(self),
+            correlation_id=correlation_id,
+        )
+
+        # Measure call duration for audit
+        start_time = time.time()
+
+        result = self.adapter.complete(
+            model=self.model,
+            messages=messages,
+            object_model=object_model,
+            config=config,
+            temperature=config.temperature,
+            num_ctx=config.num_ctx,
+            num_predict=config.num_predict,
+            max_tokens=config.max_tokens,
+        )
+
+        call_duration_ms = (time.time() - start_time) * 1000
+
+        # Record LLM response in tracer with object representation
+        # Convert object to string for tracer
+        object_str = (
+            str(result.object.model_dump())
+            if hasattr(result.object, "model_dump")
+            else str(result.object)
+        )
+        self.tracer.record_llm_response(
+            self.model,
+            f"Structured response: {object_str}",
+            call_duration_ms=call_duration_ms,
+            source=type(self),
+            correlation_id=correlation_id,
+            **_response_evidence(result),
+        )
+
+        return result.object
+
+
+def _run_async_outcomes(awaitable):
+    """
+    Drive an async ToolRunner from a sync broker call site.
+
+    When a caller pairs the sync LLMBroker with AsyncParallelToolRunner
+    we need to drive the runner's coroutine here. ``asyncio.run`` is
+    not safe to call from inside an existing event loop, so fall back
+    to creating a dedicated loop in that case.
+    """
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(awaitable)
+    # We're already inside a running loop — drive the coroutine on a fresh loop
+    # in a worker thread so we don't deadlock the outer one.
+    import concurrent.futures
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+        return pool.submit(asyncio.run, awaitable).result()
+
+
+def _next_iteration(remaining: int | None) -> int | None:
+    return None if remaining is None else remaining - 1
+
+
+def _response_evidence(response: LLMGatewayResponse) -> dict:
+    """Tracer keyword arguments carrying a gateway response's provider evidence unchanged."""
+    return {
+        "usage": response.usage,
+        "provider_model": response.model,
+        "finish_reason": response.finish_reason,
+        "metadata": response.metadata or None,
+    }
+
+
+def _ensure_correlation_id(correlation_id: str | None) -> str:
+    """Use the caller's correlation id, or start a new one so every trace event carries an id."""
+    return correlation_id or str(uuid.uuid4())

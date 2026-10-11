@@ -1,0 +1,53 @@
+[31mF[0m[31m                                                                        [100%][0m
+=================================== FAILURES ===================================
+[31m[1m_ DescribeOMLX429Recovery.should_recover_429_only_after_admission_with_exact_wire_evidence _[0m
+[1m[31msrc/mojentic/llm/gateways/omlx_429_recovery_spec.py[0m:65: in should_recover_429_only_after_admission_with_exact_wire_evidence
+    [0mresponse = [94mawait[39;49;00m request(gateway, operation)[90m[39;49;00m
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+        admissions = [AdmissionContext(failure=Failure(provider='omlx', operation='streaming', category='http', identity=Identity(logical_r...request_id='635d094b-1c10-4868-b051-3c06cf5b2e7a', attempt_id='db3f78fa-d588-4ef8-a9ff-ee732ccf259e', wire_attempt=1))]
+        admit      = <function DescribeOMLX429Recovery.should_recover_429_only_after_admission_with_exact_wire_evidence.<locals>.admit at 0x744337f69d00>
+        captures   = [WireEvent(kind='request', identity=Identity(logical_request_id='635d094b-1c10-4868-b051-3c06cf5b2e7a', attempt_id='db...4868-b051-3c06cf5b2e7a', attempt_id='db3f78fa-d588-4ef8-a9ff-ee732ccf259e', wire_attempt=1), status=None, method=None)]
+        delays     = []
+        gateway    = <mojentic.llm.gateways.omlx.OMLXGateway object at 0x7443380daa50>
+        host       = 'http://127.0.0.1:35923'
+        lifecycle  = [LifecycleEvent(transition='attempt_started', identity=Identity(logical_request_id='635d094b-1c10-4868-b051-3c06cf5b2e...ered_reasoning=0, delivered_tool_fragments=0, delivered_tool_calls=0), eligible=True, reason='transient'), delay=None)]
+        operation  = 'streaming'
+        requests   = [('/v1/chat/completions', b'{"model":"test","messages":[{"role":"user","content":"h\xc3\xa9llo"}],"temperature":1.0,"m...', {'Host': '127.0.0.1:35923', 'Accept': '*/*', 'Connection': 'keep-alive', 'User-Agent': 'python-httpx/0.28.1', ...})]
+        self       = <mojentic.llm.gateways.omlx_429_recovery_spec.DescribeOMLX429Recovery object at 0x7443380b3890>
+        sleep      = <function DescribeOMLX429Recovery.should_recover_429_only_after_admission_with_exact_wire_evidence.<locals>.sleep at 0x744337f69c60>
+[1m[31msrc/mojentic/llm/gateways/omlx_429_recovery_spec.py[0m:33: in request
+    [0m[94mraise[39;49;00m events[-[94m1[39;49;00m].error[90m[39;49;00m
+        args       = {'model': 'test', 'messages': [LLMMessage(role=<MessageRole.User: 'user'>, content='héllo', object=None, tool_calls=None, image_paths=None)]}
+        events     = [RecoveryStreamEvent(kind='failed', identity=Identity(logical_request_id='635d094b-1c10-4868-b051-3c06cf5b2e7a', attem..._tool_calls=0), eligible=True, reason='transient')), outcome=<StreamOutcome.ADMISSION_REJECTED: 'admission_rejected'>)]
+        gateway    = <mojentic.llm.gateways.omlx.OMLXGateway object at 0x7443380daa50>
+        operation  = 'streaming'
+[1m[31msrc/mojentic/llm/recovery_stream.py[0m:602: in produce
+    [0m[94mawait[39;49;00m [96mself[39;49;00m.run_stream(url, body, headers, timeout, decode)[90m[39;49;00m
+        body       = b'{"model":"test","messages":[{"role":"user","content":"h\xc3\xa9llo"}],"temperature":1.0,"max_tokens":16384,"stream":true,"stream_options":{"include_usage":true}}'
+        decode     = <function decode_completion at 0x744337f6bc40>
+        headers    = {'Content-Type': 'application/json', 'Accept-Encoding': 'identity'}
+        self       = <mojentic.llm.gateways.omlx_recovery.OMLXStreamRecovery object at 0x7443380db620>
+        timeout    = Timeout(connect=600.0, read=None, write=600.0, pool=600.0)
+        url        = 'http://127.0.0.1:35923/v1/chat/completions'
+[1m[31msrc/mojentic/llm/recovery_stream.py[0m:596: in run_stream
+    [0m[94mawait[39;49;00m [96mself[39;49;00m.failed(attempt, failure)[90m[39;49;00m
+        attempt    = _Attempt(identity=Identity(logical_request_id='635d094b-1c10-4868-b051-3c06cf5b2e7a', attempt_id='db3f78fa-d588-4ef8-a...ne, retry_after=RetryAfter(state='date', delay=3.0), phase='streaming', category='http', reason='transient', sent=True)
+        body       = b'{"model":"test","messages":[{"role":"user","content":"h\xc3\xa9llo"}],"temperature":1.0,"max_tokens":16384,"stream":true,"stream_options":{"include_usage":true}}'
+        client     = <httpx.AsyncClient object at 0x7443380dbcb0>
+        decode     = <function decode_completion at 0x744337f6bc40>
+        failure    = Failure(provider='omlx', operation='streaming', category='http', identity=Identity(logical_request_id='635d094b-1c10-4...ntent=0, delivered_reasoning=0, delivered_tool_fragments=0, delivered_tool_calls=0), eligible=True, reason='transient')
+        headers    = {'Content-Type': 'application/json', 'Accept-Encoding': 'identity'}
+        number     = 1
+        self       = <mojentic.llm.gateways.omlx_recovery.OMLXStreamRecovery object at 0x7443380db620>
+        timeout    = Timeout(connect=600.0, read=None, write=600.0, pool=600.0)
+        url        = 'http://127.0.0.1:35923/v1/chat/completions'
+[1m[31msrc/mojentic/llm/recovery.py[0m:734: in failed
+    [0m[94mraise[39;49;00m [96mself[39;49;00m.error(outcome, attempt, failure) [94mfrom[39;49;00m[90m [39;49;00m[94mNone[39;49;00m[90m[39;49;00m
+[1m[31mE   mojentic.llm.recovery.RecoveryError: omlx recovery admission_rejected; wire attempts=1[0m
+        attempt    = _Attempt(identity=Identity(logical_request_id='635d094b-1c10-4868-b051-3c06cf5b2e7a', attempt_id='db3f78fa-d588-4ef8-a...ne, retry_after=RetryAfter(state='date', delay=3.0), phase='streaming', category='http', reason='transient', sent=True)
+        failure    = Failure(provider='omlx', operation='streaming', category='http', identity=Identity(logical_request_id='635d094b-1c10-4...ntent=0, delivered_reasoning=0, delivered_tool_fragments=0, delivered_tool_calls=0), eligible=True, reason='transient')
+        outcome    = 'admission_rejected'
+        self       = <mojentic.llm.gateways.omlx_recovery.OMLXStreamRecovery object at 0x7443380db620>
+[36m[1m=========================== short test summary info ============================[0m
+[31mFAILED[0m src/mojentic/llm/gateways/omlx_429_recovery_spec.py::[1mDescribeOMLX429Recovery::should_recover_429_only_after_admission_with_exact_wire_evidence[0m - mojentic.llm.recovery.RecoveryError: omlx recovery admission_rejected; wire...
+[31m[31m[1m1 failed[0m[31m in 6.07s[0m[0m

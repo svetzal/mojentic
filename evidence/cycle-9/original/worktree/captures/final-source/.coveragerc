@@ -1,0 +1,2 @@
+[run]
+omit = **/*_spec.py,**/_examples/**

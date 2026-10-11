@@ -1,0 +1,3 @@
+uvx: exit 0
+stdout: .foundry/logs/gates/uvx-audit/2003-1791688006324608767.stdout.log
+stderr: .foundry/logs/gates/uvx-audit/2003-1791688006324608767.stderr.log

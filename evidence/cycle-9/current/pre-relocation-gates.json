@@ -1,0 +1,165 @@
+[
+  {
+    "name": "flake8",
+    "command": [
+      "uv",
+      "run",
+      "flake8",
+      "src"
+    ],
+    "exit_code": 0,
+    "receipt": "evidence/cycle-9/current/pre-relocation-receipts/flake8.receipt.log",
+    "source_manifest_sha256": "0c957695f1757455dd9c4940cd18ecaa4405ed9b06b907a46630168494316a66"
+  },
+  {
+    "name": "lint",
+    "command": [
+      "uv",
+      "run",
+      "flake8",
+      "src",
+      "--count",
+      "--select=E9,F63,F7,F82",
+      "--show-source",
+      "--statistics"
+    ],
+    "exit_code": 0,
+    "receipt": "evidence/cycle-9/current/pre-relocation-receipts/lint.receipt.log",
+    "source_manifest_sha256": "0c957695f1757455dd9c4940cd18ecaa4405ed9b06b907a46630168494316a66"
+  },
+  {
+    "name": "ruff",
+    "command": [
+      "uv",
+      "run",
+      "ruff",
+      "check",
+      "src"
+    ],
+    "exit_code": 0,
+    "receipt": "evidence/cycle-9/current/pre-relocation-receipts/ruff.receipt.log",
+    "source_manifest_sha256": "0c957695f1757455dd9c4940cd18ecaa4405ed9b06b907a46630168494316a66"
+  },
+  {
+    "name": "format",
+    "command": [
+      "uv",
+      "run",
+      "ruff",
+      "format",
+      "--check",
+      "src"
+    ],
+    "exit_code": 0,
+    "receipt": "evidence/cycle-9/current/pre-relocation-receipts/format.receipt.log",
+    "source_manifest_sha256": "0c957695f1757455dd9c4940cd18ecaa4405ed9b06b907a46630168494316a66"
+  },
+  {
+    "name": "test",
+    "command": [
+      "uv",
+      "run",
+      "pytest"
+    ],
+    "exit_code": 0,
+    "receipt": "evidence/cycle-9/current/pre-relocation-receipts/test.receipt.log",
+    "source_manifest_sha256": "0c957695f1757455dd9c4940cd18ecaa4405ed9b06b907a46630168494316a66"
+  },
+  {
+    "name": "coverage",
+    "command": [
+      "uv",
+      "run",
+      "pytest",
+      "--cov"
+    ],
+    "exit_code": 0,
+    "receipt": "evidence/cycle-9/current/pre-relocation-receipts/coverage.receipt.log",
+    "source_manifest_sha256": "0c957695f1757455dd9c4940cd18ecaa4405ed9b06b907a46630168494316a66"
+  },
+  {
+    "name": "bandit",
+    "command": [
+      "uv",
+      "run",
+      "bandit",
+      "-c",
+      ".bandit",
+      "-r",
+      "src"
+    ],
+    "exit_code": 0,
+    "receipt": "evidence/cycle-9/current/pre-relocation-receipts/bandit.receipt.log",
+    "source_manifest_sha256": "0c957695f1757455dd9c4940cd18ecaa4405ed9b06b907a46630168494316a66"
+  },
+  {
+    "name": "audit",
+    "command": [
+      "uv",
+      "run",
+      "pip-audit"
+    ],
+    "exit_code": 0,
+    "receipt": "evidence/cycle-9/current/pre-relocation-receipts/audit.receipt.log",
+    "source_manifest_sha256": "0c957695f1757455dd9c4940cd18ecaa4405ed9b06b907a46630168494316a66"
+  },
+  {
+    "name": "uvx-audit",
+    "command": [
+      "uvx",
+      "pip-audit"
+    ],
+    "exit_code": 0,
+    "receipt": "evidence/cycle-9/current/pre-relocation-receipts/uvx-audit.receipt.log",
+    "source_manifest_sha256": "0c957695f1757455dd9c4940cd18ecaa4405ed9b06b907a46630168494316a66"
+  },
+  {
+    "name": "audit-inventory",
+    "command": [
+      "uv",
+      "run",
+      "pip-audit",
+      "--format",
+      "json"
+    ],
+    "exit_code": 0,
+    "receipt": "evidence/cycle-9/current/pre-relocation-receipts/audit-inventory.receipt.log",
+    "source_manifest_sha256": "0c957695f1757455dd9c4940cd18ecaa4405ed9b06b907a46630168494316a66"
+  },
+  {
+    "name": "uvx-audit-inventory",
+    "command": [
+      "uvx",
+      "pip-audit",
+      "--format",
+      "json"
+    ],
+    "exit_code": 0,
+    "receipt": "evidence/cycle-9/current/pre-relocation-receipts/uvx-audit-inventory.receipt.log",
+    "source_manifest_sha256": "0c957695f1757455dd9c4940cd18ecaa4405ed9b06b907a46630168494316a66"
+  },
+  {
+    "name": "outdated",
+    "command": [
+      "uv",
+      "pip",
+      "list",
+      "--outdated"
+    ],
+    "exit_code": 0,
+    "receipt": "evidence/cycle-9/current/pre-relocation-receipts/outdated.receipt.log",
+    "source_manifest_sha256": "0c957695f1757455dd9c4940cd18ecaa4405ed9b06b907a46630168494316a66"
+  },
+  {
+    "name": "docs",
+    "command": [
+      "uv",
+      "run",
+      "mkdocs",
+      "build"
+    ],
+    "exit_code": 0,
+    "receipt": "evidence/cycle-9/current/pre-relocation-receipts/docs.receipt.log",
+    "source_manifest_sha256": "0c957695f1757455dd9c4940cd18ecaa4405ed9b06b907a46630168494316a66"
+  }
+]

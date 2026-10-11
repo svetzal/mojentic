@@ -1,0 +1,9 @@
+{
+  "kind": "direct",
+  "reason": "This correction retains and validates existing evidence without changing runtime behavior or fixtures. The acceptance probe checks every copied artifact hash and compares the retained final HTTP 429 specification byte-for-byte with delivered trunk.",
+  "corrected": {
+    "command": "UV_CACHE_DIR=/tmp/mojentic-cycle10-uv-cache foundry capture --log-dir .foundry/logs/retention-proof -- uv run python .foundry/probe.py",
+    "exit_code": 0,
+    "log": ".foundry/logs/retention-proof/2-1791688581580232652.stdout.log"
+  }
+}

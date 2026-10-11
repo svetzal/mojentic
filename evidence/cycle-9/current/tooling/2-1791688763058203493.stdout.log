@@ -1,0 +1,10 @@
+uv 0.12.16 (x86_64-unknown-linux-gnu)
+ruff 0.16.10
+{
+  "flake8": "7.4.1",
+  "pytest": "9.1.1",
+  "pytest-cov": "7.1.0",
+  "bandit": "1.9.4",
+  "pip-audit": "2.10.1",
+  "mkdocs": "1.6.1"
+}

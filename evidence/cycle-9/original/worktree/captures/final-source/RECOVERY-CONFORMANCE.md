@@ -1,71 +1,57 @@
 # Python recovery conformance evidence
 
-## Cycle 9: durable evidence recovered from f51ecda
+## Cycle 9: oMLX HTTP 429 coverage at 8b437e4
 
-This retention correction preserves the existing oMLX 429 implementation and
-specification at `f51ecdaabb841fea13cba2867b414ab670be1281`. Runtime source,
-fixtures, dependencies, quality policies and release files are unchanged.
+This correction preserves the landed implementation at
+`8b437e4bbca38c8c28f2d18dfbcb6d81fb8e499f` and adds
+`src/mojentic/llm/gateways/omlx_429_recovery_spec.py`. No runtime source,
+dependencies, provider support, release files or existing 503 cases changed.
 
-Recovered original captures now live in
-[evidence/cycle-9](evidence/cycle-9/README.md). The
-[provenance manifest](evidence/cycle-9/original-manifest.json) maps every
-external archive path to its repository-relative copy and SHA-256. The original
-archive is unchanged. Only the directory ancestor `worktree/.foundry` becomes
-`original/worktree/captures`; original file bytes and embedded historical paths
-remain intact. Those embedded paths describe the archived execution, not current
-committed locations.
+The new proof precedes matrix expansion in this execution. A scripted loopback
+429 with an HTTP-date minimum first rejects admission: assertions establish one
+literal request, numeric 429, a three-second minimum and exact
+started/failed/pending/rejected/exhausted transitions, before the typed
+`RecoveryError` rejects the success probe. Changing only the admission input to
+allow passes the same probe with two identical sends, original typed HTTP cause
+and body, stable logical ID, distinct attempt IDs, exact recovery lifecycle and
+successful terminal content. Complete captures, loopback records, rejecting and
+passing source snapshots, source/log hashes and the behavioral proof are retained
+in the Foundry evidence archive for this run. This is new assertion-bearing HTTP
+evidence; it does not repair or reconstruct historical chronology. An earlier
+launch failed on a read-only uv cache, and an initial assertion incorrectly tried
+to read the streaming HTTP exception response directly; both failed captures are
+retained. The accepted proof inspects retained response bytes through the public
+failure evidence API. No production defect was inferred from those probe issues.
 
-The retained [rejecting snapshot](evidence/cycle-9/original/worktree/captures/rejecting-source.py)
-and [corrected snapshot](evidence/cycle-9/original/worktree/captures/corrected-source.py)
-differ only in the admission input, reject to allow. The real loopback 429
-HTTP-date probe first asserts one literal request, numeric status 429, a
-three-second minimum and rejection lifecycle, then propagates `RecoveryError`.
-The corrected probe asserts two identical sends and successful admitted recovery.
-[Full proof output](evidence/cycle-9/original/worktree/captures/logs/)
-and [frozen loopback records](evidence/cycle-9/original/worktree/captures/proof-loopback.jsonl)
-are retained. Newly established proof does not repair historical chronology.
-Earlier read-only cache and raw streaming-response inspection failures are
-execution/fixture failures, not evidence of production defects.
+| Executed specification | Boundary and assertions |
+| --- | --- |
+| `should_recover_429_only_after_admission_with_exact_wire_evidence` (21 cases) | Public `OMLXGateway.complete_with_recovery` for ordinary and `object_model=Result` structured calls; public `complete_stream_with_recovery` for streaming. Independently literal UTF-8 request bytes, including schema or stream controls, equal every received send and request capture. Seconds/date minima exceed jitter and jitter exceeds seconds/date minima; past dates clamp to zero; invalid/absent headers retain their states and use jitter. Numeric 429, provider/operation/category, eligibility, original `HTTPStatusError`, request bytes, private response body, one retained failure, stable logical ID, distinct attempt IDs, admission context, exact eight transitions and their identities/delay, response content/structured object/model/usage/finish and typed streaming completion are asserted. |
+| `should_refuse_429_minimum_outside_limits_without_another_send` (12 cases) | All three entrypoints; minimum exceeds delay ceiling, whole budget, remaining budget consumed before admission, or remaining budget consumed during admission. One literal wire send and capture, original cause/body and complete history, same final identity, no semantic output or scheduled sleep, exact terminal lifecycle with no retry start or success, and `RecoveryError` outcome `delay_ceiling` or `budget_exhausted`. Streaming additionally asserts the sole failed event, typed `StreamOutcome`, no response and matching report identity/outcome. |
+| `should_refuse_eligible_429_without_admission` (6 cases) | All three entrypoints; absent or rejecting admission retains eligible numeric 429, original cause/body and history, one literal send/capture, no sleep, exact required/rejected terminal lifecycle and typed failure. |
 
-The delivered [HTTP specification](src/mojentic/llm/gateways/omlx_429_recovery_spec.py)
-uses independent literal UTF-8 payloads for ordinary, structured and streaming
-requests. Success cases compare actual server sends and captures, numeric 429
-and Retry-After states/minima, original HTTP causes/body, unmasked logical and
-attempt identities, exact eight lifecycle transitions, scheduled delay and typed
-terminal responses. Limit refusals compare lifecycle identities and captured
-429 status, one actual send, original cause/history, no sleep and typed terminal
-failure. Admission refusals assert one send and exact transitions/outcomes but
-do not assert every lifecycle identity or captured header status. Counts and
-names alone do not establish these assertions.
+The focused matrix passes all 39 cases. Both final full test runs pass 915 tests;
+explicit coverage is 85% (the default run reports 84%). No coverage floor is
+configured or changed. Full Ruff and format checking, full Flake8 and the
+required fatal-error selection, MkDocs, Bandit, both unfiltered pip-audit commands
+and outdated-package inspection pass. Both audits target this project's virtual
+environment through `PIPAPI_PYTHON_LOCATION` and report no known vulnerabilities.
+No dependency updates or audit suppressions were applied. Existing MkDocs
+migration notices and read-only host pip-cache warnings remain in complete logs.
+An initial import-order lint finding was corrected and final lint checks rerun.
+Independent source review found a missing structured-object assertion, now added
+and verified; no blocking source defects remain. Proof, gate receipts, full logs,
+environment inventory, unchanged-source/policy comparison and final hashes are
+retained in this run's Foundry evidence archive. These tests use scripted local HTTP only; no
+live inference or nested experiment was run. High-level broker/session 429
+coverage, other providers, remote termination and inference idempotency remain
+outside this increment; existing broader evidence and limitations remain below.
 
-The [independent reassessment](evidence/cycle-9/independent-review.md)
-qualifies the historical retention claims. All 102 artifact hashes match. Only
-15 of 211 final source/config snapshots survive; 196 are missing. Exact complete
-source at each historical gate invocation is not retained. The proof-stage
-specification differs from the expanded final specification; the frozen proof
-loopback matches its historical hash while the subsequently appended log differs.
-Five proof source snapshots are absent. Historical loopback records contain
-literal wire bodies/headers, but omit recovery identities; traceback IDs are
-truncated. Source assertions compare unmasked objects, which does not establish
-comprehensive historical literal identity records. See the
-[verification output](evidence/cycle-9/current/verification/) for every hash,
-receipt and snapshot comparison. The retained final specification equals trunk.
-
-Historical [gate receipts](evidence/cycle-9/original/worktree/captures/quality.json)
-resolve to full output supporting 915 passing tests, default 84% and explicit
-85% coverage, and clean unfiltered audits. No coverage floor is configured.
-[Current gate receipts](evidence/cycle-9/current/gates.json) and full captures
-are bound to the [current source inventory](evidence/cycle-9/current/source-manifest.json).
-Current results and limitations are recorded in the evidence index; historical
-receipts are not promoted to per-invocation source authentication.
-
-The starting tree was clean at `f51ecda`. Read-only controller status/history/trace
-captures are retained in the evidence index. They do not substitute for a current
-synchronization and conflict-free landing receipt. Foundry must reconcile arrivals,
-stop on conflicts and land this focused deliverable directly on main. Worker refs
-are unchanged; this deliverable remains uncommitted for controller review. No
-whole-mission alignment, release, live inference, sibling write or experiment
-restart is claimed.
+The starting tree was clean at `8b437e4`; worker Git inspection is read-only.
+No current controller synchronization receipt was supplied for this execution.
+A local remote-tracking ref or historical receipt cannot certify reconciliation
+with current upstream arrivals. Controller reconciliation, independent approval
+and landing directly on main remain controller responsibilities. This worktree
+retains the completed increment uncommitted for Foundry finalization.
 
 ## oMLX provider increment at d8ad832
 

@@ -1,0 +1,14 @@
+{
+  "corrected": {
+    "command": "UV_CACHE_DIR=/tmp/mojentic-uv-cache MOJENTIC_RECOVERY_EVIDENCE=1 foundry capture --log-dir .foundry/logs/proof-corrected -- uv run pytest src/mojentic/llm/gateways/omlx_429_recovery_spec.py --no-cov -q",
+    "exit_code": 0,
+    "log": "corrected.log"
+  },
+  "kind": "behavioral",
+  "rejecting": {
+    "command": "UV_CACHE_DIR=/tmp/mojentic-uv-cache MOJENTIC_RECOVERY_EVIDENCE=1 foundry capture --log-dir .foundry/logs/proof-rejecting -- uv run pytest src/mojentic/llm/gateways/omlx_429_recovery_spec.py --no-cov -q",
+    "exit_code": 1,
+    "log": "rejecting.log"
+  },
+  "source_change": "src/mojentic/llm/gateways/omlx_429_recovery_spec.py: change the real HTTP 429 date probe admission input from reject to allow; runtime source is unchanged. The rejecting probe asserts one exact request, numeric 429, parsed three-second minimum and rejection lifecycle before propagating the typed failure; corrected probe asserts admitted recovery and exact successful sends."
+}

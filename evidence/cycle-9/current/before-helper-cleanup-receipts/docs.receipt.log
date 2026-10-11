@@ -1,0 +1,3 @@
+uv: exit 0
+stdout: evidence/cycle-9/current/gates/docs/2086-1791688896650673087.stdout.log
+stderr: evidence/cycle-9/current/gates/docs/2086-1791688896650673087.stderr.log

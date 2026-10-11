@@ -1,0 +1,3 @@
+uv: exit 0
+stdout: .foundry/logs/gates/bandit/1972-1791688002040930862.stdout.log
+stderr: .foundry/logs/gates/bandit/1972-1791688002040930862.stderr.log

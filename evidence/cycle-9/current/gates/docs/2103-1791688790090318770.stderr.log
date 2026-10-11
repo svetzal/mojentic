@@ -1,0 +1,55 @@
+
+[31m │  ⚠  Warning from the Material for MkDocs team[0m
+[31m │[0m
+[31m │[0m  MkDocs 2.0, the underlying framework of Material for MkDocs,
+[31m │[0m  will introduce backward-incompatible changes, including:
+[31m │[0m
+[31m │  × [0mAll plugins will stop working – the plugin system has been removed
+[31m │  × [0mAll theme overrides will break – the theming system has been rewritten
+[31m │  × [0mNo migration path exists – existing projects cannot be upgraded
+[31m │  × [0mClosed contribution model – community members can't report bugs
+[31m │  × [0mCurrently unlicensed – unsuitable for production use
+[31m │[0m
+[31m │[0m  Our full analysis:
+[31m │[0m
+[31m │[0m  [4mhttps://squidfunk.github.io/mkdocs-material/blog/2026/02/18/mkdocs-2.0/[0m
+[0m
+INFO    -  Cleaning site directory
+INFO    -  Building documentation to directory: /home/svetzal/.foundry/worktrees/mojentic-py/mojentic-py-transient-recovery-v2-c10-e5b443/site
+INFO    -  The following pages exist in the docs directory, but are not included in the "nav" configuration:
+  - evidence/cycle-9/README.md
+  - evidence/cycle-9/independent-review.md
+  - evidence/cycle-9/current/source/AGENTS.md
+  - evidence/cycle-9/current/source/CHARTER.md
+  - evidence/cycle-9/current/source/RECOVERY-CONFORMANCE.md
+  - evidence/cycle-9/current/source/src/_examples/README.md
+  - evidence/cycle-9/current/source/src/_examples/TRACER_QT_VIEWER.md
+  - evidence/cycle-9/current/source/src/mojentic/llm/gateways/fixtures/omlx/README.md
+  - evidence/cycle-9/current/source/src/mojentic/llm/gateways/fixtures/openai_tool_roundtrip/README.md
+  - evidence/cycle-9/original/worktree/captures/review.md
+  - evidence/cycle-9/original/worktree/captures/final-source/AGENTS.md
+  - evidence/cycle-9/original/worktree/captures/final-source/RECOVERY-CONFORMANCE.md
+INFO:mojentic:{"event": "Starting logger", "logger": "mojentic", "level": "info", "timestamp": "2026-10-11T03:19:51.045710Z"}
+INFO    -  Doc file 'evidence/cycle-9/README.md' contains a link to 'evidence/cycle-9/.gitignore' which is excluded from the built site.
+INFO    -  Doc file 'evidence/cycle-9/README.md' contains an unrecognized relative link 'original/worktree/captures/logs/', it was left as is.
+INFO    -  Doc file 'evidence/cycle-9/README.md' contains an unrecognized relative link 'original/worktree/captures/final-source/', it was left as is.
+INFO    -  Doc file 'evidence/cycle-9/README.md' contains an unrecognized relative link 'current/verification/', it was left as is.
+INFO    -  Doc file 'evidence/cycle-9/README.md' contains an unrecognized relative link 'current/source/', it was left as is.
+INFO    -  Doc file 'evidence/cycle-9/README.md' contains an unrecognized relative link 'current/controller-status/', it was left as is.
+INFO    -  Doc file 'evidence/cycle-9/README.md' contains an unrecognized relative link 'current/controller-history/', it was left as is.
+INFO    -  Doc file 'evidence/cycle-9/README.md' contains an unrecognized relative link 'current/controller-trace/', it was left as is.
+INFO    -  Doc file 'evidence/cycle-9/independent-review.md' contains an unrecognized relative link 'original/worktree/captures/', it was left as is.
+WARNING -  Doc file 'evidence/cycle-9/independent-review.md' contains a link '../../../src/mojentic/llm/gateways/omlx_429_recovery_spec.py', but the target '../src/mojentic/llm/gateways/omlx_429_recovery_spec.py' is not found among documentation files.
+WARNING -  Doc file 'evidence/cycle-9/independent-review.md' contains a link '../../../RECOVERY-CONFORMANCE.md', but the target '../RECOVERY-CONFORMANCE.md' is not found among documentation files.
+WARNING -  Doc file 'evidence/cycle-9/current/source/RECOVERY-CONFORMANCE.md' contains a link 'docs/evidence/cycle-9/README.md', but the target 'evidence/cycle-9/current/source/docs/evidence/cycle-9/README.md' is not found among documentation files.
+WARNING -  Doc file 'evidence/cycle-9/current/source/RECOVERY-CONFORMANCE.md' contains a link 'docs/evidence/cycle-9/original-manifest.json', but the target 'evidence/cycle-9/current/source/docs/evidence/cycle-9/original-manifest.json' is not found among documentation files.
+WARNING -  Doc file 'evidence/cycle-9/current/source/RECOVERY-CONFORMANCE.md' contains a link 'docs/evidence/cycle-9/original/worktree/captures/rejecting-source.py', but the target 'evidence/cycle-9/current/source/docs/evidence/cycle-9/original/worktree/captures/rejecting-source.py' is not found among documentation files.
+WARNING -  Doc file 'evidence/cycle-9/current/source/RECOVERY-CONFORMANCE.md' contains a link 'docs/evidence/cycle-9/original/worktree/captures/corrected-source.py', but the target 'evidence/cycle-9/current/source/docs/evidence/cycle-9/original/worktree/captures/corrected-source.py' is not found among documentation files.
+INFO    -  Doc file 'evidence/cycle-9/current/source/RECOVERY-CONFORMANCE.md' contains an unrecognized relative link 'docs/evidence/cycle-9/original/worktree/captures/logs/', it was left as is.
+WARNING -  Doc file 'evidence/cycle-9/current/source/RECOVERY-CONFORMANCE.md' contains a link 'docs/evidence/cycle-9/original/worktree/captures/proof-loopback.jsonl', but the target 'evidence/cycle-9/current/source/docs/evidence/cycle-9/original/worktree/captures/proof-loopback.jsonl' is not found among documentation files.
+WARNING -  Doc file 'evidence/cycle-9/current/source/RECOVERY-CONFORMANCE.md' contains a link 'docs/evidence/cycle-9/independent-review.md', but the target 'evidence/cycle-9/current/source/docs/evidence/cycle-9/independent-review.md' is not found among documentation files.
+INFO    -  Doc file 'evidence/cycle-9/current/source/RECOVERY-CONFORMANCE.md' contains an unrecognized relative link 'docs/evidence/cycle-9/current/verification/', it was left as is.
+WARNING -  Doc file 'evidence/cycle-9/current/source/RECOVERY-CONFORMANCE.md' contains a link 'docs/evidence/cycle-9/original/worktree/captures/quality.json', but the target 'evidence/cycle-9/current/source/docs/evidence/cycle-9/original/worktree/captures/quality.json' is not found among documentation files.
+WARNING -  Doc file 'evidence/cycle-9/current/source/RECOVERY-CONFORMANCE.md' contains a link 'docs/evidence/cycle-9/current/gates.json', but the target 'evidence/cycle-9/current/source/docs/evidence/cycle-9/current/gates.json' is not found among documentation files.
+WARNING -  Doc file 'evidence/cycle-9/current/source/RECOVERY-CONFORMANCE.md' contains a link 'docs/evidence/cycle-9/current/source-manifest.json', but the target 'evidence/cycle-9/current/source/docs/evidence/cycle-9/current/source-manifest.json' is not found among documentation files.
+INFO    -  Documentation built in 5.00 seconds

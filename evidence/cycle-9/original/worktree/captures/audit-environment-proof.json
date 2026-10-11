@@ -1,0 +1,16 @@
+{
+  "project": {
+    "inventory": ".foundry/logs/audit-inventory-project/2-1791688026894685888.stdout.log",
+    "matches_environment": true,
+    "distribution_count": 96,
+    "vulnerabilities": 0,
+    "skipped": 0
+  },
+  "uvx": {
+    "inventory": ".foundry/logs/audit-inventory-uvx/2-1791688026895919691.stdout.log",
+    "matches_environment": true,
+    "distribution_count": 96,
+    "vulnerabilities": 0,
+    "skipped": 0
+  }
+}

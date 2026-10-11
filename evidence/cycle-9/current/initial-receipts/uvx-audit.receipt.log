@@ -1,0 +1,6 @@
+uvx: exit 2
+stdout: docs/evidence/cycle-9/current/gates/uvx-audit/1975-1791688716815478015.stdout.log
+stderr: docs/evidence/cycle-9/current/gates/uvx-audit/1975-1791688716815478015.stderr.log
+
+error: Could not create temporary file
+  cause: Read-only file system (os error 30) at path "/home/svetzal/.local/share/uv/tools/.tmpj5NMgr"

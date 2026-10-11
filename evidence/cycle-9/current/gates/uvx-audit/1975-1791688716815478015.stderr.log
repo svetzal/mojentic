@@ -1,0 +1,2 @@
+error: Could not create temporary file
+  cause: Read-only file system (os error 30) at path "/home/svetzal/.local/share/uv/tools/.tmpj5NMgr"

@@ -1,0 +1,38 @@
+[
+  {
+    "name": "ruff",
+    "command": "uv run ruff check src",
+    "chunk_id": "098044",
+    "wall_time_seconds": 0.073033854,
+    "exit_code": 0,
+    "original_token_count": 36,
+    "output": "uv: exit 0\nstdout: .foundry/logs/final-ruff/2-1791687964596148354.stdout.log\nstderr: .foundry/logs/final-ruff/2-1791687964596148354.stderr.log\n"
+  },
+  {
+    "name": "format-check",
+    "command": "uv run ruff format --check src",
+    "chunk_id": "436bf5",
+    "wall_time_seconds": 0.090707962,
+    "exit_code": 0,
+    "original_token_count": 40,
+    "output": "uv: exit 0\nstdout: .foundry/logs/final-format-check/2-1791687964599379817.stdout.log\nstderr: .foundry/logs/final-format-check/2-1791687964599379817.stderr.log\n"
+  },
+  {
+    "name": "flake8",
+    "command": "uv run flake8 src",
+    "chunk_id": "58f1ef",
+    "wall_time_seconds": 1.708855247,
+    "exit_code": 0,
+    "original_token_count": 37,
+    "output": "uv: exit 0\nstdout: .foundry/logs/final-flake8/2-1791687964625270901.stdout.log\nstderr: .foundry/logs/final-flake8/2-1791687964625270901.stderr.log\n"
+  },
+  {
+    "name": "lint",
+    "command": "uv run flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics",
+    "chunk_id": "27f60d",
+    "wall_time_seconds": 1.638190534,
+    "exit_code": 0,
+    "original_token_count": 36,
+    "output": "uv: exit 0\nstdout: .foundry/logs/final-lint/2-1791687964574873083.stdout.log\nstderr: .foundry/logs/final-lint/2-1791687964574873083.stderr.log\n"
+  }
+]

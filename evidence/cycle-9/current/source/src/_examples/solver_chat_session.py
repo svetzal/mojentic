@@ -1,0 +1,65 @@
+import logging
+
+from mojentic.agents import IterativeProblemSolver
+from mojentic.llm import ChatSession, LLMBroker
+from mojentic.llm.tools.date_resolver import ResolveDateTool
+from mojentic.llm.tools.llm_tool import LLMTool
+
+logging.basicConfig(level=logging.WARNING)
+
+
+class IterativeProblemSolverTool(LLMTool):
+    def __init__(self, llm: LLMBroker, tools: list[LLMTool]):
+        self.llm = llm
+        self.tools = tools
+
+    def run(self, problem_to_solve: str):
+        solver = IterativeProblemSolver(llm=self.llm, available_tools=self.tools)
+        return solver.solve(problem_to_solve)
+
+    @property
+    def descriptor(self):
+        return {
+            "type": "function",
+            "function": {
+                "name": "iterative_problem_solver",
+                "description": "Iteratively solve a complex multi-step problem using available tools.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "problem_to_solve": {
+                            "type": "string",
+                            "description": "The problem or request to be solved.",
+                        }
+                    },
+                    "required": ["problem_to_solve"],
+                    "additionalProperties": False,
+                },
+            },
+        }
+
+
+def main():
+    # llm = LLMBroker(model="MFDoom/deepseek-r1-tool-calling:14b")
+    # llm = LLMBroker(model="qwen3:14b")
+    # llm = LLMBroker(model="qwen3:14b")
+    # llm = LLMBroker(model="qwen3:7b")
+    llm = LLMBroker(model="qwq")
+    # llm = LLMBroker(model="qwq:32b-fp16")
+    # llm = LLMBroker(model="qwen3:32b")
+
+    chat_session = ChatSession(
+        llm, tools=[IterativeProblemSolverTool(llm=llm, tools=[ResolveDateTool()])]
+    )
+
+    while True:
+        query = input("Query: ")
+        if not query:
+            break
+        else:
+            response = chat_session.send(query)
+            print(response)
+
+
+if __name__ == "__main__":
+    main()

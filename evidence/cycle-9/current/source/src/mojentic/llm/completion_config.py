@@ -1,0 +1,93 @@
+from typing import Any, Literal
+
+from pydantic import BaseModel, Field, model_validator
+
+
+class ResponseFormat(BaseModel):
+    """
+    The output format requested from the provider.
+
+    This records what was requested. It is not proof that the provider enforced it,
+    so callers must still validate the returned content.
+
+    Attributes
+    ----------
+    type : Literal["text", "json_object"]
+        ``"text"`` requests plain text. ``"json_object"`` requests JSON object mode,
+        or JSON schema mode when ``json_schema`` is set.
+    json_schema : Optional[Dict[str, Any]]
+        The JSON schema the response must follow. Only valid with ``"json_object"``.
+    """
+
+    type: Literal["text", "json_object"] = Field(description="Requested output format")
+    json_schema: dict[str, Any] | None = Field(
+        default=None,
+        description="JSON schema for schema mode; only valid with type 'json_object'",
+    )
+
+    @model_validator(mode="after")
+    def _schema_requires_json_object(self) -> "ResponseFormat":
+        if self.json_schema is not None and self.type != "json_object":
+            raise ValueError("json_schema is only valid when type is 'json_object'")
+        return self
+
+
+class CompletionConfig(BaseModel):
+    """
+    Configuration object for LLM completion requests.
+
+    This model provides a unified way to configure LLM behavior across different
+    providers and models. It replaces loose kwargs with a structured configuration
+    object.
+
+    Attributes
+    ----------
+    temperature : float
+        Controls randomness in the output. Higher values (e.g., 1.5) make output
+        more random, while lower values (e.g., 0.1) make it more deterministic.
+        Defaults to 1.0.
+    num_ctx : int
+        The number of context tokens to use. This sets the context window size.
+        Defaults to 32768.
+    max_tokens : int
+        The maximum number of tokens to generate in the response.
+        Defaults to 16384.
+    num_predict : int
+        The number of tokens to predict. A value of -1 means no limit.
+        Defaults to -1.
+    reasoning_effort : Optional[Literal["low", "medium", "high"]]
+        Controls the reasoning effort level for models that support extended thinking.
+        - "low": Quick, minimal reasoning
+        - "medium": Balanced reasoning effort
+        - "high": Deep, thorough reasoning
+        Provider-specific behavior:
+        - Ollama: Maps to `think: true` parameter for all levels
+        - OpenAI: Maps to `reasoning_effort` API parameter for reasoning models
+        Defaults to None (no extended reasoning).
+    max_tool_iterations : int
+        Maximum number of tool-call recursion steps allowed before raising
+        MaxToolIterationsExceededError. Defaults to 10.
+    response_format : Optional[ResponseFormat]
+        The output format to request from the provider. Defaults to None, which leaves
+        the request unchanged and uses the provider default.
+    """
+
+    temperature: float = Field(
+        default=1.0, description="Temperature for sampling (higher = more random)"
+    )
+    num_ctx: int = Field(default=32768, description="Number of context tokens")
+    max_tokens: int = Field(default=16384, description="Maximum tokens to generate")
+    num_predict: int = Field(
+        default=-1, description="Number of tokens to predict (-1 = no limit)"
+    )
+    reasoning_effort: Literal["low", "medium", "high"] | None = Field(
+        default=None, description="Reasoning effort level for extended thinking"
+    )
+    max_tool_iterations: int | None = Field(
+        default=10,
+        description="Maximum number of tool-call recursion steps allowed; None means unlimited",
+    )
+    response_format: ResponseFormat | None = Field(
+        default=None,
+        description="Requested output format; None leaves the provider default",
+    )

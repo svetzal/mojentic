@@ -1,0 +1,90 @@
+site_name: Mojentic
+site_url: https://vetzal.com/mojentic/
+theme:
+  name: material
+  features:
+    - content.code.copy
+    - content.code.select
+  palette:
+    primary: custom
+    accent: custom
+  custom_dir: docs/overrides
+  logo: assets/mojility_favicon.png
+  favicon: assets/mojility_favicon.png
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [ "src" ]
+          import:
+            - https://docs.python.org/3/objects.inv
+            - https://docs.pydantic.dev/latest/objects.inv
+            - https://jcristharif.com/msgspec//objects.inv
+          options:
+            docstring_style: "numpy"
+            heading_level: 1
+            annotations_path: brief
+            extensions:
+              - griffe_fieldz
+      enable_inventory: true
+  - autorefs
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+nav:
+  - Home: index.md
+  - Getting Started: get_started.md
+  - Using LLMs: broker.md
+  - Ollama Completion Recovery: transient_recovery.md
+  - Layer 1 - Core:
+    - Getting Started with Layer 1:
+      - The Basics: starter_1.md
+      - Message Composers: message_composers.md
+    - Examples and Tutorials (Layer 1):
+      - Simple Text Generation: simple_text_generation.md
+      - Streaming Responses: streaming.md
+      - Building Tools: building_tools.md
+      - Tool Usage: tool_usage.md
+      - Parallel Tools: parallel_tools.md
+      - Reasoning Effort: reasoning_effort.md
+  - Use Cases:
+      - Building Chatbots: chat_sessions.md
+      - Chatbots with Tools: chat_sessions_with_tools.md
+      - Structured Output: structured_output.md
+      - Building Agents: sra.md
+      - Image Analysis: image_analysis.md
+      - Realtime Voice: realtime.md
+  - Examples:
+      - File Tools: file_tools.md
+      - Task Management: task_management.md
+      - Web Search: web_search.md
+      - Embeddings: embeddings.md
+  - Layer 2 - Agents:
+      - Asynchronous Capabilities: async_capabilities.md
+      - Iterative Problem Solver: ipa.md
+      - Simple Recursive Agent: sra.md
+  - Observability:
+      - Tracer System: tracer.md
+      - Comprehensive Guide: observable.md
+  - API Documentation:
+      - Intro: api_0.md
+      - Layer 1: api_1.md
+      - Layer 2: api_2.md
+      - OpenAI Gateway Infrastructure: openai_gateway_enhanced_infrastructure.md
+  - Contributing:
+      - Testing: testing.md
+      - User Personas: personas.md
+
+repo_name: svetzal/mojentic
+repo_url: https://github.com/svetzal/mojentic

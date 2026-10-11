@@ -1,0 +1,3 @@
+uv: exit 0
+stdout: docs/evidence/cycle-9/current/gates/coverage/1029-1791688691983530650.stdout.log
+stderr: docs/evidence/cycle-9/current/gates/coverage/1029-1791688691983530650.stderr.log

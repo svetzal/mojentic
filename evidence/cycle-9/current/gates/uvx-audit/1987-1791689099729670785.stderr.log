@@ -1,0 +1,2 @@
+WARNING:pip_audit._cache:Failed to write to cache directory, performance may be degraded: [Errno 30] Read-only file system: '/home/svetzal/.cache/pip-audit/b/4/e/5/a/tmpfpfgd15f'
+No known vulnerabilities found

@@ -7,22 +7,22 @@ specification at `f51ecdaabb841fea13cba2867b414ab670be1281`. Runtime source,
 fixtures, dependencies, quality policies and release files are unchanged.
 
 Recovered original captures now live in
-[evidence/cycle-9](evidence/cycle-9/README.md). The
-[provenance manifest](evidence/cycle-9/original-manifest.json) maps every
+[docs/evidence/cycle-9](docs/evidence/cycle-9/README.md). The
+[provenance manifest](docs/evidence/cycle-9/original-manifest.json) maps every
 external archive path to its repository-relative copy and SHA-256. The original
 archive is unchanged. Only the directory ancestor `worktree/.foundry` becomes
 `original/worktree/captures`; original file bytes and embedded historical paths
 remain intact. Those embedded paths describe the archived execution, not current
 committed locations.
 
-The retained [rejecting snapshot](evidence/cycle-9/original/worktree/captures/rejecting-source.py)
-and [corrected snapshot](evidence/cycle-9/original/worktree/captures/corrected-source.py)
+The retained [rejecting snapshot](docs/evidence/cycle-9/original/worktree/captures/rejecting-source.py)
+and [corrected snapshot](docs/evidence/cycle-9/original/worktree/captures/corrected-source.py)
 differ only in the admission input, reject to allow. The real loopback 429
 HTTP-date probe first asserts one literal request, numeric status 429, a
 three-second minimum and rejection lifecycle, then propagates `RecoveryError`.
 The corrected probe asserts two identical sends and successful admitted recovery.
-[Full proof output](evidence/cycle-9/original/worktree/captures/logs/)
-and [frozen loopback records](evidence/cycle-9/original/worktree/captures/proof-loopback.jsonl)
+[Full proof output](docs/evidence/cycle-9/original/worktree/captures/logs/)
+and [frozen loopback records](docs/evidence/cycle-9/original/worktree/captures/proof-loopback.jsonl)
 are retained. Newly established proof does not repair historical chronology.
 Earlier read-only cache and raw streaming-response inspection failures are
 execution/fixture failures, not evidence of production defects.
@@ -38,7 +38,7 @@ failure. Admission refusals assert one send and exact transitions/outcomes but
 do not assert every lifecycle identity or captured header status. Counts and
 names alone do not establish these assertions.
 
-The [independent reassessment](evidence/cycle-9/independent-review.md)
+The [independent reassessment](docs/evidence/cycle-9/independent-review.md)
 qualifies the historical retention claims. All 102 artifact hashes match. Only
 15 of 211 final source/config snapshots survive; 196 are missing. Exact complete
 source at each historical gate invocation is not retained. The proof-stage
@@ -48,14 +48,14 @@ Five proof source snapshots are absent. Historical loopback records contain
 literal wire bodies/headers, but omit recovery identities; traceback IDs are
 truncated. Source assertions compare unmasked objects, which does not establish
 comprehensive historical literal identity records. See the
-[verification output](evidence/cycle-9/current/verification/) for every hash,
+[verification output](docs/evidence/cycle-9/current/verification/) for every hash,
 receipt and snapshot comparison. The retained final specification equals trunk.
 
-Historical [gate receipts](evidence/cycle-9/original/worktree/captures/quality.json)
+Historical [gate receipts](docs/evidence/cycle-9/original/worktree/captures/quality.json)
 resolve to full output supporting 915 passing tests, default 84% and explicit
 85% coverage, and clean unfiltered audits. No coverage floor is configured.
-[Current gate receipts](evidence/cycle-9/current/gates.json) and full captures
-are bound to the [current source inventory](evidence/cycle-9/current/source-manifest.json).
+[Current gate receipts](docs/evidence/cycle-9/current/gates.json) and full captures
+are bound to the [current source inventory](docs/evidence/cycle-9/current/source-manifest.json).
 Current results and limitations are recorded in the evidence index; historical
 receipts are not promoted to per-invocation source authentication.
 

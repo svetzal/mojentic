@@ -1,0 +1,3 @@
+uv: exit 0
+stdout: docs/evidence/cycle-9/current/gates/flake8/8-1791688665456525919.stdout.log
+stderr: docs/evidence/cycle-9/current/gates/flake8/8-1791688665456525919.stderr.log

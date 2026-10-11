@@ -1,0 +1,724 @@
+{
+  "original_files_verified": 107,
+  "historical_hashes": {
+    "artifact-hashes.json": {
+      "matched": [
+        ".foundry/audit-environment-proof.json",
+        ".foundry/audit-inventory-receipts.json",
+        ".foundry/corrected-source.py",
+        ".foundry/environment.json",
+        ".foundry/final-dirty-state.log",
+        ".foundry/final-small-gates.json",
+        ".foundry/final-source/.bandit",
+        ".foundry/final-source/.coveragerc",
+        ".foundry/final-source/AGENTS.md",
+        ".foundry/final-source/RECOVERY-CONFORMANCE.md",
+        ".foundry/final-source/pyproject.toml",
+        ".foundry/final-source/pytest.ini",
+        ".foundry/final-source/setup.cfg",
+        ".foundry/final-source/src/mojentic/llm/gateways/omlx.py",
+        ".foundry/final-source/src/mojentic/llm/gateways/omlx_429_recovery_spec.py",
+        ".foundry/final-source/src/mojentic/llm/gateways/omlx_protocol.py",
+        ".foundry/final-source/src/mojentic/llm/gateways/omlx_recovery.py",
+        ".foundry/final-source/src/mojentic/llm/gateways/omlx_recovery_spec.py",
+        ".foundry/final-source/src/mojentic/llm/recovery.py",
+        ".foundry/final-source/src/mojentic/llm/recovery_stream.py",
+        ".foundry/final-source/uv.lock",
+        ".foundry/final-source-hashes.json",
+        ".foundry/logs/audit-inventory-project/2-1791688026894685888.stderr.log",
+        ".foundry/logs/audit-inventory-project/2-1791688026894685888.stdout.log",
+        ".foundry/logs/audit-inventory-uvx/2-1791688026895919691.stderr.log",
+        ".foundry/logs/audit-inventory-uvx/2-1791688026895919691.stdout.log",
+        ".foundry/logs/authenticated_capture.jsonl",
+        ".foundry/logs/corrected/2-1791687699674529768.stderr.log",
+        ".foundry/logs/corrected/2-1791687699674529768.stdout.log",
+        ".foundry/logs/corrected.log",
+        ".foundry/logs/final-flake8/2-1791687964625270901.stderr.log",
+        ".foundry/logs/final-flake8/2-1791687964625270901.stdout.log",
+        ".foundry/logs/final-format-check/2-1791687964599379817.stderr.log",
+        ".foundry/logs/final-format-check/2-1791687964599379817.stdout.log",
+        ".foundry/logs/final-lint/2-1791687964574873083.stderr.log",
+        ".foundry/logs/final-lint/2-1791687964574873083.stdout.log",
+        ".foundry/logs/final-ruff/2-1791687903591116622.stderr.log",
+        ".foundry/logs/final-ruff/2-1791687903591116622.stdout.log",
+        ".foundry/logs/final-ruff/2-1791687964596148354.stderr.log",
+        ".foundry/logs/final-ruff/2-1791687964596148354.stdout.log",
+        ".foundry/logs/format/2-1791687848687508148.stderr.log",
+        ".foundry/logs/format/2-1791687848687508148.stdout.log",
+        ".foundry/logs/format-final/2-1791687855701389198.stderr.log",
+        ".foundry/logs/format-final/2-1791687855701389198.stdout.log",
+        ".foundry/logs/gates/audit/1987-1791688004145188768.stderr.log",
+        ".foundry/logs/gates/audit/1987-1791688004145188768.stdout.log",
+        ".foundry/logs/gates/audit.receipt.log",
+        ".foundry/logs/gates/bandit/1972-1791688002040930862.stderr.log",
+        ".foundry/logs/gates/bandit/1972-1791688002040930862.stdout.log",
+        ".foundry/logs/gates/bandit.receipt.log",
+        ".foundry/logs/gates/coverage/1031-1791687968497915910.stderr.log",
+        ".foundry/logs/gates/coverage/1031-1791687968497915910.stdout.log",
+        ".foundry/logs/gates/coverage.receipt.log",
+        ".foundry/logs/gates/docs/1948-1791687994644524590.stderr.log",
+        ".foundry/logs/gates/docs/1948-1791687994644524590.stdout.log",
+        ".foundry/logs/gates/docs.receipt.log",
+        ".foundry/logs/gates/flake8/67-1791687872359238914.stderr.log",
+        ".foundry/logs/gates/flake8/67-1791687872359238914.stdout.log",
+        ".foundry/logs/gates/flake8.receipt.log",
+        ".foundry/logs/gates/format-check/38-1791687872101253780.stderr.log",
+        ".foundry/logs/gates/format-check/38-1791687872101253780.stdout.log",
+        ".foundry/logs/gates/format-check.receipt.log",
+        ".foundry/logs/gates/lint/91-1791687876749947023.stderr.log",
+        ".foundry/logs/gates/lint/91-1791687876749947023.stdout.log",
+        ".foundry/logs/gates/lint.receipt.log",
+        ".foundry/logs/gates/outdated/2036-1791688007584392283.stderr.log",
+        ".foundry/logs/gates/outdated/2036-1791688007584392283.stdout.log",
+        ".foundry/logs/gates/outdated.receipt.log",
+        ".foundry/logs/gates/ruff/9-1791687871760645952.stderr.log",
+        ".foundry/logs/gates/ruff/9-1791687871760645952.stdout.log",
+        ".foundry/logs/gates/ruff.receipt.log",
+        ".foundry/logs/gates/test/115-1791687880754512939.stderr.log",
+        ".foundry/logs/gates/test/115-1791687880754512939.stdout.log",
+        ".foundry/logs/gates/test.receipt.log",
+        ".foundry/logs/gates/uvx-audit/2003-1791688006324608767.stderr.log",
+        ".foundry/logs/gates/uvx-audit/2003-1791688006324608767.stdout.log",
+        ".foundry/logs/gates/uvx-audit.receipt.log",
+        ".foundry/logs/import-fix/2-1791687886921747155.stderr.log",
+        ".foundry/logs/import-fix/2-1791687886921747155.stdout.log",
+        ".foundry/logs/loopback.jsonl",
+        ".foundry/logs/matrix/2-1791687796927428960.stderr.log",
+        ".foundry/logs/matrix/2-1791687796927428960.stdout.log",
+        ".foundry/logs/proof-corrected/2-1791687719098620277.stderr.log",
+        ".foundry/logs/proof-corrected/2-1791687719098620277.stdout.log",
+        ".foundry/logs/proof-rejecting/2-1791687709881441736.stderr.log",
+        ".foundry/logs/proof-rejecting/2-1791687709881441736.stdout.log",
+        ".foundry/logs/rejecting/2-1791687618866506936.stderr.log",
+        ".foundry/logs/rejecting/2-1791687618866506936.stdout.log",
+        ".foundry/logs/rejecting/2-1791687625409998628.stderr.log",
+        ".foundry/logs/rejecting/2-1791687625409998628.stdout.log",
+        ".foundry/logs/rejecting-assertions/2-1791687687642227993.stderr.log",
+        ".foundry/logs/rejecting-assertions/2-1791687687642227993.stdout.log",
+        ".foundry/logs/rejecting.log",
+        ".foundry/proof-hashes.json",
+        ".foundry/proof-loopback.jsonl",
+        ".foundry/proof.json",
+        ".foundry/quality-initial.json",
+        ".foundry/quality.json",
+        ".foundry/rejecting-source.py",
+        ".foundry/review.md",
+        ".foundry/unchanged-source-policy.json",
+        ".foundry/validation.json"
+      ],
+      "missing": [],
+      "mismatched": []
+    },
+    "proof-hashes.json": {
+      "matched": [
+        ".foundry/rejecting-source.py",
+        ".foundry/corrected-source.py",
+        ".foundry/logs/corrected.log",
+        ".foundry/logs/rejecting.log",
+        ".foundry/logs/rejecting-assertions/2-1791687687642227993.stderr.log",
+        ".foundry/logs/rejecting-assertions/2-1791687687642227993.stdout.log",
+        ".foundry/logs/proof-corrected/2-1791687719098620277.stdout.log",
+        ".foundry/logs/proof-corrected/2-1791687719098620277.stderr.log",
+        ".foundry/logs/proof-rejecting/2-1791687709881441736.stderr.log",
+        ".foundry/logs/proof-rejecting/2-1791687709881441736.stdout.log",
+        ".foundry/logs/rejecting/2-1791687625409998628.stdout.log",
+        ".foundry/logs/rejecting/2-1791687618866506936.stderr.log",
+        ".foundry/logs/rejecting/2-1791687618866506936.stdout.log",
+        ".foundry/logs/rejecting/2-1791687625409998628.stderr.log",
+        ".foundry/logs/corrected/2-1791687699674529768.stderr.log",
+        ".foundry/logs/corrected/2-1791687699674529768.stdout.log",
+        "src/mojentic/llm/recovery_stream.py",
+        "src/mojentic/llm/recovery.py",
+        "src/mojentic/llm/gateways/omlx.py",
+        "src/mojentic/llm/gateways/omlx_protocol.py",
+        "src/mojentic/llm/gateways/omlx_recovery_spec.py",
+        "src/mojentic/llm/gateways/omlx_recovery.py"
+      ],
+      "missing": [
+        "src/mojentic/llm/recovery_spec.py",
+        "src/mojentic/llm/gateways/omlx_protocol_spec.py",
+        "src/mojentic/llm/gateways/omlx_spec.py",
+        "src/mojentic/llm/gateways/omlx_stream.py",
+        "src/mojentic/llm/gateways/omlx_stream_spec.py"
+      ],
+      "mismatched": [
+        {
+          "path": ".foundry/logs/loopback.jsonl",
+          "expected": "8deceaf895d3b85b3199689c402ad2710c66c1122ea6dfa83478e22885bcd16b",
+          "actual": "be855a16400f179287a8cefdcbfe436fb026fd7e181cf34009ebbba45ca8ecb3"
+        },
+        {
+          "path": "src/mojentic/llm/gateways/omlx_429_recovery_spec.py",
+          "expected": "e461411467b8c35920b45d9fef68fffa9239fefc42d52f00c1d067987c561a44",
+          "actual": "e6f6a0f282df7040a567d071a9806c7a8bc967b9d93b9ca6d809e62d352588df"
+        }
+      ]
+    },
+    "final-source-hashes.json": {
+      "matched": [
+        "src/mojentic/llm/recovery_stream.py",
+        "src/mojentic/llm/recovery.py",
+        "src/mojentic/llm/gateways/omlx.py",
+        "src/mojentic/llm/gateways/omlx_protocol.py",
+        "src/mojentic/llm/gateways/omlx_429_recovery_spec.py",
+        "src/mojentic/llm/gateways/omlx_recovery_spec.py",
+        "src/mojentic/llm/gateways/omlx_recovery.py",
+        "RECOVERY-CONFORMANCE.md",
+        "pyproject.toml",
+        "uv.lock",
+        ".bandit",
+        ".coveragerc",
+        "pytest.ini",
+        "setup.cfg",
+        "AGENTS.md"
+      ],
+      "missing": [
+        "src/_examples/audit_openai_capabilities.py",
+        "src/_examples/broker_image_examples.py",
+        "src/_examples/streaming.py",
+        "src/_examples/characterize_ollama.py",
+        "src/_examples/routed_send_response.py",
+        "src/_examples/list_models.py",
+        "src/_examples/ephemeral_task_manager_example.py",
+        "src/_examples/coding_file_tool.py",
+        "src/_examples/chat_session.py",
+        "src/_examples/ensures_files_exist.py",
+        "src/_examples/tracer_qt_viewer.py",
+        "src/_examples/iterative_solver.py",
+        "src/_examples/raw.py",
+        "src/_examples/image_analysis.py",
+        "src/_examples/simple_llm.py",
+        "src/_examples/embeddings.py",
+        "src/_examples/react.py",
+        "src/_examples/image_broker_splat.py",
+        "src/_examples/image_broker.py",
+        "src/_examples/async_dispatcher_example.py",
+        "src/_examples/tracer_demo.py",
+        "src/_examples/chat_session_with_tool.py",
+        "src/_examples/file_deduplication.py",
+        "src/_examples/__init__.py",
+        "src/_examples/solver_chat_session.py",
+        "src/_examples/omlx_gateway.py",
+        "src/_examples/oversized_embeddings.py",
+        "src/_examples/current_datetime_tool_example.py",
+        "src/_examples/recursive_agent.py",
+        "src/_examples/file_tool.py",
+        "src/_examples/async_llm_example.py",
+        "src/_examples/parallel_tool_calls.py",
+        "src/_examples/simple_llm_repl.py",
+        "src/_examples/broker_as_tool.py",
+        "src/_examples/openai_gateway_enhanced_demo.py",
+        "src/_examples/fetch_openai_models.py",
+        "src/_examples/design_analysis.py",
+        "src/_examples/working_memory.py",
+        "src/_examples/broker_examples.py",
+        "src/_examples/simple_tool.py",
+        "src/_examples/simple_structured.py",
+        "src/_examples/tell_user_example.py",
+        "src/_examples/model_characterization.py",
+        "src/_examples/characterize_openai.py",
+        "src/mojentic/router.py",
+        "src/mojentic/dispatcher.py",
+        "src/mojentic/event.py",
+        "src/mojentic/__init__.py",
+        "src/mojentic/async_dispatcher.py",
+        "src/mojentic/async_dispatcher_spec.py",
+        "src/mojentic/router_spec.py",
+        "src/mojentic/context/shared_working_memory.py",
+        "src/mojentic/context/__init__.py",
+        "src/mojentic/context/shared_working_memory_spec.py",
+        "src/mojentic/agents/base_llm_agent_spec.py",
+        "src/mojentic/agents/correlation_aggregator_agent_spec.py",
+        "src/mojentic/agents/agent_event_adapter.py",
+        "src/mojentic/agents/simple_recursive_agent.py",
+        "src/mojentic/agents/correlation_aggregator_agent.py",
+        "src/mojentic/agents/async_aggregator_agent.py",
+        "src/mojentic/agents/async_aggregator_agent_spec.py",
+        "src/mojentic/agents/__init__.py",
+        "src/mojentic/agents/base_async_agent.py",
+        "src/mojentic/agents/base_llm_agent.py",
+        "src/mojentic/agents/output_agent.py",
+        "src/mojentic/agents/iterative_problem_solver.py",
+        "src/mojentic/agents/async_llm_agent_spec.py",
+        "src/mojentic/agents/async_llm_agent.py",
+        "src/mojentic/agents/simple_recursive_agent_spec.py",
+        "src/mojentic/agents/base_agent.py",
+        "src/mojentic/llm/llm_broker.py",
+        "src/mojentic/llm/completion_config.py",
+        "src/mojentic/llm/message_composers_spec.py",
+        "src/mojentic/llm/completion_config_spec.py",
+        "src/mojentic/llm/chat_session.py",
+        "src/mojentic/llm/chat_session_spec.py",
+        "src/mojentic/llm/__init__.py",
+        "src/mojentic/llm/recovery_spec.py",
+        "src/mojentic/llm/message_composers.py",
+        "src/mojentic/llm/llm_broker_spec.py",
+        "src/mojentic/realtime/openai_gateway_spec.py",
+        "src/mojentic/realtime/broker.py",
+        "src/mojentic/realtime/codec.py",
+        "src/mojentic/realtime/schemas.py",
+        "src/mojentic/realtime/events.py",
+        "src/mojentic/realtime/openai_gateway.py",
+        "src/mojentic/realtime/__init__.py",
+        "src/mojentic/realtime/schemas_spec.py",
+        "src/mojentic/realtime/session_spec.py",
+        "src/mojentic/realtime/transport.py",
+        "src/mojentic/realtime/config.py",
+        "src/mojentic/realtime/gateway.py",
+        "src/mojentic/realtime/session.py",
+        "src/mojentic/realtime/codec_spec.py",
+        "src/mojentic/utils/__init__.py",
+        "src/mojentic/utils/formatting.py",
+        "src/mojentic/tracer/event_store_spec.py",
+        "src/mojentic/tracer/null_tracer.py",
+        "src/mojentic/tracer/tracer_events.py",
+        "src/mojentic/tracer/tracer_system_spec.py",
+        "src/mojentic/tracer/__init__.py",
+        "src/mojentic/tracer/event_store.py",
+        "src/mojentic/tracer/tracer_events_spec.py",
+        "src/mojentic/tracer/tracer_system.py",
+        "src/mojentic/llm/gateways/anthropic_spec.py",
+        "src/mojentic/llm/gateways/openai_response_format_spec.py",
+        "src/mojentic/llm/gateways/ollama_stream_events.py",
+        "src/mojentic/llm/gateways/ollama.py",
+        "src/mojentic/llm/gateways/openai_spec.py",
+        "src/mojentic/llm/gateways/openai_model_registry_spec.py",
+        "src/mojentic/llm/gateways/ollama_response_format_spec.py",
+        "src/mojentic/llm/gateways/openai_messages_adapter.py",
+        "src/mojentic/llm/gateways/ollama_messages_adapter.py",
+        "src/mojentic/llm/gateways/openai_temperature_handling_spec.py",
+        "src/mojentic/llm/gateways/anthropic.py",
+        "src/mojentic/llm/gateways/file_gateway.py",
+        "src/mojentic/llm/gateways/ollama_messages_adapter_spec.py",
+        "src/mojentic/llm/gateways/ollama_stream_eof_spec.py",
+        "src/mojentic/llm/gateways/omlx_protocol_spec.py",
+        "src/mojentic/llm/gateways/embeddings_gateway.py",
+        "src/mojentic/llm/gateways/openai_stream_events.py",
+        "src/mojentic/llm/gateways/openai_stream_events_spec.py",
+        "src/mojentic/llm/gateways/models.py",
+        "src/mojentic/llm/gateways/omlx_spec.py",
+        "src/mojentic/llm/gateways/__init__.py",
+        "src/mojentic/llm/gateways/omlx_stream.py",
+        "src/mojentic/llm/gateways/openai_tool_roundtrip_spec.py",
+        "src/mojentic/llm/gateways/tokenizer_gateway.py",
+        "src/mojentic/llm/gateways/ollama_spec.py",
+        "src/mojentic/llm/gateways/ollama_stream_events_spec.py",
+        "src/mojentic/llm/gateways/structured_boundary_spec.py",
+        "src/mojentic/llm/gateways/omlx_stream_spec.py",
+        "src/mojentic/llm/gateways/openai_message_adapter_spec.py",
+        "src/mojentic/llm/gateways/openai_model_registry.py",
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py",
+        "src/mojentic/llm/gateways/openai.py",
+        "src/mojentic/llm/gateways/llm_gateway.py",
+        "src/mojentic/llm/gateways/anthropic_messages_adapter.py",
+        "src/mojentic/llm/gateways/stream_events.py",
+        "src/mojentic/llm/gateways/ollama_stream_recovery_spec.py",
+        "src/mojentic/llm/gateways/lint_boundary_spec.py",
+        "src/mojentic/llm/tools/tool_wrapper.py",
+        "src/mojentic/llm/tools/file_manager_spec.py",
+        "src/mojentic/llm/tools/date_resolver_spec.py",
+        "src/mojentic/llm/tools/llm_tool_spec.py",
+        "src/mojentic/llm/tools/organic_web_search.py",
+        "src/mojentic/llm/tools/__init__.py",
+        "src/mojentic/llm/tools/runner.py",
+        "src/mojentic/llm/tools/current_datetime_spec.py",
+        "src/mojentic/llm/tools/file_manager.py",
+        "src/mojentic/llm/tools/llm_tool.py",
+        "src/mojentic/llm/tools/tool_wrapper_spec.py",
+        "src/mojentic/llm/tools/ask_user_tool.py",
+        "src/mojentic/llm/tools/create_directory_boundary_spec.py",
+        "src/mojentic/llm/tools/tell_user_tool.py",
+        "src/mojentic/llm/tools/date_resolver.py",
+        "src/mojentic/llm/tools/current_datetime.py",
+        "src/mojentic/llm/tools/runner_spec.py",
+        "src/mojentic/llm/registry/populate_registry_from_ollama.py",
+        "src/mojentic/llm/registry/llm_registry.py",
+        "src/mojentic/llm/registry/models.py",
+        "src/mojentic/llm/registry/__init__.py",
+        "src/mojentic/llm/tools/ephemeral_task_manager/start_task_tool.py",
+        "src/mojentic/llm/tools/ephemeral_task_manager/complete_task_tool.py",
+        "src/mojentic/llm/tools/ephemeral_task_manager/insert_task_after_tool.py",
+        "src/mojentic/llm/tools/ephemeral_task_manager/ephemeral_task_list_spec.py",
+        "src/mojentic/llm/tools/ephemeral_task_manager/clear_tasks_tool_spec.py",
+        "src/mojentic/llm/tools/ephemeral_task_manager/start_task_tool_spec.py",
+        "src/mojentic/llm/tools/ephemeral_task_manager/list_tasks_tool.py",
+        "src/mojentic/llm/tools/ephemeral_task_manager/complete_task_tool_spec.py",
+        "src/mojentic/llm/tools/ephemeral_task_manager/ephemeral_task_list.py",
+        "src/mojentic/llm/tools/ephemeral_task_manager/append_task_tool.py",
+        "src/mojentic/llm/tools/ephemeral_task_manager/__init__.py",
+        "src/mojentic/llm/tools/ephemeral_task_manager/prepend_task_tool_spec.py",
+        "src/mojentic/llm/tools/ephemeral_task_manager/prepend_task_tool.py",
+        "src/mojentic/llm/tools/ephemeral_task_manager/insert_task_after_tool_spec.py",
+        "src/mojentic/llm/tools/ephemeral_task_manager/list_tasks_tool_spec.py",
+        "src/mojentic/llm/tools/ephemeral_task_manager/clear_tasks_tool.py",
+        "src/mojentic/llm/tools/ephemeral_task_manager/append_task_tool_spec.py",
+        "src/_examples/realtime/with_tools.py",
+        "src/_examples/realtime/interruption.py",
+        "src/_examples/realtime/parallel_tools.py",
+        "src/_examples/realtime/simple_voice_wav.py",
+        "src/_examples/realtime/push_to_talk.py",
+        "src/_examples/realtime/__init__.py",
+        "src/_examples/realtime/text_mode.py",
+        "src/_examples/react/formatters.py",
+        "src/_examples/react/__init__.py",
+        "src/_examples/react/agents/tool_call_agent.py",
+        "src/_examples/react/agents/thinking_agent.py",
+        "src/_examples/react/agents/__init__.py",
+        "src/_examples/react/agents/summarization_agent.py",
+        "src/_examples/react/agents/decisioning_agent.py",
+        "src/_examples/react/models/events.py",
+        "src/_examples/react/models/__init__.py",
+        "src/_examples/react/models/base.py"
+      ],
+      "mismatched": []
+    }
+  },
+  "historical_receipts": [
+    {
+      "metadata": "quality-initial.json",
+      "command": "uv run ruff check src",
+      "exit_code": 1,
+      "full_logs": [
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/ruff/9-1791687871760645952.stdout.log",
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/ruff/9-1791687871760645952.stderr.log"
+      ],
+      "exact_invocation_source_snapshot": "not retained; final subset only"
+    },
+    {
+      "metadata": "quality-initial.json",
+      "command": "uv run ruff format --check src",
+      "exit_code": 0,
+      "full_logs": [
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/format-check/38-1791687872101253780.stdout.log",
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/format-check/38-1791687872101253780.stderr.log"
+      ],
+      "exact_invocation_source_snapshot": "not retained; final subset only"
+    },
+    {
+      "metadata": "quality-initial.json",
+      "command": "uv run flake8 src",
+      "exit_code": 0,
+      "full_logs": [
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/flake8/67-1791687872359238914.stdout.log",
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/flake8/67-1791687872359238914.stderr.log"
+      ],
+      "exact_invocation_source_snapshot": "not retained; final subset only"
+    },
+    {
+      "metadata": "quality-initial.json",
+      "command": "uv run flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics",
+      "exit_code": 0,
+      "full_logs": [
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/lint/91-1791687876749947023.stdout.log",
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/lint/91-1791687876749947023.stderr.log"
+      ],
+      "exact_invocation_source_snapshot": "not retained; final subset only"
+    },
+    {
+      "metadata": "quality-initial.json",
+      "command": "uv run pytest",
+      "exit_code": 0,
+      "full_logs": [
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/test/115-1791687880754512939.stdout.log",
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/test/115-1791687880754512939.stderr.log"
+      ],
+      "exact_invocation_source_snapshot": "not retained; final subset only"
+    },
+    {
+      "metadata": "quality-initial.json",
+      "command": "uv run pytest --cov",
+      "exit_code": 0,
+      "full_logs": [
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/coverage/1031-1791687968497915910.stdout.log",
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/coverage/1031-1791687968497915910.stderr.log"
+      ],
+      "exact_invocation_source_snapshot": "not retained; final subset only"
+    },
+    {
+      "metadata": "quality-initial.json",
+      "command": "uv run mkdocs build",
+      "exit_code": 0,
+      "full_logs": [
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/docs/1948-1791687994644524590.stdout.log",
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/docs/1948-1791687994644524590.stderr.log"
+      ],
+      "exact_invocation_source_snapshot": "not retained; final subset only"
+    },
+    {
+      "metadata": "quality-initial.json",
+      "command": "uv run bandit -c .bandit -r src",
+      "exit_code": 0,
+      "full_logs": [
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/bandit/1972-1791688002040930862.stdout.log",
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/bandit/1972-1791688002040930862.stderr.log"
+      ],
+      "exact_invocation_source_snapshot": "not retained; final subset only"
+    },
+    {
+      "metadata": "quality-initial.json",
+      "command": "uv run pip-audit",
+      "exit_code": 0,
+      "full_logs": [
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/audit/1987-1791688004145188768.stdout.log",
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/audit/1987-1791688004145188768.stderr.log"
+      ],
+      "exact_invocation_source_snapshot": "not retained; final subset only"
+    },
+    {
+      "metadata": "quality-initial.json",
+      "command": "uvx pip-audit",
+      "exit_code": 0,
+      "full_logs": [
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/uvx-audit/2003-1791688006324608767.stdout.log",
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/uvx-audit/2003-1791688006324608767.stderr.log"
+      ],
+      "exact_invocation_source_snapshot": "not retained; final subset only"
+    },
+    {
+      "metadata": "quality-initial.json",
+      "command": "uv pip list --outdated",
+      "exit_code": 0,
+      "full_logs": [
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/outdated/2036-1791688007584392283.stdout.log",
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/outdated/2036-1791688007584392283.stderr.log"
+      ],
+      "exact_invocation_source_snapshot": "not retained; final subset only"
+    },
+    {
+      "metadata": "quality.json",
+      "command": "uv run ruff check src",
+      "exit_code": 0,
+      "full_logs": [
+        "docs/evidence/cycle-9/original/worktree/captures/logs/final-ruff/2-1791687964596148354.stdout.log",
+        "docs/evidence/cycle-9/original/worktree/captures/logs/final-ruff/2-1791687964596148354.stderr.log"
+      ],
+      "exact_invocation_source_snapshot": "not retained; final subset only"
+    },
+    {
+      "metadata": "quality.json",
+      "command": "uv run ruff format --check src",
+      "exit_code": 0,
+      "full_logs": [
+        "docs/evidence/cycle-9/original/worktree/captures/logs/final-format-check/2-1791687964599379817.stdout.log",
+        "docs/evidence/cycle-9/original/worktree/captures/logs/final-format-check/2-1791687964599379817.stderr.log"
+      ],
+      "exact_invocation_source_snapshot": "not retained; final subset only"
+    },
+    {
+      "metadata": "quality.json",
+      "command": "uv run flake8 src",
+      "exit_code": 0,
+      "full_logs": [
+        "docs/evidence/cycle-9/original/worktree/captures/logs/final-flake8/2-1791687964625270901.stdout.log",
+        "docs/evidence/cycle-9/original/worktree/captures/logs/final-flake8/2-1791687964625270901.stderr.log"
+      ],
+      "exact_invocation_source_snapshot": "not retained; final subset only"
+    },
+    {
+      "metadata": "quality.json",
+      "command": "uv run flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics",
+      "exit_code": 0,
+      "full_logs": [
+        "docs/evidence/cycle-9/original/worktree/captures/logs/final-lint/2-1791687964574873083.stdout.log",
+        "docs/evidence/cycle-9/original/worktree/captures/logs/final-lint/2-1791687964574873083.stderr.log"
+      ],
+      "exact_invocation_source_snapshot": "not retained; final subset only"
+    },
+    {
+      "metadata": "quality.json",
+      "command": "uv run pytest",
+      "exit_code": 0,
+      "full_logs": [
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/test/115-1791687880754512939.stdout.log",
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/test/115-1791687880754512939.stderr.log"
+      ],
+      "exact_invocation_source_snapshot": "not retained; final subset only"
+    },
+    {
+      "metadata": "quality.json",
+      "command": "uv run pytest --cov",
+      "exit_code": 0,
+      "full_logs": [
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/coverage/1031-1791687968497915910.stdout.log",
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/coverage/1031-1791687968497915910.stderr.log"
+      ],
+      "exact_invocation_source_snapshot": "not retained; final subset only"
+    },
+    {
+      "metadata": "quality.json",
+      "command": "uv run mkdocs build",
+      "exit_code": 0,
+      "full_logs": [
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/docs/1948-1791687994644524590.stdout.log",
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/docs/1948-1791687994644524590.stderr.log"
+      ],
+      "exact_invocation_source_snapshot": "not retained; final subset only"
+    },
+    {
+      "metadata": "quality.json",
+      "command": "uv run bandit -c .bandit -r src",
+      "exit_code": 0,
+      "full_logs": [
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/bandit/1972-1791688002040930862.stdout.log",
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/bandit/1972-1791688002040930862.stderr.log"
+      ],
+      "exact_invocation_source_snapshot": "not retained; final subset only"
+    },
+    {
+      "metadata": "quality.json",
+      "command": "uv run pip-audit",
+      "exit_code": 0,
+      "full_logs": [
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/audit/1987-1791688004145188768.stdout.log",
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/audit/1987-1791688004145188768.stderr.log"
+      ],
+      "exact_invocation_source_snapshot": "not retained; final subset only"
+    },
+    {
+      "metadata": "quality.json",
+      "command": "uvx pip-audit",
+      "exit_code": 0,
+      "full_logs": [
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/uvx-audit/2003-1791688006324608767.stdout.log",
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/uvx-audit/2003-1791688006324608767.stderr.log"
+      ],
+      "exact_invocation_source_snapshot": "not retained; final subset only"
+    },
+    {
+      "metadata": "quality.json",
+      "command": "uv pip list --outdated",
+      "exit_code": 0,
+      "full_logs": [
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/outdated/2036-1791688007584392283.stdout.log",
+        "docs/evidence/cycle-9/original/worktree/captures/logs/gates/outdated/2036-1791688007584392283.stderr.log"
+      ],
+      "exact_invocation_source_snapshot": "not retained; final subset only"
+    },
+    {
+      "metadata": "final-small-gates.json",
+      "command": "uv run ruff check src",
+      "exit_code": 0,
+      "full_logs": [
+        "docs/evidence/cycle-9/original/worktree/captures/logs/final-ruff/2-1791687964596148354.stdout.log",
+        "docs/evidence/cycle-9/original/worktree/captures/logs/final-ruff/2-1791687964596148354.stderr.log"
+      ],
+      "exact_invocation_source_snapshot": "not retained; final subset only"
+    },
+    {
+      "metadata": "final-small-gates.json",
+      "command": "uv run ruff format --check src",
+      "exit_code": 0,
+      "full_logs": [
+        "docs/evidence/cycle-9/original/worktree/captures/logs/final-format-check/2-1791687964599379817.stdout.log",
+        "docs/evidence/cycle-9/original/worktree/captures/logs/final-format-check/2-1791687964599379817.stderr.log"
+      ],
+      "exact_invocation_source_snapshot": "not retained; final subset only"
+    },
+    {
+      "metadata": "final-small-gates.json",
+      "command": "uv run flake8 src",
+      "exit_code": 0,
+      "full_logs": [
+        "docs/evidence/cycle-9/original/worktree/captures/logs/final-flake8/2-1791687964625270901.stdout.log",
+        "docs/evidence/cycle-9/original/worktree/captures/logs/final-flake8/2-1791687964625270901.stderr.log"
+      ],
+      "exact_invocation_source_snapshot": "not retained; final subset only"
+    },
+    {
+      "metadata": "final-small-gates.json",
+      "command": "uv run flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics",
+      "exit_code": 0,
+      "full_logs": [
+        "docs/evidence/cycle-9/original/worktree/captures/logs/final-lint/2-1791687964574873083.stdout.log",
+        "docs/evidence/cycle-9/original/worktree/captures/logs/final-lint/2-1791687964574873083.stderr.log"
+      ],
+      "exact_invocation_source_snapshot": "not retained; final subset only"
+    },
+    {
+      "metadata": "audit-inventory-receipts.json",
+      "command": "uv run pip-audit --format json",
+      "exit_code": 0,
+      "full_logs": [
+        "docs/evidence/cycle-9/original/worktree/captures/logs/audit-inventory-project/2-1791688026894685888.stdout.log",
+        "docs/evidence/cycle-9/original/worktree/captures/logs/audit-inventory-project/2-1791688026894685888.stderr.log"
+      ],
+      "exact_invocation_source_snapshot": "not retained; final subset only"
+    },
+    {
+      "metadata": "audit-inventory-receipts.json",
+      "command": "uvx pip-audit --format json",
+      "exit_code": 0,
+      "full_logs": [
+        "docs/evidence/cycle-9/original/worktree/captures/logs/audit-inventory-uvx/2-1791688026895919691.stdout.log",
+        "docs/evidence/cycle-9/original/worktree/captures/logs/audit-inventory-uvx/2-1791688026895919691.stderr.log"
+      ],
+      "exact_invocation_source_snapshot": "not retained; final subset only"
+    }
+  ],
+  "final_snapshot_comparison": [
+    {
+      "source": ".bandit",
+      "equals_delivered": true
+    },
+    {
+      "source": ".coveragerc",
+      "equals_delivered": true
+    },
+    {
+      "source": "AGENTS.md",
+      "equals_delivered": true
+    },
+    {
+      "source": "RECOVERY-CONFORMANCE.md",
+      "equals_delivered": true
+    },
+    {
+      "source": "pyproject.toml",
+      "equals_delivered": true
+    },
+    {
+      "source": "pytest.ini",
+      "equals_delivered": true
+    },
+    {
+      "source": "setup.cfg",
+      "equals_delivered": true
+    },
+    {
+      "source": "src/mojentic/llm/gateways/omlx.py",
+      "equals_delivered": true
+    },
+    {
+      "source": "src/mojentic/llm/gateways/omlx_429_recovery_spec.py",
+      "equals_delivered": true
+    },
+    {
+      "source": "src/mojentic/llm/gateways/omlx_protocol.py",
+      "equals_delivered": true
+    },
+    {
+      "source": "src/mojentic/llm/gateways/omlx_recovery.py",
+      "equals_delivered": true
+    },
+    {
+      "source": "src/mojentic/llm/gateways/omlx_recovery_spec.py",
+      "equals_delivered": true
+    },
+    {
+      "source": "src/mojentic/llm/recovery.py",
+      "equals_delivered": true
+    },
+    {
+      "source": "src/mojentic/llm/recovery_stream.py",
+      "equals_delivered": true
+    },
+    {
+      "source": "uv.lock",
+      "equals_delivered": true
+    }
+  ],
+  "proof_snapshots": "exact one-line rejection-to-admission input change",
+  "frozen_proof_loopback_hash_matches": true,
+  "chronology": "New proof does not repair historical chronology",
+  "scope": "No whole-mission alignment claim; no controller reconciliation claim"
+}

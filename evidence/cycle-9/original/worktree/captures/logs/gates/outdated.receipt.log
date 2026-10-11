@@ -1,0 +1,3 @@
+uv: exit 0
+stdout: .foundry/logs/gates/outdated/2036-1791688007584392283.stdout.log
+stderr: .foundry/logs/gates/outdated/2036-1791688007584392283.stderr.log

@@ -1,0 +1,8 @@
+Using CPython 3.13.15
+Creating virtual environment at: .venv
+   Building mojentic @ file:///home/svetzal/.foundry/worktrees/mojentic-py/mojentic-py-transient-recovery-v2-c9-87ad4f
+      Built mojentic @ file:///home/svetzal/.foundry/worktrees/mojentic-py/mojentic-py-transient-recovery-v2-c9-87ad4f
+warning: Failed to hardlink files; falling back to full copy. This may lead to degraded performance.
+         If the cache and target directories are on different filesystems, hardlinking may not be supported.
+         If this is intentional, set `export UV_LINK_MODE=copy` or use `--link-mode=copy` to suppress this warning.
+Installed 96 packages in 20.07s

@@ -1,0 +1,924 @@
+import warnings
+
+import pytest
+from pydantic import BaseModel
+
+from mojentic.llm.completion_config import CompletionConfig
+from mojentic.llm.gateways.models import (
+    LLMGatewayResponse,
+    LLMMessage,
+    LLMToolCall,
+    MessageRole,
+)
+from mojentic.llm.llm_broker import LLMBroker, MaxToolIterationsExceededError
+
+
+class SimpleModel(BaseModel):
+    text: str
+    number: int
+
+
+class NestedModel(BaseModel):
+    title: str
+    details: SimpleModel
+
+
+class ComplexModel(BaseModel):
+    name: str
+    items: list[SimpleModel]
+    metadata: dict[str, str]
+
+
+@pytest.fixture
+def mock_gateway(mocker):
+    return mocker.MagicMock()
+
+
+@pytest.fixture
+def llm_broker(mock_gateway):
+    return LLMBroker(model="test-model", gateway=mock_gateway)
+
+
+class DescribeLLMBroker:
+    class DescribeMessageGeneration:
+        def should_generate_simple_response_for_user_message(
+            self, llm_broker, mock_gateway
+        ):
+            test_response_content = "I am fine, thank you!"
+            messages = [
+                LLMMessage(role=MessageRole.User, content="Hello, how are you?")
+            ]
+            mock_gateway.complete.return_value = LLMGatewayResponse(
+                content=test_response_content, object=None, tool_calls=[]
+            )
+
+            result = llm_broker.generate(messages)
+
+            assert result == test_response_content
+            mock_gateway.complete.assert_called_once()
+
+        def should_handle_tool_calls_during_generation(
+            self, llm_broker, mock_gateway, mocker
+        ):
+            messages = [
+                LLMMessage(role=MessageRole.User, content="What is the date on Friday?")
+            ]
+            tool_call = mocker.create_autospec(LLMToolCall, instance=True)
+            tool_call.name = "resolve_date"
+            tool_call.arguments = {"date": "Friday"}
+
+            mock_gateway.complete.side_effect = [
+                LLMGatewayResponse(content="", object=None, tool_calls=[tool_call]),
+                LLMGatewayResponse(
+                    content="The date is Friday.", object=None, tool_calls=[]
+                ),
+            ]
+
+            mock_tool = mocker.MagicMock()
+            mock_tool.matches.return_value = True
+            mock_tool.run.return_value = {"resolved_date": "Friday"}
+
+            result = llm_broker.generate(messages, tools=[mock_tool])
+
+            assert result == "The date is Friday."
+            assert mock_gateway.complete.call_count == 2
+            mock_tool.run.assert_called_once_with(date="Friday")
+
+    class DescribeObjectGeneration:
+        def should_generate_simple_model(self, llm_broker, mock_gateway):
+            messages = [
+                LLMMessage(role=MessageRole.User, content="Generate a simple object")
+            ]
+            mock_object = SimpleModel(text="test", number=42)
+            mock_gateway.complete.return_value = LLMGatewayResponse(
+                content='{"text": "test", "number": 42}',
+                object=mock_object,
+                tool_calls=[],
+            )
+
+            result = llm_broker.generate_object(messages, object_model=SimpleModel)
+
+            assert isinstance(result, SimpleModel)
+            assert result.text == "test"
+            assert result.number == 42
+            mock_gateway.complete.assert_called_once()
+
+        def should_generate_nested_model(self, llm_broker, mock_gateway):
+            messages = [
+                LLMMessage(role=MessageRole.User, content="Generate a nested object")
+            ]
+            mock_object = NestedModel(
+                title="main", details=SimpleModel(text="nested", number=123)
+            )
+            mock_gateway.complete.return_value = LLMGatewayResponse(
+                content='{"title": "main", "details": {"text": "nested", "number": 123}}',
+                object=mock_object,
+                tool_calls=[],
+            )
+
+            result = llm_broker.generate_object(messages, object_model=NestedModel)
+
+            assert isinstance(result, NestedModel)
+            assert result.title == "main"
+            assert isinstance(result.details, SimpleModel)
+            assert result.details.text == "nested"
+            assert result.details.number == 123
+            mock_gateway.complete.assert_called_once()
+
+        def should_generate_complex_model(self, llm_broker, mock_gateway):
+            messages = [
+                LLMMessage(role=MessageRole.User, content="Generate a complex object")
+            ]
+            mock_object = ComplexModel(
+                name="test",
+                items=[
+                    SimpleModel(text="item1", number=1),
+                    SimpleModel(text="item2", number=2),
+                ],
+                metadata={"key1": "value1", "key2": "value2"},
+            )
+            mock_gateway.complete.return_value = LLMGatewayResponse(
+                content=(
+                    '{"name": "test", "items": [{"text": "item1", "number": 1}, '
+                    '{"text": "item2", "number": 2}], '
+                    '"metadata": {"key1": "value1", "key2": "value2"}}'
+                ),
+                object=mock_object,
+                tool_calls=[],
+            )
+
+            result = llm_broker.generate_object(messages, object_model=ComplexModel)
+
+            assert isinstance(result, ComplexModel)
+            assert result.name == "test"
+            assert len(result.items) == 2
+            assert all(isinstance(item, SimpleModel) for item in result.items)
+            assert result.items[0].text == "item1"
+            assert result.items[1].number == 2
+            assert result.metadata == {"key1": "value1", "key2": "value2"}
+            mock_gateway.complete.assert_called_once()
+
+    class DescribeStreamingGeneration:
+        def should_stream_simple_response(self, llm_broker, mock_gateway, mocker):
+            from mojentic.llm.gateways.ollama import StreamingResponse
+
+            messages = [LLMMessage(role=MessageRole.User, content="Tell me a story")]
+
+            # Mock the complete_stream method to yield chunks
+            mock_gateway.complete_stream = mocker.MagicMock()
+            mock_gateway.complete_stream.return_value = iter(
+                [
+                    StreamingResponse(content="Once "),
+                    StreamingResponse(content="upon "),
+                    StreamingResponse(content="a "),
+                    StreamingResponse(content="time..."),
+                ]
+            )
+
+            result_chunks = list(llm_broker.generate_stream(messages))
+
+            assert result_chunks == ["Once ", "upon ", "a ", "time..."]
+            mock_gateway.complete_stream.assert_called_once()
+
+        def should_handle_tool_calls_during_streaming(
+            self, llm_broker, mock_gateway, mocker
+        ):
+            from mojentic.llm.gateways.ollama import StreamingResponse
+
+            messages = [
+                LLMMessage(role=MessageRole.User, content="What is the date on Friday?")
+            ]
+            tool_call = mocker.create_autospec(LLMToolCall, instance=True)
+            tool_call.name = "resolve_date"
+            tool_call.arguments = {"date": "Friday"}
+
+            # First stream has tool call, second stream has the response after tool execution
+            mock_gateway.complete_stream = mocker.MagicMock()
+            mock_gateway.complete_stream.side_effect = [
+                iter(
+                    [
+                        StreamingResponse(content="Let "),
+                        StreamingResponse(content="me "),
+                        StreamingResponse(content="check..."),
+                        StreamingResponse(tool_calls=[tool_call]),
+                    ]
+                ),
+                iter(
+                    [
+                        StreamingResponse(content="The "),
+                        StreamingResponse(content="date "),
+                        StreamingResponse(content="is "),
+                        StreamingResponse(content="2024-11-15"),
+                    ]
+                ),
+            ]
+
+            mock_tool = mocker.MagicMock()
+            mock_tool.matches.return_value = True
+            mock_tool.run.return_value = {"resolved_date": "2024-11-15"}
+
+            result_chunks = list(
+                llm_broker.generate_stream(messages, tools=[mock_tool])
+            )
+
+            # Should get chunks from first response, then chunks from second response after tool execution
+            assert result_chunks == [
+                "Let ",
+                "me ",
+                "check...",
+                "The ",
+                "date ",
+                "is ",
+                "2024-11-15",
+            ]
+            assert mock_gateway.complete_stream.call_count == 2
+            mock_tool.run.assert_called_once_with(date="Friday")
+
+        def should_raise_error_if_gateway_does_not_support_streaming(
+            self, llm_broker, mock_gateway
+        ):
+            messages = [LLMMessage(role=MessageRole.User, content="Hello")]
+
+            # Remove complete_stream method to simulate unsupported gateway
+            if hasattr(mock_gateway, "complete_stream"):
+                delattr(mock_gateway, "complete_stream")
+
+            with pytest.raises(NotImplementedError) as exc_info:
+                list(llm_broker.generate_stream(messages))
+
+            assert "does not support streaming" in str(exc_info.value)
+
+    class DescribeCompletionConfigSupport:
+        def should_pass_config_to_gateway_in_generate(self, llm_broker, mock_gateway):
+            config = CompletionConfig(temperature=0.7, reasoning_effort="high")
+            messages = [LLMMessage(role=MessageRole.User, content="Test")]
+            mock_gateway.complete.return_value = LLMGatewayResponse(
+                content="Response", object=None, tool_calls=[]
+            )
+
+            llm_broker.generate(messages, config=config)
+
+            mock_gateway.complete.assert_called_once()
+            call_kwargs = mock_gateway.complete.call_args[1]
+            assert call_kwargs["config"] == config
+            assert call_kwargs["config"].reasoning_effort == "high"
+
+        def should_build_config_from_kwargs_when_not_provided(
+            self, llm_broker, mock_gateway
+        ):
+            messages = [LLMMessage(role=MessageRole.User, content="Test")]
+            mock_gateway.complete.return_value = LLMGatewayResponse(
+                content="Response", object=None, tool_calls=[]
+            )
+
+            llm_broker.generate(messages, temperature=0.5, num_ctx=16384)
+
+            mock_gateway.complete.assert_called_once()
+            call_kwargs = mock_gateway.complete.call_args[1]
+            assert call_kwargs["config"].temperature == 0.5
+            assert call_kwargs["config"].num_ctx == 16384
+
+        def should_emit_deprecation_warning_when_both_config_and_kwargs_provided(
+            self, llm_broker, mock_gateway
+        ):
+            config = CompletionConfig(temperature=0.7)
+            messages = [LLMMessage(role=MessageRole.User, content="Test")]
+            mock_gateway.complete.return_value = LLMGatewayResponse(
+                content="Response", object=None, tool_calls=[]
+            )
+
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("always")
+                llm_broker.generate(messages, config=config, temperature=0.5)
+
+                assert len(w) == 1
+                assert issubclass(w[0].category, DeprecationWarning)
+                assert "deprecated" in str(w[0].message).lower()
+
+        def should_pass_config_to_gateway_in_generate_object(
+            self, llm_broker, mock_gateway
+        ):
+            config = CompletionConfig(temperature=0.3, max_tokens=8192)
+            messages = [LLMMessage(role=MessageRole.User, content="Generate object")]
+            mock_object = SimpleModel(text="test", number=42)
+            mock_gateway.complete.return_value = LLMGatewayResponse(
+                content='{"text": "test", "number": 42}',
+                object=mock_object,
+                tool_calls=[],
+            )
+
+            llm_broker.generate_object(
+                messages, object_model=SimpleModel, config=config
+            )
+
+            mock_gateway.complete.assert_called_once()
+            call_kwargs = mock_gateway.complete.call_args[1]
+            assert call_kwargs["config"] == config
+            assert call_kwargs["config"].max_tokens == 8192
+
+        def should_pass_config_to_gateway_in_generate_stream(
+            self, llm_broker, mock_gateway, mocker
+        ):
+            from mojentic.llm.gateways.ollama import StreamingResponse
+
+            config = CompletionConfig(temperature=0.9, reasoning_effort="medium")
+            messages = [LLMMessage(role=MessageRole.User, content="Stream test")]
+
+            mock_gateway.complete_stream = mocker.MagicMock()
+            mock_gateway.complete_stream.return_value = iter(
+                [StreamingResponse(content="Response")]
+            )
+
+            list(llm_broker.generate_stream(messages, config=config))
+
+            mock_gateway.complete_stream.assert_called_once()
+            call_kwargs = mock_gateway.complete_stream.call_args[1]
+            assert call_kwargs["config"] == config
+            assert call_kwargs["config"].reasoning_effort == "medium"
+
+    class DescribeMaxToolIterations:
+        def should_raise_when_tool_calls_exceed_max_iterations_in_generate(
+            self, llm_broker, mock_gateway, mocker
+        ):
+            from mojentic.llm.gateways.models import LLMToolCall
+
+            messages = [LLMMessage(role=MessageRole.User, content="Solve this")]
+            tool_call = mocker.create_autospec(LLMToolCall, instance=True)
+            tool_call.name = "some_tool"
+            tool_call.arguments = {}
+
+            mock_gateway.complete.return_value = LLMGatewayResponse(
+                content="", object=None, tool_calls=[tool_call]
+            )
+
+            mock_tool = mocker.MagicMock()
+            mock_tool.matches.return_value = True
+            mock_tool.run.return_value = {"result": "data"}
+
+            with pytest.raises(MaxToolIterationsExceededError):
+                llm_broker.generate(
+                    messages,
+                    tools=[mock_tool],
+                    config=CompletionConfig(max_tool_iterations=2),
+                )
+
+        def should_raise_when_tool_calls_exceed_max_iterations_in_generate_stream(
+            self, llm_broker, mock_gateway, mocker
+        ):
+            from mojentic.llm.gateways.ollama import StreamingResponse
+
+            messages = [LLMMessage(role=MessageRole.User, content="Solve this")]
+            tool_call = mocker.create_autospec(LLMToolCall, instance=True)
+            tool_call.name = "some_tool"
+            tool_call.arguments = {}
+
+            mock_gateway.complete_stream = mocker.MagicMock()
+            mock_gateway.complete_stream.return_value = iter(
+                [StreamingResponse(tool_calls=[tool_call])]
+            )
+
+            mock_tool = mocker.MagicMock()
+            mock_tool.matches.return_value = True
+            mock_tool.run.return_value = {"result": "data"}
+
+            with pytest.raises(MaxToolIterationsExceededError):
+                list(
+                    llm_broker.generate_stream(
+                        messages,
+                        tools=[mock_tool],
+                        config=CompletionConfig(max_tool_iterations=1),
+                    )
+                )
+
+        def should_pass_custom_max_iterations(self, llm_broker, mock_gateway, mocker):
+            messages = [LLMMessage(role=MessageRole.User, content="Solve this")]
+            tool_call = mocker.create_autospec(LLMToolCall, instance=True)
+            tool_call.name = "some_tool"
+            tool_call.arguments = {}
+
+            mock_gateway.complete.return_value = LLMGatewayResponse(
+                content="", object=None, tool_calls=[tool_call]
+            )
+
+            mock_tool = mocker.MagicMock()
+            mock_tool.matches.return_value = True
+            mock_tool.run.return_value = {"result": "data"}
+
+            def always_return_tool_call(*args, **kwargs):
+                return LLMGatewayResponse(
+                    content="", object=None, tool_calls=[tool_call]
+                )
+
+            mock_gateway.complete.side_effect = always_return_tool_call
+
+            with pytest.raises(MaxToolIterationsExceededError):
+                llm_broker.generate(
+                    messages,
+                    tools=[mock_tool],
+                    config=CompletionConfig(max_tool_iterations=3),
+                )
+
+            assert mock_gateway.complete.call_count == 3
+
+
+class DescribeNativeResponse:
+    def should_return_native_calls_without_executing_them(
+        self, llm_broker, mock_gateway
+    ):
+        response = LLMGatewayResponse(
+            content="Checking",
+            tool_calls=[
+                LLMToolCall(id="call-1", name="missing", arguments={"path": "file"})
+            ],
+        )
+        mock_gateway.complete.return_value = response
+        messages = [LLMMessage(content="Inspect")]
+
+        assert llm_broker.generate_response(messages, tools=[]) == response
+        assert len(messages) == 1
+        mock_gateway.complete.assert_called_once()
+
+    def should_return_unknown_tool_error_to_model(self, llm_broker, mock_gateway):
+        mock_gateway.complete.side_effect = [
+            LLMGatewayResponse(
+                tool_calls=[LLMToolCall(id="missing-1", name="missing", arguments={})]
+            ),
+            LLMGatewayResponse(content="Recovered"),
+        ]
+        messages = [LLMMessage(content="Inspect")]
+
+        assert llm_broker.generate(messages, tools=[]) == "Recovered"
+        assert messages[-1].role == MessageRole.Tool
+        assert "not found" in messages[-1].content
+        assert messages[-1].tool_calls[0].id == "missing-1"
+
+    def should_allow_explicitly_unlimited_tool_rounds(self, llm_broker, mock_gateway):
+        mock_gateway.complete.side_effect = [
+            *[
+                LLMGatewayResponse(
+                    tool_calls=[
+                        LLMToolCall(id=f"call-{i}", name="missing", arguments={})
+                    ]
+                )
+                for i in range(12)
+            ],
+            LLMGatewayResponse(content="Done"),
+        ]
+
+        assert (
+            llm_broker.generate(
+                [LLMMessage(content="Inspect")],
+                tools=[],
+                config=CompletionConfig(max_tool_iterations=None),
+            )
+            == "Done"
+        )
+        assert mock_gateway.complete.call_count == 13
+
+    def should_preserve_one_assistant_batch_and_all_cancelled_receipts(
+        self, mock_gateway
+    ):
+        import asyncio
+
+        from mojentic.llm.tools.runner import ToolRunContext
+
+        cancelled = asyncio.Event()
+        cancelled.set()
+        outcomes = []
+        calls = [LLMToolCall(id=str(i), name="missing", arguments={}) for i in range(2)]
+        mock_gateway.complete.side_effect = [
+            LLMGatewayResponse(content="Inspecting", tool_calls=calls),
+            LLMGatewayResponse(content="Stopped"),
+        ]
+        broker = LLMBroker(
+            "test",
+            mock_gateway,
+            tool_context=ToolRunContext(
+                cancel_event=cancelled,
+                on_call_complete=outcomes.append,
+            ),
+        )
+        messages = [LLMMessage(content="Inspect")]
+        assert broker.generate(messages, tools=[]) == "Stopped"
+        assert messages[1].tool_calls == calls
+        assert messages[1].content == "Inspecting"
+        assert [m.role for m in messages[2:]] == [MessageRole.Tool, MessageRole.Tool]
+        assert [o.id for o in outcomes] == ["0", "1"]
+        assert all(not o.ok for o in outcomes)
+
+
+class DescribeResponseEvidenceInTraces:
+    @pytest.fixture
+    def tracer(self):
+        from mojentic.tracer.tracer_system import TracerSystem
+
+        return TracerSystem()
+
+    @pytest.fixture
+    def evidence_gateway(self, mocker):
+        from mojentic.llm.gateways.ollama import OllamaGateway
+
+        return mocker.Mock(spec=OllamaGateway)
+
+    @pytest.fixture
+    def broker(self, evidence_gateway, tracer):
+        return LLMBroker(
+            model="configured-model", gateway=evidence_gateway, tracer=tracer
+        )
+
+    @pytest.fixture
+    def messages(self):
+        return [LLMMessage(role=MessageRole.User, content="Hello")]
+
+    @staticmethod
+    def _response_event(tracer):
+        from mojentic.tracer.tracer_events import LLMResponseTracerEvent
+
+        return tracer.get_events(event_type=LLMResponseTracerEvent)[-1]
+
+    def should_record_gateway_evidence_unchanged_for_ordinary_responses(
+        self, broker, evidence_gateway, tracer, messages
+    ):
+        usage = {"prompt_tokens": 7, "completion_tokens": 3, "details": {"cached": 1}}
+        evidence_gateway.complete.return_value = LLMGatewayResponse(
+            content="Hi",
+            usage=usage,
+            model="provider-model-2026",
+            finish_reason="stop",
+            metadata={"system_fingerprint": "fp_1"},
+        )
+
+        broker.generate(messages, correlation_id="c-1")
+
+        event = self._response_event(tracer)
+        assert (
+            event.model,
+            event.usage,
+            event.provider_model,
+            event.finish_reason,
+            event.metadata,
+        ) == (
+            "configured-model",
+            usage,
+            "provider-model-2026",
+            "stop",
+            {"system_fingerprint": "fp_1"},
+        )
+
+    def should_record_null_usage_when_gateway_reports_none(
+        self, broker, evidence_gateway, tracer, messages
+    ):
+        evidence_gateway.complete.return_value = LLMGatewayResponse(content="Hi")
+
+        broker.generate(messages, correlation_id="c-1")
+
+        assert self._response_event(tracer).usage is None
+
+    def should_record_gateway_evidence_for_structured_responses(
+        self, broker, evidence_gateway, tracer, messages
+    ):
+        usage = {"prompt_tokens": 9, "completion_tokens": 4}
+        evidence_gateway.complete.return_value = LLMGatewayResponse(
+            object=SimpleModel(text="a", number=1),
+            usage=usage,
+            model="provider-model",
+            finish_reason="stop",
+        )
+
+        broker.generate_object(messages, object_model=SimpleModel, correlation_id="c-1")
+
+        event = self._response_event(tracer)
+        assert (event.usage, event.provider_model, event.finish_reason) == (
+            usage,
+            "provider-model",
+            "stop",
+        )
+
+
+class DescribeStreamEvents:
+    @pytest.fixture
+    def tracer(self):
+        from mojentic.tracer.tracer_system import TracerSystem
+
+        return TracerSystem()
+
+    @pytest.fixture
+    def messages(self):
+        return [LLMMessage(role=MessageRole.User, content="Hello")]
+
+    @pytest.fixture
+    def openai_gateway(self, mocker):
+        from mojentic.llm.gateways.openai import OpenAIGateway
+
+        return mocker.Mock(spec=OpenAIGateway)
+
+    @pytest.fixture
+    def broker(self, openai_gateway, tracer):
+        return LLMBroker(
+            model="configured-model", gateway=openai_gateway, tracer=tracer
+        )
+
+    @staticmethod
+    def _completed():
+        from mojentic.llm.gateways.stream_events import (
+            CompletionMetadata,
+            StreamCompleted,
+        )
+
+        return StreamCompleted(
+            metadata=CompletionMetadata(
+                finish_reason="stop",
+                usage={"prompt_tokens": 3, "completion_tokens": 2},
+                provider_model="gpt-4o-x",
+                metadata={"total_duration": 900},
+            )
+        )
+
+    def should_relay_gateway_events_in_order(self, broker, openai_gateway, messages):
+        from mojentic.llm.gateways.stream_events import StreamContent
+
+        openai_gateway.complete_stream_events.return_value = iter(
+            [StreamContent(text="Hel"), StreamContent(text="lo"), self._completed()]
+        )
+
+        events = list(broker.generate_stream_events(messages, correlation_id="c-1"))
+
+        assert events == [
+            StreamContent(text="Hel"),
+            StreamContent(text="lo"),
+            self._completed(),
+        ]
+
+    def should_force_zero_tool_iterations(self, broker, openai_gateway, messages):
+        openai_gateway.complete_stream_events.return_value = iter([self._completed()])
+
+        list(
+            broker.generate_stream_events(
+                messages, CompletionConfig(temperature=0.2), correlation_id="c-1"
+            )
+        )
+
+        config = openai_gateway.complete_stream_events.call_args.kwargs["config"]
+        assert (config.max_tool_iterations, config.temperature) == (0, 0.2)
+
+    def should_end_with_an_incomplete_stream_error_when_the_gateway_stops_early(
+        self, broker, openai_gateway, messages
+    ):
+        from mojentic.llm.gateways.stream_events import (
+            StreamContent,
+            StreamError,
+            StreamErrorReason,
+        )
+
+        openai_gateway.complete_stream_events.return_value = iter(
+            [StreamContent(text="Hel")]
+        )
+
+        events = list(broker.generate_stream_events(messages, correlation_id="c-1"))
+
+        assert events[-1] == StreamError(reason=StreamErrorReason.INCOMPLETE_STREAM)
+
+    def should_yield_nothing_after_the_terminal_event(
+        self, broker, openai_gateway, messages
+    ):
+        from mojentic.llm.gateways.stream_events import StreamContent
+
+        openai_gateway.complete_stream_events.return_value = iter(
+            [self._completed(), StreamContent(text="late")]
+        )
+
+        events = list(broker.generate_stream_events(messages, correlation_id="c-1"))
+
+        assert events == [self._completed()]
+
+    def should_report_unsupported_gateways_without_a_request(
+        self, mocker, tracer, messages
+    ):
+        from mojentic.llm.gateways.anthropic import AnthropicGateway
+        from mojentic.llm.gateways.stream_events import StreamErrorReason
+        from mojentic.tracer.tracer_events import LLMCallTracerEvent
+
+        gateway = mocker.Mock(spec=AnthropicGateway)
+        broker = LLMBroker(model="claude", gateway=gateway, tracer=tracer)
+
+        events = list(broker.generate_stream_events(messages, correlation_id="c-1"))
+
+        assert (
+            [event.reason for event in events],
+            gateway.method_calls,
+            tracer.get_events(event_type=LLMCallTracerEvent),
+        ) == ([StreamErrorReason.STREAM_EVENTS_UNSUPPORTED], [], [])
+
+    def should_trace_the_call_and_the_response_with_reported_usage(
+        self, broker, openai_gateway, tracer, messages
+    ):
+        from mojentic.llm.gateways.stream_events import StreamContent
+        from mojentic.tracer.tracer_events import (
+            LLMCallTracerEvent,
+            LLMResponseTracerEvent,
+        )
+
+        openai_gateway.complete_stream_events.return_value = iter(
+            [StreamContent(text="Hel"), StreamContent(text="lo"), self._completed()]
+        )
+
+        list(broker.generate_stream_events(messages, correlation_id="c-1"))
+
+        response = tracer.get_events(event_type=LLMResponseTracerEvent)[0]
+        assert (
+            len(tracer.get_events(event_type=LLMCallTracerEvent)),
+            response.model,
+            response.content,
+            response.usage,
+            response.provider_model,
+            response.finish_reason,
+            response.metadata,
+        ) == (
+            1,
+            "configured-model",
+            "Hello",
+            {"prompt_tokens": 3, "completion_tokens": 2},
+            "gpt-4o-x",
+            "stop",
+            {"total_duration": 900},
+        )
+
+    def should_trace_failure_evidence_with_the_content_so_far(
+        self, broker, openai_gateway, tracer, messages
+    ):
+        from mojentic.llm.gateways.stream_events import (
+            CompletionMetadata,
+            StreamContent,
+            StreamError,
+            StreamErrorReason,
+        )
+        from mojentic.tracer.tracer_events import LLMResponseTracerEvent
+
+        openai_gateway.complete_stream_events.return_value = iter(
+            [
+                StreamContent(text="Hel"),
+                StreamError(
+                    reason=StreamErrorReason.INCOMPLETE_COMPLETION,
+                    metadata=CompletionMetadata(
+                        finish_reason="length", usage={"completion_tokens": 1}
+                    ),
+                ),
+            ]
+        )
+
+        list(broker.generate_stream_events(messages, correlation_id="c-1"))
+
+        response = tracer.get_events(event_type=LLMResponseTracerEvent)[0]
+        assert (response.content, response.finish_reason, response.usage) == (
+            "Hel",
+            "length",
+            {"completion_tokens": 1},
+        )
+
+    def should_trace_the_call_but_no_response_when_the_consumer_stops_early(
+        self, broker, openai_gateway, tracer, messages
+    ):
+        from mojentic.llm.gateways.stream_events import StreamContent
+        from mojentic.tracer.tracer_events import (
+            LLMCallTracerEvent,
+            LLMResponseTracerEvent,
+        )
+
+        openai_gateway.complete_stream_events.return_value = iter(
+            [StreamContent(text="Hel"), StreamContent(text="lo"), self._completed()]
+        )
+        events = broker.generate_stream_events(messages, correlation_id="c-1")
+        next(events)
+
+        events.close()
+
+        assert (
+            len(tracer.get_events(event_type=LLMCallTracerEvent)),
+            len(tracer.get_events(event_type=LLMResponseTracerEvent)),
+        ) == (1, 0)
+
+    def should_close_the_http_request_when_the_consumer_stops_early(
+        self, mocker, tracer, messages
+    ):
+        from mojentic.llm.gateways.openai import OpenAIGateway, OpenAIStreamTransport
+
+        closed = []
+
+        def lines(body):
+            try:
+                yield 'data: {"choices":[{"delta":{"content":"Hel"}}]}'
+                yield 'data: {"choices":[{"delta":{"content":"lo"}}]}'
+            finally:
+                closed.append(True)
+
+        transport = mocker.Mock(spec=OpenAIStreamTransport)
+        transport.stream_lines.side_effect = lines
+        mocker.patch("mojentic.llm.gateways.openai.OpenAI")
+        broker = LLMBroker(
+            model="gpt-4o",
+            gateway=OpenAIGateway(api_key="k", stream_transport=transport),
+            tracer=tracer,
+        )
+        events = broker.generate_stream_events(messages, correlation_id="c-1")
+        next(events)
+
+        events.close()
+
+        assert closed == [True]
+
+
+class DescribeMissingCorrelationId:
+    @pytest.fixture
+    def tracer(self):
+        from mojentic.tracer.tracer_system import TracerSystem
+
+        return TracerSystem()
+
+    @pytest.fixture
+    def gateway(self, mocker):
+        from mojentic.llm.gateways.openai import OpenAIGateway
+
+        gateway = mocker.Mock(spec=OpenAIGateway)
+        gateway.complete.return_value = LLMGatewayResponse(
+            content="Hi", object=SimpleModel(text="a", number=1)
+        )
+        return gateway
+
+    @pytest.fixture
+    def broker(self, gateway, tracer):
+        return LLMBroker(model="configured-model", gateway=gateway, tracer=tracer)
+
+    @pytest.fixture
+    def messages(self):
+        return [LLMMessage(role=MessageRole.User, content="Hello")]
+
+    @staticmethod
+    def _correlation_ids(tracer):
+        from mojentic.tracer.tracer_events import (
+            LLMCallTracerEvent,
+            LLMResponseTracerEvent,
+        )
+
+        return [
+            event.correlation_id
+            for event in tracer.get_events(event_type=LLMCallTracerEvent)
+            + tracer.get_events(event_type=LLMResponseTracerEvent)
+        ]
+
+    def should_trace_generate_under_one_generated_correlation_id(
+        self, broker, tracer, messages
+    ):
+        broker.generate(messages)
+
+        ids = self._correlation_ids(tracer)
+        assert (len(ids), len(set(ids)), bool(ids[0])) == (2, 1, True)
+
+    def should_trace_generate_response_under_one_generated_correlation_id(
+        self, broker, tracer, messages
+    ):
+        broker.generate_response(messages)
+
+        ids = self._correlation_ids(tracer)
+        assert (len(ids), len(set(ids)), bool(ids[0])) == (2, 1, True)
+
+    def should_trace_generate_object_under_one_generated_correlation_id(
+        self, broker, tracer, messages
+    ):
+        broker.generate_object(messages, object_model=SimpleModel)
+
+        ids = self._correlation_ids(tracer)
+        assert (len(ids), len(set(ids)), bool(ids[0])) == (2, 1, True)
+
+    def should_trace_generate_stream_under_one_generated_correlation_id(
+        self, broker, gateway, tracer, messages
+    ):
+        from mojentic.llm.gateways.ollama import StreamingResponse
+
+        gateway.complete_stream.return_value = iter([StreamingResponse(content="Hi")])
+
+        list(broker.generate_stream(messages))
+
+        ids = self._correlation_ids(tracer)
+        assert (len(ids), len(set(ids)), bool(ids[0])) == (2, 1, True)
+
+    def should_trace_generate_stream_events_under_one_generated_correlation_id(
+        self, broker, gateway, tracer, messages
+    ):
+        from mojentic.llm.gateways.stream_events import (
+            CompletionMetadata,
+            StreamCompleted,
+        )
+
+        gateway.complete_stream_events.return_value = iter(
+            [StreamCompleted(metadata=CompletionMetadata(finish_reason="stop"))]
+        )
+
+        list(broker.generate_stream_events(messages))
+
+        ids = self._correlation_ids(tracer)
+        assert (len(ids), len(set(ids)), bool(ids[0])) == (2, 1, True)
+
+    def should_keep_a_supplied_correlation_id(self, broker, tracer, messages):
+        broker.generate(messages, correlation_id="supplied")
+
+        assert set(self._correlation_ids(tracer)) == {"supplied"}

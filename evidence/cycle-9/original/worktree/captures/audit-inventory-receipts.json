@@ -1,0 +1,20 @@
+[
+  {
+    "name": "project",
+    "command": "uv run pip-audit --format json",
+    "chunk_id": "35a2bf",
+    "wall_time_seconds": 0.814755402,
+    "exit_code": 0,
+    "original_token_count": 43,
+    "output": "uv: exit 0\nstdout: .foundry/logs/audit-inventory-project/2-1791688026894685888.stdout.log\nstderr: .foundry/logs/audit-inventory-project/2-1791688026894685888.stderr.log\n"
+  },
+  {
+    "name": "uvx",
+    "command": "uvx pip-audit --format json",
+    "chunk_id": "176f5c",
+    "wall_time_seconds": 0.8203246,
+    "exit_code": 0,
+    "original_token_count": 41,
+    "output": "uvx: exit 0\nstdout: .foundry/logs/audit-inventory-uvx/2-1791688026895919691.stdout.log\nstderr: .foundry/logs/audit-inventory-uvx/2-1791688026895919691.stderr.log\n"
+  }
+]

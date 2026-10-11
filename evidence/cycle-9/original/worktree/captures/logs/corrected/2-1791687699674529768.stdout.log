@@ -1,0 +1,28 @@
+[31mF[0m[31m                                                                        [100%][0m
+=================================== FAILURES ===================================
+[31m[1m_ DescribeOMLX429Recovery.should_recover_429_only_after_admission_with_exact_wire_evidence _[0m
+[1m[31msrc/mojentic/llm/gateways/omlx_429_recovery_spec.py[0m:96: in should_recover_429_only_after_admission_with_exact_wire_evidence
+    [0m[94massert[39;49;00m cause.response.content == [33mb[39;49;00m[33m"[39;49;00m[33mbusy-429[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+           ^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m
+        admissions = [AdmissionContext(failure=Failure(provider='omlx', operation='streaming', category='http', identity=Identity(logical_r...request_id='0fab3558-4b85-4494-b595-4aaf0e0c0ddc', attempt_id='fbeec9e1-8bb0-409d-8785-67484c904b36', wire_attempt=1))]
+        admit      = <function DescribeOMLX429Recovery.should_recover_429_only_after_admission_with_exact_wire_evidence.<locals>.admit at 0x7b6b7c759d00>
+        captures   = [WireEvent(kind='request', identity=Identity(logical_request_id='0fab3558-4b85-4494-b595-4aaf0e0c0ddc', attempt_id='fb...4494-b595-4aaf0e0c0ddc', attempt_id='3f580c43-20ef-464a-bc3b-809ad110516b', wire_attempt=2), status=None, method=None)]
+        cause      = HTTPStatusError("Client error '429 Too Many Requests' for url 'http://127.0.0.1:34419/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429")
+        delays     = [3.0]
+        failure    = Failure(provider='omlx', operation='streaming', category='http', identity=Identity(logical_request_id='0fab3558-4b85-4...ntent=0, delivered_reasoning=0, delivered_tool_fragments=0, delivered_tool_calls=0), eligible=True, reason='transient')
+        gateway    = <mojentic.llm.gateways.omlx.OMLXGateway object at 0x7b6b7c8c6a50>
+        host       = 'http://127.0.0.1:34419'
+        lifecycle  = [LifecycleEvent(transition='attempt_started', identity=Identity(logical_request_id='0fab3558-4b85-4494-b595-4aaf0e0c0d...reasoning=0, delivered_tool_fragments=0, delivered_tool_calls=0), eligible=True, reason='transient'), delay=None), ...]
+        operation  = 'streaming'
+        report     = RecoveryReport(identity=Identity(logical_request_id='0fab3558-4b85-4494-b595-4aaf0e0c0ddc', attempt_id='3f580c43-20ef-..., delivered_reasoning=13, delivered_tool_fragments=0, delivered_tool_calls=0), outcome='succeeded', final_failure=None)
+        requests   = [('/v1/chat/completions', b'{"model":"test","messages":[{"role":"user","content":"h\xc3\xa9llo"}],"temperature":1.0,"m...', {'Host': '127.0.0.1:34419', 'Accept': '*/*', 'Connection': 'keep-alive', 'User-Agent': 'python-httpx/0.28.1', ...})]
+        response   = LLMGatewayResponse(content='é', object=None, tool_calls=[], thinking='native reason', usage={'prompt_tokens': 2, 'completion_tokens': 3, 'total_tokens': 5}, model='actual-model', finish_reason='stop', metadata={})
+        self       = <mojentic.llm.gateways.omlx_429_recovery_spec.DescribeOMLX429Recovery object at 0x7b6b7c89f890>
+        sleep      = <function DescribeOMLX429Recovery.should_recover_429_only_after_admission_with_exact_wire_evidence.<locals>.sleep at 0x7b6b7c759c60>
+[1m[31m.venv/lib/python3.13/site-packages/httpx/_models.py[0m:638: in content
+    [0m[94mraise[39;49;00m ResponseNotRead()[90m[39;49;00m
+[1m[31mE   httpx.ResponseNotRead: Attempted to access streaming response content, without having called `read()`.[0m
+        self       = <Response [429 Too Many Requests]>
+[36m[1m=========================== short test summary info ============================[0m
+[31mFAILED[0m src/mojentic/llm/gateways/omlx_429_recovery_spec.py::[1mDescribeOMLX429Recovery::should_recover_429_only_after_admission_with_exact_wire_evidence[0m - httpx.ResponseNotRead: Attempted to access streaming response content, with...
+[31m[31m[1m1 failed[0m[31m in 2.75s[0m[0m

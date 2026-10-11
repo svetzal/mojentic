@@ -1,0 +1,68 @@
+[
+  {
+    "name": "ruff",
+    "command": "uv run ruff check src",
+    "exit_code": 0,
+    "capture_receipt": "uv: exit 0\nstdout: .foundry/logs/final-ruff/2-1791687964596148354.stdout.log\nstderr: .foundry/logs/final-ruff/2-1791687964596148354.stderr.log\n"
+  },
+  {
+    "name": "format-check",
+    "command": "uv run ruff format --check src",
+    "exit_code": 0,
+    "capture_receipt": "uv: exit 0\nstdout: .foundry/logs/final-format-check/2-1791687964599379817.stdout.log\nstderr: .foundry/logs/final-format-check/2-1791687964599379817.stderr.log\n"
+  },
+  {
+    "name": "flake8",
+    "command": "uv run flake8 src",
+    "exit_code": 0,
+    "capture_receipt": "uv: exit 0\nstdout: .foundry/logs/final-flake8/2-1791687964625270901.stdout.log\nstderr: .foundry/logs/final-flake8/2-1791687964625270901.stderr.log\n"
+  },
+  {
+    "name": "lint",
+    "command": "uv run flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics",
+    "exit_code": 0,
+    "capture_receipt": "uv: exit 0\nstdout: .foundry/logs/final-lint/2-1791687964574873083.stdout.log\nstderr: .foundry/logs/final-lint/2-1791687964574873083.stderr.log\n"
+  },
+  {
+    "name": "test",
+    "command": "uv run pytest",
+    "exit_code": 0,
+    "receipt": ".foundry/logs/gates/test.receipt.log"
+  },
+  {
+    "name": "coverage",
+    "command": "uv run pytest --cov",
+    "exit_code": 0,
+    "receipt": ".foundry/logs/gates/coverage.receipt.log"
+  },
+  {
+    "name": "docs",
+    "command": "uv run mkdocs build",
+    "exit_code": 0,
+    "receipt": ".foundry/logs/gates/docs.receipt.log"
+  },
+  {
+    "name": "bandit",
+    "command": "uv run bandit -c .bandit -r src",
+    "exit_code": 0,
+    "receipt": ".foundry/logs/gates/bandit.receipt.log"
+  },
+  {
+    "name": "audit",
+    "command": "uv run pip-audit",
+    "exit_code": 0,
+    "receipt": ".foundry/logs/gates/audit.receipt.log"
+  },
+  {
+    "name": "uvx-audit",
+    "command": "uvx pip-audit",
+    "exit_code": 0,
+    "receipt": ".foundry/logs/gates/uvx-audit.receipt.log"
+  },
+  {
+    "name": "outdated",
+    "command": "uv pip list --outdated",
+    "exit_code": 0,
+    "receipt": ".foundry/logs/gates/outdated.receipt.log"
+  }
+]

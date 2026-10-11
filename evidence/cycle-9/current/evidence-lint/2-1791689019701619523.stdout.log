@@ -1,0 +1,40 @@
+I001 [*] Import block is un-sorted or un-formatted
+  --> evidence/cycle-9/current/run-gates.py:1:1
+   |
+ 1 | / import hashlib
+ 2 | | import importlib.metadata
+ 3 | | import json
+ 4 | | import os
+ 5 | | from pathlib import Path
+ 6 | | import shutil
+ 7 | | import subprocess
+ 8 | | import sys
+   | |__________^
+ 9 |
+10 |   base = Path('evidence/cycle-9/current')
+   |
+help: Organize imports
+  |
+4 | import os
+  - from pathlib import Path
+5 | import shutil
+6 | import subprocess
+7 | import sys
+8 + from pathlib import Path
+9 |
+  |
+
+PLW1510 `subprocess.run` without explicit `check` argument
+  --> evidence/cycle-9/current/run-gates.py:45:14
+   |
+43 | for name, command in gates:
+44 |     capture = ['foundry', 'capture', '--log-dir', str(base / 'gates' / name), '--', *command]
+45 |     result = subprocess.run(capture, env=env, capture_output=True, text=True)
+   |              ^^^^^^^^^^^^^^
+46 |     receipt = result.stdout + result.stderr
+47 |     (base / 'gates').mkdir(exist_ok=True)
+   |
+help: Add explicit `check=False`
+
+Found 2 errors.
+[*] 1 fixable with the `--fix` option.

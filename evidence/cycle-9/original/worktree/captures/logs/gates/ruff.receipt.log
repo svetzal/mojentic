@@ -1,0 +1,34 @@
+uv: exit 1
+stdout: .foundry/logs/gates/ruff/9-1791687871760645952.stdout.log
+stderr: .foundry/logs/gates/ruff/9-1791687871760645952.stderr.log
+I001 [*] Import block is un-sorted or un-formatted
+  --> src/mojentic/llm/gateways/omlx_429_recovery_spec.py:3:1
+   |
+ 1 |   """HTTP 429 conformance through public oMLX recovery entrypoints."""
+ 2 |
+ 3 | / import httpx
+ 4 | | import pytest
+ 5 | |
+ 6 | | from mojentic.llm.gateways.models import LLMMessage
+ 7 | | from mojentic.llm.gateways.ollama_recovery_spec import scripted_http
+ 8 | | from mojentic.llm.gateways.omlx import OMLXGateway
+ 9 | | from mojentic.llm.gateways.omlx_recovery_spec import (
+10 | |     Result,
+11 | |     allow,
+12 | |     completion,
+13 | |     reject,
+14 | |     stream,
+15 | | )
+16 | | from mojentic.llm.recovery import RecoveryError, RecoveryPolicy
+17 | | from mojentic.llm.recovery_stream import StreamOutcome
+   | |______________________________________________________^
+help: Organize imports
+   |
+18 |
+   -
+19 | EXPECTED = {
+   |
+
+Found 1 error.
+[*] 1 fixable with the `--fix` option.
+

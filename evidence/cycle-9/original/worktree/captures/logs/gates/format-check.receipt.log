@@ -1,0 +1,3 @@
+uv: exit 0
+stdout: .foundry/logs/gates/format-check/38-1791687872101253780.stdout.log
+stderr: .foundry/logs/gates/format-check/38-1791687872101253780.stderr.log
