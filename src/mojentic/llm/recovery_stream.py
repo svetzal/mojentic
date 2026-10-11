@@ -355,6 +355,7 @@ class _StreamRecovery(_Recovery):
         self.check_dispatch()
         attempt.sent, attempt.phase = True, "awaiting_headers"
         response = await client.send(request, stream=True, auth=httpx.Auth())
+        pending = b""
         try:
             attempt.status = response.status_code
             attempt.headers = tuple(response.headers.multi_items())
@@ -374,7 +375,6 @@ class _StreamRecovery(_Recovery):
                 attempt,
             )
             decoder = _Decoder()
-            pending = b""
             async for chunk in response.aiter_raw():
                 self.check_cancelled()
                 attempt.raw += chunk
@@ -401,15 +401,14 @@ class _StreamRecovery(_Recovery):
                     if decoder.terminal:
                         return decode(self.response_frame(decoder))
             response.raise_for_status()
-            if pending.strip():
-                frames, parse_error = self.parse_lines([pending], decoder, attempt)
-                if parse_error is not None:
-                    raise parse_error
-                for frame in frames:
-                    await self.deliver_frame(frame, decoder, attempt)
-            if not decoder.terminal:
-                raise ValueError("stream ended without stop")
-            return decode(self.response_frame(decoder))
+            if pending:
+                attempt.category, attempt.reason = "protocol", "invalid_response"
+                raise ValueError("stream ended with unfinished frame")
+            raise httpx.RemoteProtocolError("stream ended without terminal proof")
+        except httpx.TransportError:
+            if response.is_success and pending:
+                attempt.category, attempt.reason = "protocol", "invalid_response"
+            raise
         finally:
             await response.aclose()
 

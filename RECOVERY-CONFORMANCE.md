@@ -4,6 +4,65 @@ The current increment covers opt-in Ollama ordinary, structured, and tool-capabl
 streaming HTTP completion. Remaining provider alignment stays pending. Tests use scripted
 loopback HTTP and local files; no live inference or experiment restart occurred.
 
+## Ollama streaming EOF correction (c7)
+
+This correction preserves the accumulated streaming implementation at
+`5627d288b448f8d44eb271b08922540464378b57`; the worktree was clean before edits.
+The controller receipt and Python logs cited below remain historical
+synchronization evidence. Read-only observations show local `origin/main` at
+`49ea5504b1ea3d7a0062105b4ddbab28d1f0d968`, an ancestor of this HEAD; they do
+not prove a fresh remote fetch. The worker does not mutate refs. Foundry owns
+review and direct-main landing without a PR; no release is part of this task.
+
+The exact Rust `4ca1ed279c02eab37827a1ed07c30e961155ecf3` stream engine
+classifies EOF and failed HTTP reads by whether a protocol frame is pending.
+The Python correction preserves that distinction and typed HTTP causes:
+
+- Pending NDJSON bytes at clean EOF or truncation are protocol-ineligible even
+  with caller admission. A JSON object without a newline cannot deliver a
+  completed response, content, reasoning, or executable tools.
+- EOF between complete keepalive-only frames is transport-eligible, subject to
+  explicit admission. Absence and rejection each retain one wire request.
+- Semantics observed in an unfinished object remain private progress evidence;
+  delivered counts stay zero. Request bytes, response bytes, headers, bounded
+  history, actual attempt identities and lifecycle order remain asserted.
+- The public async gateway, synchronous broker and chat session propagate these
+  outcomes. Interrupted tool frames never execute tools or store a completed
+  assistant reply. Existing cancellation, capture privacy, terminal telemetry,
+  immutable requests and completed-tool-once tests remain unchanged.
+
+Before fixture expansion or full gates, the five-case public loopback probe
+rejected the preserved source with exit 1 (four failing cases) and passed the
+corrected source with exit 0. Rejection included an unauthorized second request,
+semantic/success delivery from an unterminated frame, transport overwriting the
+protocol category, and failure to admit a keepalive-only clean EOF recovery.
+The durable proof includes both exact probe source snapshots, source hashes,
+actual exit codes and full logs. The expanded public-boundary suite retains
+complete private wire captures and exercises admission rejection/absence,
+retry exhaustion, tool interruption and broker/session propagation.
+
+Durable evidence for this correction resides at
+`/home/svetzal/.foundry/tool-logs/mojentic-py-eof-c7/`, including controller
+receipt/logs, exact retained Rust source, Python snapshots, wire captures,
+quality-gate records and independent source review. This adds no providers,
+dependencies, runtime pins, rules, thresholds, exclusions or suppressions.
+The c6 verification below describes the prior increment, separately from c7.
+
+C7 final verification passes full Ruff and formatting, full and selective
+Flake8, both full pytest runs (762 tests each), MkDocs, Bandit, both unfiltered
+dependency audits and the outdated-package check. The explicit `pytest --cov`
+run reports 85% coverage; the configured default run reports 83%. No coverage
+floor is configured or changed. Both audit inventories match all 96 installed
+project distributions exactly using this worktree's interpreter, without skips
+or vulnerabilities. Existing documentation-tool warnings remain visible.
+Independent review passes all 41 EOF specifications and verifies final hashes.
+
+An additional McCabe diagnostic (separate from configured lint gates) confirms
+the changed HTTP exchange function is at most 10. It also flags the unchanged
+`run_stream` function at 12 on both preserved and corrected source. The inherited
+finding remains disclosed rather than expanding this EOF correction or changing
+lint policy. No suppression was added. Exact diagnostic logs remain archived.
+
 ## Tool-capable Ollama streaming increment (c6)
 
 This worker started at clean `49ea5504b1ea3d7a0062105b4ddbab28d1f0d968`.

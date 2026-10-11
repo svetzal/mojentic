@@ -239,6 +239,24 @@ replay, including when capture fails before delivery. Keepalive-only progress ca
 recover after explicit admission. Capture failures remain terminal and retain
 the original exception, raw bytes, private headers, and observed evidence.
 
+Recovery streams require newline-terminated NDJSON frames. At clean EOF or HTTP
+truncation, any unfinished frame is a protocol failure and cannot be replayed,
+even when admission would allow it. A complete JSON object without its trailing
+newline is still unfinished: its semantics may be observed privately but are
+never delivered as content, reasoning, executable tools, or success. Exact
+response bytes and headers remain inspectable; HTTP truncation retains its
+original typed transport cause while the failure category stays `protocol`.
+
+EOF between complete frames without terminal proof is a transport interruption.
+Complete keepalive-only frames permit another attempt only after explicit caller
+admission; absent or rejected admission sends no second request. Previously
+observed semantics still prevent replay. These outcomes propagate through
+`complete_stream_with_recovery`, `LLMBroker.generate_stream`, and
+`ChatSession.send_stream`. Broker and session callers receive `RecoveryError`
+on failure and do not execute tools or store a completed assistant message from
+an unfinished frame. Ordinary and structured permanent HTTP status handling
+retains its existing behavior.
+
 The stream owns its HTTP/admission tasks independently of consumer pacing.
 `call.cancel()` closes locally owned resources even while consumption is paused;
 cancellation wins over buffered terminal telemetry and completed responses.

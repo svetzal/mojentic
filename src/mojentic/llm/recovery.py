@@ -661,7 +661,9 @@ class _Recovery:
     def record_failure(self, attempt: _Attempt, cause: BaseException) -> Failure:
         cause = cause.original if isinstance(cause, _HookError) else cause
         attempt.cause = cause
-        if isinstance(cause, httpx.TimeoutException):
+        if attempt.reason == "invalid_response":
+            attempt.category = "protocol"
+        elif isinstance(cause, httpx.TimeoutException):
             attempt.category = "client_timeout"
         elif isinstance(cause, httpx.TransportError):
             attempt.category = "transport"
