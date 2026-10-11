@@ -160,3 +160,24 @@ must protect it along with bodies. Cancellation consumers should expect an
 Use the report's wire count/history rather than counting request-capture or
 `attempt_started` callbacks, since a callback can prevent dispatch. The legacy
 SDK path, other adapters, streaming, and ordinary finish behavior are unchanged.
+
+## Directory tool exception compatibility
+
+`CreateDirectoryTool` continues to accept a `FilesystemGateway` directly:
+
+```python
+from mojentic.llm.tools.file_manager import CreateDirectoryTool, FilesystemGateway
+
+tool = CreateDirectoryTool(FilesystemGateway("/your/sandbox"))
+result = tool.run("nested/directory")
+```
+
+Successful creation, including an existing directory, returns the same success
+string. Sandbox violations, permission failures and other OS errors retain their
+error strings. Unexpected programming failures propagate with their original
+exception object instead of being converted to strings. Callers that previously
+treated every failure as a returned string should let unexpected exceptions
+reach their application error boundary. The focused regression uses a real
+filesystem gateway and a failing path protocol object; it verifies exception
+identity and no filesystem mutation. This documents the preserved lint-cleanup
+correction and adds no new runtime behavior or completion-recovery guarantee.

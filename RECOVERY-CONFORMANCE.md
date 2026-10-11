@@ -4,6 +4,54 @@ This increment covers opt-in Ollama ordinary and structured HTTP completion.
 Streaming and remaining provider alignment stay pending. Tests use scripted
 loopback HTTP and local files; no live inference or experiment restart occurred.
 
+## Focused CreateDirectoryTool proof closure (c5)
+
+This worker started from clean `cd0817e22def141c8d9708cc1a2ddec263c773cb`.
+The sections below retain the separate c4 evidence; they do not establish a
+historical sequence or completion of the whole recovery mission. This increment
+adds assertions and migration guidance only, preserving the licensed exception
+correction already present in the starting source.
+
+`src/mojentic/llm/tools/create_directory_boundary_spec.py` exercises
+`CreateDirectoryTool.run()` with a real `FilesystemGateway`. A path object's
+`__fspath__` raises an original `RuntimeError`; the assertion requires that exact
+object to escape and verifies unchanged directory entries and sentinel bytes.
+The identical assertion rejects `c95d805e617f521c77cc04866b2232c11d0baba8`
+because its catch-all returns an error string. It passes on the starting source.
+No private method or library internals are mocked.
+
+Early proof was recorded in `.foundry/proof.json` before compatibility expansion
+or full gates. Durable evidence resides in
+`/home/svetzal/.foundry/tool-logs/mojentic-py-directory-c5/`: `proof.json`,
+`early-proof-spec.py`, `proof-rejecting.json`, `proof-corrected.json`, and their
+complete captures. An exploratory TypeError identity assertion failed because
+`os.path.join` replaces that exception; those captures remain retained and are
+not presented as passing evidence. The final RuntimeError probe avoids that
+library replacement without changing runtime code.
+`final-boundary-rejecting.json` and `final-boundary-corrected.json` also exercise
+the final formatted specification: one rejection plus four compatibility passes
+on the baseline, and all five passes on the corrected revision.
+
+`compatibility-rejecting.json` and `compatibility-corrected.json` record four
+passing specifications on each exact revision: nested and repeated creation,
+sandbox escape rejection, an actual existing-file collision, and the retained
+permission error message. PermissionError is supplied by a path protocol object,
+not by an OS permission fixture; this characterizes the handler rather than
+claiming platform permission enforcement. The constructor still takes a direct
+`FilesystemGateway`, and `src/_examples/coding_file_tool.py` still passes `fs`.
+
+`source-hashes.json`, `synchronization.json`, `preservation.json`, and
+`evidence-index.json` retain revisions, source/evidence hashes, read-only ref
+observations and unchanged policy/runtime files. Remote main was observed at
+the starting revision; this does not prove any unobserved controller state.
+Foundry owns landing directly on main; this worker makes no ref mutations.
+`review.md` records independent assertion and compatibility review.
+`quality.json` retains actual final-source gate commands, exits and full capture
+hashes. `audit-environment-proof.json` compares both unfiltered audit inventories
+with the project interpreter's installed distributions. No rules, thresholds,
+pins, dependencies, exclusions, suppressions or existing recovery assertions
+are changed by this increment.
+
 ## Reconciliation provenance
 
 The worker began with clean HEAD `1cacf50037c9f60e91161df29e6efd955aa2d535`,
