@@ -24,6 +24,7 @@ from mojentic.llm.gateways.stream_events import (
     StreamErrorReason,
     StreamEvent,
 )
+from mojentic.llm.model_context_window import ModelContextWindow, ollama_context_window
 from mojentic.llm.reasoning import reasoning_controls
 from mojentic.llm.recovery import (
     Capabilities,
@@ -170,6 +171,17 @@ class OllamaGateway(LLMGateway):
                 if (value := getattr(config, field)) is not None
             }
         )
+
+    def get_model_context_window(self, model: str) -> ModelContextWindow | None:
+        """Discover model metadata without changing completion options."""
+        with httpx.Client(
+            headers=self._recovery_headers, timeout=self._recovery_timeout
+        ) as client:
+            response = client.post(
+                self._recovery_host + "/api/show", json={"model": model}
+            )
+            response.raise_for_status()
+            return ollama_context_window(response.json())
 
     def complete(self, **args) -> LLMGatewayResponse:
         """

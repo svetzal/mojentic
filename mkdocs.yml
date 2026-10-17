@@ -58,6 +58,7 @@ nav:
       - Tool Usage: tool_usage.md
       - Parallel Tools: parallel_tools.md
       - Reasoning Effort: reasoning_effort.md
+      - Model Context Windows: model_context_window.md
   - Use Cases:
       - Building Chatbots: chat_sessions.md
       - Chatbots with Tools: chat_sessions_with_tools.md

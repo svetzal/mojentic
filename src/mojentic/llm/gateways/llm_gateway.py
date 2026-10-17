@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Optional
 from pydantic import BaseModel
 
 from mojentic.llm.gateways.models import LLMGatewayResponse, LLMMessage
+from mojentic.llm.model_context_window import ModelContextWindow
 from mojentic.llm.tools.llm_tool import LLMTool
 
 if TYPE_CHECKING:
@@ -15,6 +16,30 @@ class LLMGateway:
 
     To create a new gateway, inherit from this class and implement the `complete` method.
     """
+
+    def get_model_context_window(self, model: str) -> ModelContextWindow | None:
+        """Return advertised metadata, or None when discovery is unsupported.
+
+        Parameters
+        ----------
+        model : str
+            Exact provider model identifier.
+
+        Returns
+        -------
+        ModelContextWindow | None
+            Positive advertised window and source field, or not advertised.
+
+        Raises
+        ------
+        httpx.TransportError
+            The provider could not be reached (HTTP gateways).
+        httpx.HTTPStatusError
+            The provider returned a non-success status (HTTP gateways).
+        ValueError
+            The response body or advertised metadata is malformed.
+        """
+        return None
 
     def complete(
         self,

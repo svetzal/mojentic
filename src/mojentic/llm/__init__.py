@@ -18,6 +18,7 @@ from .gateways.stream_events import (  # noqa: F401
 )
 from .llm_broker import LLMBroker  # noqa: F401
 from .message_composers import FileTypeSensor, MessageBuilder  # noqa: F401
+from .model_context_window import ModelContextWindow, effective_context_window
 from .reasoning import ReasoningEffort as ReasoningEffort
 from .reasoning import ReasoningProfile as ReasoningProfile
 from .recovery import CaptureError as CaptureError
@@ -41,6 +42,7 @@ from .registry.llm_registry import LLMRegistry  # noqa: F401
 __all__ = [
     "CaptureError",
     "LengthTerminationError",
+    "ModelContextWindow",
     "ReasoningEffort",
     "ReasoningProfile",
     "RecoveryPolicyError",
@@ -48,6 +50,7 @@ __all__ = [
     "StreamFrameProgress",
     "StreamMetrics",
     "StreamOutcome",
+    "effective_context_window",
 ]
 __all__ += [
     name for name in globals() if not name.startswith("_") and name not in __all__

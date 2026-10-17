@@ -29,6 +29,7 @@ from mojentic.llm.gateways.stream_events import (
     StreamErrorReason,
     StreamEvent,
 )
+from mojentic.llm.model_context_window import ModelContextWindow, omlx_context_window
 from mojentic.llm.recovery import (
     Capabilities,
     RecoveryCall,
@@ -151,6 +152,10 @@ class OMLXGateway(LLMGateway):
             else None
         )
         self.recovery_call = recovery_call
+
+    def get_model_context_window(self, model: str) -> ModelContextWindow | None:
+        """Discover exact model metadata using the configured host and credentials."""
+        return omlx_context_window(self.transport.get("models").json(), model)
 
     def complete(
         self,

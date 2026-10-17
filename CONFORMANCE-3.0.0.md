@@ -973,3 +973,112 @@ XDG cache directories were redirected under `/tmp`; dependency files are
 unchanged. Formatting is scoped to the changed Python file, preserving the
 previously documented unrelated formatting gap. No Git finalization, version
 change, metadata/timing expansion or sibling repository modification was made.
+
+### Cycle 11: provider context-window discovery (section 1)
+
+Python base HEAD: `8dccb4a329176435f87194f5e0df161a179906f1` plus this
+uncommitted correction. The initiative brief SHA-256 was verified as
+`ea6a0efa56bfb3cd74b5ce728f80cc33c6fbd853114bec94b8aabe79f5d28e6e`.
+Only MODEL-METADATA-2026-10.md section 1 is implemented here. Completion
+recovery, reasoning, request fidelity, versions and first-token timing are unchanged.
+
+The unchanged `context-window-v1` JSON was located read-only at the authorized
+Elixir Foundry worktree `mojentic-3-0-ex-c11-25cb56`, base HEAD
+`4ca97881bfe5249a3b4ebe0e3a640ec25e28cb1c`, and copied into
+`src/mojentic/llm/contracts/context_window_v1.json`. Its SHA-256 matches the
+initiative finding:
+`cfeee4702c0dd3b18e02fbd0c8bad82ae58ee1ca7eadcfd21683479ba24f3dc4`.
+No independent replacement fixtures were invented.
+
+Snapshot identity discrepancy: the supplied finding reports Elixir manifest
+`c71163faa50dd12ff22137b80f7ea2db22478b917d809559db0bec54ccb3b426`.
+The available manifest hashes to
+`1c25185664b06c07e0d105a69e17ced6b5d238af615c2d3ff35ce2f58d138b76`;
+all 17 entries pass `sha256sum --check test/contracts/context_window_v1.manifest.sha256`
+from that read-only checkout. The finding's exact executable snapshot is therefore
+**unverified**, although the JSON identity matches. The Elixir reference parser
+was consulted for null optional containers, sorted architecture-key selection,
+and signed positive integer text parsing; no ambiguous contract decision was
+changed locally. No command that writes or executes tests in Elixir was run.
+
+| Section 1 decision | Named Python verification in `context_window_spec.py` |
+| --- | --- |
+| oMLX configured host/key, exact model identity, positive max_model_len; missing model/field | `should_select_exact_model_through_authenticated_http`; `should_verify_provider_semantics_and_exact_http_request` |
+| Ollama exact POST body, architecture-independent field, optional model_num_ctx | `should_verify_provider_semantics_and_exact_http_request` |
+| Missing vs malformed values; JSON shape; HTTP status and unknown-model 404 | `should_verify_provider_semantics_and_exact_http_request` asserts every applicable contract case's result/error and full captured method/path/body/authentication |
+| Transport errors remain distinct from HTTP and ValueError | `should_distinguish_transport_failure` through non-listening loopback endpoints |
+| OpenAI exact registry-only lookup, unknown patterns not advertised | `should_lookup_only_exact_registry_entries_without_http`; `should_preserve_registry_completion_semantics_after_discovery` |
+| Unsupported/legacy gateways return None | `should_return_not_advertised_for_unsupported_gateway` |
+| Pure effective helper: caller precedence, model fallback, clamping, unknown metadata | `should_apply_helper_precedence_and_clamping` executes all eight shared effective cases |
+| Doubles derive from verified provider cases | `should_derive_gateway_double_from_verified_provider_case` uses a spec-constrained owned gateway and the same semantic outcomes, not independently authored mocks |
+| Discovery cannot alter subsequent requests, including failed discovery | `should_leave_same_model_completion_request_unchanged_after_discovery` runs every shared provider case with omitted controls and explicit zero temperature/context/output controls, using the exact same model before/after; compares full completion requests and asserts control presence/values |
+| Registry completion fallback remains intact | `should_preserve_registry_completion_semantics_after_discovery` checks known gpt-5.4 and unknown o1-custom requests, output-limit mapping and no discovery HTTP |
+
+`ModelContextWindow` is immutable, validates strict positive integers, and keeps
+source `field` separate from model defaults. HTTP and transport exceptions retain
+their existing httpx types. Malformed JSON/metadata raises ValueError (including
+Pydantic validation errors); missing advertisement returns None. Discovery does
+not cache, retry, or write completion configuration. `effective_context_window`
+is an explicit pure application helper; its advertised result remains an upper
+bound when the server environment is unknown.
+
+Python provider verification runs through public gateways and actual loopback
+HTTP. Doubles are contract-derived and checked, but do not prove an external
+consumer agrees. The JSON's `lookup_cases` record existing Elixir model-list
+behavior; this change does not modify Python's pre-existing sorted model lists.
+These unrelated lookup rows are not claimed as shared metadata verification.
+Semantic completion replies are reused from the existing `request-fidelity-v1`
+contract via its existing Python envelope adapter.
+
+Local executable command:
+`uv run pytest src/mojentic/llm/gateways/context_window_spec.py`.
+The normal pytest gate collects this verifier. The Python source snapshot is
+identified by `src/mojentic/llm/contracts/context_window_v1.manifest.sha256`;
+run `sha256sum --check` on it from the repository root.
+
+External counterpart status: the initiative finding reports Elixir
+`scripts/verify-context-window-contract` exited 0 with 194 tests at the reported
+snapshot. This run did **not** reproduce that result and the available manifest
+differs. Actual oMLX/Ollama server producer verification and external consumer
+verification against the same contract remain **MISSING**: no tested external
+revision, command/result pair is available here. Coordinate these in separately
+authorized repositories. Do not infer paired compatibility. The coordinated
+publication hold remains until all six ports satisfy owner scope and required
+paired consumer/provider verification is available.
+
+Cycle 11 local results (all exit 0 unless explicitly marked):
+
+| Command | Result |
+| --- | --- |
+| `uv run pytest src/mojentic/llm/gateways/context_window_spec.py --no-cov` | 231 passed: all 53 provider cases plus 53 contract-derived double cases, eight effective cases, four registry cases, transport/unsupported tests, 106 same-model comparisons and registry request controls |
+| `uv run flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics` | Required gate: zero errors |
+| `uv run pytest` | Required gate: 2,468 passed; 86% source coverage; new metadata module 100% |
+| `uv run pytest --cov` | 2,468 passed; 87% coverage; new metadata module 100%. No repository fail-under threshold is configured. |
+| `uv run bandit -c .bandit -r src` | Gate: zero issues |
+| `uv run pip-audit` | Gate: no known vulnerabilities |
+| `uv run flake8 src` | Full lint: zero findings |
+| `uv run --with ruff ruff check src` | Zero findings |
+| `uv run --with ruff ruff format` and `ruff format --check` on the seven changed Python files | Formatted and passing; unrelated existing formatting left outside scope |
+| `uv export --format requirements-txt --no-emit-project \| uvx pip-audit -r /dev/stdin --disable-pip` under `bash -o pipefail` | Locked dependencies: no known vulnerabilities |
+| `uv pip list --outdated` | Inventory reviewed; no advisory upgrades required by either audit |
+| `uv run mkdocs build` | Passed |
+| `sha256sum --check src/mojentic/llm/contracts/context_window_v1.manifest.sha256` | All 11 Python snapshot entries verified |
+| `git diff --check` | Clean |
+
+The Python executable/source manifest SHA-256 is
+`59ec8e6ae69cd9bf004f6408b1d14b454651f014f5a88662460caf1f0e617950`.
+The root metadata specification matches the JSON's `source_sha256`:
+`a085da1c0d110f9d587a24ace6ac2854b653e1ac28905b3829d94d665b2c906e`.
+
+Before fixture/test expansion and the full suite, the focused authenticated
+exact-selection HTTP test failed on the absent operation, then passed after
+implementation. A further fault-injection probe temporarily replaced exact ID
+equality with prefix matching: the real HTTP test failed with the neighbor's
+1-token window instead of the requested model's 262144 (exit 1). Restoring exact
+matching passed the same command (exit 0). The mutation was removed and the
+source manifest reverified. Foundry's behavioral proof records the semantic
+failure/pass commands, actual exit codes and complete logs. No markers or
+case-count assertions stand in for semantic verification.
+
+Tool caches were redirected to writable temporary directories; no dependencies,
+Git refs, versions, sibling repositories or publication state were changed.

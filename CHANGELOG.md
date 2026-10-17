@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Provider context discovery: `get_model_context_window(model)` returns advertised
+  metadata from configured oMLX/Ollama HTTP endpoints or exact OpenAI registry
+  entries, with distinct transport, HTTP and malformed-response errors. Unsupported
+  gateways return `None`. The pure `effective_context_window` helper applies caller
+  precedence and advertised-window clamping without changing completion requests.
+- Reuse `context-window-v1` for real HTTP semantic/request verification and
+  contract-derived doubles, including same-model completion request comparisons.
+  External paired verification remains unfinished; coordinated publication stays on hold.
+
 ### Fixed
 
 - Ollama recovery rejects HTTP 200 responses without `done: true`, even when

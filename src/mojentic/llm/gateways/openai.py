@@ -32,6 +32,7 @@ from mojentic.llm.gateways.stream_events import (
     StreamEvent,
 )
 from mojentic.llm.gateways.tokenizer_gateway import TokenizerGateway
+from mojentic.llm.model_context_window import ModelContextWindow
 from mojentic.llm.reasoning import validate_openai_reasoning
 from mojentic.llm.recovery import Capabilities, RecoveryCall, RecoveryPolicy
 from mojentic.llm.recovery_stream import RecoveryStreamEvent
@@ -480,6 +481,17 @@ class OpenAIGateway(LLMGateway):
                 requested=token_value,
                 max_allowed=capabilities.max_output_tokens,
             )
+
+    def get_model_context_window(self, model: str) -> ModelContextWindow | None:
+        """Return exact registry metadata without a network request or pattern fallback."""
+        if model not in self.model_registry.get_registered_models():
+            return None
+        value = self.model_registry.get_model_capabilities(model).max_context_tokens
+        return (
+            ModelContextWindow(max_context_tokens=value, field="registry")
+            if value is not None
+            else None
+        )
 
     def complete(self, **kwargs) -> LLMGatewayResponse:
         """

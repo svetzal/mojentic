@@ -10,6 +10,7 @@ Mojentic is a framework that provides a simple and flexible way to interact with
 
 - **LLM Integration**: Support for multiple LLM providers (OpenAI, Ollama, Anthropic, oMLX)
 - **Native Reasoning**: Distinct effort controls, explicit model profiles and opt-in assistant reasoning history for Ollama/oMLX. See [reasoning controls and migration](docs/reasoning_effort.md).
+- **Context Discovery**: Read provider-advertised model windows from Ollama/oMLX or exact OpenAI registry entries, with a pure effective-window helper. See [context windows](docs/model_context_window.md).
 - **Latest OpenAI Models**: Full support for GPT-5, GPT-4.1, and all reasoning models (o1, o3, o4 series)
 - **Automatic Model Adaptation**: Seamless parameter handling across different OpenAI model types
 - **Structured Output**: Generate structured data from LLM responses using Pydantic models
