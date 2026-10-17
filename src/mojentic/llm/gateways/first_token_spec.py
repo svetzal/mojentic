@@ -18,7 +18,12 @@ from mojentic.llm.gateways.request_fidelity_spec import (
     gateway_for,
     reply,
 )
-from mojentic.llm.gateways.stream_events import CompletionMetadata
+from mojentic.llm.gateways.stream_events import (
+    CompletionMetadata,
+    StreamContent,
+    StreamError,
+    StreamErrorReason,
+)
 from mojentic.llm.llm_broker import LLMBroker
 from mojentic.llm.recovery import RecoveryCall, RecoveryPolicy
 from mojentic.llm.recovery_stream import StreamMetrics
@@ -28,7 +33,109 @@ TIMING_CONTRACT = json.loads(
 )
 
 
+@pytest.fixture
+def incomplete_stream(provider):
+    if provider == "ollama":
+        body = (
+            b'{"model":"test","message":{"role":"assistant","content":"answer"},'
+            b'"done":false,"eval_duration":123}\n'
+        )
+        expected = {"eval_duration": 123}
+    else:
+        body = (
+            b'data: {"choices":[{"index":0,"delta":{"content":"answer"}}],'
+            b'"usage":{"prompt_tokens":2,"completion_tokens":3,"total_tokens":5}}\n\n'
+        )
+        expected = {
+            "usage": {"prompt_tokens": 2, "completion_tokens": 3, "total_tokens": 5}
+        }
+    return body, expected
+
+
 class DescribeFirstTokenTiming:
+    @pytest.mark.parametrize("provider", ["openai", "omlx"])
+    def should_preserve_invalid_stream_event_for_noniterable_choices(self, provider):
+        body = b'data: {"choices":1}\n\n'
+        with scripted_http([(200, {}, (0.025, body))]) as (host, requests):
+            gateway = gateway_for(provider, host)
+            events = list(
+                gateway.complete_stream_events(
+                    "gpt-4o", [LLMMessage(content="hello")], CompletionConfig()
+                )
+            )
+
+        assert len(events) == 1
+        assert isinstance(events[0], StreamError)
+        assert events[0].reason == StreamErrorReason.INVALID_STREAM_EVENT
+        assert events[0].metadata.request_duration_ms >= 15
+        assert events[0].metadata.time_to_first_token_ms is None
+        assert events[0].metadata.first_token_kind is None
+        assert len(requests) == 1
+
+    @pytest.mark.parametrize("provider", ["openai", "omlx"])
+    def should_preserve_content_timing_before_invalid_choices(self, provider):
+        content = b'data: {"choices":[{"index":0,"delta":{"content":"answer"}}]}\n\n'
+        invalid = b'data: {"choices":1}\n\n'
+        with scripted_http([(200, {}, [(0.025, content), (0.05, invalid)])]) as (
+            host,
+            requests,
+        ):
+            gateway = gateway_for(provider, host)
+            events = list(
+                gateway.complete_stream_events(
+                    "gpt-4o", [LLMMessage(content="hello")], CompletionConfig()
+                )
+            )
+
+        assert len(events) == 2
+        assert events[0] == StreamContent(text="answer")
+        assert isinstance(events[1], StreamError)
+        assert events[1].reason == StreamErrorReason.INVALID_STREAM_EVENT
+        assert events[1].metadata.first_token_kind == "content"
+        assert (
+            15
+            <= events[1].metadata.time_to_first_token_ms
+            <= events[1].metadata.request_duration_ms
+        )
+        assert len(requests) == 1
+
+    @pytest.mark.parametrize("provider", ["ollama", "omlx", "openai"])
+    @pytest.mark.parametrize("route", ["legacy", "broker", "session"])
+    def should_retain_recovery_timing_immediately_after_public_close(
+        self, provider, route, incomplete_stream
+    ):
+        body, expected = incomplete_stream
+        with scripted_http([(200, {}, [(0.025, body), (0.2, b"\n")])]) as (
+            host,
+            requests,
+        ):
+            gateway = gateway_for(provider, host, True)
+            broker = LLMBroker(model="gpt-4o", gateway=gateway)
+            owner, stream = close_route(gateway, broker, route)
+
+            chunk = next(stream)
+            assert (chunk.content if route == "legacy" else chunk) == "answer"
+            stream.close()
+            metrics = owner.last_stream_metrics
+            assert metrics is not None
+            assert metrics.first_token_kind == "content"
+            assert 15 <= metrics.time_to_first_token_ms <= metrics.request_duration_ms
+            assert metrics.metadata == expected
+            assert len(requests) == 1
+
+    @pytest.mark.parametrize("provider", ["ollama", "omlx", "openai"])
+    @pytest.mark.parametrize("route", ["legacy", "broker", "session"])
+    def should_leave_unsent_recovery_close_without_timing(self, provider, route):
+        with scripted_http([]) as (host, requests):
+            gateway = gateway_for(provider, host, True)
+            broker = LLMBroker(model="gpt-4o", gateway=gateway)
+            owner, stream = close_route(gateway, broker, route)
+
+            stream.close()
+
+            assert getattr(owner, "last_stream_metrics", None) is None
+            assert requests == []
+
     def should_exclude_capture_and_lazy_delay_at_actual_dispatch(self):
         def capture(event):
             if event.kind == "request":
@@ -390,6 +497,16 @@ def expected_continuation(provider: str, recovery: bool) -> list[dict]:
         {"role": "assistant", "content": "", "tool_calls": [call]},
         {"role": "tool", "content": json.dumps("next-π"), "tool_call_id": call["id"]},
     ]
+
+
+def close_route(gateway, broker, route):
+    messages = [LLMMessage(content="hello")]
+    if route == "legacy":
+        return gateway, gateway.complete_stream(model="gpt-4o", messages=messages)
+    if route == "broker":
+        return broker, broker.generate_stream(messages)
+    session = ChatSession(broker)
+    return session, session.send_stream("hello")
 
 
 def public_route_metrics(gateway, route: str) -> dict:

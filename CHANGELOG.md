@@ -32,6 +32,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Malformed OpenAI/oMLX `choices` retain the parser's typed stream failure
+  instead of raising from timing observation. Closing a recovery-backed gateway,
+  broker or session stream after content retains measured timing and available
+  provider metadata immediately; the synchronous bridge finishes async cleanup.
 - Ollama recovery rejects HTTP 200 responses without `done: true`, even when
   `done_reason` is `stop`. Incomplete native reasoning and tool calls cannot
   enter broker history or a tool continuation. Real-HTTP broker regressions

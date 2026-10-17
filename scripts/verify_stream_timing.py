@@ -17,6 +17,7 @@ import mojentic
 from mojentic.llm import ChatSession, CompletionConfig, LLMBroker, LLMMessage
 from mojentic.llm.gateways import OllamaGateway, OpenAIGateway
 from mojentic.llm.gateways.omlx import OMLXGateway
+from mojentic.llm.gateways.stream_events import StreamError, StreamErrorReason
 from mojentic.llm.recovery import RecoveryPolicy
 from mojentic.llm.recovery_stream import StreamMetrics
 
@@ -116,6 +117,69 @@ def main() -> None:
             assert metrics.first_token_kind == "content"
             assert 15 <= metrics.time_to_first_token_ms <= metrics.request_duration_ms
             print(provider, "events/session/recovery: passed")
+            if provider != "ollama":
+                state["body"] = b'data: {"choices":1}\n\n'
+                events = list(
+                    gateway.complete_stream_events(
+                        "gpt-4o", [LLMMessage(content="hello")], CompletionConfig()
+                    )
+                )
+                assert len(events) == 1
+                assert isinstance(events[0], StreamError)
+                assert events[0].reason == StreamErrorReason.INVALID_STREAM_EVENT
+                assert events[0].metadata.request_duration_ms >= 15
+                assert events[0].metadata.time_to_first_token_ms is None
+            if provider == "ollama":
+                state["body"] = (
+                    b'{"model":"test","message":{"role":"assistant","content":"answer"},'
+                    b'"done":false,"eval_duration":123}\n'
+                )
+                expected = {"eval_duration": 123}
+            else:
+                state["body"] = (
+                    b'data: {"choices":[{"index":0,"delta":{"content":"answer"}}],'
+                    b'"usage":{"prompt_tokens":2,"completion_tokens":3,"total_tokens":5}}\n\n'
+                )
+                expected = {
+                    "usage": {
+                        "prompt_tokens": 2,
+                        "completion_tokens": 3,
+                        "total_tokens": 5,
+                    }
+                }
+            for route in ("legacy", "broker", "session"):
+                gateway = factory()
+                gateway.recovery_policy = RecoveryPolicy()
+                broker = LLMBroker(model="gpt-4o", gateway=gateway)
+                session = ChatSession(broker)
+                routes = {
+                    "legacy": (
+                        gateway,
+                        lambda: gateway.complete_stream(
+                            model="gpt-4o", messages=[LLMMessage(content="hello")]
+                        ),
+                    ),
+                    "broker": (
+                        broker,
+                        lambda: broker.generate_stream([LLMMessage(content="hello")]),
+                    ),
+                    "session": (session, lambda: session.send_stream("hello")),
+                }
+                owner, create_stream = routes[route]
+                stream = create_stream()
+                stream.close()
+                assert getattr(owner, "last_stream_metrics", None) is None
+                stream = create_stream()
+                chunk = next(stream)
+                assert (chunk.content if route == "legacy" else chunk) == "answer"
+                stream.close()
+                metrics = owner.last_stream_metrics
+                assert metrics.first_token_kind == "content"
+                assert (
+                    15 <= metrics.time_to_first_token_ms <= metrics.request_duration_ms
+                )
+                assert metrics.metadata == expected
+            print(provider, "malformed events/public recovery close: passed")
     finally:
         server.shutdown()
         server.server_close()

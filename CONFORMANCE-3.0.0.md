@@ -1122,7 +1122,7 @@ exit codes (1 then 0) and complete logs were retained for Foundry review.
 Synchronous gateway methods now use a clock scoped only to advancing their
 iterator. HTTP request hooks start it at send; raw frame observation precedes
 splitting thinking/content/tool chunks. Scope is removed while the caller is
-paused. Owned recovery starts its own clock immediately before `client.send`,
+paused. Owned recovery starts its clock immediately before `client.send`,
 after request capture and lifecycle callbacks and their dispatch checks; the
 same clock survives admitted retries. Frame observation precedes body capture
 so capture failure/cancellation does not erase already-observed first-token
@@ -1192,6 +1192,10 @@ live provider behavior outside the declared fixtures, and owner release
 authorization remain unverified here. The coordinated publication hold remains.
 
 ### Tested source, fixture and artifact identities
+
+The following identities and results are historical cycle-12 evidence. The
+cycle-13 correction below supersedes them for the current candidate and corrects
+the overbroad recovery-close claim above.
 
 Tested baseline commit: **`34b0dc9242b8e01e5311a4a919b8ed29cce3083e`**, plus
 this uncommitted correction. Reproduce the corrected source identity with:
@@ -1265,3 +1269,125 @@ the wheel SHA-256 and the same fixture identities. This is the required library
 self-validation, with no assertion of external running-service compatibility.
 The behavioral proof's JSON types, captured exit codes, nonempty logs and
 referenced complete stdout/stderr logs were validated before handoff.
+
+
+## Cycle-13 timing repair (October 17)
+
+This correction preserves cycle-12 implementation at
+`e0cccae7dbe584e02e8709a3515cb06c05d53c1d` and supersedes its broad claims
+about malformed-frame transparency and recovery-backed local close. The old
+local-close test covered the direct event route only; it did not establish
+recovery-backed gateway, broker or session close behavior. The old malformed
+fixtures did not include a noniterable `choices` value.
+
+The first real-loopback regression run rejected the preserved implementation:
+OpenAI/oMLX `choices: 1` raised `TypeError` before the parser could return
+`INVALID_STREAM_EVENT`, and all nine recovery-backed public-close combinations
+returned no metrics after content. An initial unsent probe also attempted direct
+access to an uninitialized gateway diagnostic; it now checks absent evidence
+without requiring an attribute before first use. The corrected behavioral probe
+passes all 20 cases. Proof logs and actual nonzero/zero exit codes are retained
+as Foundry execution evidence.
+
+| Regression in `DescribeFirstTokenTiming` | Verified behavior |
+| --- | --- |
+| `should_preserve_invalid_stream_event_for_noniterable_choices` | OpenAI/oMLX production parser returns exactly one typed `StreamError` with `INVALID_STREAM_EVENT`, measured dispatched duration, no invented first token |
+| `should_preserve_content_timing_before_invalid_choices` | Exact emitted content followed by typed invalid-event failure; non-null content kind and first-token time survive |
+| `should_retain_recovery_timing_immediately_after_public_close` | Ollama/OpenAI/oMLX through `complete_stream`, `LLMBroker.generate_stream`, `ChatSession.send_stream`: consume exactly the content chunk, close that actual public iterator before terminal evidence, inspect timing immediately; preserve Ollama `eval_duration=123` or exact OpenAI/oMLX usage |
+| `should_leave_unsent_recovery_close_without_timing` | All nine public combinations close before first advancement, send zero HTTP requests, retain no timing |
+
+No clocks, observers, parsers or transport internals are mocked. Delayed HTTP
+frames exercise actual provider gateways. Observation now tolerates malformed
+`choices` without taking parser ownership. Recovery shares the advancing
+synchronous iterator's clock through the existing context propagation into its
+owned loop; direct async calls still own a fresh clock. Thus the public wrapper
+can snapshot timing after the inner stream has closed, without draining or
+inventing a terminal. Already available typed terminal/error metadata is retained
+rather than replaced by a timing-only snapshot.
+
+Close propagation was inspected end to end: session and broker `ExitStack`
+callbacks close their child iterators; gateways use `closing` or `yield from`;
+the synchronous bridge awaits async closure; cloud recovery closes its nested
+iterator; async recovery cancels and awaits the producer, whose HTTP response
+is closed in `finally`. The bridge now also awaits `shutdown_asyncgens()` before
+stopping its owned loop. This resolves the real-close regression's unawaited
+transport cleanup warnings. The full timing suite passes with runtime warnings
+promoted to errors. No garbage collection or iterator draining is used as proof.
+Existing tests still exercise first-dispatch clocks across admitted retries,
+thinking/content/tool precedence, fresh clocks on tool continuations, exact
+request/history fidelity and unchanged typed recovery/cancellation behavior.
+
+The initiative brief hash was verified as
+`ea6a0efa56bfb3cd74b5ce728f80cc33c6fbd853114bec94b8aabe79f5d28e6e`.
+The read-only TypeScript reference `ts-stream-first-token-v1.test.ts` was
+consulted at SHA-256
+`e94d4f53928b3ea519eceedcb0f7e7a41ae2eb5da52076369d92374108b3d2a8`.
+The existing `py-stream-first-token-v1` fixture remains unchanged at
+`c508e719670e851cf0a1eb7d89fbcfe2eae0ab5859df1ab0ddcbe7681140ac3e`;
+`request-fidelity-v1` also remains unchanged. Named Python regressions extend
+local behavioral coverage without asserting another port's executable results.
+
+### Current candidate and verification
+
+Tested source is baseline `e0cccae7dbe584e02e8709a3515cb06c05d53c1d` plus
+these uncommitted changes. `uv run python scripts/verify_stream_timing.py
+--source-id` reports the source/fixture/verifier manifest SHA-256
+`53f349288a7f1089344d7a8c3e7082e5e9683167fb445d7a49fa85e77f6a7c86`.
+The unpublished candidate retains version 2.1.0:
+
+| Artifact | SHA-256 |
+| --- | --- |
+| `mojentic-2.1.0-py3-none-any.whl` | `76e216bb42c09b744effba622e8862fc49f8509dfae3086fe383772d0fa9a208` |
+| `mojentic-2.1.0.tar.gz` | `09bde01eab6d95f3e04de573d47c552b0812a212107f5b91701db019cbb9c5c9` |
+
+Commands use `foundry capture --log-dir .foundry/logs --` for complete execution
+logs. Set `UV_CACHE_DIR=/tmp/mojentic-uv-cache`; the locked export audit also
+uses `UV_TOOL_DIR=/tmp/mojentic-uv-tools` because default home caches/tool
+directories are read-only. These environment settings do not change dependencies.
+
+| Command | Actual result |
+| --- | --- |
+| `uv run pytest src/mojentic/llm/gateways/first_token_spec.py -k 'noniterable_choices or immediately_after_public_close or unsent_recovery_close' --no-cov` | Rejecting exit 1; corrected exit 0, 20 passed |
+| `uv run pytest src/mojentic/llm/gateways/first_token_spec.py --no-cov -W error::RuntimeWarning` | Exit 0; final 100 passed, including two content-before-invalid-event cases |
+| `uv run flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics` | Exit 0; required lint gate, zero errors |
+| `uv run pytest` | Exit 0; final required test gate, 2,565 passed, 86% coverage (5,973 statements, 826 missed), above 85% |
+| `uv run pytest --cov --cov-fail-under=85` | Exit 0; initial repaired suite 2,563 passed, 87.46%; final two additional error cases verified by the full gate and focused suite above |
+| `uv run flake8 src` / `uv run ruff check src` | Both exit 0; zero lint findings |
+| `uv run ruff format src` | Exit 0; unrelated pre-existing formatting in `file_manager_spec.py` restored to keep scope bounded |
+| `uv run flake8 src/mojentic/llm/stream_timing.py --max-complexity=10` | Exit 0; timing code meets the complexity limit |
+| `uv run flake8 src/mojentic/llm/stream_timing.py src/mojentic/llm/recovery_stream.py --max-complexity=10` | Exit 1; unchanged `_StreamRecovery.run_stream` has pre-existing complexity 12. No suppression or unrelated refactoring added |
+| `uv run bandit -c .bandit -r src` | Exit 0; zero issues |
+| `uv run pip-audit` | Exit 0; no known vulnerabilities |
+| `uv export --format requirements-txt --no-emit-project \| uvx pip-audit -r /dev/stdin --disable-pip` under `bash -o pipefail` | Exit 0; no known vulnerabilities in locked dependencies |
+| `uv pip list --outdated` | Exit 0; inventory reviewed, no advisory-driven upgrade needed; unrelated updates remain outside scope |
+| `uv run mkdocs build` | Exit 0; docs built; existing Material/MkDocs 2 notice remains |
+| `uv build` | Exit 0; current wheel and sdist built without version change |
+| `git diff --check` | Exit 0 after documentation whitespace cleanup |
+
+Fresh artifact installation and verification (all exit 0):
+
+```bash
+uv venv /tmp/mojentic-c13-final.2ULCmw/.venv
+uv pip install --python /tmp/mojentic-c13-final.2ULCmw/.venv/bin/python \
+  dist/mojentic-2.1.0-py3-none-any.whl
+uv run --no-project --directory /tmp/mojentic-c13-final.2ULCmw \
+  --python /tmp/mojentic-c13-final.2ULCmw/.venv/bin/python \
+  "$checkout/scripts/verify_stream_timing.py" \
+  "$checkout/src/mojentic/llm/gateways/fixtures/contracts/first_token_v1.json"
+```
+
+Here `checkout` is this worktree's absolute path. Installed imports resolved to
+`/tmp/mojentic-c13-final.2ULCmw/.venv/lib/python3.13/site-packages/mojentic/__init__.py`,
+and the verifier explicitly rejects source-checkout imports. Every streaming
+provider passed empty event, session content and async recovery terminal checks,
+plus immediate explicit close through all three public legacy routes and unsent
+closure; OpenAI/oMLX malformed choices retain the typed parser failure.
+The same unchanged fixture identity is printed by the installed-package probe.
+
+All required Foundry gates pass. Remaining limitations: the unchanged complexity
+12 noted above, live vendor behavior outside controlled fixtures, other ports'
+readiness, and coordinated owner release authorization are unverified here.
+The Python library self-validates public consumer/provider roles and the fresh
+artifact; no dependent or other-port executable snapshot is required. No
+application/service boundary in another repository was changed. The publication
+hold remains; no Git finalization, version bump or publication was performed.

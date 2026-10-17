@@ -361,8 +361,11 @@ Within the first token-bearing frame the precedence is thinking, content, then
 tool arguments, regardless of delivery order.
 
 Success and failure after dispatch carry duration even without tokens. Closing
-a synchronous iterator yields no synthetic terminal event; direct event-stream
-local close leaves timing on the gateway. Recovery `RecoveryCall.cancel()`
+a synchronous iterator yields no synthetic terminal event. Direct event-stream
+local close leaves timing on the gateway. Recovery-backed `complete_stream`,
+`generate_stream` and `send_stream` retain timing and available provider metadata
+immediately after `close()`, including after content but before terminal evidence.
+Closing an unsent iterator records no timing. Recovery `RecoveryCall.cancel()`
 produces the existing typed cancelled terminal with timing if dispatched;
 `aclose()` releases resources without inventing a terminal. Remote termination
 remains unknown. Anthropic streaming and unsupported model/routes remain

@@ -31,7 +31,7 @@ from mojentic.llm.recovery import (
     _Recovery,
     parse_retry_after,
 )
-from mojentic.llm.stream_timing import ClientTiming, StreamClock
+from mojentic.llm.stream_timing import ClientTiming, recovery_clock
 
 Decode = Callable[[dict], LLMGatewayResponse]
 
@@ -310,7 +310,7 @@ class _StreamRecovery(_Recovery):
         self, policy: RecoveryPolicy, call: RecoveryCall, queue: asyncio.Queue
     ) -> None:
         super().__init__(policy, call, "streaming")
-        self.clock = StreamClock()
+        self.clock = recovery_clock()
         self.last_metrics = None
         self.queue = queue
         self.attempt = None
@@ -758,6 +758,7 @@ def synchronous_stream(
                 return
     finally:
         asyncio.run_coroutine_threadsafe(stream.aclose(), loop).result()
+        asyncio.run_coroutine_threadsafe(loop.shutdown_asyncgens(), loop).result()
         loop.call_soon_threadsafe(loop.stop)
         thread.join()
         loop.close()

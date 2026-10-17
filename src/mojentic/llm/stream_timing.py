@@ -55,10 +55,10 @@ class StreamClock:
         )
         if self.first is not None:
             return
+        choices = frame.get("choices")
+        choices = choices if isinstance(choices, list) else []
         messages = [frame.get("message") or {}] + [
-            choice.get("delta") or {}
-            for choice in frame.get("choices") or []
-            if isinstance(choice, dict)
+            choice.get("delta") or {} for choice in choices if isinstance(choice, dict)
         ]
         messages = [message for message in messages if isinstance(message, dict)]
         kinds = {
@@ -101,6 +101,11 @@ class StreamClock:
 _current_clock: ContextVar[StreamClock | None] = ContextVar(
     "stream_clock", default=None
 )
+
+
+def recovery_clock() -> StreamClock:
+    """Share the advancing public iterator's clock, or own an async call's clock."""
+    return _current_clock.get() or StreamClock()
 
 
 def dispatch_stream(request: object) -> None:
@@ -151,7 +156,11 @@ def timed_stream(method: Callable) -> Callable:
                     self.last_stream_metrics = evidence
                     event = event.model_copy(update={"metadata": evidence})
                 yield event
-            if not terminal and clock.started is not None:
+            if (
+                not terminal
+                and clock.started is not None
+                and self.last_stream_metrics is None
+            ):
                 self.last_stream_metrics = CompletionMetadata(
                     metadata=clock.provider or None, **clock.evidence()
                 )
@@ -175,6 +184,8 @@ def _snapshot(clock: StreamClock, previous: ClientTiming | None) -> ClientTiming
 
     if clock.started is None:
         return previous
+    if previous is not None:
+        return previous.model_copy(update=clock.evidence())
     return CompletionMetadata(metadata=clock.provider or None, **clock.evidence())
 
 
