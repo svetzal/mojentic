@@ -3,7 +3,13 @@
 import pytest
 from pydantic import ValidationError
 
-from mojentic.llm.recovery import Failure, Identity, RecoveryPolicy, parse_retry_after
+from mojentic.llm.recovery import (
+    Failure,
+    Identity,
+    RecoveryPolicy,
+    RecoveryPolicyError,
+    parse_retry_after,
+)
 
 
 class DescribeRecoveryPolicy:
@@ -39,7 +45,7 @@ class DescribeRecoveryPolicy:
         ],
     )
     def should_reject_invalid_recovery_policy(self, kwargs):
-        with pytest.raises(ValidationError):
+        with pytest.raises(RecoveryPolicyError):
             RecoveryPolicy(**kwargs)
 
     @pytest.mark.parametrize(

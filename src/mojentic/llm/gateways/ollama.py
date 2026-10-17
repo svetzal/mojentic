@@ -27,6 +27,7 @@ from mojentic.llm.recovery import (
     Capabilities,
     RecoveryCall,
     RecoveryPolicy,
+    RecoveryPolicyError,
     preparation_error,
     recover,
 )
@@ -134,7 +135,11 @@ class OllamaGateway(LLMGateway):
     ):
         if headers is None:
             headers = {}
-        self.recovery_policy = recovery_policy
+        self.recovery_policy = (
+            RecoveryPolicy.model_validate(recovery_policy)
+            if recovery_policy is not None
+            else None
+        )
         self.recovery_call = recovery_call
         self._recovery_host = (
             host.rstrip("/") if isinstance(host, str) else "http://localhost:11434"
@@ -270,7 +275,7 @@ class OllamaGateway(LLMGateway):
             No recovery policy is configured.
         """
         if self.recovery_policy is None:
-            raise ValueError(
+            raise RecoveryPolicyError(
                 "configure recovery_policy before using complete_with_recovery"
             )
         operation = "structured" if args.get("object_model") is not None else "ordinary"
@@ -431,7 +436,9 @@ class OllamaGateway(LLMGateway):
         Raw ``complete_stream_events`` remains a single-turn compatibility API.
         """
         if self.recovery_policy is None:
-            raise ValueError("configure recovery_policy before using recovery streams")
+            raise RecoveryPolicyError(
+                "configure recovery_policy before using recovery streams"
+            )
         try:
             request = self._stream_request(args)
             request["options"] = request["options"].model_dump(exclude_none=True)

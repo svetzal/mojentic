@@ -367,7 +367,9 @@ class DescribeRecoveryAdmission:
         assert report.outcome == "interrupted"
         assert report.final_failure.acceptance == "unknown"
         assert report.final_failure.http_status == 200
-        assert isinstance(report.final_failure.inspect_cause(), error_type)
+        assert isinstance(
+            report.final_failure.inspect_cause().inspect_cause(), error_type
+        )
         assert report.final_failure.progress.headers_received
         assert report.final_failure.progress.raw_bytes > 0
         assert not report.final_failure.eligible

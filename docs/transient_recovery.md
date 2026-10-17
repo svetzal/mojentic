@@ -128,10 +128,71 @@ The request hook precedes dispatch: it can prevent the request, so a capture alo
 does not prove a wire attempt occurred. Hooks must synchronously accept
 an event or raise; returning an awaitable is unsupported. The caller owns capture
 storage, access, redaction, and retention. The library never persists captures.
-A hook failure retains response evidence and its typed original exception,
+A hook failure retains response evidence and a typed `CaptureError` cause,
 prevents success, and prohibits another request. Observed content, reasoning, or
 tool evidence is recorded before calling the body hook, even when nothing was
 delivered to the caller.
+
+### Typed policy, capture and length errors
+
+Import `RecoveryPolicyError`, `CaptureError` and `LengthTerminationError` from
+`mojentic.llm` or `mojentic.llm.recovery`. Invalid policy construction,
+`model_validate`, `model_validate_json` (including invalid JSON) and
+`model_validate_strings` raise `RecoveryPolicyError`. Gateway constructors
+validate supplied policies; explicitly invoking recovery without a policy
+raises the same type before dispatch. This replaces Pydantic `ValidationError`
+for policy input errors. Frozen-policy assignment remains unsupported.
+
+Failures during recovery still surface as `RecoveryError`, or a failed event
+containing that same error from `complete_stream_with_recovery`. Inspect its
+typed cause without parsing messages or reason strings:
+
+```python
+from mojentic.llm import CaptureError, LengthTerminationError
+from mojentic.llm.recovery import RecoveryError
+
+try:
+    broker.generate(messages)
+except RecoveryError as error:
+    cause = error.inspect_cause()
+    if isinstance(cause, CaptureError):
+        original_callback_exception = cause.inspect_cause()  # Sensitive, explicit access
+    elif isinstance(cause, LengthTerminationError):
+        pass  # The provider exhausted its output length limit
+    raise
+```
+
+Migration: `error.inspect_cause()` and `failure.inspect_cause()` now return
+`CaptureError` for a wire-hook failure. The further `inspect_cause()` step
+returns the identical original callback exception. Reports, failed-attempt
+history, response bytes, request identities and observed/delivered progress
+remain available. Capture failure is terminal even before semantics or dispatch;
+an already delivered stream never triggers a resend.
+
+`LengthTerminationError` subclasses `ValueError`. It distinguishes `length`
+from other unsafe stream finishes for Ollama, oMLX and OpenAI, including the
+OpenAI decoder's reuse of oMLX machinery. OpenAI structured completion uses it
+when rejecting a length finish, including through `generate_object`.
+Ordinary completions continue returning length metadata successfully; oMLX
+and Ollama structured parsing retain their existing behavior. Anthropic still
+supports only ordinary recovery; structured output, tools and streaming are
+refused. `ChatSession` has no structured-output operation. Raw single-turn
+event APIs retain their existing contract.
+
+Default error strings, representations, traceback formatting and serialized
+reports omit callback messages and invalid policy values. Explicit private
+inspection, wire capture, successful output and application tracing remain
+sensitive. Source lines in tracebacks can themselves contain caller literals;
+the formatting guarantee cannot redact caller source code.
+
+The executable Python binding `python-typed-errors-v1` lives in
+`src/mojentic/llm/gateways/typed_errors_spec.py` and runs in the required pytest
+gate. It exercises in-repository consumers and the implementation against the
+same scripted HTTP cases, without independent SDK mocks. It is distinct from
+Elixir's `typed-errors-v1`; no shared cross-repository executable set or paired
+external consumer result is available. See `CONFORMANCE-3.0.0.md` for source
+identity, hash, named tests and unfinished coordination work. Publication
+remains on hold.
 
 Cancellation requested by a request or `attempt_started` hook is checked before
 dispatch and produces no wire history. Header/body capture cancellation retains

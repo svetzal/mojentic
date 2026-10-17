@@ -851,7 +851,7 @@ class DescribeCloudPrivacy:
         assert len(requests) == 1
         assert failure.progress.observed_content
         assert failure.progress.delivered_content == 0
-        assert caught.value.inspect_cause() is cause
+        assert caught.value.inspect_cause().inspect_cause() is cause
         assert caught.value.inspect_response() == data
         assert [event.transition for event in lifecycle] == [
             "attempt_started",
@@ -988,7 +988,7 @@ class DescribeCloudRecovery:
         assert failure.progress.observed_content
         assert failure.progress.delivered_content == 0
         assert failure.reason == "capture_failed"
-        assert failure.inspect_cause() is cause
+        assert failure.inspect_cause().inspect_cause() is cause
         assert failure.inspect_response() == body
         assert [event.transition for event in lifecycle] == [
             "attempt_started",

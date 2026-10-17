@@ -18,6 +18,9 @@ from .gateways.stream_events import (  # noqa: F401
 )
 from .llm_broker import LLMBroker  # noqa: F401
 from .message_composers import FileTypeSensor, MessageBuilder  # noqa: F401
+from .recovery import CaptureError as CaptureError
+from .recovery import LengthTerminationError as LengthTerminationError
+from .recovery import RecoveryPolicyError as RecoveryPolicyError
 from .recovery_stream import (
     RecoveryStreamEvent as RecoveryStreamEvent,
 )
@@ -34,6 +37,9 @@ from .registry.llm_registry import LLMRegistry  # noqa: F401
 
 # Preserve the existing wildcard surface while declaring the additive exports.
 __all__ = [
+    "CaptureError",
+    "LengthTerminationError",
+    "RecoveryPolicyError",
     "RecoveryStreamEvent",
     "StreamFrameProgress",
     "StreamMetrics",

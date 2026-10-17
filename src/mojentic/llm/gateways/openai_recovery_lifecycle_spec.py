@@ -172,7 +172,7 @@ class DescribeOpenAIStreamSafety:
         assert failure.progress.delivered_content == 0
         assert failure.progress.delivered_reasoning == 0
         assert failure.progress.delivered_tool_fragments == 0
-        assert events[-1].error.inspect_cause() is cause
+        assert events[-1].error.inspect_cause().inspect_cause() is cause
         assert events[-1].error.inspect_response() == data
 
     @pytest.mark.parametrize(
@@ -645,7 +645,7 @@ class DescribeOpenAICaptureEvidence:
         }[operation]
         assert failure.reason == expected_reason
         assert caught.value.inspect_response() == data
-        assert caught.value.inspect_cause() is cause
+        assert caught.value.inspect_cause().inspect_cause() is cause
         assert [event.transition for event in lifecycle] == [
             "attempt_started",
             "attempt_failed",

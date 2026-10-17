@@ -14,6 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from mojentic.llm.gateways.models import LLMGatewayResponse
 from mojentic.llm.recovery import (
     Identity,
+    LengthTerminationError,
     Progress,
     RecoveryCall,
     RecoveryError,
@@ -482,7 +483,14 @@ class _StreamRecovery(_Recovery):
         events, accepted = decoder.events(frame, attempt)
         if not accepted:
             attempt.category, attempt.reason = "protocol", "invalid_response"
-            cause = ValueError("incomplete stream finish")
+            finish = decoder.evidence.get(
+                "finish_reason", decoder.evidence.get("done_reason")
+            )
+            cause = (
+                LengthTerminationError("completion length limit reached")
+                if finish == "length"
+                else ValueError("incomplete stream finish")
+            )
             self.terminal_failure = self.record_failure(attempt, cause)
         for event in events:
             await self.deliver(event, attempt)

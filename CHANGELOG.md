@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking changes and migration
 
+- Invalid `RecoveryPolicy` construction and validation now raise
+  `RecoveryPolicyError` with input-free formatting instead of Pydantic's
+  `ValidationError`. Gateways validate supplied policies at construction;
+  explicit recovery entrypoints without a policy raise the same type.
+  Recovery capture failures now expose `CaptureError` through
+  `RecoveryError.inspect_cause()` and `Failure.inspect_cause()`; call the
+  capture cause's own `inspect_cause()` to inspect the exact original callback
+  exception. Recovery stream length failures and OpenAI structured length
+  failures retain `LengthTerminationError` (a `ValueError` subtype) through
+  gateway, broker and session consumers. Ordinary successful length metadata,
+  refusal of unsupported operations and retry admission remain unchanged.
+  Import these types from `mojentic.llm` or `mojentic.llm.recovery`.
+  Local `python-typed-errors-v1` verification does not establish paired
+  downstream compatibility; the coordinated publication hold remains.
 - Completion `recovery_capabilities()` now includes `local_cancellation` and
   endpoint-specific `evidence` (source, inspection date and basis) for all five
   recovery facilities across Ollama, oMLX, OpenAI and Anthropic. Update strict

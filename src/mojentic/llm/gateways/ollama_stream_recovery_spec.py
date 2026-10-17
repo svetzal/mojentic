@@ -40,7 +40,7 @@ class DescribeOllamaStreamRecovery:
         assert failure.progress.observed_content
         assert failure.progress.delivered_content == 0
         assert failure.reason == "capture_failed"
-        assert failure.inspect_cause() is cause
+        assert failure.inspect_cause().inspect_cause() is cause
         assert failure.inspect_response() == frame("évidence") + b"\n"
         assert [event.transition for event in lifecycle] == [
             "attempt_started",
@@ -960,8 +960,8 @@ class DescribeStreamPrivacyAndCapture:
             == 0
         )
         assert failure.reason == "capture_failed"
-        assert failure.inspect_cause() is cause
-        assert error.inspect_cause() is cause
+        assert failure.inspect_cause().inspect_cause() is cause
+        assert error.inspect_cause().inspect_cause() is cause
         assert failure.inspect_response() == body
         assert dict(error.inspect_headers())["x-secret"] == "credential-sentinel"
         assert [event.kind for event in captured] == ["request", "headers", "body"]
@@ -1047,7 +1047,7 @@ class DescribeStreamPrivacyAndCapture:
         assert len(requests) == count
         assert events[-1].identity.wire_attempt == count
         assert len(events[-1].report.history) == count
-        assert events[-1].error.inspect_cause() is cause
+        assert events[-1].error.inspect_cause().inspect_cause() is cause
         assert events[-1].outcome.value == "interrupted"
 
     async def should_fail_when_success_observer_raises_without_delivering_completion(
@@ -1116,7 +1116,7 @@ class DescribeStreamPrivacyAndCapture:
         assert [event.kind for event in events] == ["failed"]
         assert events[-1].outcome.value == "cancelled"
         assert events[-1].report.history[0].reason == "capture_failed"
-        assert events[-1].report.history[0].inspect_cause() is cause
+        assert events[-1].report.history[0].inspect_cause().inspect_cause() is cause
         assert events[-1].report.history[0].progress.observed_content
         assert events[-1].report.history[0].progress.delivered_content == 0
         assert [event.transition for event in lifecycle] == [
@@ -1206,7 +1206,7 @@ class DescribeStreamPrivacyAndCapture:
         assert len(requests) == 1
         assert [event.kind for event in events] == ["failed"]
         assert events[-1].report.final_failure.reason == "capture_failed"
-        assert events[-1].error.inspect_cause() is cause
+        assert events[-1].error.inspect_cause().inspect_cause() is cause
         assert events[-1].progress.completed_tool_calls == completed
         assert events[-1].progress.observed_tool_fragments == 1
         assert (

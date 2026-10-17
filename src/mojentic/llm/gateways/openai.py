@@ -126,7 +126,11 @@ class OpenAIGateway(LLMGateway):
         if base_url is None:
             base_url = os.getenv("OPENAI_API_ENDPOINT")
         self.client = OpenAI(api_key=api_key, base_url=base_url)
-        self.recovery_policy = recovery_policy
+        self.recovery_policy = (
+            RecoveryPolicy.model_validate(recovery_policy)
+            if recovery_policy is not None
+            else None
+        )
         self.recovery_call = recovery_call
         self.model_registry = get_model_registry()
         self.stream_transport = stream_transport or OpenAIStreamTransport(self.client)
@@ -244,6 +248,10 @@ class OpenAIGateway(LLMGateway):
                 "length",
                 "content_filter",
             }:
+                if choice.get("finish_reason") == "length":
+                    from mojentic.llm.recovery import LengthTerminationError
+
+                    raise LengthTerminationError("completion length limit reached")
                 raise ValueError("structured completion did not finish safely")
         result = decode_completion(frame)
         if object_model is not None and not (

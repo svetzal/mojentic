@@ -33,6 +33,7 @@ from mojentic.llm.recovery import (
     Capabilities,
     RecoveryCall,
     RecoveryPolicy,
+    RecoveryPolicyError,
     preparation_error,
 )
 from mojentic.llm.recovery_stream import (
@@ -144,7 +145,11 @@ class OMLXGateway(LLMGateway):
             host=host, api_key=api_key, timeout=timeout, environ=os.environ
         )
         self.transport = transport or OMLXTransport(self.settings)
-        self.recovery_policy = recovery_policy
+        self.recovery_policy = (
+            RecoveryPolicy.model_validate(recovery_policy)
+            if recovery_policy is not None
+            else None
+        )
         self.recovery_call = recovery_call
 
     def complete(
@@ -278,7 +283,7 @@ class OMLXGateway(LLMGateway):
         from mojentic.llm.gateways.omlx_recovery import OMLXRecovery, decode_completion
 
         if self.recovery_policy is None:
-            raise ValueError("configure recovery_policy before using recovery")
+            raise RecoveryPolicyError("configure recovery_policy before using recovery")
         operation = "structured" if args.get("object_model") is not None else "ordinary"
         try:
             body = self._recovery_body(args, False)
@@ -331,7 +336,7 @@ class OMLXGateway(LLMGateway):
         )
 
         if self.recovery_policy is None:
-            raise ValueError("configure recovery_policy before using recovery")
+            raise RecoveryPolicyError("configure recovery_policy before using recovery")
         try:
             body = self._recovery_body(args, True)
         except (ValueError, TypeError, KeyError, OSError) as cause:

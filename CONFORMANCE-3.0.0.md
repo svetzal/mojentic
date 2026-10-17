@@ -356,3 +356,135 @@ its two existing logs were inspected against the failing/passing test summaries.
 The final probe passes all 11 history cases. No advisory suppression was added.
 Changes remain in this worktree for Foundry; no commit, push, merge, rebase,
 tag, publication, dependency change, version bump or Git ref update occurred.
+
+## October 12 Typed errors decision
+
+This correction implements the Typed errors decision in Python only. The
+initiative brief SHA-256 was verified as
+`ea6a0efa56bfb3cd74b5ce728f80cc33c6fbd853114bec94b8aabe79f5d28e6e`.
+The authoritative root amendment was read in the read-only `mojentic-unify`
+checkout; its SHA-256 is
+`a53a3a4eb118fa4687dd703d6ce918dd40dd6cb4eda796abc6c429a6e932e7a3`.
+The local October 9 contract copy does not supersede that amendment.
+
+### Characterized behavior and verified decisions
+
+Before the change, invalid policies exposed Pydantic `ValidationError`, missing
+policies on explicit recovery APIs raised `ValueError`, capture failures exposed
+the raw callback exception, and unsafe stream finishes exposed a generic
+`ValueError`. OpenAI shares the oMLX stream decoder and the common stream
+consumer. The initial real-HTTP OpenAI probe delivered content, encountered a
+length finish and rejected the generic cause; after the source change the same
+probe passed with a concrete `LengthTerminationError`, preserved progress,
+one wire request and an exact request-body assertion.
+
+Policies now fail with `RecoveryPolicyError` across construction, Python/JSON/
+string validation, gateway construction with invalid policy input and explicit
+recovery calls missing a policy. Pydantic validation details are not included in
+default formatting. Frozen assignment remains unsupported. The policy error is
+an `Exception` subtype rather than a Pydantic validator's `ValueError`, which
+would otherwise be wrapped back into `ValidationError`.
+
+Wire-hook failures retain `CaptureError` as the concrete inspectable cause;
+its own `inspect_cause()` returns the identical original callback exception.
+Existing capture evidence specifications were migrated to this explicit
+inspection step without weakening their request, semantics, cancellation or
+admission assertions. Other hook failures retain their existing types.
+
+Ollama, oMLX and OpenAI recovery streams retain `LengthTerminationError` as a
+`ValueError` subtype; other unsafe finishes remain generic protocol failures.
+OpenAI structured length rejection carries the same concrete type through
+`generate_object`. Ordinary successful length metadata and Ollama/oMLX
+structured parsing remain unchanged. Anthropic ordinary-only recovery and
+unsupported-operation refusals remain unchanged. ChatSession has no structured
+operation. Native raw single-turn event APIs remain separate from recovery.
+
+### Executable verification map
+
+The existing co-located pytest mechanism and scripted HTTP server are reused.
+The versioned Python binding is **python-typed-errors-v1** in
+[typed_errors_spec.py](src/mojentic/llm/gateways/typed_errors_spec.py), SHA-256
+`b42bdbbb3734019738f470a39d51e4e7c036a369b54c69aaf323e1fc269f6137`.
+It runs automatically in the required pytest gate. Test responses are scripted
+at a real loopback HTTP boundary; no independently authored SDK mocks are used.
+The only mock in these caller paths is the existing typed tokenizer gateway.
+
+| Decision | Named test in `DescribeTypedErrorsV1` |
+| --- | --- |
+| OpenAI delivered content followed by typed length cause, no replay, exact bytes and safe formatting | `should_preserve_typed_length_after_delivered_openai_content` |
+| Capture type, exact original exception, identity/history/progress, exact requests and sentinel privacy through every supported sync/async gateway, broker and session operation | `should_preserve_capture_type_original_and_evidence_through_public_callers` |
+| Shared stream length handling through gateways, brokers and sessions, including truthful delivered counts | `should_preserve_length_cause_through_stream_consumers` |
+| Prior transient HTTP cause retained beside typed capture cause; stable logical identity, distinct attempt IDs and identical resends | `should_retain_prior_failure_and_request_identity_when_capture_stops_a_retry` |
+| Capture failure before dispatch or semantics remains terminal with truthful zero/one attempt accounting | `should_stop_capture_before_semantics_without_inventing_attempts` |
+| OpenAI structured length rejection through sync/async gateways and broker | `should_retain_typed_length_for_openai_structured_completion` |
+| Old ordinary completion length behavior remains successful | `should_preserve_successful_ordinary_length_metadata` |
+| Missing policy type on each supported explicit recovery operation, before HTTP | `should_reject_missing_policy_with_the_same_type_before_dispatch` |
+| Invalid gateway policy inputs are typed and private for all four adapters | `should_validate_policy_at_gateway_construction_without_disclosing_input` |
+| Invalid policy fields, malformed JSON and string validation expose the same safe type | `should_use_one_safe_policy_error_across_validation_entrypoints` |
+
+Existing `recovery_spec.py` covers numeric bounds, NaN/infinity and immutable
+policy behavior. Existing capture tests cover reasoning, tool fragments and
+completed tools as well as content; the admission tests retain acceptance
+`unknown` for connection-shaped exceptions raised by capture hooks. Existing
+Anthropic history and capability contracts remain in the full suite.
+
+### Contract identities and coordination gaps
+
+Provider source: `mojentic-py@fe1a94bba6e3ab7fb02c6c17d30cbe3695d449a8`
+plus this uncommitted correction. In-repository broker/session consumer source:
+the same revision plus this correction, tested with the same executable file
+and hash above. Both roles are exercised together by:
+
+```bash
+uv run pytest src/mojentic/llm/gateways/typed_errors_spec.py
+```
+
+This Python binding is distinct from Elixir's existing `typed-errors-v1`
+executable set. Matching the decision name or error schema does not establish
+cross-language or cross-repository compatibility. No sibling was changed.
+External consumer revision, supported old/new package versions, shared
+executable contract identity and consumer verification commands/results are
+**unavailable / not run**. Those remain unfinished coordination work; no paired
+external compatibility or live provider verification is claimed. The named
+Bedrock and microgentic follow-ups remain assigned to their respective ports.
+No published 3.0.0 package or external optional-field/version migration was
+verified here. The coordinated publication hold remains until all six ports
+satisfy owner scope and required paired verification is available.
+
+### Verification results for this correction
+
+All commands used the task's writable uv cache. The exported-lock audit also
+used a writable uv tool directory and audit cache after the default read-only
+locations rejected writes. Commands were captured with their actual exit codes.
+
+| Command | Result |
+| --- | --- |
+| `uv run pytest src/mojentic/llm/gateways/typed_errors_spec.py -q` | Exit 0; all 101 Python contract/caller cases pass together |
+| `uv run pytest --cov` | Exit 0; 1,541 passed, 86% coverage; no repository coverage minimum is configured |
+| `uv run pytest` | Exit 0; 1,541 passed, 85% configured source coverage |
+| `uv run flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics` | Exit 0 |
+| `uv run flake8 src` | Exit 0 |
+| `uv run ruff check src` | Exit 0; zero findings |
+| `uv run --with ruff ruff format src` | Exit 0; unrelated `file_manager_spec.py` formatting restored to keep scope |
+| `uv run bandit -c .bandit -r src` | Exit 0; zero issues |
+| `uv run pip-audit` | Exit 0; no known vulnerabilities |
+| `uv export --format requirements-txt --no-emit-project` piped to `uvx pip-audit -r /dev/stdin --disable-pip`, with `bash -o pipefail` | Exit 0; no known vulnerabilities |
+| `uv pip list --outdated` | Exit 0; available updates reported; no dependency changes required by the audits |
+| `uv run mkdocs build` | Exit 0; rebuilt after documentation edits |
+
+The sole discovered gate file is the root `.hone-gates.json`; all four gates
+passed. An additional explicit complexity diagnostic on the touched recovery
+modules and contract file (`ruff check ... --select C901 --config
+lint.mccabe.max-complexity=10`) exits 1 solely for the existing OpenAI legacy
+`complete` (21) and `complete_stream` (25) methods. Running the same diagnostic
+on that file extracted from the tested base commit reproduces both counts.
+Neither method was changed by this correction; no new or changed function is
+reported over ten. This pre-existing complexity debt remains outside the typed
+errors scope; no lint suppression or rule relaxation was added.
+
+Behavioral proof was validated as JSON with string/object/integer fields,
+actual rejecting exit 1 and corrected exit 0, and both existing logs inspected.
+The rejecting run failed on generic `ValueError` after delivered OpenAI content;
+the final corrected run passed all 101 contract cases, including that probe.
+Changes remain uncommitted in this worktree for Foundry. No sibling edits,
+Git ref updates, version bumps, publication or advisory suppressions occurred.

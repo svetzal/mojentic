@@ -40,7 +40,11 @@ class AnthropicGateway(LLMGateway):
         self.client = Anthropic(
             api_key=api_key, **({"base_url": base_url} if base_url else {})
         )
-        self.recovery_policy = recovery_policy
+        self.recovery_policy = (
+            RecoveryPolicy.model_validate(recovery_policy)
+            if recovery_policy is not None
+            else None
+        )
         self.recovery_call = recovery_call
 
     _recovery_provider = "anthropic"

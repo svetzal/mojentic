@@ -485,7 +485,7 @@ class DescribePublicRecoveryProof:
         assert len(requests) == 1
         assert failure.progress.observed_content and failure.progress.observed_reasoning
         assert failure.progress.delivered_content == 0
-        assert error.inspect_cause() is original
+        assert error.inspect_cause().inspect_cause() is original
         assert error.inspect_response() == frame(secret, thinking=secret)
         assert [event.transition for event in events] == [
             "attempt_started",
@@ -1377,8 +1377,8 @@ class DescribeRecoveryEdgeEvidence:
             failure.progress.delivered_tool_fragments,
             failure.progress.delivered_tool_calls,
         ) == (0, 0, 0, 0)
-        assert caught.value.inspect_cause() is cause
-        assert failure.inspect_cause() is cause
+        assert caught.value.inspect_cause().inspect_cause() is cause
+        assert failure.inspect_cause().inspect_cause() is cause
         assert failure.inspect_response() == body
         assert "secret" not in failure.model_dump_json() + repr(failure) + str(
             caught.value
@@ -1411,7 +1411,7 @@ class DescribeRecoveryEdgeEvidence:
         assert len(requests) == count
         assert caught.value.report.identity.wire_attempt == count
         assert len(caught.value.report.history) == count
-        assert caught.value.inspect_cause() is cause
+        assert caught.value.inspect_cause().inspect_cause() is cause
         assert not caught.value.report.final_failure.eligible
 
     @pytest.mark.parametrize(

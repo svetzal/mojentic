@@ -22,7 +22,14 @@ from urllib.parse import unquote
 from uuid import UUID, uuid4
 
 import httpx
-from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PrivateAttr,
+    ValidationError,
+    model_validator,
+)
 
 Result = TypeVar("Result")
 Timeout = httpx.Timeout | float | None
@@ -166,7 +173,8 @@ class RecoveryError(Exception):
     report : RecoveryReport
         Safe wire accounting and final failure.
     causes : tuple[BaseException, ...]
-        Private original exceptions, in failure order.
+        Private typed causes, in failure order. CaptureError retains its original
+        callback exception behind a further explicit inspect_cause() call.
     responses : tuple[bytes, ...]
         Private response evidence, in failure order.
     """
@@ -186,7 +194,7 @@ class RecoveryError(Exception):
         )
 
     def inspect_cause(self, index: int = -1) -> BaseException:
-        """Return the original cause; its formatting may contain sensitive data."""
+        """Return the typed cause; transport and validation text may contain secrets."""
         return self._causes[index]
 
     def inspect_response(self, index: int = -1) -> bytes:
@@ -253,6 +261,26 @@ class RecoveryCall:
             await asyncio.sleep(0.005)
 
 
+class RecoveryPolicyError(Exception):
+    """Invalid recovery configuration; formatting never includes input values."""
+
+
+class CaptureError(Exception):
+    """A wire observer failed; its original exception requires explicit inspection."""
+
+    def __init__(self, cause: Exception) -> None:
+        self._original_cause = cause
+        super().__init__("wire capture failed")
+
+    def inspect_cause(self) -> Exception:
+        """Return the original callback exception, which may contain secrets."""
+        return self._original_cause
+
+
+class LengthTerminationError(ValueError):
+    """The provider ended output at its length limit rather than a safe finish."""
+
+
 def _jitter(ceiling: float) -> float:
     return ceiling * secrets.randbelow(2**53) / 2**53
 
@@ -295,6 +323,31 @@ class RecoveryPolicy(BaseModel):
     sleeper: Callable[[float], Awaitable[None]] = Field(
         default=asyncio.sleep, exclude=True, repr=False
     )
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def validate_policy(cls, value: object, handler: Callable) -> "RecoveryPolicy":
+        """Expose one privacy-safe policy error for Pydantic validation paths."""
+        try:
+            return handler(value)
+        except ValidationError:
+            raise RecoveryPolicyError("invalid recovery policy") from None
+
+    @classmethod
+    def model_validate_json(
+        cls, json_data: str | bytes | bytearray, **kwargs: object
+    ) -> "RecoveryPolicy":
+        """Validate a serialized policy, including malformed JSON, with a safe error.
+
+        Raises
+        ------
+        RecoveryPolicyError
+            If JSON parsing or policy validation fails.
+        """
+        try:
+            return super().model_validate_json(json_data, **kwargs)
+        except ValidationError:
+            raise RecoveryPolicyError("invalid recovery policy") from None
 
     def delay(self, failure: Failure) -> float | None:
         """Bounded full jitter with Retry-After as a minimum, never shortened."""
@@ -695,7 +748,7 @@ class _Recovery:
                 _require_synchronous(observed)
             except Exception as cause:
                 attempt.category, attempt.reason = "protocol", "capture_failed"
-                raise _HookError(cause) from cause
+                raise _HookError(CaptureError(cause)) from cause
 
     def remaining(self) -> float | None:
         limits = []

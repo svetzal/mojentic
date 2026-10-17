@@ -9,7 +9,13 @@ import httpx
 
 from mojentic.llm.gateways.models import LLMGatewayResponse
 from mojentic.llm.gateways.ollama import StreamingResponse
-from mojentic.llm.recovery import RecoveryCall, Timeout, _Recovery, preparation_error
+from mojentic.llm.recovery import (
+    RecoveryCall,
+    RecoveryPolicyError,
+    Timeout,
+    _Recovery,
+    preparation_error,
+)
 from mojentic.llm.recovery_stream import (
     RecoveryStreamEvent,
     recover_stream,
@@ -43,7 +49,7 @@ async def complete(
 ) -> LLMGatewayResponse:
     """Run one ordinary or structured cloud completion over owned HTTP."""
     if gateway.recovery_policy is None:
-        raise ValueError("configure recovery_policy before using recovery")
+        raise RecoveryPolicyError("configure recovery_policy before using recovery")
     operation = "structured" if args.get("object_model") is not None else "ordinary"
     try:
         body = gateway._recovery_body(args, False)
@@ -74,7 +80,7 @@ async def stream(
     from mojentic.llm.gateways.openai_recovery import OpenAIStreamRecovery
 
     if gateway.recovery_policy is None:
-        raise ValueError("configure recovery_policy before using recovery")
+        raise RecoveryPolicyError("configure recovery_policy before using recovery")
     try:
         body = gateway._recovery_body(args, True)
     except (ValueError, TypeError, KeyError, OSError, NotImplementedError) as cause:
