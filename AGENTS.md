@@ -1,30 +1,23 @@
 # Mojentic Python — Project Guidance
 
-## Coordinated 2.1.0 release authorization
+## Owner-authorized 3.0.0 scope
 
-Stacey authorized this release on September 30, 2026. If `v2.1.0` does not
-exist yet, the next release is exactly **2.1.0**, even when a normal major or
-minor bump would choose a different version. All six ports are ready at their
-audited main commits. Use September 30, 2026 as the changelog date.
+Stacey authorized the coordinated 3.0.0 initiative on October 15, 2026.
+The binding owner scope is [../RELEASE-3.0.0.md](../RELEASE-3.0.0.md): complete
+transient recovery including the October 12 amendment, native reasoning, model
+metadata and request fidelity, and the identified audit fixes across all ports.
+The initiative brief records this authorization; the former 2.1.0 release
+preparation authorization is obsolete.
 
-Keep scope to release preparation. Disabled reasoning parity is deferred to
-2.2.0. Ordinary generate finish handling is deferred to a later major release.
-Swift and Kotlin keep whole-text embeddings as the accepted 2.1.0 exception.
-Do not add features, update dependencies, or change runtime behavior.
+This correction task implements only Python recovery admission guarantees.
+Do not implement the other initiative parts here. Record verified decisions in
+CONFORMANCE-3.0.0.md and explicitly identify unverified decisions. Preserve the
+coordinated publication hold until all six ports satisfy the owner scope and
+paired consumer/provider contract verification is available where required.
 
-This AGENTS.md section is the release coordinator's known, authorized edit.
-The clone was synced before it was added. Preserve it and include it in the
-release commit after all required gates pass. Do not stash or revert it.
-Fetch again before work; rebase only if the tree permits it and stop on conflicts.
-
-Update all actual package versions and lockfile root versions, finalize the
-Unreleased changelog as 2.1.0, then commit on main and tag that commit v2.1.0.
-Create and publish a GitHub release using those changelog notes so workflows
-that require the release-published event run. No branch or PR.
-For Kotlin use gradle.properties version=2.1.0 and the configured
-com.vetzal.mojentic group. Tag push runs the Maven Central workflow. For Swift,
-the git tag is the package version; do not change swift-tools-version.
-Verify the tag points at the version/changelog HEAD commit before pushing.
+Foundry owns Git finalization for this task: leave changes in this worktree;
+do not commit, push, merge, rebase, tag, publish, or bump versions. Run all
+.hone-gates.json gates and applicable quality checks before handoff.
 
 Why this project exists and what problem does it solve: @CHARTER.md
 

@@ -278,7 +278,8 @@ class RecoveryPolicy(BaseModel):
     budget: float | None = Field(default=None, ge=0)
     deadline: float | None = None
     admission: (
-        Callable[[AdmissionContext], Awaitable[Literal["allow", "reject"]]] | None
+        Callable[[AdmissionContext], Awaitable[Literal["allow", "reject"] | None]]
+        | None
     ) = Field(default=None, exclude=True, repr=False)
     observer: Callable[[LifecycleEvent], None] | None = Field(
         default=None, exclude=True, repr=False
@@ -491,7 +492,20 @@ class _Attempt(BaseModel):
             retry_after=self.retry_after,
             phase=self.phase,
             progress=self.progress,
-            acceptance="unknown" if self.sent else "no",
+            # Connection establishment failed before completion request bytes
+            # could be sent. Read/write failures and HTTP statuses prove no such
+            # thing, even when the response suggests a transient server error.
+            acceptance=(
+                "no"
+                if not self.sent
+                or (
+                    self.reason == "transient"
+                    and isinstance(
+                        self.cause, (httpx.ConnectError, httpx.ConnectTimeout)
+                    )
+                )
+                else "unknown"
+            ),
             eligible=eligible,
             reason=reason,
         )
@@ -778,7 +792,7 @@ class _Recovery:
 
     async def admit(self, attempt: _Attempt, failure: Failure) -> str | None:
         if self.policy.admission is None:
-            if self.provider not in {"ollama", "omlx"}:
+            if self.provider not in {"ollama", "omlx"} or failure.acceptance == "no":
                 return None
             self.emit("admission_required", attempt, failure)
             return "admission_required"
@@ -800,9 +814,12 @@ class _Recovery:
         except Exception as cause:
             attempt.category, attempt.reason = "protocol", "admission_failed"
             raise _HookError(cause) from cause
-        if decision != "allow":
+        if decision == "reject":
             self.emit("admission_rejected", attempt, failure)
             return "admission_rejected"
+        if decision != "allow":
+            self.emit("admission_undecided", attempt, failure)
+            return "admission_undecided"
         self.emit("admission_allowed", attempt, failure)
         return None
 

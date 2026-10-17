@@ -43,6 +43,7 @@ class StreamOutcome(str, Enum):
     ATTEMPTS_EXHAUSTED = "attempts_exhausted"
     ADMISSION_REQUIRED = "admission_required"
     ADMISSION_REJECTED = "admission_rejected"
+    ADMISSION_UNDECIDED = "admission_undecided"
     DELAY_CEILING = "delay_ceiling"
     BUDGET_EXHAUSTED = "budget_exhausted"
     CANCELLED = "cancelled"

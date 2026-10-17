@@ -50,7 +50,20 @@ The opted-in structured path raises a `RecoveryError` with the original Pydantic
 
 Every ambiguous local resend requires explicit asynchronous admission. A pending
 coroutine remains pending. Only `"allow"` admits a retry; `"reject"` stops it.
-No hook yields `admission_required`. Neither generated IDs nor caller admission
+A hook that returns without either decision stops with `admission_undecided`,
+including a `None` return. This differs from the caller's explicit
+`admission_rejected`; an invalid return never grants permission. The lifecycle
+transition and ordinary `RecoveryError.report.outcome` use that stable value;
+streaming ends with a failed event whose `StreamOutcome` is
+`ADMISSION_UNDECIDED` and whose report carries the same value.
+
+Without a hook, ambiguous local acceptance yields `admission_required`. An
+eligible local connection-establishment failure (`httpx.ConnectError` or
+`httpx.ConnectTimeout`) supplies acceptance `no` and may retry without a hook.
+HTTP statuses, response bodies, read/write failures, silence and generated IDs
+are not evidence of nonacceptance. Other dispatched failures retain acceptance
+`unknown`. A supplied hook is still consulted even when acceptance is `no`.
+Neither generated IDs nor caller admission
 prove idempotency or remote inference termination.
 
 Backoff uses full jitter below the smaller of the delay ceiling and exponential

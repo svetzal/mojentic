@@ -7,9 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking changes and migration
+
+- Recovery hooks that finish without `"allow"` or `"reject"` now stop with
+  `admission_undecided`, rather than `admission_rejected`. Handle the new
+  `StreamOutcome.ADMISSION_UNDECIDED` in exhaustive stream handlers and
+  the matching ordinary report outcome/lifecycle transition. Return `"reject"`
+  explicitly when the caller intends to deny permission; return `"allow"` only
+  when a resend is authorized. Pending hooks still wait until a decision,
+  cancellation, or budget/deadline expiration.
+- Eligible Ollama/oMLX connection-establishment failures now report acceptance
+  `no` and can retry without a hook. Install an admission hook to retain caller
+  control over those retries. Ambiguous local failures still require admission;
+  eligible OpenAI/Anthropic no-hook retry behavior is preserved. Request payloads
+  and eligibility rules are unchanged.
+
 ### Added
 
-- Opt-in transient completion recovery for `OpenAIGateway`: ordinary, structured and tool-capable streaming completions route through owned HTTP when a `recovery_policy` is set. Existing broker and chat session return types are unchanged. Cloud retries may proceed without an admission hook; local retries still require explicit admission.
+- Opt-in transient completion recovery for `OpenAIGateway`: ordinary, structured and tool-capable streaming completions route through owned HTTP when a `recovery_policy` is set. Existing broker and chat session return types are unchanged. Cloud retries may proceed without an admission hook; ambiguous local retries still require explicit admission.
 - Recovered responses and recovery errors carry validated provider metadata (provider request IDs and provider error codes) where the provider supplies them.
 - Opt-in ordinary completion recovery for the Anthropic gateway. Structured output, tools and streaming remain unsupported and are refused before dispatch.
 
