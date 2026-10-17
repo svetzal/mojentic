@@ -48,7 +48,7 @@ CALLERS = [
         else ["gateway", "async", "broker", "session"]
     )
 ]
-CONFIG = CompletionConfig(temperature=0.25, max_tokens=17)
+CONFIG = CompletionConfig(temperature=0.25, num_ctx=32768, max_tokens=17)
 
 
 def gateway_for(provider, host, policy):
@@ -191,7 +191,9 @@ class DescribeTypedErrorsV1:
             events = [
                 event
                 async for event in gateway.complete_stream_with_recovery(
-                    model="gpt-4o", messages=[LLMMessage(content="prompt")]
+                    model="gpt-4o",
+                    messages=[LLMMessage(content="prompt")],
+                    config=CompletionConfig(temperature=1.0, max_tokens=16384),
                 )
             ]
 

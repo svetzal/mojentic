@@ -39,7 +39,6 @@ def main():
         tools=[date_tool],
         temperature=0.7,
         num_ctx=32768,
-        num_predict=-1,
     )
     for chunk in stream:
         print(chunk, end="", flush=True)

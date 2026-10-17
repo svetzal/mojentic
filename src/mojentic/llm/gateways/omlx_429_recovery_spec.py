@@ -3,6 +3,7 @@
 import httpx
 import pytest
 
+from mojentic.llm.completion_config import CompletionConfig
 from mojentic.llm.gateways.models import LLMMessage
 from mojentic.llm.gateways.ollama_recovery_spec import scripted_http
 from mojentic.llm.gateways.omlx import OMLXGateway
@@ -32,7 +33,11 @@ EXPECTED = {
 
 
 async def request(gateway, operation):
-    args = {"model": "test", "messages": [LLMMessage(content="héllo")]}
+    args = {
+        "model": "test",
+        "messages": [LLMMessage(content="héllo")],
+        "config": CompletionConfig(temperature=1.0, max_tokens=16384),
+    }
     if operation == "streaming":
         events = [
             event async for event in gateway.complete_stream_with_recovery(**args)

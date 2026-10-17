@@ -203,13 +203,10 @@ class OpenAIGateway(LLMGateway):
         controls = {
             "model": args["model"],
             "tools": args.get("tools"),
-            "temperature": config.temperature
-            if config
-            else args.get("temperature", 1.0),
-            "max_tokens": config.max_tokens
-            if config
-            else args.get("max_tokens", 16384),
+            "temperature": config.temperature if config else args.get("temperature"),
+            "max_tokens": config.max_tokens if config else args.get("max_tokens"),
             "reasoning_effort": config.reasoning_effort if config else None,
+            "top_p": config.top_p if config else args.get("top_p"),
         }
         adapted = self._adapt_parameters_for_model(args["model"], controls)
         self._validate_model_parameters(args["model"], adapted)
@@ -223,6 +220,7 @@ class OpenAIGateway(LLMGateway):
                 "temperature",
                 "max_tokens",
                 "max_completion_tokens",
+                "top_p",
                 "reasoning_effort",
             )
             if key in adapted and adapted[key] is not None
@@ -353,7 +351,11 @@ class OpenAIGateway(LLMGateway):
         dict
             The adapted arguments with correct parameter names for the model type.
         """
-        adapted_args = args.copy()
+        adapted_args = {
+            key: value
+            for key, value in args.items()
+            if value is not None or key not in {"temperature", "max_tokens", "top_p"}
+        }
         capabilities = self.model_registry.get_model_capabilities(model)
 
         logger.debug(
@@ -406,7 +408,7 @@ class OpenAIGateway(LLMGateway):
                 adapted_args.pop("temperature", None)
             elif not capabilities.supports_temperature(temperature):
                 # Model supports temperature but not this specific value - use default
-                default_temp = 1.0
+                default_temp = capabilities.supported_temperatures[0]
                 logger.warning(
                     "Model does not support requested temperature, using default",
                     model=model,
@@ -495,13 +497,11 @@ class OpenAIGateway(LLMGateway):
             A list of tools to use with the LLM. If a tool call is requested, the tool will be called and the output
             will be included in the response.
         temperature : float, optional
-            The temperature to use for the response. Defaults to 1.0.
+            The temperature to use for the response. Unspecified by default.
         num_ctx : int, optional
-            The number of context tokens to use. Defaults to 32768.
+            The number of context tokens to use. Unspecified by default.
         max_tokens : int, optional
-            The maximum number of tokens to generate. Defaults to 16384.
-        num_predict : int, optional
-            The number of tokens to predict. Defaults to no limit.
+            The maximum number of tokens to generate. Unspecified by default.
 
         Returns
         -------
@@ -523,13 +523,11 @@ class OpenAIGateway(LLMGateway):
             temperature = config.temperature
             num_ctx = config.num_ctx
             max_tokens = config.max_tokens
-            num_predict = config.num_predict
             reasoning_effort = config.reasoning_effort
         else:
-            temperature = kwargs.get("temperature", 1.0)
-            num_ctx = kwargs.get("num_ctx", 32768)
-            max_tokens = kwargs.get("max_tokens", 16384)
-            num_predict = kwargs.get("num_predict", -1)
+            temperature = kwargs.get("temperature")
+            num_ctx = kwargs.get("num_ctx")
+            max_tokens = kwargs.get("max_tokens")
             reasoning_effort = None
 
         if not model:
@@ -546,7 +544,6 @@ class OpenAIGateway(LLMGateway):
             "temperature": temperature,
             "num_ctx": num_ctx,
             "max_tokens": max_tokens,
-            "num_predict": num_predict,
             "reasoning_effort": reasoning_effort,
         }
 
@@ -566,6 +563,9 @@ class OpenAIGateway(LLMGateway):
             "model": adapted_args["model"],
             "messages": adapt_messages_to_openai(adapted_args["messages"]),
         }
+
+        if config is not None and config.top_p is not None:
+            openai_args["top_p"] = config.top_p
 
         # Add temperature if specified
         if "temperature" in adapted_args:
@@ -687,13 +687,11 @@ class OpenAIGateway(LLMGateway):
         tools : Optional[List[LLMTool]]
             A list of tools to use with the LLM. Tool calls will be accumulated and yielded when complete.
         temperature : float, optional
-            The temperature to use for the response. Defaults to 1.0.
+            The temperature to use for the response. Unspecified by default.
         num_ctx : int, optional
-            The number of context tokens to use. Defaults to 32768.
+            The number of context tokens to use. Unspecified by default.
         max_tokens : int, optional
-            The maximum number of tokens to generate. Defaults to 16384.
-        num_predict : int, optional
-            The number of tokens to predict. Defaults to no limit.
+            The maximum number of tokens to generate. Unspecified by default.
 
         Returns
         -------
@@ -717,13 +715,11 @@ class OpenAIGateway(LLMGateway):
             temperature = config.temperature
             num_ctx = config.num_ctx
             max_tokens = config.max_tokens
-            num_predict = config.num_predict
             reasoning_effort = config.reasoning_effort
         else:
-            temperature = kwargs.get("temperature", 1.0)
-            num_ctx = kwargs.get("num_ctx", 32768)
-            max_tokens = kwargs.get("max_tokens", 16384)
-            num_predict = kwargs.get("num_predict", -1)
+            temperature = kwargs.get("temperature")
+            num_ctx = kwargs.get("num_ctx")
+            max_tokens = kwargs.get("max_tokens")
             reasoning_effort = None
 
         if not model:
@@ -740,7 +736,6 @@ class OpenAIGateway(LLMGateway):
             "temperature": temperature,
             "num_ctx": num_ctx,
             "max_tokens": max_tokens,
-            "num_predict": num_predict,
             "reasoning_effort": reasoning_effort,
         }
 
@@ -890,6 +885,9 @@ class OpenAIGateway(LLMGateway):
         if response_format is not None:
             openai_args["response_format"] = response_format
 
+        if config is not None and config.top_p is not None:
+            openai_args["top_p"] = config.top_p
+
         # Add temperature if specified
         if "temperature" in adapted_args:
             openai_args["temperature"] = adapted_args["temperature"]
@@ -970,7 +968,6 @@ class OpenAIGateway(LLMGateway):
             "temperature": config.temperature,
             "num_ctx": config.num_ctx,
             "max_tokens": config.max_tokens,
-            "num_predict": config.num_predict,
             "reasoning_effort": config.reasoning_effort,
         }
         adapted_args = self._adapt_parameters_for_model(model, args)

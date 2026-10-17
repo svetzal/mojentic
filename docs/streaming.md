@@ -177,7 +177,6 @@ def generate_stream(
     config: Optional[CompletionConfig] = None,
     temperature=None,
     num_ctx=None,
-    num_predict=None,
     max_tokens=None,
     correlation_id: str = None
 ) -> Iterator[str]:
@@ -199,8 +198,6 @@ def generate_stream(
         (Legacy) The temperature to use for the response.
     num_ctx : int, optional
         (Legacy) The number of context tokens to use.
-    num_predict : int, optional
-        (Legacy) The number of tokens to predict.
     max_tokens : int, optional
         (Legacy) The maximum number of tokens to generate.
     correlation_id : str
@@ -447,3 +444,9 @@ For detailed API documentation, see:
 - [LLMBroker.generate_stream_events()][mojentic.llm.LLMBroker.generate_stream_events]
 - [OllamaGateway.complete_stream()][mojentic.llm.gateways.OllamaGateway.complete_stream]
 - [OpenAIGateway.complete_stream()][mojentic.llm.gateways.OpenAIGateway.complete_stream]
+
+
+Streaming uses the same [request fidelity rules](broker.md#request-fidelity-in-30)
+as ordinary completion: unspecified temperature, context and output limits are
+omitted; use `max_tokens` for an explicit output limit. Session `max_context`
+remains a local history budget.

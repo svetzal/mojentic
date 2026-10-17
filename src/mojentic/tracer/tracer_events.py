@@ -51,8 +51,8 @@ class LLMCallTracerEvent(TracerEvent):
 
     model: str = Field(..., description="The LLM model that was used")
     messages: list[dict] = Field(..., description="The messages sent to the LLM")
-    temperature: float = Field(
-        1.0, description="The temperature setting used for the call"
+    temperature: float | None = Field(
+        None, description="The temperature setting used for the call"
     )
     tools: list[dict] | None = Field(
         None, description="The tools available to the LLM, if any"
@@ -69,7 +69,7 @@ class LLMCallTracerEvent(TracerEvent):
                 f"\n   Messages: {msg_count} message{'s' if msg_count != 1 else ''}"
             )
 
-        if self.temperature != 1.0:
+        if self.temperature is not None and self.temperature != 1.0:
             summary += f"\n   Temperature: {self.temperature}"
 
         if self.tools:

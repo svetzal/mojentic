@@ -170,9 +170,8 @@ print(llm.generate([LLMMessage(content="Reply with exactly: hello")]))
 #### Requests
 
 The gateway builds each request from `CompletionConfig` with no per-model changes. It
-always sends `temperature` and `max_tokens` (never `max_completion_tokens`), and sends
-`reasoning_effort` unchanged when you set it. It does not send `num_ctx` or
-`num_predict`, because oMLX sets the context length per model.
+sends `temperature` and `max_tokens` only when set (never `max_completion_tokens`), and sends
+`reasoning_effort` unchanged when you set it. It does not send `num_ctx` because oMLX sets the context length per model.
 
 `reasoning_effort` goes to the model's chat template, so its effect depends on the
 model. Leave it unset to keep the model's default. Qwen 3 models think by default.
@@ -257,10 +256,11 @@ response = llm.generate(messages, config=config)
 
 ### Available Parameters
 
-- **temperature** (float): Controls randomness. Default: 1.0
-- **num_ctx** (int): Context window size in tokens. Default: 32768
-- **max_tokens** (int): Maximum tokens to generate. Default: 16384
-- **num_predict** (int): Tokens to predict (-1 = no limit). Default: -1
+- **temperature** (float | None): Controls randomness. Default: None (omitted)
+- **num_ctx** (int | None): Ollama context window size. Default: None (omitted)
+- **max_tokens** (int | None): The only output limit. Default: None (omitted, except Anthropic)
+- **top_p** (float | None): Nucleus sampling; Ollama, OpenAI, oMLX and Anthropic. Default: None
+- **top_k** (int | None): Sampling candidates; Ollama, oMLX and Anthropic. Default: None
 - **reasoning_effort** (`ReasoningEffort` | None): Distinct disabled/enabled/low/medium/high/xhigh controls. Default: None (unspecified)
 - **reasoning_profile** (`ReasoningProfile` | None): Caller-selected effort/history capabilities, validated before requests. Default: None
 - **retain_reasoning** (bool): Keep completed native reasoning in broker tool continuations for Ollama/oMLX. Default: False
@@ -342,3 +342,41 @@ message = LLMMessage(
 
 `LLMMessage.content` is optional plain text. Lists of content parts are not
 accepted, including for system and tool messages.
+
+
+### Request fidelity in 3.0
+
+Omitted controls and explicit `None` leave provider settings intact. Temperature
+`0` is sent. `max_tokens` maps to Ollama's `options.num_predict`, OpenAI's
+`max_tokens` (or `max_completion_tokens` for reasoning models), and oMLX/Anthropic's
+`max_tokens`. `num_predict` is no longer a public setting or unlimited sentinel.
+OpenAI rewrites an explicitly requested temperature to a fixed model's registered
+value; an unspecified temperature stays absent. Unsupported reasoning effort is
+warned about and dropped, subject to the native reasoning validation rules.
+
+Anthropic requires `max_tokens`: an unset limit uses the registered output maximum,
+or 4096 for an unknown model. The initial registry covers Sonnet 4.5 and Haiku 4.5
+aliases and dated IDs at 64000 tokens, from their official model pages:
+[Sonnet 4.5](https://platform.claude.com/docs/en/models/sonnet-4-5/overview) and
+[Haiku 4.5](https://platform.claude.com/docs/en/models/haiku-4-5/overview).
+Other exact IDs use 4096 until registered. Explicit limits always take precedence.
+oMLX requires no fallback.
+
+To reproduce the supported former Python config defaults explicitly:
+
+```python
+config = CompletionConfig(temperature=1.0, num_ctx=32768, max_tokens=16384)
+```
+
+For the former Anthropic gateway call without a config, use
+`CompletionConfig(temperature=1.0, max_tokens=2000)` instead.
+
+Set just the controls your application needs. With no explicit controls, Ollama
+can use a different context window and unlimited generation; OpenAI can generate
+more output and incur higher costs. ChatSession's `max_context` still trims local
+history but no longer configures the server; set `config.num_ctx` separately when
+needed. A real TracerSystem accepts and records an unspecified temperature.
+
+The same omission rules apply to ordinary and structured requests, supported
+streams, tool continuations and immutable recovery resends. Anthropic legacy
+structured completion, streaming and tools retain their existing support limits.

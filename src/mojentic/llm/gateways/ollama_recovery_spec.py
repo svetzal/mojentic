@@ -1456,7 +1456,9 @@ class DescribeRecoveryEdgeEvidence:
         image = tmp_path / "input.png"
         image.write_bytes(b"original image bytes")
         messages[0].image_paths = [str(image)]
-        config = CompletionConfig(response_format=ResponseFormat(type="json_object"))
+        config = CompletionConfig(
+            temperature=1.0, response_format=ResponseFormat(type="json_object")
+        )
 
         async def admission(context):
             image.write_bytes(b"replaced image bytes")

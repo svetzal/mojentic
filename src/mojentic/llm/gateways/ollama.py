@@ -9,6 +9,7 @@ import structlog
 from ollama import ChatResponse, Client, Image, Options, ResponseError
 from pydantic import BaseModel, ValidationError
 
+from mojentic.llm.completion_config import CompletionConfig
 from mojentic.llm.gateways.llm_gateway import LLMGateway
 from mojentic.llm.gateways.models import LLMGatewayResponse, LLMMessage, LLMToolCall
 from mojentic.llm.gateways.ollama_messages_adapter import adapt_messages_to_ollama
@@ -39,7 +40,7 @@ from mojentic.llm.recovery_stream import (
 )
 
 if TYPE_CHECKING:
-    from mojentic.llm.completion_config import CompletionConfig, ResponseFormat
+    from mojentic.llm.completion_config import ResponseFormat
 
 logger = structlog.get_logger()
 
@@ -155,27 +156,20 @@ class OllamaGateway(LLMGateway):
         self.stream_transport = stream_transport or OllamaStreamTransport(self.client)
 
     def _extract_options_from_args(self, args):
-        # Extract config if present, otherwise use individual kwargs
-        config = args.get("config", None)
-        if config:
-            options = Options(
-                temperature=config.temperature,
-                num_ctx=config.num_ctx,
-            )
-            if config.num_predict > 0:
-                options.num_predict = config.num_predict
-            if config.max_tokens:
-                options.num_predict = config.max_tokens
-        else:
-            options = Options(
-                temperature=args.get("temperature", 1.0),
-                num_ctx=args.get("num_ctx", 32768),
-            )
-            if args.get("num_predict", 0) > 0:
-                options.num_predict = args["num_predict"]
-            if "max_tokens" in args:
-                options.num_predict = args["max_tokens"]
-        return options
+        config = args.get("config") or CompletionConfig(
+            **{
+                field: args[field]
+                for field in ("temperature", "num_ctx", "max_tokens", "top_p", "top_k")
+                if field in args
+            }
+        )
+        return Options(
+            **{
+                ("num_predict" if field == "max_tokens" else field): value
+                for field in ("temperature", "num_ctx", "max_tokens", "top_p", "top_k")
+                if (value := getattr(config, field)) is not None
+            }
+        )
 
     def complete(self, **args) -> LLMGatewayResponse:
         """
@@ -193,13 +187,11 @@ class OllamaGateway(LLMGateway):
             A list of tools to use with the LLM. If a tool call is requested, the tool will be called and the output
             will be included in the response.
         temperature : float, optional
-            The temperature to use for the response. Defaults to 1.0.
+            The temperature to use for the response. Unspecified by default.
         num_ctx : int, optional
-            The number of context tokens to use. Defaults to 32768.
+            The number of context tokens to use. Unspecified by default.
         max_tokens : int, optional
-            The maximum number of tokens to generate. Defaults to 16384.
-        num_predict : int, optional
-            The number of tokens to predict. Defaults to no limit.
+            The maximum number of tokens to generate. Unspecified by default.
 
         Returns
         -------
@@ -378,13 +370,11 @@ class OllamaGateway(LLMGateway):
             A list of tools to use with the LLM. If a tool call is requested, the tool will be called and the output
             will be included in the response.
         temperature : float, optional
-            The temperature to use for the response. Defaults to 1.0.
+            The temperature to use for the response. Unspecified by default.
         num_ctx : int, optional
-            The number of context tokens to use. Defaults to 32768.
+            The number of context tokens to use. Unspecified by default.
         max_tokens : int, optional
-            The maximum number of tokens to generate. Defaults to 16384.
-        num_predict : int, optional
-            The number of tokens to predict. Defaults to no limit.
+            The maximum number of tokens to generate. Unspecified by default.
 
         Returns
         -------

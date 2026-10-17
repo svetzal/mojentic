@@ -27,7 +27,7 @@ class ChatSession:
         max_context: int = 32768,
         tokenizer_gateway: TokenizerGateway = None,
         config: CompletionConfig | None = None,
-        temperature: float = 1.0,
+        temperature: float | None = None,
     ):
         """
         Create an instance of the ChatSession.
@@ -45,9 +45,10 @@ class ChatSession:
         tokenizer_gateway : TokenizerGateway, optional
             The gateway to use for tokenization. If None, `mxbai-embed-large` is used on a local Ollama server.
         config : Optional[CompletionConfig], optional
-            Configuration object for LLM completion. If None, one is created from temperature and max_context.
+            Configuration object for LLM completion. If None, one is created from temperature.
+            max_context is only a local trimming budget.
         temperature : float, optional
-            The temperature to use for the response. Defaults to 1.0. Deprecated: use config.
+            The temperature to use for the response. Unspecified by default. Deprecated: use config.
         """
 
         self.llm = llm
@@ -59,7 +60,7 @@ class ChatSession:
         if config is not None:
             self.config = config
         else:
-            self.config = CompletionConfig(temperature=temperature, num_ctx=max_context)
+            self.config = CompletionConfig(temperature=temperature)
 
         if tokenizer_gateway is None:
             self.tokenizer_gateway = TokenizerGateway()

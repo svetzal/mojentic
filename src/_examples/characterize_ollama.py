@@ -18,7 +18,6 @@ def check_ollama_gateway():
         object_model=Feeling,
         temperature=1.0,
         num_ctx=32768,
-        num_predict=-1,
     )
     print(response)
 

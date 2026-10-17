@@ -129,9 +129,14 @@ def omlx_chat_body(
     body = {
         "model": model,
         "messages": adapt_messages_to_openai(messages),
-        "temperature": config.temperature,
-        "max_tokens": config.max_tokens,
     }
+    body.update(
+        {
+            field: value
+            for field in ("temperature", "max_tokens", "top_p", "top_k")
+            if (value := getattr(config, field)) is not None
+        }
+    )
     for original, adapted in zip(messages, body["messages"]):
         if original.role.value == "assistant" and original.thinking is not None:
             adapted["reasoning_content"] = original.thinking

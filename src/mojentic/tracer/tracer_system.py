@@ -64,7 +64,7 @@ class TracerSystem:
         self,
         model: str,
         messages: list[dict],
-        temperature: float = 1.0,
+        temperature: float | None = None,
         tools: list[dict] | None = None,
         source: Any = None,
         correlation_id: str | None = None,
@@ -78,7 +78,7 @@ class TracerSystem:
             The name of the LLM model being called.
         messages : List[Dict]
             The messages sent to the LLM.
-        temperature : float, default=1.0
+        temperature : float | None, default=None
             The temperature setting for the LLM call.
         tools : List[Dict], optional
             The tools available to the LLM, if any.

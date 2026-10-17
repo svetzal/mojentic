@@ -677,7 +677,9 @@ class DescribeCloudCancellation:
                 RecoveryPolicy(max_attempts=3, observer=lifecycle.append),
             )
             iterator = gateway.complete_stream_with_recovery(
-                model="gpt-4o", messages=[LLMMessage(content="héllo")]
+                model="gpt-4o",
+                messages=[LLMMessage(content="héllo")],
+                config=CompletionConfig(temperature=1.0, max_tokens=16384),
             )
             first = await asyncio.wait_for(anext(iterator), 2)
             assert first.kind == "progress"
@@ -972,7 +974,9 @@ class DescribeCloudRecovery:
             with pytest.raises(RecoveryError) as caught:
                 delivered.extend(
                     gateway.complete_stream(
-                        model="gpt-4o", messages=[LLMMessage(content="héllo")]
+                        model="gpt-4o",
+                        messages=[LLMMessage(content="héllo")],
+                        config=CompletionConfig(temperature=1.0, max_tokens=16384),
                     )
                 )
 

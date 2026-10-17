@@ -7,10 +7,10 @@ from mojentic.llm.completion_config import CompletionConfig, ResponseFormat
 class DescribeCompletionConfig:
     def should_use_default_values(self):
         config = CompletionConfig()
-        assert config.temperature == 1.0
-        assert config.num_ctx == 32768
-        assert config.max_tokens == 16384
-        assert config.num_predict == -1
+        assert config.temperature is None
+        assert config.num_ctx is None
+        assert config.max_tokens is None
+        assert "num_predict" not in type(config).model_fields
         assert config.reasoning_effort is None
 
     def should_accept_custom_values(self):
@@ -18,13 +18,11 @@ class DescribeCompletionConfig:
             temperature=0.5,
             num_ctx=16384,
             max_tokens=8192,
-            num_predict=100,
             reasoning_effort="high",
         )
         assert config.temperature == 0.5
         assert config.num_ctx == 16384
         assert config.max_tokens == 8192
-        assert config.num_predict == 100
         assert config.reasoning_effort == "high"
 
     def should_accept_valid_reasoning_effort_levels(self):

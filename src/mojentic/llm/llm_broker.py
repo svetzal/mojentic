@@ -112,7 +112,6 @@ class LLMBroker:
         config: CompletionConfig | None = None,
         temperature: float | None = None,
         num_ctx: int | None = None,
-        num_predict: int | None = None,
         max_tokens: int | None = None,
         correlation_id: str | None = None,
     ) -> str:
@@ -134,8 +133,6 @@ class LLMBroker:
             The temperature to use for the response. Deprecated: use config.
         num_ctx : Optional[int]
             The number of context tokens to use. Deprecated: use config.
-        num_predict : Optional[int]
-            The number of tokens to predict. Deprecated: use config.
         max_tokens : Optional[int]
             The maximum number of tokens to generate. Deprecated: use config.
         correlation_id : str
@@ -154,8 +151,7 @@ class LLMBroker:
         """
         # Handle config vs individual kwargs
         if config is not None and any(
-            param is not None
-            for param in [temperature, num_ctx, num_predict, max_tokens]
+            param is not None for param in [temperature, num_ctx, max_tokens]
         ):
             warnings.warn(
                 "Both config and individual kwargs provided. Using config and ignoring kwargs. "
@@ -166,10 +162,9 @@ class LLMBroker:
         elif config is None:
             # Build config from individual kwargs
             config = CompletionConfig(
-                temperature=temperature if temperature is not None else 1.0,
-                num_ctx=num_ctx if num_ctx is not None else 32768,
-                num_predict=num_predict if num_predict is not None else -1,
-                max_tokens=max_tokens if max_tokens is not None else 16384,
+                temperature=temperature,
+                num_ctx=num_ctx,
+                max_tokens=max_tokens,
             )
 
         correlation_id = _ensure_correlation_id(correlation_id)
@@ -266,7 +261,6 @@ class LLMBroker:
             config=config,
             temperature=config.temperature,
             num_ctx=config.num_ctx,
-            num_predict=config.num_predict,
             max_tokens=config.max_tokens,
         )
 
@@ -295,7 +289,6 @@ class LLMBroker:
         config: CompletionConfig | None = None,
         temperature: float | None = None,
         num_ctx: int | None = None,
-        num_predict: int | None = None,
         max_tokens: int | None = None,
         correlation_id: str | None = None,
     ) -> Iterator[str]:
@@ -321,8 +314,6 @@ class LLMBroker:
             The temperature to use for the response. Deprecated: use config.
         num_ctx : Optional[int]
             The number of context tokens to use. Deprecated: use config.
-        num_predict : Optional[int]
-            The number of tokens to predict. Deprecated: use config.
         max_tokens : Optional[int]
             The maximum number of tokens to generate. Deprecated: use config.
         correlation_id : str
@@ -341,8 +332,7 @@ class LLMBroker:
         """
         # Handle config vs individual kwargs
         if config is not None and any(
-            param is not None
-            for param in [temperature, num_ctx, num_predict, max_tokens]
+            param is not None for param in [temperature, num_ctx, max_tokens]
         ):
             warnings.warn(
                 "Both config and individual kwargs provided. Using config and ignoring kwargs. "
@@ -353,10 +343,9 @@ class LLMBroker:
         elif config is None:
             # Build config from individual kwargs
             config = CompletionConfig(
-                temperature=temperature if temperature is not None else 1.0,
-                num_ctx=num_ctx if num_ctx is not None else 32768,
-                num_predict=num_predict if num_predict is not None else -1,
-                max_tokens=max_tokens if max_tokens is not None else 16384,
+                temperature=temperature,
+                num_ctx=num_ctx,
+                max_tokens=max_tokens,
             )
 
         correlation_id = _ensure_correlation_id(correlation_id)
@@ -416,7 +405,6 @@ class LLMBroker:
                 config=config,
                 temperature=config.temperature,
                 num_ctx=config.num_ctx,
-                num_predict=config.num_predict,
                 max_tokens=config.max_tokens,
             )
 
@@ -690,7 +678,6 @@ class LLMBroker:
         config: CompletionConfig | None = None,
         temperature: float | None = None,
         num_ctx: int | None = None,
-        num_predict: int | None = None,
         max_tokens: int | None = None,
         correlation_id: str | None = None,
     ) -> BaseModel:
@@ -710,8 +697,6 @@ class LLMBroker:
             The temperature to use for the response. Deprecated: use config.
         num_ctx : Optional[int]
             The number of context tokens to use. Deprecated: use config.
-        num_predict : Optional[int]
-            The number of tokens to predict. Deprecated: use config.
         max_tokens : Optional[int]
             The maximum number of tokens to generate. Deprecated: use config.
         correlation_id : str
@@ -725,8 +710,7 @@ class LLMBroker:
         """
         # Handle config vs individual kwargs
         if config is not None and any(
-            param is not None
-            for param in [temperature, num_ctx, num_predict, max_tokens]
+            param is not None for param in [temperature, num_ctx, max_tokens]
         ):
             warnings.warn(
                 "Both config and individual kwargs provided. Using config and ignoring kwargs. "
@@ -737,10 +721,9 @@ class LLMBroker:
         elif config is None:
             # Build config from individual kwargs
             config = CompletionConfig(
-                temperature=temperature if temperature is not None else 1.0,
-                num_ctx=num_ctx if num_ctx is not None else 32768,
-                num_predict=num_predict if num_predict is not None else -1,
-                max_tokens=max_tokens if max_tokens is not None else 16384,
+                temperature=temperature,
+                num_ctx=num_ctx,
+                max_tokens=max_tokens,
             )
         correlation_id = _ensure_correlation_id(correlation_id)
         approximate_tokens = len(
@@ -771,7 +754,6 @@ class LLMBroker:
             config=config,
             temperature=config.temperature,
             num_ctx=config.num_ctx,
-            num_predict=config.num_predict,
             max_tokens=config.max_tokens,
         )
 

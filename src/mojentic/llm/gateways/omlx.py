@@ -159,10 +159,9 @@ class OMLXGateway(LLMGateway):
         object_model: type[BaseModel] | None = None,
         tools: list[LLMTool] | None = None,
         config: Optional["CompletionConfig"] = None,
-        temperature: float = 1.0,
-        num_ctx: int = 32768,
-        max_tokens: int = 16384,
-        num_predict: int = -1,
+        temperature: float | None = None,
+        num_ctx: int | None = None,
+        max_tokens: int | None = None,
     ) -> LLMGatewayResponse:
         """
         Complete one chat turn.
@@ -185,8 +184,8 @@ class OMLXGateway(LLMGateway):
         config : Optional[CompletionConfig]
             Temperature, token limit, reasoning effort and response format. When None, one is
             built from ``temperature`` and ``max_tokens``.
-        temperature, num_ctx, max_tokens, num_predict
-            Deprecated: use ``config``. ``num_ctx`` and ``num_predict`` are never sent.
+        temperature, num_ctx, max_tokens
+            Deprecated: use ``config``. ``num_ctx`` is never sent.
 
         Returns
         -------
@@ -205,12 +204,9 @@ class OMLXGateway(LLMGateway):
                     temperature=temperature,
                     num_ctx=num_ctx,
                     max_tokens=max_tokens,
-                    num_predict=num_predict,
                 )
             )
-        config = config or _config_from_arguments(
-            temperature, num_ctx, max_tokens, num_predict
-        )
+        config = config or _config_from_arguments(temperature, num_ctx, max_tokens)
         body = omlx_chat_body(
             model, messages, config, tools=tools, object_model=object_model
         )
@@ -228,10 +224,9 @@ class OMLXGateway(LLMGateway):
 
     def _recovery_body(self, args: dict, streaming: bool) -> bytes:
         config = args.get("config") or _config_from_arguments(
-            args.get("temperature", 1.0),
-            args.get("num_ctx", 32768),
-            args.get("max_tokens", 16384),
-            args.get("num_predict", -1),
+            args.get("temperature"),
+            args.get("num_ctx"),
+            args.get("max_tokens"),
         )
         body = omlx_chat_body(
             args["model"],
@@ -388,10 +383,9 @@ class OMLXGateway(LLMGateway):
         object_model: type[BaseModel] | None = None,
         tools: list[LLMTool] | None = None,
         config: Optional["CompletionConfig"] = None,
-        temperature: float = 1.0,
-        num_ctx: int = 32768,
-        max_tokens: int = 16384,
-        num_predict: int = -1,
+        temperature: float | None = None,
+        num_ctx: int | None = None,
+        max_tokens: int | None = None,
     ) -> Iterator[StreamingResponse]:
         """
         Stream one chat turn as legacy chunks.
@@ -421,7 +415,6 @@ class OMLXGateway(LLMGateway):
                     temperature=temperature,
                     num_ctx=num_ctx,
                     max_tokens=max_tokens,
-                    num_predict=num_predict,
                 )
             )
             with closing(events):
@@ -437,9 +430,7 @@ class OMLXGateway(LLMGateway):
                             tool_calls=event.response.tool_calls, completed=True
                         )
             return
-        config = config or _config_from_arguments(
-            temperature, num_ctx, max_tokens, num_predict
-        )
+        config = config or _config_from_arguments(temperature, num_ctx, max_tokens)
         body = omlx_chat_body(model, messages, config, tools=tools) | {"stream": True}
         lines = self.transport.stream_lines("/chat/completions", body)
         with closing(lines):
@@ -562,7 +553,7 @@ class OMLXGateway(LLMGateway):
 
 
 def _config_from_arguments(
-    temperature: float, num_ctx: int, max_tokens: int, num_predict: int
+    temperature: float | None, num_ctx: int | None, max_tokens: int | None
 ) -> "CompletionConfig":
     from mojentic.llm.completion_config import CompletionConfig
 
@@ -570,7 +561,6 @@ def _config_from_arguments(
         temperature=temperature,
         num_ctx=num_ctx,
         max_tokens=max_tokens,
-        num_predict=num_predict,
     )
 
 

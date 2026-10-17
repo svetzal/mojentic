@@ -148,18 +148,18 @@ class DescribeAnthropicHistory:
     @pytest.mark.parametrize(
         "controls,expected",
         [
-            ({}, {"temperature": 1.0, "max_tokens": 2000}),
+            ({}, {"max_tokens": 4096}),
             (
-                {"temperature": 0.2, "num_predict": 23},
+                {"temperature": 0.2, "max_tokens": 23},
                 {"temperature": 0.2, "max_tokens": 23},
             ),
             (
-                {"max_tokens": 19, "num_predict": 23},
-                {"temperature": 1.0, "max_tokens": 19},
+                {"max_tokens": 19},
+                {"max_tokens": 19},
             ),
         ],
     )
-    def should_preserve_legacy_controls_and_absent_system(
+    def should_preserve_explicit_controls_and_absent_system(
         self, policy, controls, expected
     ):
         with scripted_http([(200, {}, success("anthropic"))]) as (host, requests):

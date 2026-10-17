@@ -44,19 +44,20 @@ class CompletionConfig(BaseModel):
 
     Attributes
     ----------
-    temperature : float
+    temperature : float | None
         Controls randomness in the output. Higher values (e.g., 1.5) make output
         more random, while lower values (e.g., 0.1) make it more deterministic.
-        Defaults to 1.0.
-    num_ctx : int
+        Unspecified by default.
+    num_ctx : int | None
         The number of context tokens to use. This sets the context window size.
-        Defaults to 32768.
-    max_tokens : int
+        Unspecified by default.
+    max_tokens : int | None
         The maximum number of tokens to generate in the response.
-        Defaults to 16384.
-    num_predict : int
-        The number of tokens to predict. A value of -1 means no limit.
-        Defaults to -1.
+        Unspecified by default.
+    top_p : float | None
+        Optional nucleus sampling probability.
+    top_k : int | None
+        Optional candidate count (not sent by OpenAI).
     reasoning_effort : ReasoningEffort | None
         Disabled, Enabled, Low, Medium, High or XHigh. None leaves effort unspecified.
         Ollama sends exact booleans/levels; oMLX sends enable_thinking or reasoning_effort.
@@ -75,14 +76,17 @@ class CompletionConfig(BaseModel):
         the request unchanged and uses the provider default.
     """
 
-    temperature: float = Field(
-        default=1.0, description="Temperature for sampling (higher = more random)"
+    temperature: float | None = Field(
+        default=None, description="Temperature for sampling"
     )
-    num_ctx: int = Field(default=32768, description="Number of context tokens")
-    max_tokens: int = Field(default=16384, description="Maximum tokens to generate")
-    num_predict: int = Field(
-        default=-1, description="Number of tokens to predict (-1 = no limit)"
+    num_ctx: int | None = Field(default=None, description="Number of context tokens")
+    max_tokens: int | None = Field(
+        default=None, description="Maximum tokens to generate"
     )
+    top_p: float | None = Field(
+        default=None, description="Nucleus sampling probability"
+    )
+    top_k: int | None = Field(default=None, description="Top-k sampling candidates")
     reasoning_effort: ReasoningEffort | None = Field(
         default=None, description="Reasoning effort level for extended thinking"
     )

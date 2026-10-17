@@ -43,7 +43,7 @@ class DescribeStructuredBoundary:
                 "tools": [],
                 "stream": False,
                 "format": Result.model_json_schema(),
-                "options": {"temperature": 1.0, "num_ctx": 32768, "num_predict": 16384},
+                "options": {},
             }
 
     def should_propagate_validator_defects_with_exact_authenticated_request(self):
@@ -70,11 +70,11 @@ class DescribeStructuredBoundary:
                     "title": "Result",
                     "type": "object",
                 },
-                "options": {"temperature": 1.0, "num_ctx": 32768},
+                "options": {},
             }
             assert body == (
                 b'{"model":"test","stream":false,"options":'
-                b'{"num_ctx":32768,"temperature":1.0},"format":'
+                b'{},"format":'
                 b'{"properties":{"answer":{"title":"Answer","type":"string"}},'
                 b'"required":["answer"],"title":"Result","type":"object"},'
                 b'"messages":[],"tools":[]}'

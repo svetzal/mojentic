@@ -2,6 +2,7 @@
 
 | Owner decision | Python verification | Cross-port status |
 | --- | --- | --- |
+| Part 3: section 3 request fidelity | `request_fidelity_spec.py` executes unchanged `request-fidelity-v1` through captured real HTTP gateway, broker, session, structured/stream routes, retries and tool continuations; Anthropic registry/4096 fallback | Local Python consumer/provider roles verified; external paired verification and Anthropic cross-port registry table alignment unfinished. Context discovery and first-token timing are separate objectives. Publication remains on hold. |
 | Part 2: native reasoning | `native_reasoning_spec.py` executes shared `native-reasoning-v1` controls and broker continuations through real HTTP, profiles, structured output, recovery, cancellation and unsupported OpenAI requests; incomplete Ollama recovery cannot retain history or execute tools, with a completed continuation control | Rust reference consulted read-only; local consumer/provider roles verified together; external counterpart and live server verification unfinished |
 | Part 1: Anthropic structured recovery and immutable requests | `anthropic-structured-v1` in `anthropic_structured_spec.py`: exact HTTP schema/history/control bytes, gateway and broker recovery, optional fields, typed terminal failures and bounded attempts | Local provider and broker consumer roles use the same executable set; live Anthropic and external consumer counterpart verification remain unfinished; tools/streaming separate |
 | October 12 Typed errors decision | `python-typed-errors-v1` in `typed_errors_spec.py`: policy validation, capture and length types through supported gateways, brokers and sessions; real HTTP and exact request/history/progress assertions | Python provider and in-repository callers verified together; external consumers, other ports and live provider verification remain unavailable; not the Elixir `typed-errors-v1` executable set |
@@ -10,7 +11,7 @@
 | Remote no-hook retries, local admission unless evidenced nonacceptance, and distinct undecided admission | [Recovery admission decision map](CONFORMANCE-3.0.0.md); ordinary, structured and supported stream APIs | Other ports and paired consumer verification remain unverified here |
 
 The October 12 root recovery amendment governs these decisions. Exception
-types alone do not establish nonacceptance. Metadata/request fidelity and
-remaining initiative work are outside the native reasoning correction. The coordinated publication
+types alone do not establish nonacceptance. Context-window discovery, first-token timing and remaining initiative work
+are outside this request-fidelity correction. The coordinated publication
 hold remains until all six ports satisfy owner scope and required paired
 consumer/provider verification is available.

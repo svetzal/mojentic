@@ -4,8 +4,10 @@ import structlog
 from anthropic import Anthropic, transform_schema
 from pydantic import BaseModel
 
+from mojentic.llm.completion_config import CompletionConfig
 from mojentic.llm.gateways import cloud_recovery
 from mojentic.llm.gateways.anthropic_messages_adapter import adapt_messages_to_anthropic
+from mojentic.llm.gateways.anthropic_model_registry import max_output_tokens
 from mojentic.llm.gateways.llm_gateway import LLMGateway
 from mojentic.llm.gateways.models import LLMGatewayResponse, LLMToolCall, MessageRole
 from mojentic.llm.gateways.recovery_capabilities import completion_capabilities
@@ -89,13 +91,8 @@ class AnthropicGateway(LLMGateway):
             "model": args["model"],
             "system": " ".join(m.content for m in system) if system else None,
             "messages": adapt_messages_to_anthropic(history),
-            "temperature": config.temperature
-            if config
-            else args.get("temperature", 1.0),
-            "max_tokens": config.max_tokens
-            if config
-            else args.get("max_tokens", args.get("num_predict", 2000)),
         }
+        payload.update(_request_controls(args))
         if args.get("object_model") is not None:
             payload["output_config"] = {
                 "format": {
@@ -161,19 +158,11 @@ class AnthropicGateway(LLMGateway):
         messages = args.get("messages")
         config = args.get("config", None)
 
-        # Extract temperature and max_tokens from config if provided
-        if config:
-            temperature = config.temperature
-            max_tokens = config.max_tokens
-            # Note: reasoning_effort not supported by Anthropic yet
-            if config.reasoning_effort is not None:
-                logger.warning(
-                    "Anthropic gateway does not yet support reasoning_effort parameter",
-                    reasoning_effort=config.reasoning_effort,
-                )
-        else:
-            temperature = args.get("temperature", 1.0)
-            max_tokens = args.get("max_tokens", args.get("num_predict", 2000))
+        if config and config.reasoning_effort is not None:
+            logger.warning(
+                "Anthropic gateway does not yet support reasoning_effort parameter",
+                reasoning_effort=config.reasoning_effort,
+            )
 
         system_messages = [m for m in messages if m.role == MessageRole.System]
         history = [
@@ -188,15 +177,16 @@ class AnthropicGateway(LLMGateway):
             "messages": adapt_messages_to_anthropic(history),
         }
 
+        controls = _request_controls(args)
         response = self.client.messages.create(
             **anthropic_args,
-            # SDK 1.15 removed the keyword; retain the existing wire control.
-            extra_body={"temperature": temperature},
-            max_tokens=max_tokens,
-            # thinking={
-            #     "type": "enabled",
-            #     "budget_tokens": 32768,
-            # }
+            # Sampling fields remain wire controls across SDK keyword changes.
+            extra_body={
+                key: value for key, value in controls.items() if key != "max_tokens"
+            },
+            max_tokens=controls["max_tokens"],
+            # Keep the configured timeout; SDK token-count heuristics reject registry maxima.
+            timeout=self.client.timeout,
         )
 
         object = None
@@ -220,3 +210,21 @@ class AnthropicGateway(LLMGateway):
         raise NotImplementedError(
             "The Anthropic API does not support embedding generation."
         )
+
+
+def _request_controls(args: dict) -> dict:
+    config = args.get("config") or CompletionConfig(
+        **{
+            field: args[field]
+            for field in ("temperature", "max_tokens", "top_p", "top_k")
+            if field in args
+        }
+    )
+    controls = {
+        field: value
+        for field in ("temperature", "max_tokens", "top_p", "top_k")
+        if (value := getattr(config, field)) is not None
+    }
+    if config.max_tokens is None:
+        controls["max_tokens"] = max_output_tokens(args["model"])
+    return controls

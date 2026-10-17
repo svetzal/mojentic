@@ -127,9 +127,7 @@ class DescribeOMLXChatBody:
         assert ("max_tokens" in body, "max_completion_tokens" in body) == (True, False)
 
     def should_not_send_context_or_prediction_lengths(self, messages):
-        body = omlx_chat_body(
-            "m", messages, CompletionConfig(num_ctx=4096, num_predict=128)
-        )
+        body = omlx_chat_body("m", messages, CompletionConfig(num_ctx=4096))
 
         assert ("num_ctx" in body, "num_predict" in body) == (False, False)
 

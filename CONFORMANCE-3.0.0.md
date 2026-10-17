@@ -798,3 +798,103 @@ All commands below passed on the corrected worktree, through `foundry capture`:
 
 Dependencies, versions and unrelated characterized behavior are preserved.
 Ruff was supplied ephemerally, with writable caches under `/tmp` as above.
+
+## MODEL-METADATA section 3: request fidelity
+
+Binding source SHA-256:
+`a085da1c0d110f9d587a24ace6ac2854b653e1ac28905b3829d94d665b2c906e`.
+The initiative brief hash remains verified as recorded above. This correction
+starts at Python `3f9b474a71b0ba0b140d6f7bcb7c4d02f0a9e572`; the tested revision is
+that base plus the uncommitted task worktree changes. No version or ref changed.
+Context-window discovery and first-token timing remain separate objectives.
+
+### Characterization before migration
+
+Inspection established numeric CompletionConfig defaults (temperature 1.0,
+context 32768, output 16384), the separate -1 num_predict sentinel, gateway
+fallbacks, and ChatSession forwarding its local budget as num_ctx. A rejecting
+real HTTP probe through ChatSession, broker, real TracerSystem and Ollama recovery
+captured `options` containing temperature 1.0, num_ctx 8192 and num_predict 16384.
+The corrected identical probe succeeds with empty options and the local budget
+still 8192. Existing recovery byte assertions now supply explicit former settings
+where necessary; their admission, identity, causes, progress and history assertions
+remain intact. Structured boundary expectations reflect the new omitted controls.
+
+### Named section-3 decision map
+
+All names below are in `src/mojentic/llm/gateways/request_fidelity_spec.py` unless
+another file is specified. Assertions inspect actual outbound HTTP and returned
+content/objects/events, including terminal completion and byte-identical retries.
+
+| Binding decision | Executable verification |
+| --- | --- |
+| 3.2.1: omitted and null temperature/context/output controls stay absent; zero survives | `DescribeSharedRequestFidelity.should_execute_shared_cases`: all seven shared cases, all three streaming providers, ordinary/structured/legacy/events, with and without recovery |
+| 3.2.2: max_tokens is the only public output control; Ollama options.num_predict is its wire mapping | Same shared cases inspect exact parameter sets and values; `completion_config_spec.py::should_use_default_values` checks removed public field; examples and signatures remove the sentinel |
+| 3.2.3: no invented gateway or deprecated broker defaults | `DescribeMigrationFidelity.should_omit_controls_for_gateway_keywords_without_config` and `should_forward_only_explicit_deprecated_broker_keywords` |
+| 3.2.3: session budget stays local, unspecified tracing works | `DescribeRequestFidelity.should_omit_unset_session_controls_at_http_boundary`; `DescribeSharedRequestFidelity.should_preserve_controls_through_public_routes` uses a real tracer; existing `chat_session_spec.py::should_respect_context_capacity` and `should_maintain_newest_messages` preserve trimming |
+| 3.2.4: sampling field coverage | Shared `sampling` and `all` cases: top_p on all four providers; top_k on Ollama/oMLX/Anthropic, absent on OpenAI, matching read-only Elixir's supported fields |
+| 3.2.4: fixed-temperature OpenAI adaptation only for explicit controls | `DescribeMigrationFidelity.should_adapt_only_explicit_temperature_to_registered_fixed_value`, including an only-allowed value other than 1.0 |
+| 3.2.4: unsupported effort warns and is dropped | `DescribeMigrationFidelity.should_warn_and_drop_effort_for_non_reasoning_model`; existing native reasoning preflight safeguards remain unchanged |
+| 3.3 / 3.5: explicit migration preserves supported former defaults | `DescribeMigrationFidelity.should_forward_only_explicit_deprecated_broker_keywords`: explicit 1.0/32768/16384; `DescribeAnthropicMigration.should_reproduce_supported_former_sdk_and_config_limits` covers its former 2000/16384 limits; CHANGELOG and broker guide describe provider defaults and cost/context consequences |
+| 3.4: Anthropic registry maximum or unknown-model 4096; explicit limit wins | `DescribeAnthropicFidelity.should_apply_only_required_fallback_and_explicit_controls`: known/unknown, all seven shared cases, SDK/recovery, gateway/broker/session and supported recovery structured route |
+| 3.4: oMLX has no required output-limit fallback | Shared unset/null cases, including both streaming APIs and structured completion |
+| 3.6: continuations/retries retain exact controls | `DescribeContinuationFidelity.should_keep_controls_and_tool_history_on_admitted_resend`: shared tool response, real session/broker, single tool execution, continuation result/history and byte-identical resend |
+
+### Contract identity, provenance and counterpart gap
+
+Unchanged `request-fidelity-v1`, copied from Elixir
+`ff479d92067b6ffbd99d3cd5533f96e13ebc09b0`:
+`6f02088311f50707b9c12154d888f844928c23d359043cb2e5d5654bf7e5eaea`.
+The source contract and clean read-only Elixir checkout have that revision.
+Python's scripted responses derive their semantics, tool calls and retryable
+errors from the shared set. Python's strict Ollama decoder additionally requires
+an assistant role; Anthropic uses a native envelope around the shared content.
+The shared file itself is not edited. API version is unreleased 3.0.0; former
+2.1 config defaults require explicit migration settings, not a second default mode.
+
+Python provider and in-repository broker/session consumer roles execute together
+with `uv run pytest src/mojentic/llm/gateways/request_fidelity_spec.py`; the normal
+pytest gate includes them. This is local scripted HTTP verification, not external
+provider compatibility. Elixir's counterpart command is
+`mix test test/mojentic/llm/immutable_request_wire_test.exs`; it was **not run** in
+this Python-only authorized worktree task. A paired result at the cited revision, external
+consumer verification and live provider runs remain unfinished coordination work.
+
+Unverified alignment: neither the shared JSON nor Elixir supplies an Anthropic
+model table. Python now registers exact Sonnet 4.5 and Haiku 4.5 IDs/aliases at
+64000 from their official model pages (linked in `docs/broker.md`); other IDs use
+the binding 4096 fallback. No pattern-based limit is inferred. Coordinate the
+registry table across Anthropic ports before declaring initiative conformance.
+The SDK's nonstream token heuristic rejects registered maxima; passing its own
+configured timeout explicitly preserves that timeout and permits the required
+HTTP payload, covered by the known-model SDK probe.
+
+Recovery admission and typed causes, immutable resends, Anthropic assistant
+history, and native reasoning completion/retention safeguards remain frozen and
+are covered by the full regression suite. The coordinated publication hold stays
+in effect until all six ports meet owner scope and required paired verification
+is available.
+
+### Verification results in this task worktree
+
+- `uv run pytest --cov`: **2195 passed**, **87% total coverage**; no coverage
+  fail-under threshold is configured in this repository.
+- Both required flake8 gate and full `uv run flake8 src`: pass.
+- `uv run ruff check src`: pass, zero findings. Changed Python files were
+  formatted with `uv run ruff format` and pass its format check.
+- `uv run bandit -c .bandit -r src`: pass, zero findings.
+- `uv run pip-audit` and the locked export audit
+  `uv export --format requirements-txt --no-emit-project | uvx pip-audit -r /dev/stdin --disable-pip`:
+  pass, no known vulnerabilities. No suppressions or dependency changes added.
+- `uv pip list --outdated`: completed; newer packages exist but the audits are
+  clean, so dependency upgrades are outside this correction.
+- `uv run mkdocs build`: pass.
+- Extra whole-tree `uv run ruff format --check src` identifies one pre-existing
+  unformatted file, `src/mojentic/llm/tools/file_manager_spec.py`. Checking the
+  same file from HEAD reproduces it. It is unchanged to preserve authorized scope.
+
+uv cache/tool/cache-home directories were redirected to writable temporary paths
+because the default home cache is read-only in this sandbox. This changes neither
+locked dependencies nor request behavior. Complete command logs and the validated
+rejecting/corrected proof are retained as Foundry execution evidence, not package
+assets. External counterpart results remain unverified as specified above.

@@ -23,10 +23,9 @@ class LLMGateway:
         object_model: type[BaseModel] | None = None,
         tools: list[LLMTool] | None = None,
         config: Optional["CompletionConfig"] = None,
-        temperature: float = 1.0,
-        num_ctx: int = 32768,
-        max_tokens: int = 16384,
-        num_predict: int = -1,
+        temperature: float | None = None,
+        num_ctx: int | None = None,
+        max_tokens: int | None = None,
     ) -> LLMGatewayResponse:
         """
         Complete the LLM request.
@@ -45,13 +44,11 @@ class LLMGateway:
         config : Optional[CompletionConfig]
             Configuration object for LLM completion (recommended over individual kwargs).
         temperature : float
-            The temperature to use for the response. Defaults to 1.0. (Deprecated: use config)
+            The temperature to use for the response. Unspecified by default. (Deprecated: use config)
         num_ctx : int
-            The number of context tokens to use. Defaults to 32768. (Deprecated: use config)
+            The number of context tokens to use. Unspecified by default. (Deprecated: use config)
         max_tokens : int
-            The maximum number of tokens to generate. Defaults to 16384. (Deprecated: use config)
-        num_predict : int
-            The number of tokens to predict. Defaults to no limit. (Deprecated: use config)
+            The maximum number of tokens to generate. Unspecified by default. (Deprecated: use config)
 
         Returns
         -------

@@ -130,12 +130,20 @@ The framework automatically handles parameter differences between model types, s
 
 Some models have specific parameter restrictions that are automatically handled:
 
-- **GPT-5 Series**: Only supports `temperature=1.0` (default). Other temperature values are automatically adjusted with a warning.
-- **o1 & o4 Series**: Only supports `temperature=1.0` (default). Other temperature values are automatically adjusted with a warning.
+- **GPT-5 Series**: Only supports `temperature=1.0` when explicitly requested. Other temperature values are automatically adjusted with a warning.
+- **o1 & o4 Series**: Only supports `temperature=1.0` when explicitly requested. Other temperature values are automatically adjusted with a warning.
 - **o3 Series**: Does not support the `temperature` parameter at all. The parameter is automatically removed with a warning.
 - **All Reasoning Models** (o1, o3, o4, GPT-5): Use `max_completion_tokens` instead of `max_tokens`, and have limited tool support.
 
 The framework will automatically adapt parameters and log warnings when unsupported values are provided.
+
+In 3.0, temperature, context and output limits default to `None` and stay off the
+wire. Use `max_tokens` as the only output control; `num_predict` is only Ollama's
+wire field. Anthropic requires an output limit and uses its registered maximum
+or 4096 for unknown models. ChatSession's `max_context` only trims local history.
+For former config defaults, explicitly set
+`CompletionConfig(temperature=1.0, num_ctx=32768, max_tokens=16384)`.
+See [request fidelity and migration](docs/broker.md#request-fidelity-in-30).
 
 ## 🏗️ Project Structure
 

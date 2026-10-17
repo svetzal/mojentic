@@ -19,6 +19,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking changes and migration
 
+- Request fidelity (MODEL-METADATA section 3): `CompletionConfig.temperature`,
+  `num_ctx` and `max_tokens` now default to `None`; omitted/null controls stay off
+  the wire. `num_predict` and its -1 sentinel are removed as public controls;
+  use `max_tokens` (mapped only on Ollama's wire to `options.num_predict`).
+  To reproduce supported former config defaults, explicitly pass
+  `CompletionConfig(temperature=1.0, num_ctx=32768, max_tokens=16384)`.
+  Gateway and deprecated broker keywords no longer invent defaults. ChatSession
+  keeps its local `max_context` trimming budget without forwarding it as `num_ctx`.
+  Ollama may therefore use a smaller server context or unlimited output; OpenAI
+  may generate longer responses with higher cost. Temperature zero is preserved.
+  `top_p` is supported by all four gateways; `top_k` by Ollama, oMLX and Anthropic.
+  Fixed OpenAI temperatures adapt only when requested; dropped unsupported effort
+  still warns. Anthropic's required output limit uses its registered maximum or
+  4096 for unknown models; explicit limits win. oMLX omits unset output limits.
+  See [request fidelity migration](docs/broker.md#request-fidelity-in-30).
+  Shared-contract loopback verification does not establish external provider
+  compatibility; paired verification and the coordinated publication hold remain.
+
 - Native reasoning now exposes `ReasoningEffort.Disabled`, `Enabled`, `Low`,
   `Medium`, `High` and `XHigh` (the corresponding lowercase strings remain valid).
   Ollama sends exact booleans or level strings; low/medium/high no longer all
