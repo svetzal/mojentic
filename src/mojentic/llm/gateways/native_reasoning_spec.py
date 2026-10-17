@@ -75,7 +75,11 @@ class Answer(BaseModel):
 
 
 class Count(LLMTool):
+    def __init__(self) -> None:
+        self.calls: list[int] = []
+
     def run(self, value: int) -> str:
+        self.calls.append(value)
         return CONTRACT["tool_result"]
 
     @property
@@ -373,6 +377,71 @@ class DescribeNativeReasoningWireContract:
                 )
 
         assert messages == [LLMMessage(content="question")]
+
+    def should_reject_incomplete_recovery_ollama_history(self):
+        tool = Count()
+        messages = [LLMMessage(content="question")]
+        original = [message.model_copy(deep=True) for message in messages]
+        with scripted_http(
+            [
+                (200, {}, reply("ollama", tool=True, terminal=False)),
+                (200, {}, reply("ollama")),
+            ]
+        ) as (host, requests):
+            broker = LLMBroker(
+                model="alias", gateway=gateway_for("ollama", host, recovery=True)
+            )
+
+            with pytest.raises(RecoveryError) as caught:
+                broker.generate(
+                    messages,
+                    tools=[tool],
+                    config=CompletionConfig(retain_reasoning=True),
+                )
+
+        assert isinstance(caught.value.inspect_cause(), ValueError)
+        assert str(caught.value.inspect_cause()) == "incomplete Ollama response"
+        assert caught.value.report.history[-1].category == "protocol"
+        assert caught.value.report.history[-1].reason == "semantic_output"
+        assert messages == original
+        assert tool.calls == []
+        bodies = [json.loads(request[1]) for request in requests]
+        assert [request[0] for request in requests] == ["/api/chat"]
+        assert [body["messages"] for body in bodies] == [
+            [{"role": "user", "content": "question"}]
+        ]
+        assert bodies[0]["stream"] is False
+        assert bodies[0]["tools"][0]["function"]["name"] == "count"
+
+    def should_retain_completed_recovery_ollama_history_and_execute_tool_once(self):
+        tool = Count()
+        messages = [LLMMessage(content="question")]
+        with scripted_http(
+            [
+                (200, {}, reply("ollama", tool=True)),
+                (200, {}, reply("ollama")),
+            ]
+        ) as (host, requests):
+            broker = LLMBroker(
+                model="alias", gateway=gateway_for("ollama", host, recovery=True)
+            )
+
+            result = broker.generate(
+                messages, tools=[tool], config=CompletionConfig(retain_reasoning=True)
+            )
+
+        assert result == '{"answer":"answer"}'
+        assert tool.calls == [7]
+        assert len(requests) == 2
+        continuation = json.loads(requests[1][1])["messages"]
+        assert continuation[1]["thinking"] == CONTRACT["reasoning"]
+        assert continuation[1]["content"] == CONTRACT["visible"]
+        assert continuation[1]["tool_calls"][0]["function"] == {
+            "name": "count",
+            "arguments": {"value": 7},
+        }
+        assert continuation[2]["content"] == json.dumps(CONTRACT["tool_result"])
+        assert messages[1].thinking == CONTRACT["reasoning"]
 
     @pytest.mark.parametrize("provider", ["ollama", "omlx"])
     def should_exclude_capped_ordinary_reasoning_from_history(self, provider):

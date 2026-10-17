@@ -641,6 +641,7 @@ broker consumer tests send the continuation through the same gateway boundary.
 | Caller-selected profiles validate supported effort/history | `should_accept_exact_qwen_profile_controls`, `should_reject_unsupported_qwen_controls`, `should_reject_history_for_a_profile_without_history`, `should_reject_named_effort_for_boolean_only_profile`; Qwen accepts only omitted/disabled/low/medium/xhigh and rejects enabled/high |
 | Native assistant history separate from visible content and tool results | `should_retain_native_history_separately_through_tool_continuation` and `should_preserve_distinct_payloads_in_broker_tool_history`: exact native field, content, typed arguments and serialized result; oMLX call IDs and continuation result IDs |
 | Broker retention opt-in for completed ordinary and streamed tool turns | `should_preserve_distinct_payloads_in_broker_tool_history`: both providers, retention on/off, ordinary/stream, recovery on/off |
+| Ollama recovery requires explicit completion before native history or tool execution | `should_reject_incomplete_recovery_ollama_history`: HTTP 200 with `done:false`, `done_reason:stop`, native reasoning and tool calls raises public `RecoveryError` with inspectable `ValueError`; unchanged caller messages, zero executions, exactly one captured initial request. `should_retain_completed_recovery_ollama_history_and_execute_tool_once`: completed control retains separate native reasoning, content, typed arguments and tool result in the continuation and executes once |
 | oMLX requests preserve_thinking; server enforcement not implied | Same continuation test checks the exact `chat_template_kwargs` request; no server override/enforcement claim |
 | Structured output uses equivalent controls | `should_send_exact_controls_without_model_inference[structured-*]`: schema request plus exact shared effort matrix |
 | Interrupted, failed, capped and cancelled responses never fabricate retained history | `should_not_retain_unfinished_stream_history`, `should_not_fabricate_history_on_stream_failure_or_close`, `should_discard_partial_native_history_when_caller_closes`, `should_reject_incomplete_ordinary_ollama_history`, `should_exclude_capped_ordinary_reasoning_from_history`, `should_discard_reasoning_after_provider_error_frame` |
@@ -677,7 +678,7 @@ uv run pytest src/mojentic/llm/gateways/native_reasoning_spec.py -k 'exact_contr
 Local broker consumer verification against the same executable set:
 
 ```bash
-uv run pytest src/mojentic/llm/gateways/native_reasoning_spec.py -k 'tool_continuation or broker_tool_history or unfinished or failure_or_close or partial_native or incomplete_ordinary or capped_ordinary or provider_error_frame' --no-cov
+uv run pytest src/mojentic/llm/gateways/native_reasoning_spec.py -k 'tool_continuation or broker_tool_history or unfinished or failure_or_close or partial_native or incomplete_ordinary or capped_ordinary or provider_error_frame or incomplete_recovery_ollama or completed_recovery_ollama' --no-cov
 ```
 
 The ordinary `uv run pytest` repository gate executes both roles. Exact command
@@ -694,7 +695,7 @@ unverified. Coordinate those runs in their authorized repositories; no sibling
 repository was changed. Preserve the coordinated publication hold until all six
 ports satisfy the owner scope and required paired verification is available.
 
-### Native reasoning correction verification results
+### Prior native reasoning correction verification results
 
 Executable Python set SHA-256 (`native_reasoning_spec.py`):
 `59a73d635c3fc8c7186df15662c8eb821eca5e53fae8c79b016ff1c6d8a9e4d5`.
@@ -734,3 +735,66 @@ results. They remain Foundry scratch evidence, outside committed project paths.
 External counterpart verification remains **unfinished** as described above;
 these local results do not authorize publication, and no Git finalization or
 version change was performed.
+
+### Cycle-8 Ollama recovery completion correction
+
+Tested Python source: preserved native-reasoning commit
+`a05b14d7d0fbf4053c2ae44b0e8859c88aa67947` plus this uncommitted correction.
+The initiative brief SHA-256 was verified again against the recorded value above.
+Only Python was changed; Rust remains the read-only reference recorded above.
+
+Before the fix, the real-HTTP broker probe failed because no `RecoveryError`
+was raised for HTTP 200 with `done:false`, `done_reason:stop`, native reasoning
+and tool calls. The completed-response control already passed. Recovery now
+requires literal `done:true` before converting a response into broker output.
+The corrected probe passes both cases: incomplete output raises `RecoveryError`
+with inspectable `ValueError("incomplete Ollama response")`, preserves caller
+messages, executes no tools and sends only the captured initial request.
+The existing recovery policy classifies observed semantic output as
+`protocol` / `semantic_output`; it does not retry it. The completed control
+retains native reasoning separately from content, preserves typed tool
+arguments and the serialized result in the continuation, and executes once.
+Both probes use public `LLMBroker.generate` with recovery enabled and
+`CompletionConfig(retain_reasoning=True)` against real loopback HTTP, without
+SDK or private-decoder mocks. Behavioral proof records actual exit codes 1
+before correction and 0 afterward and was validated against the logs.
+
+The shared executable inputs remain **native-reasoning-v1**, unchanged SHA-256
+`be212ff011125f1d0927e3a65a0d7cd87eedbf9f5ff69e803b4112a80ae6b1f6`,
+from Elixir `98b54a0cf0b028b82d38655ac59ebafcd7988077`.
+Current Python executable set (`native_reasoning_spec.py`) SHA-256:
+`558a9d9acfa14d716f3ea61cfdda4678e62234063f9e19bf50508d578dfe6b50`.
+Current `ollama.py` SHA-256:
+`dd300d374e094478c1946e49e340bb00f7dfb03d1425b080f43185ccc32fc309`.
+The local provider command above passed **202 cases** (31 deselected);
+the updated local broker consumer command above passed **31 cases**
+(202 deselected), both on the Python source identity just recorded.
+The entire shared-input specification passed **233 cases** with
+`uv run pytest src/mojentic/llm/gateways/native_reasoning_spec.py --no-cov`.
+
+**Unfinished coordination:** external consumer and provider tested commits,
+verification commands and results against this same contract are unavailable,
+not run here. The Elixir source identity identifies fixture provenance only.
+Local HTTP verification does not establish external counterpart agreement.
+The coordinated publication hold remains; metadata/request-fidelity and other
+initiative work remain separate. No commit, ref, version or publication changed.
+
+All commands below passed on the corrected worktree, through `foundry capture`:
+
+| Verification | Result |
+| --- | --- |
+| `.hone-gates.json`: `uv run flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics` | Exit 0, zero errors |
+| `.hone-gates.json`: `uv run pytest` | Exit 0, 1,804 passed, 85% source coverage |
+| `.hone-gates.json`: `uv run bandit -c .bandit -r src` | Exit 0, no issues |
+| `.hone-gates.json`: `uv run pip-audit` | Exit 0, no known vulnerabilities |
+| `uv run pytest --cov` | Exit 0, 1,804 passed, 85% source coverage; no repository minimum configured |
+| `uv run flake8 src` | Exit 0 |
+| `uv run --with ruff ruff check src` | Exit 0, zero findings |
+| `uv run --with ruff ruff format src/mojentic/llm/gateways/native_reasoning_spec.py src/mojentic/llm/gateways/ollama.py` | Exit 0; scoped to changed Python files |
+| `uv export --format requirements-txt --no-emit-project \| uvx pip-audit -r /dev/stdin --disable-pip` with shell pipefail | Exit 0, no known vulnerabilities in locked dependencies |
+| `uv pip list --outdated` | Exit 0, inventory reviewed; audits required no advisory upgrade |
+| `uv run mkdocs build` | Exit 0 |
+| `git diff --check` | Exit 0 |
+
+Dependencies, versions and unrelated characterized behavior are preserved.
+Ruff was supplied ephemerally, with writable caches under `/tmp` as above.

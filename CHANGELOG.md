@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Ollama recovery rejects HTTP 200 responses without `done: true`, even when
+  `done_reason` is `stop`. Incomplete native reasoning and tool calls cannot
+  enter broker history or a tool continuation. Real-HTTP broker regressions
+  verify the public recovery error and inspectable cause, unchanged caller
+  messages, zero tool executions and a single request; a completed-response
+  control verifies retained reasoning and exactly one tool execution.
+  External counterpart verification remains unfinished; publication stays on hold.
+
 ### Breaking changes and migration
 
 - Native reasoning now exposes `ReasoningEffort.Disabled`, `Enabled`, `Low`,

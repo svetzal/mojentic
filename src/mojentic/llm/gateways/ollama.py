@@ -325,6 +325,8 @@ class OllamaGateway(LLMGateway):
             raise ValueError("invalid response role")
         if not isinstance(frame["message"].get("content", ""), str):
             raise TypeError("invalid response content")
+        if frame.get("done") is not True:
+            raise ValueError("incomplete Ollama response")
         response = ChatResponse.model_validate(frame)
         object = (
             object_model.model_validate_json(response.message.content)
