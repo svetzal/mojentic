@@ -9,11 +9,13 @@ metadata and request fidelity, and the identified audit fixes across all ports.
 The initiative brief records this authorization; the former 2.1.0 release
 preparation authorization is obsolete.
 
-This correction task implements only Python recovery admission guarantees.
-Do not implement the other initiative parts here. Record verified decisions in
-CONFORMANCE-3.0.0.md and explicitly identify unverified decisions. Preserve the
-coordinated publication hold until all six ports satisfy the owner scope and
-paired consumer/provider contract verification is available where required.
+The owner-authorized initiative covers the complete scope above. This Foundry
+correction addresses part 5, issue #2: Anthropic assistant-history preservation
+in ordinary SDK and recovery completions. Other initiative work remains separate.
+Record verified decisions in CONFORMANCE-3.0.0.md and explicitly identify
+unverified decisions. Preserve the coordinated publication hold until all six
+ports satisfy the owner scope and paired consumer/provider contract verification
+is available where required.
 
 Foundry owns Git finalization for this task: leave changes in this worktree;
 do not commit, push, merge, rebase, tag, publish, or bump versions. Run all

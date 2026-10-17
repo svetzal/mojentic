@@ -1,4 +1,4 @@
-# Python 3.0.0 conformance — recovery admission
+# Python 3.0.0 conformance — partial decision map
 
 This is a partial decision map for the owner scope in
 `mojentic-unify/RELEASE-3.0.0.md`. It does not declare Python or the
@@ -107,14 +107,15 @@ until this gap and all six ports' owner scope are satisfied.
 - Remaining October 12 robustness decisions are **unverified by this decision
   map**; the older recovery map and provider specs are prior evidence, not a
   completed 3.0.0 audit.
-- Native reasoning, model metadata/request fidelity and other initiative audit
-  fixes remain **unverified here** and outside this correction.
+- Native reasoning, model metadata/request fidelity and remaining initiative audit
+  fixes remain **unverified here** and outside this correction. Anthropic history
+  (part 5, issue #2) is verified locally below.
 - Actual connection timeout, Unix-socket and TLS failure paths are **not
   exercised** by the deterministic TCP-refusal tests. Remote execution,
   inference termination, idempotency and provider request-status APIs remain
   **unverified/unsupported**. Admission does not prove termination or idempotency.
 
-## Verification record
+## Prior recovery-admission verification record
 
 Provider tested commit: preserved `3e3b353c4893a9153a194e7123b668aecfae9ea0`
 plus the uncommitted correction in this worktree. Foundry owns finalization;
@@ -153,3 +154,87 @@ HTTP responses, status/progress/cause and conservative acceptance.
 The same probe was rerun successfully on the final source. This proof and the
 105-case matrix are local implementation evidence, not paired verification.
 
+## Anthropic assistant history — part 5, issue #2
+
+Owner brief SHA-256 was verified as
+`ea6a0efa56bfb3cd74b5ce728f80cc33c6fbd853114bec94b8aabe79f5d28e6e`.
+The referenced `../RELEASE-3.0.0.md` is unavailable in this isolated worktree;
+the supplied Foundry initiative brief records the binding owner scope and issue.
+This correction implements only assistant-history preservation and the SDK
+wiring needed to exercise its existing temperature control. It does not
+implement reasoning, model metadata, broader request fidelity or recovery
+expansion. The recovery-admission-v2 set above remains unchanged.
+
+The local executable set **anthropic-history-v1** is
+[src/mojentic/llm/gateways/anthropic_history_spec.py](src/mojentic/llm/gateways/anthropic_history_spec.py),
+SHA-256 `db19a66cbc73500885c6c3bb74e3d727d9330e068adde8ede705701f34b8dfc4`.
+All tests below belong to `DescribeAnthropicHistory`; the public SDK completion
+and owned recovery paths use real loopback HTTP. Only the owned tokenizer
+gateway is mocked, using the existing spec-constrained broker fixture.
+
+| Decision | Named executable verification |
+| --- | --- |
+| Preserve exact ordered user/assistant contents, including Unicode and empty assistant text | `should_preserve_ordered_history_system_images_controls_and_response` with recovery disabled/enabled |
+| Keep system extraction (space-joined, separate field), user/image serialization, tool-message exclusion, config precedence and zero temperature | Same test compares the full decoded request, path and authentication/version headers |
+| Keep first text-block response, model, finish reason, usage and absent object/tool calls | Same test checks actual SDK/owned HTTP response evidence |
+| Preserve absent system as null, default controls, legacy temperature/num_predict and max_tokens precedence | `should_preserve_legacy_controls_and_absent_system`, six SDK/recovery cases |
+| Two-turn ChatSession through LLMBroker sends the first assistant answer with the next query | `should_send_first_assistant_answer_in_second_chat_turn`, SDK/recovery cases compare both exact message lists |
+| Eligible 503 then success retains full-history bytes and one logical ID with two distinct nonempty attempt IDs | `should_resend_identical_full_history_with_stable_logical_identity` compares both server-received and captured request bytes, ordered roles/contents and report evidence |
+| Unsupported recovery JSON, structured output and tools fail before dispatch; no streaming implementation | Existing `DescribeAnthropicCapabilityBoundary.should_reject_unsupported_configured_json_format_before_dispatch` and `should_reject_unsupported_recovery_before_dispatch` in `cloud_recovery_spec.py` |
+
+Characterization found that locked Anthropic SDK **1.15.0** rejects the old
+`temperature=` keyword before HTTP. Passing the identical control through SDK
+`extra_body` restores dispatch while retaining its wire value. No dependency
+or version changed. Older allowed SDK versions have not been exercised here.
+The loopback image payload checks serialization, not live vendor image validity.
+Empty assistant content is retained; live vendor/model acceptance is unverified.
+
+### Boundary verification and coordination gap
+
+Provider tested base commit: `1b1ff5e930fe66c3165134bc2cae0e638f30ae6e`
+plus this uncommitted correction. The local HTTP suite exercises the Python
+client implementation against scripted responses, reusing existing HTTP and
+recovery fixtures. These are local executable specifications, not a shared
+Anthropic-provider or downstream-consumer contract. No external contract
+format, protocol version or consumer repository was changed.
+
+**PY-ANTHROPIC-HISTORY-PAIRED-VERIFICATION (open):** paired consumer and provider
+verification against the same versioned executable contract set is unavailable.
+Consumer tested commit, command and result: **unavailable, not run**. Live
+Anthropic provider tested revision, verification command and result:
+**unavailable, not run**. The local `anthropic-history-v1` hash identifies the
+cases for coordination; it does not establish cross-repository compatibility.
+Any required counterpart work needs separate authorization in its repository.
+Keep the publication hold until all six ports meet owner scope and required
+paired verification is available. No sibling repository or Git ref was changed.
+
+### Current correction verification
+
+All tool/test commands below run through `foundry capture --log-dir .foundry/logs --`.
+The behavioral proof first rejected missing full-history bytes (exit 1), then
+passed with the source correction (exit 0), through actual HTTP after 503.
+The proof records the actual exit codes and existing logs; it is local evidence.
+
+| Command | Result |
+| --- | --- |
+| `uv run pytest src/mojentic/llm/gateways/anthropic_history_spec.py --no-cov` | Exit 0; 11 passed on final source (initial hardest probe: exit 1, missing assistant history) |
+| `uv run pytest src/mojentic/llm/gateways/anthropic_history_spec.py src/mojentic/llm/gateways/cloud_recovery_spec.py --no-cov` | Exit 0; 120 passed |
+| `uv run flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics` | Exit 0 |
+| `uv run pytest` | Exit 0; 1,387 passed, 85% configured coverage |
+| `uv run bandit -c .bandit -r src` | Exit 0; zero issues |
+| `uv run pip-audit` | Exit 0; no known vulnerabilities |
+| `uv run flake8 src` | Exit 0 |
+| `uv run ruff check src` | Exit 0; zero findings after correcting fixture import style |
+| `uv run ruff format src` | Exit 0; unrelated formatter edit restored; correction files retain formatting |
+| `uv run pytest --cov` | Exit 0; 1,387 passed, 86% coverage; no repository coverage minimum configured |
+| `uv run mkdocs build` | Exit 0; rerun after final documentation edits |
+| `uv export --format requirements-txt --no-emit-project` piped to `uvx pip-audit -r /dev/stdin --disable-pip` under `bash -o pipefail` | Exit 0; no known vulnerabilities |
+| `uv pip list --outdated` | Exit 0; available updates reported; no dependencies changed |
+
+The root `.hone-gates.json` is the only discovered gate file. All four gates,
+including both advisory gates, passed. The final behavioral proof JSON has the
+required string/object/integer fields, rejecting exit 1 and corrected exit 0;
+its two existing logs were inspected against the failing/passing test summaries.
+The final probe passes all 11 history cases. No advisory suppression was added.
+Changes remain in this worktree for Foundry; no commit, push, merge, rebase,
+tag, publication, dependency change, version bump or Git ref update occurred.

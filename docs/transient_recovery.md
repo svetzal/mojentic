@@ -164,7 +164,7 @@ caller-owned sensitive data.
 | OpenAI ordinary / structured / tool-capable streaming | Opt-in owned HTTP; model controls adapted before immutable encoding | Unsupported / unsupported / unknown / unsupported |
 | oMLX / OpenAI structured streaming | Unsupported; rejected before dispatch | No recovery claim |
 | OpenAI raw stream events | Existing single-turn API; recovery policy is ignored | Recovery configuration does not enable retries |
-| Anthropic ordinary completion | Opt-in owned HTTP; existing system/user message selection retained | Unsupported / unsupported / unknown / unsupported |
+| Anthropic ordinary completion | Opt-in owned HTTP; ordered user/assistant history; system instructions extracted separately | Unsupported / unsupported / unknown / unsupported |
 | Anthropic structured / tools / streaming | Unsupported; schema/tool recovery requests fail before dispatch, no streaming entrypoint | No new provider capability |
 | Embeddings and realtime voice | Outside completion recovery scope | No recovery claim |
 
@@ -407,12 +407,24 @@ single-turn compatibility behavior and ignore the recovery policy.
 
 `AnthropicGateway(api_key=..., recovery_policy=...)` supports ordinary
 `complete` / `complete_with_recovery`, `LLMBroker.generate` / `generate_response`,
-and `ChatSession.send`. Its existing system/user selection and first text-block
-mapping are retained. It has no streaming implementation. Nonempty tools or an
-`object_model`, or a configured JSON output format, produce a pre-dispatch `RecoveryError` whose private cause is
+and `ChatSession.send`. Both SDK and recovery completions retain user and
+assistant history in its original order, including empty assistant content. System messages are joined
+with spaces into the separate `system` field; user images keep their existing
+serialization. First text-block response mapping is retained. A second
+`ChatSession.send` includes the first assistant answer, and recovery retries
+freeze and resend the entire history without rebuilding it. It has no streaming
+implementation. Nonempty tools or an `object_model`, or a configured JSON output
+format, produce a pre-dispatch `RecoveryError` whose private cause is
 `NotImplementedError`; `recovery_capabilities()` reports structured and streaming
 recovery as false. This increment adds no Anthropic tool execution or structured
-output capability.
+output capability. The SDK path sends the existing temperature value through
+`extra_body` for compatibility with locked Anthropic SDK 1.15.0.
+
+The local `anthropic-history-v1` specifications in
+`src/mojentic/llm/gateways/anthropic_history_spec.py` exercise both paths against
+loopback HTTP. They do not verify live vendor acceptance or a shared contract
+with a downstream consumer; see the partial `CONFORMANCE-3.0.0.md` decision map
+in the repository root.
 
 Recovery bypasses both SDKs' HTTP transports. SDK transport customizations do
 not configure the owned recovery connection. It freezes literal UTF-8 bytes once,

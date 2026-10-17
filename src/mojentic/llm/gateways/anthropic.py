@@ -72,11 +72,13 @@ class AnthropicGateway(LLMGateway):
             )
         messages = args["messages"]
         system = [m for m in messages if m.role == MessageRole.System]
-        users = [m for m in messages if m.role == MessageRole.User]
+        history = [
+            m for m in messages if m.role in {MessageRole.User, MessageRole.Assistant}
+        ]
         payload = {
             "model": args["model"],
             "system": " ".join(m.content for m in system) if system else None,
-            "messages": adapt_messages_to_anthropic(users),
+            "messages": adapt_messages_to_anthropic(history),
             "temperature": config.temperature
             if config
             else args.get("temperature", 1.0),
@@ -152,19 +154,22 @@ class AnthropicGateway(LLMGateway):
             max_tokens = args.get("max_tokens", args.get("num_predict", 2000))
 
         system_messages = [m for m in messages if m.role == MessageRole.System]
-        user_messages = [m for m in messages if m.role == MessageRole.User]
+        history = [
+            m for m in messages if m.role in {MessageRole.User, MessageRole.Assistant}
+        ]
 
         anthropic_args = {
             "model": args["model"],
             "system": " ".join([m.content for m in system_messages])
             if system_messages
             else None,
-            "messages": adapt_messages_to_anthropic(user_messages),
+            "messages": adapt_messages_to_anthropic(history),
         }
 
         response = self.client.messages.create(
             **anthropic_args,
-            temperature=temperature,
+            # SDK 1.15 removed the keyword; retain the existing wire control.
+            extra_body={"temperature": temperature},
             max_tokens=max_tokens,
             # thinking={
             #     "type": "enabled",

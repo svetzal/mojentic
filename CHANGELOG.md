@@ -31,6 +31,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Recovered responses and recovery errors carry validated provider metadata (provider request IDs and provider error codes) where the provider supplies them.
 - Opt-in ordinary completion recovery for the Anthropic gateway. Structured output, tools and streaming remain unsupported and are refused before dispatch.
 
+### Fixed
+
+- Anthropic ordinary completions now preserve user and assistant history in order,
+  including empty assistant content, through the SDK and opt-in recovery paths.
+  Two-turn chat sessions send the first assistant answer with the second query;
+  recovery resends the same full-history request bytes. System extraction, image
+  serialization and completion controls retain their existing behavior.
+- Send the existing Anthropic temperature control through SDK `extra_body` so
+  locked SDK 1.15.0 reaches HTTP without rejecting an unsupported keyword.
+
 ### Security
 
 - Fixed FileManager sandbox containment to reject sibling directories whose names share the sandbox path prefix. Base and candidate paths are normalized before component-wise comparison.
