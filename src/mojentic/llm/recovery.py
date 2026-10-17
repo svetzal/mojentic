@@ -307,17 +307,43 @@ class RecoveryPolicy(BaseModel):
         return max(minimum, jittered) if minimum <= self.delay_ceiling else None
 
 
+CapabilitySupport = Literal["supported", "unsupported", "unknown"]
+CapabilityName = Literal[
+    "local_cancellation",
+    "remote_cancellation",
+    "request_status",
+    "idempotency",
+    "inference_termination",
+]
+
+
+class CapabilityEvidence(SafeModel):
+    """Documentation inspected for one facility on an exact completion endpoint."""
+
+    endpoint: str
+    source: str
+    inspected_on: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
+    basis: str
+
+
 class Capabilities(SafeModel):
-    """Only facilities implemented and evidenced by this adapter."""
+    """Operation support and documented endpoint facilities.
+
+    ``inference_termination`` means termination of this exact attempt, never a
+    model-level observation. Missing evidence on older serialized values is
+    accepted for migration, but does not establish documented support.
+    """
 
     ordinary_recovery: bool = True
     structured_recovery: bool = True
     streaming_recovery: bool = False
-    remote_cancellation: Literal["unsupported"] = "unsupported"
-    request_status: Literal["unsupported"] = "unsupported"
+    local_cancellation: CapabilitySupport = "unknown"
+    remote_cancellation: CapabilitySupport = "unsupported"
+    request_status: CapabilitySupport = "unsupported"
     inference_termination: Literal["unknown"] = "unknown"
-    idempotency: Literal["unsupported"] = "unsupported"
+    idempotency: CapabilitySupport = "unsupported"
     exact_wire_capture: bool = True
+    evidence: dict[CapabilityName, CapabilityEvidence] = Field(default_factory=dict)
 
 
 class _Attempt(BaseModel):

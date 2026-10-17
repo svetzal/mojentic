@@ -153,6 +153,33 @@ caller-owned sensitive data.
 
 ## Capability boundaries
 
+`gateway.recovery_capabilities()` exposes five documented endpoint facilities.
+The October 12 rule uses `supported` only for an explicitly documented facility,
+`unsupported` when the endpoint reference describes no such facility, and
+`unknown` for absent or ambiguous documentation. Inspection date: **2026-10-17**.
+
+| Adapter / inspected completion endpoint | Local cancellation | Remote cancellation | Request status | Idempotency | Exact-attempt termination |
+| --- | --- | --- | --- | --- | --- |
+| [Ollama: POST /api/chat](https://docs.ollama.com/api/chat) | unknown | unsupported | unsupported | unsupported | unknown |
+| [oMLX: POST /v1/chat/completions](https://github.com/jundot/omlx/blob/main/README.md#api-compatibility) | unknown | unsupported | unsupported | unsupported | unknown |
+| [OpenAI: POST /v1/chat/completions](https://developers.openai.com/api/reference/resources/chat) | unknown | unsupported | unsupported | unsupported | unknown |
+| [Anthropic: POST /v1/messages](https://platform.claude.com/docs/en/api/messages/create) | unknown | unsupported | unsupported | unsupported | unknown |
+
+Each returned value has `evidence[name]` containing `endpoint`, `source`,
+`inspected_on` and `basis`. The local cancellation documentation is silent:
+`RecoveryCall.cancel()` still cancels local work, but implementation behavior
+alone does not meet the amendment's documentation requirement for `supported`.
+The inspected endpoint references describe no remote cancel, in-flight status
+lookup or inference deduplication facility. OpenAI stored completions are
+completed output, and Responses cancellation and Batch APIs are separate
+endpoints. Model unload and aggregate activity are not exact-attempt evidence.
+No local connection closure proves remote termination. These documentation
+decisions do not change retry admission or any completion operation support.
+Custom endpoint deployments have not been independently inspected; these
+reports describe the documented provider endpoint, not proxy extensions.
+
+The existing operation support remains:
+
 | Adapter / operation | Recovery in this increment | Remote cancellation / status / termination / idempotency |
 | --- | --- | --- |
 | Ollama ordinary and structured completion | Opt-in, loopback tested | Unsupported / unsupported / unknown / unsupported |
@@ -176,6 +203,28 @@ parity, live inference, and experiment efficacy remain unverified and pending.
 See the repository's `RECOVERY-CONFORMANCE.md` for actual assertion mappings.
 
 ## Migrating from the preserved first recovery increment
+
+Capability attribute access and all previous serialized fields retain their
+values. `inference_termination` remains the field name for exact-attempt
+termination. `model_dump()` and JSON now add `local_cancellation` and `evidence`.
+Update strict dictionary snapshots and consumers that forbid unknown keys.
+To send the old representation to a strict older reader, explicitly project it:
+
+```python
+capabilities = gateway.recovery_capabilities()
+legacy = capabilities.model_dump(exclude={"local_cancellation", "evidence"})
+local_evidence = capabilities.evidence["local_cancellation"]
+print(capabilities.local_cancellation, local_evidence.source)
+```
+
+New readers accept old payloads with the two additions omitted; the defaults
+are local cancellation `unknown` and empty evidence. Missing evidence does not
+establish documented support. Facility fields use the three-value vocabulary;
+exact-attempt termination still accepts only `unknown`. The local executable
+contract `recovery-capabilities-v1` verifies old field projection, optional new
+fields, new Python/JSON round trips, invalid-value rejection and each facility
+through every gateway. Paired downstream verification remains open; this
+migration is not a claim that an older strict reader accepts new payloads.
 
 The opt-in APIs and immutable payload policy are retained. Consumers of
 `provider_request_id` now receive exact validated provider IDs when supported.

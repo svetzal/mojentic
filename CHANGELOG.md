@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking changes and migration
 
+- Completion `recovery_capabilities()` now includes `local_cancellation` and
+  endpoint-specific `evidence` (source, inspection date and basis) for all five
+  recovery facilities across Ollama, oMLX, OpenAI and Anthropic. Update strict
+  serialized-dictionary consumers or project out the two new fields for older
+  readers. Existing fields and operation support retain their values. Local
+  cancellation is `unknown` under the documentation rule despite implemented
+  local cancellation; exact-attempt termination remains `unknown`. See the
+  recovery guide for the inspected endpoint table and migration example.
+  Local `recovery-capabilities-v1` verification does not establish paired
+  consumer compatibility; the coordinated publication hold remains.
 - Recovery hooks that finish without `"allow"` or `"reject"` now stop with
   `admission_undecided`, rather than `admission_rejected`. Handle the new
   `StreamOutcome.ADMISSION_UNDECIDED` in exhaustive stream handlers and

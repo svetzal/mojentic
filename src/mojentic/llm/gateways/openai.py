@@ -25,6 +25,7 @@ from mojentic.llm.gateways.ollama import StreamingResponse
 from mojentic.llm.gateways.openai_messages_adapter import adapt_messages_to_openai
 from mojentic.llm.gateways.openai_model_registry import ModelType, get_model_registry
 from mojentic.llm.gateways.openai_stream_events import parse_openai_stream
+from mojentic.llm.gateways.recovery_capabilities import completion_capabilities
 from mojentic.llm.gateways.stream_events import (
     StreamError,
     StreamErrorReason,
@@ -150,7 +151,7 @@ class OpenAIGateway(LLMGateway):
 
     def recovery_capabilities(self) -> Capabilities:
         """Report completion recovery; remote inference termination remains unknown."""
-        return Capabilities(streaming_recovery=True)
+        return completion_capabilities("openai")
 
     def _validate_recovery_args(self, args: dict, streaming: bool) -> None:
         model = args["model"]

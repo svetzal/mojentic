@@ -8,6 +8,7 @@ from mojentic.llm.gateways import cloud_recovery
 from mojentic.llm.gateways.anthropic_messages_adapter import adapt_messages_to_anthropic
 from mojentic.llm.gateways.llm_gateway import LLMGateway
 from mojentic.llm.gateways.models import LLMGatewayResponse, LLMToolCall, MessageRole
+from mojentic.llm.gateways.recovery_capabilities import completion_capabilities
 from mojentic.llm.recovery import Capabilities, RecoveryCall, RecoveryPolicy
 
 logger = structlog.get_logger()
@@ -58,7 +59,7 @@ class AnthropicGateway(LLMGateway):
 
     def recovery_capabilities(self) -> Capabilities:
         """Report ordinary recovery only; structured output and tools remain unsupported."""
-        return Capabilities(structured_recovery=False, streaming_recovery=False)
+        return completion_capabilities("anthropic")
 
     def _recovery_body(self, args: dict, streaming: bool) -> bytes:
         if streaming or args.get("object_model") is not None or args.get("tools"):

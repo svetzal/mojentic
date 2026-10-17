@@ -23,6 +23,7 @@ from mojentic.llm.gateways.omlx_protocol import (
 )
 from mojentic.llm.gateways.omlx_stream import drop_keepalive_frames, omlx_stream_chunks
 from mojentic.llm.gateways.openai_stream_events import parse_openai_stream
+from mojentic.llm.gateways.recovery_capabilities import completion_capabilities
 from mojentic.llm.gateways.stream_events import (
     StreamError,
     StreamErrorReason,
@@ -218,7 +219,7 @@ class OMLXGateway(LLMGateway):
 
     def recovery_capabilities(self) -> Capabilities:
         """Report supported request recovery and unsupported remote facilities."""
-        return Capabilities(streaming_recovery=True)
+        return completion_capabilities("omlx")
 
     def _recovery_body(self, args: dict, streaming: bool) -> bytes:
         config = args.get("config") or _config_from_arguments(

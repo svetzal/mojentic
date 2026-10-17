@@ -928,7 +928,9 @@ class DescribeRecoveryBoundaries:
         assert len(report["history"]) == 1
         assert report["history"][0]["http_status"] == 503
         assert report["outcome"] == "succeeded"
-        assert gateway.recovery_capabilities().model_dump() == {
+        assert gateway.recovery_capabilities().model_dump(
+            exclude={"local_cancellation", "evidence"}
+        ) == {
             "ordinary_recovery": True,
             "structured_recovery": True,
             "streaming_recovery": True,

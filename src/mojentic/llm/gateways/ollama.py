@@ -17,6 +17,7 @@ from mojentic.llm.gateways.ollama_stream_events import (
     ollama_usage,
     parse_ollama_stream,
 )
+from mojentic.llm.gateways.recovery_capabilities import completion_capabilities
 from mojentic.llm.gateways.stream_events import (
     StreamError,
     StreamErrorReason,
@@ -254,7 +255,7 @@ class OllamaGateway(LLMGateway):
 
     def recovery_capabilities(self) -> Capabilities:
         """Report recovery support without implying remote cancellation or idempotency."""
-        return Capabilities(streaming_recovery=True)
+        return completion_capabilities("ollama")
 
     async def complete_with_recovery(
         self, call: RecoveryCall | None = None, **args

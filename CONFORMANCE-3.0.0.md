@@ -4,6 +4,124 @@ This is a partial decision map for the owner scope in
 `mojentic-unify/RELEASE-3.0.0.md`. It does not declare Python or the
 coordinated release ready. Versions and publication remain on hold.
 
+## October 12 Capabilities decision
+
+This correction implements only the Capabilities decision in part 1 of the
+owner scope. The Foundry initiative brief was read and its SHA-256 verified as
+`ea6a0efa56bfb3cd74b5ce728f80cc33c6fbd853114bec94b8aabe79f5d28e6e`.
+The binding root amendment was inspected at
+`mojentic-unify/TRANSIENT-RECOVERY-2026-10.md`, October 12, Capabilities;
+the older local October 9 copy does not replace that decision.
+
+### Characterized representation and migration
+
+Before the source change, inspection of `Capabilities`, all four public
+`recovery_capabilities()` methods, the exact dictionary in
+`ollama_recovery_spec.py::should_expose_success_history_and_truthful_capabilities`,
+and `cloud_recovery_spec.py::DescribeAnthropicCapabilityBoundary` established:
+eight serialized fields, string-valued remote/status/idempotency `unsupported`,
+termination `unknown`, and boolean operation/capture indicators. Anthropic
+supported only ordinary recovery. The initial public Anthropic probe printed
+that original representation and rejected missing `local_cancellation`.
+
+Existing attributes, serialized values, operation support and capture flags
+are preserved. Serialization adds `local_cancellation` and `evidence`;
+strict older readers must receive a projection excluding those fields.
+New readers accept legacy payloads without them (unknown local cancellation,
+empty evidence). No evidence on an old payload proves documented support.
+The facility vocabulary permits supported/unsupported/unknown, while
+`inference_termination` still accepts only unknown. The original Ollama exact
+dictionary assertion now checks the explicit legacy projection; the new
+contract checks each addition and full Python/JSON round trips.
+Anthropic's ordinary-only assertions and pre-dispatch rejection checks remain
+unchanged. No admission, completion, reasoning or metadata behavior changed.
+
+### Verified documentation decisions
+
+All four actual completion endpoints were inspected on **2026-10-17**; their
+sources and the five-value matrix are in the recovery guide's
+[capability boundaries](docs/transient_recovery.md#capability-boundaries).
+Every returned value carries endpoint, source, date and basis, including
+unsupported and unknown values. Local cancellation is unknown because the
+endpoint documentation is silent, despite implemented `RecoveryCall`
+cancellation. Remote cancellation, in-flight status and idempotency are
+unsupported because the inspected endpoint references describe no such
+facilities. Exact-attempt termination remains unknown for every gateway.
+OpenAI Responses/Batch facilities, stored completed output, model unload,
+aggregate model activity and closing HTTP do not establish these facilities
+for an in-flight completion attempt.
+
+Unverified: documented local-cancellation guarantees, remote termination for
+any individual attempt, live vendor behavior, custom proxy extensions and
+other ports. Static reports describe the cited provider endpoint documentation;
+they are not active probes of caller-selected deployments.
+
+### Executable contract and coordination finding
+
+The existing pytest specification mechanism is reused for the versioned
+executable set **recovery-capabilities-v1**:
+[recovery_capabilities_spec.py](src/mojentic/llm/gateways/recovery_capabilities_spec.py).
+SHA-256: `c780d497a8202fa4fb509b543a02e39bb06f8ae923e4752c3b42ce6ac503252c`.
+It runs in the required `.hone-gates.json` pytest gate. There are no new test
+doubles or independent consumer mocks.
+
+| Decision | Named tests in `DescribeRecoveryCapabilitiesV1` (each gateway) |
+| --- | --- |
+| Local cancellation value and exact endpoint evidence | `should_report_local_cancellation_with_endpoint_evidence` |
+| Remote cancellation value and exact endpoint evidence | `should_report_remote_cancellation_with_endpoint_evidence` |
+| Request status value and exact endpoint evidence | `should_report_request_status_with_endpoint_evidence` |
+| Idempotency value and exact endpoint evidence | `should_report_idempotency_with_endpoint_evidence` |
+| Exact-attempt termination value and exact endpoint evidence | `should_report_exact_attempt_termination_with_endpoint_evidence` |
+| Legacy access, serialization and omitted additions | `should_preserve_legacy_access_and_serialized_values` |
+| New evidence and JSON serialization | `should_round_trip_new_evidence_in_python_and_json` |
+| Invalid vocabulary and unsupported termination claims | `should_reject_invalid_capability_values`, `should_reject_claims_of_exact_attempt_termination` |
+
+Provider tested commit: `af1de0c685632edca77bdc35285b6ff76a90b862` plus this
+uncommitted correction. Provider verification command:
+`uv run pytest src/mojentic/llm/gateways/recovery_capabilities_spec.py --no-cov`.
+This verifies the real Python capability entrypoints, without network mocks.
+Result: **exit 0, 53 passed**, including 20 separately named facility cases
+across four gateways. The combined capability, Ollama recovery and cloud
+recovery suite passed **248 tests**.
+
+**PY-CAPABILITIES-PAIRED-VERIFICATION (open):** downstream consumer repositories
+are not authorized in this task. Consumer tested commits, verification commands
+and results: **unavailable, not run**. They must verify this same executable
+contract version/hash against both supported legacy projections and new
+payloads before paired compatibility can be declared. Relay that work as a
+separate initiative assignment. Local provider verification alone does not
+complete cross-repository compatibility. Preserve the coordinated publication
+hold until all six ports satisfy owner scope and required paired verification
+is available. No sibling repository was modified.
+
+### Capability correction quality verification
+
+Commands run through `foundry capture --log-dir .foundry/logs --`, with a
+writable temporary uv cache and tool directory because the default home cache
+is read-only. The initial public-entrypoint behavioral probe failed with exit 1
+for the absent field and passed with exit 0 after the source correction.
+The proof JSON records both actual exit codes and logs.
+
+| Command | Result |
+| --- | --- |
+| `uv run flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics` | Exit 0; required lint gate |
+| `uv run pytest` | Exit 0; 1,440 passed; 85% configured coverage |
+| `uv run bandit -c .bandit -r src` | Exit 0; zero issues |
+| `uv run pip-audit` | Exit 0; no known vulnerabilities |
+| `uv run flake8 src` | Exit 0 |
+| `uv run ruff check src` | Exit 0; zero findings after sorting the new imports |
+| `uv run ruff format src` | Exit 0; unrelated formatter edit restored to keep scope |
+| `uv run pytest --cov` | Exit 0; 1,440 passed; 86% coverage; no repository minimum configured; capability decision module 100% |
+| `uv run mkdocs build` | Exit 0; rebuilt after recovery documentation updates |
+| `uv pip list --outdated` | Exit 0; available updates reported; no dependencies changed |
+| `uv export --format requirements-txt --no-emit-project` piped to `uvx pip-audit -r /dev/stdin --disable-pip` under `bash -o pipefail` | Exit 0; no known vulnerabilities (rerun with writable uv tool directory) |
+
+The root `.hone-gates.json` is the only discovered gate file. All four gates
+passed, including both advisory gates. No audit suppression was added. All
+changes remain uncommitted for Foundry; Git refs and package versions remain
+unchanged. The behavioral proof JSON was validated for field types, actual
+exit codes (1 then 0), existing logs and their failing/passing test summaries.
+
 ## Executable admission decisions
 
 The local executable set is **recovery-admission-v2** in
