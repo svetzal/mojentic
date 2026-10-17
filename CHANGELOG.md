@@ -17,6 +17,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   control verifies retained reasoning and exactly one tool execution.
   External counterpart verification remains unfinished; publication stays on hold.
 
+### Changed
+
+- Extend unchanged `request-fidelity-v1` loopback HTTP verification to every
+  shared case through `ChatSession.send_stream` and `LLMBroker.generate_stream_events`
+  with real Ollama, OpenAI and oMLX gateways. Regression assertions check exact
+  outbound controls and returned content, one successful terminal event, and
+  ordered session history after consumption. Runtime behavior is unchanged;
+  external counterpart verification and the publication hold remain open.
+
 ### Breaking changes and migration
 
 - Request fidelity (MODEL-METADATA section 3): `CompletionConfig.temperature`,

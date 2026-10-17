@@ -828,16 +828,16 @@ content/objects/events, including terminal completion and byte-identical retries
 
 | Binding decision | Executable verification |
 | --- | --- |
-| 3.2.1: omitted and null temperature/context/output controls stay absent; zero survives | `DescribeSharedRequestFidelity.should_execute_shared_cases`: all seven shared cases, all three streaming providers, ordinary/structured/legacy/events, with and without recovery |
+| 3.2.1: omitted and null temperature/context/output controls stay absent; zero survives | `DescribeSharedRequestFidelity.should_execute_shared_cases`: all seven shared cases, all three streaming providers, ordinary/structured/legacy/events, with and without recovery; `should_preserve_controls_through_broker_events` and `should_preserve_controls_and_history_through_session_stream` execute every case directly through both public streaming routes to HTTP |
 | 3.2.2: max_tokens is the only public output control; Ollama options.num_predict is its wire mapping | Same shared cases inspect exact parameter sets and values; `completion_config_spec.py::should_use_default_values` checks removed public field; examples and signatures remove the sentinel |
 | 3.2.3: no invented gateway or deprecated broker defaults | `DescribeMigrationFidelity.should_omit_controls_for_gateway_keywords_without_config` and `should_forward_only_explicit_deprecated_broker_keywords` |
-| 3.2.3: session budget stays local, unspecified tracing works | `DescribeRequestFidelity.should_omit_unset_session_controls_at_http_boundary`; `DescribeSharedRequestFidelity.should_preserve_controls_through_public_routes` uses a real tracer; existing `chat_session_spec.py::should_respect_context_capacity` and `should_maintain_newest_messages` preserve trimming |
-| 3.2.4: sampling field coverage | Shared `sampling` and `all` cases: top_p on all four providers; top_k on Ollama/oMLX/Anthropic, absent on OpenAI, matching read-only Elixir's supported fields |
+| 3.2.3: session budget stays local, unspecified tracing works | `DescribeRequestFidelity.should_omit_unset_session_controls_at_http_boundary`; `DescribeSharedRequestFidelity.should_preserve_controls_through_public_routes` uses a real tracer; `should_preserve_controls_and_history_through_session_stream` checks the distinct local budget, outbound history and ordered history after consumption; existing `chat_session_spec.py::should_respect_context_capacity` and `should_maintain_newest_messages` preserve trimming |
+| 3.2.4: sampling field coverage | Shared `sampling` and `all` cases: top_p on all four providers; top_k on Ollama/oMLX/Anthropic, absent on OpenAI, matching read-only Elixir's supported fields; both named public streaming tests inspect exact outbound parameter sets and values for Ollama/OpenAI/oMLX |
 | 3.2.4: fixed-temperature OpenAI adaptation only for explicit controls | `DescribeMigrationFidelity.should_adapt_only_explicit_temperature_to_registered_fixed_value`, including an only-allowed value other than 1.0 |
 | 3.2.4: unsupported effort warns and is dropped | `DescribeMigrationFidelity.should_warn_and_drop_effort_for_non_reasoning_model`; existing native reasoning preflight safeguards remain unchanged |
 | 3.3 / 3.5: explicit migration preserves supported former defaults | `DescribeMigrationFidelity.should_forward_only_explicit_deprecated_broker_keywords`: explicit 1.0/32768/16384; `DescribeAnthropicMigration.should_reproduce_supported_former_sdk_and_config_limits` covers its former 2000/16384 limits; CHANGELOG and broker guide describe provider defaults and cost/context consequences |
 | 3.4: Anthropic registry maximum or unknown-model 4096; explicit limit wins | `DescribeAnthropicFidelity.should_apply_only_required_fallback_and_explicit_controls`: known/unknown, all seven shared cases, SDK/recovery, gateway/broker/session and supported recovery structured route |
-| 3.4: oMLX has no required output-limit fallback | Shared unset/null cases, including both streaming APIs and structured completion |
+| 3.4: oMLX has no required output-limit fallback | Shared unset/null cases, including both streaming APIs and structured completion; both named public streaming tests verify absence at HTTP after broker/session forwarding |
 | 3.6: continuations/retries retain exact controls | `DescribeContinuationFidelity.should_keep_controls_and_tool_history_on_admitted_resend`: shared tool response, real session/broker, single tool execution, continuation result/history and byte-identical resend |
 
 ### Contract identity, provenance and counterpart gap
@@ -875,7 +875,7 @@ are covered by the full regression suite. The coordinated publication hold stays
 in effect until all six ports meet owner scope and required paired verification
 is available.
 
-### Verification results in this task worktree
+### Verification results before cycle 10
 
 - `uv run pytest --cov`: **2195 passed**, **87% total coverage**; no coverage
   fail-under threshold is configured in this repository.
@@ -898,3 +898,78 @@ because the default home cache is read-only in this sandbox. This changes neithe
 locked dependencies nor request behavior. Complete command logs and the validated
 rejecting/corrected proof are retained as Foundry execution evidence, not package
 assets. External counterpart results remain unverified as specified above.
+
+### Cycle 10: direct public streaming-route verification
+
+Tested Python source identity: base
+`4f8a8afbe3fc553bf54cd372f7a84d8c803baaf3` plus this uncommitted correction.
+The changed `src/mojentic/llm/gateways/request_fidelity_spec.py` has SHA-256
+`2fdf85d383efe7586c9a9c722828c2ca6af44db3322cb97c33e566bc96be2214`.
+The initiative brief was read and its recorded SHA-256
+`ea6a0efa56bfb3cd74b5ce728f80cc33c6fbd853114bec94b8aabe79f5d28e6e`
+verified. `request-fidelity-v1` retains SHA-256
+`6f02088311f50707b9c12154d888f844928c23d359043cb2e5d5654bf7e5eaea`.
+
+The two new named tests in the section-3 map execute all seven existing cases
+through `LLMBroker.generate_stream_events` and `ChatSession.send_stream`, with
+real Ollama, OpenAI and oMLX gateways against loopback HTTP: 42 new checks.
+They inspect actual outbound parameter presence, absence and values, and assert
+exact returned content. The event route asserts exactly one terminal event,
+successful completion with finish reason `stop`, and terminal ordering. The
+session route checks outbound history and the ordered system/user/assistant
+history after full consumption, retaining an earlier conversation turn. Its
+4096-token local budget is distinct from the contract's explicit 8192 context.
+
+Before extending the matrix or documentation, a focused real HTTP event-route
+probe rejected a temporary source mutation that discarded temperature zero.
+Restoring forwarding passed the same probe. The final matrix's six
+zero-temperature cases were then run with temperature temporarily discarded in
+both public routes: **6 failed**, each on missing HTTP temperature, exit **1**.
+Restoring both production files passed the identical command, **6 passed**,
+exit **0**:
+
+```bash
+uv run pytest src/mojentic/llm/gateways/request_fidelity_spec.py -k '(through_broker_events or through_session_stream) and zero-temperature'
+```
+
+These mutations were removed. Runtime code, recovery safeguards, shared
+responses and contracts are unchanged. The Unreleased changelog adds only the
+new regression coverage; it does not claim a runtime fix. Foundry retains the
+validated behavioral proof and complete command logs as execution evidence.
+
+Local Python consumer execution and real gateway provider verification run
+together using the same contract with
+`uv run pytest src/mojentic/llm/gateways/request_fidelity_spec.py`:
+**433 passed**, exit **0**. The normal pytest gate includes this verification.
+The unchanged Elixir contract provenance is
+`ff479d92067b6ffbd99d3cd5533f96e13ebc09b0`; its counterpart command
+`mix test test/mojentic/llm/immutable_request_wire_test.exs` was **not run**.
+Elixir paired verification at a reported source identity remains **open** for
+initiative coordination. Loopback verification does not establish live provider
+compatibility. The coordinated publication hold remains until all six ports
+satisfy the owner scope and required paired verification is available.
+
+Cycle 10 command results (all exit **0** unless noted):
+
+| Command | Result |
+| --- | --- |
+| `uv run flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics` | Required lint gate: zero errors |
+| `uv run pytest` | Required test gate: 2,237 passed, 86% source coverage |
+| `uv run pytest --cov` | 2,237 passed, 87% reported coverage; no repository fail-under threshold configured |
+| `uv run bandit -c .bandit -r src` | Security scan gate: no issues |
+| `uv run pip-audit` | Dependency audit gate: no known vulnerabilities |
+| `uv run flake8 src` | Full lint: zero findings |
+| `uv run --with ruff ruff check src` | Zero findings |
+| `uv run --with ruff ruff format src/mojentic/llm/gateways/request_fidelity_spec.py` | Changed Python source formatted |
+| `uv run --with ruff ruff format --check src/mojentic/llm/gateways/request_fidelity_spec.py` | Format check passed |
+| `uv export --format requirements-txt --no-emit-project \| uvx pip-audit -r /dev/stdin --disable-pip` under `bash -o pipefail` | Locked dependencies: no known vulnerabilities |
+| `uv pip list --outdated` | Inventory reviewed; audits found no required advisory upgrades |
+| `uv run mkdocs build` | Documentation build passed |
+| `git diff --check` | Clean |
+
+The export audit initially exited 2 because uvx's default tool directory is
+read-only. Rerunning with a writable `UV_TOOL_DIR` passed. uv caches, tool and
+XDG cache directories were redirected under `/tmp`; dependency files are
+unchanged. Formatting is scoped to the changed Python file, preserving the
+previously documented unrelated formatting gap. No Git finalization, version
+change, metadata/timing expansion or sibling repository modification was made.

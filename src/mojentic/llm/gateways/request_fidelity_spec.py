@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from mojentic.llm.chat_session import ChatSession
 from mojentic.llm.completion_config import CompletionConfig
 from mojentic.llm.gateways.anthropic import AnthropicGateway
-from mojentic.llm.gateways.models import LLMMessage
+from mojentic.llm.gateways.models import LLMMessage, MessageRole
 from mojentic.llm.gateways.ollama import OllamaGateway
 from mojentic.llm.gateways.ollama_recovery_spec import scripted_http
 from mojentic.llm.gateways.omlx import OMLXGateway
@@ -21,6 +21,7 @@ from mojentic.llm.gateways.openai_model_registry import (
     ModelType,
     OpenAIModelRegistry,
 )
+from mojentic.llm.gateways.stream_events import StreamCompleted, StreamContent
 from mojentic.llm.llm_broker import LLMBroker
 from mojentic.llm.recovery import RecoveryPolicy
 from mojentic.llm.tools.llm_tool import LLMTool
@@ -113,6 +114,76 @@ class Answer(BaseModel):
 
 
 class DescribeSharedRequestFidelity:
+    @pytest.mark.parametrize("case", CONTRACT["cases"], ids=lambda case: case["name"])
+    @pytest.mark.parametrize("provider", ["ollama", "openai", "omlx"])
+    def should_preserve_controls_through_broker_events(self, case, provider):
+        with scripted_http([(200, {}, reply(provider, "events"))]) as (host, requests):
+            broker = LLMBroker(
+                model="gpt-4o",
+                gateway=gateway_for(provider, host),
+                tracer=TracerSystem(),
+            )
+
+            events = list(
+                broker.generate_stream_events(
+                    [LLMMessage(content="hello")],
+                    config=CompletionConfig(**case["config"]),
+                )
+            )
+
+        assert (
+            "".join(event.text for event in events if isinstance(event, StreamContent))
+            == "answer"
+        )
+        assert [
+            event.type for event in events if not isinstance(event, StreamContent)
+        ] == ["completed"]
+        assert isinstance(events[-1], StreamCompleted)
+        assert events[-1].metadata.finish_reason == "stop"
+        assert len(requests) == 1
+        assert_controls(json.loads(requests[0][1]), provider, case["config"])
+
+    @pytest.mark.parametrize("case", CONTRACT["cases"], ids=lambda case: case["name"])
+    @pytest.mark.parametrize("provider", ["ollama", "openai", "omlx"])
+    def should_preserve_controls_and_history_through_session_stream(
+        self, case, provider
+    ):
+        with scripted_http([(200, {}, reply(provider, "legacy"))]) as (host, requests):
+            broker = LLMBroker(
+                model="gpt-4o",
+                gateway=gateway_for(provider, host),
+                tracer=TracerSystem(),
+            )
+            session = ChatSession(
+                broker, config=CompletionConfig(**case["config"]), max_context=4096
+            )
+            session.insert_message(
+                LLMMessage(role=MessageRole.User, content="previous question")
+            )
+            session.insert_message(
+                LLMMessage(role=MessageRole.Assistant, content="previous answer")
+            )
+
+            content = "".join(session.send_stream("hello"))
+
+        assert content == "answer"
+        assert len(requests) == 1
+        payload = json.loads(requests[0][1])
+        assert_controls(payload, provider, case["config"])
+        expected_history = [
+            ("system", session.system_prompt),
+            ("user", "previous question"),
+            ("assistant", "previous answer"),
+            ("user", "hello"),
+        ]
+        assert [
+            (message["role"], message["content"]) for message in payload["messages"]
+        ] == expected_history
+        assert [
+            (message.role.value, message.content) for message in session.messages
+        ] == (expected_history + [("assistant", "answer")])
+        assert session.max_context == 4096
+
     @pytest.mark.parametrize("case", CONTRACT["cases"], ids=lambda case: case["name"])
     @pytest.mark.parametrize("provider", ["ollama", "openai", "omlx"])
     @pytest.mark.parametrize("operation", ["complete", "object", "legacy", "events"])
