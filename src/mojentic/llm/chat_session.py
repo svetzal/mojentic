@@ -5,6 +5,7 @@ from mojentic.llm.completion_config import CompletionConfig
 from mojentic.llm.gateways.models import LLMMessage, MessageRole
 from mojentic.llm.gateways.tokenizer_gateway import TokenizerGateway
 from mojentic.llm.llm_broker import LLMBroker
+from mojentic.llm.stream_timing import ClientTiming
 from mojentic.llm.tools.llm_tool import LLMTool
 
 
@@ -94,6 +95,11 @@ class ChatSession:
         self._ensure_all_messages_are_sized()
         self.insert_message(LLMMessage(role=MessageRole.Assistant, content=response))
         return response
+
+    @property
+    def last_stream_metrics(self) -> ClientTiming | None:
+        """Timing evidence for the latest completion in this session's broker."""
+        return self.llm.last_stream_metrics
 
     def send_stream(self, query) -> Iterator[str]:
         """

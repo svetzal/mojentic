@@ -1026,9 +1026,13 @@ class DescribeOMLXGatewayOverTheRealHttpLayer:
         assert events == [
             StreamError(
                 reason=StreamErrorReason.PROVIDER_ERROR,
+                metadata=events[0].metadata,
                 detail={
                     "status_code": 404,
                     "error": load_fixture("error_model_not_found.json")["error"],
                 },
             )
         ]
+        assert events[0].metadata.request_duration_ms >= 0
+        assert events[0].metadata.time_to_first_token_ms is None
+        assert events[0].metadata.first_token_kind is None

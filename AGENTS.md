@@ -10,13 +10,21 @@ The initiative brief records this authorization; the former 2.1.0 release
 preparation authorization is obsolete.
 
 The owner-authorized initiative covers the complete scope above. This Foundry
-correction implements part 2: native reasoning controls, explicit profiles and
-opt-in native assistant-history retention, using Rust as the read-only reference.
-Metadata/request-fidelity work and other initiative work remain separate.
-Record verified decisions in CONFORMANCE-3.0.0.md and explicitly identify
-unverified decisions. Preserve the coordinated publication hold until all six
-ports satisfy the owner scope and paired consumer/provider contract verification
-is available where required.
+correction implements MODEL-METADATA-2026-10.md section 2: client-measured
+first-token timing on existing supported streaming routes. Consult
+`ts-stream-first-token-v1` read-only as the behavioral reference; do not require
+another port's executable snapshot. Record verified and unverified decisions
+in CONFORMANCE-3.0.0.md.
+
+The October 17 library self-validation policy supersedes older requirements
+here and in historical conformance evidence for external/counterpart checks of
+an unreleased library. Validate through public APIs, binding contracts and
+fixtures, production gateways against controlled HTTP, and a fresh installation
+of the packaged artifact. Dependents verify when adopting a released version.
+Changed boundaries between running applications/services still require both
+sides to verify the same versioned executable contracts in separately authorized
+repositories. Preserve the coordinated publication hold until all six ports
+satisfy owner scope and the owner authorizes release.
 
 Foundry owns Git finalization for this task: leave changes in this worktree;
 do not commit, push, merge, rebase, tag, publish, or bump versions. Run all

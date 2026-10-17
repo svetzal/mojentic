@@ -13,6 +13,7 @@ from openai import (
     APIConnectionError,
     APIStatusError,
     BadRequestError,
+    DefaultHttpxClient,
     OpenAI,
     pydantic_function_tool,
 )
@@ -39,6 +40,8 @@ from mojentic.llm.recovery_stream import RecoveryStreamEvent
 
 if TYPE_CHECKING:
     from mojentic.llm.completion_config import CompletionConfig, ResponseFormat
+
+from mojentic.llm.stream_timing import dispatch_stream, observe_stream, timed_stream
 
 logger = structlog.get_logger()
 
@@ -127,7 +130,11 @@ class OpenAIGateway(LLMGateway):
             api_key = os.getenv("OPENAI_API_KEY")
         if base_url is None:
             base_url = os.getenv("OPENAI_API_ENDPOINT")
-        self.client = OpenAI(api_key=api_key, base_url=base_url)
+        self.client = OpenAI(
+            api_key=api_key,
+            base_url=base_url,
+            http_client=DefaultHttpxClient(event_hooks={"request": [dispatch_stream]}),
+        )
         self.recovery_policy = (
             RecoveryPolicy.model_validate(recovery_policy)
             if recovery_policy is not None
@@ -683,6 +690,7 @@ class OpenAIGateway(LLMGateway):
             finish_reason=response.choices[0].finish_reason,
         )
 
+    @timed_stream
     def complete_stream(self, **kwargs) -> Iterator[StreamingResponse]:
         """
         Stream the LLM response from OpenAI service.
@@ -806,6 +814,7 @@ class OpenAIGateway(LLMGateway):
         tool_calls_accumulator: dict[int, dict] = {}
 
         for chunk in stream:
+            observe_stream(chunk.model_dump(exclude_none=True))
             if not chunk.choices:
                 continue
 
@@ -921,6 +930,7 @@ class OpenAIGateway(LLMGateway):
             openai_args["reasoning_effort"] = adapted_args["reasoning_effort"]
         return openai_args
 
+    @timed_stream
     def complete_stream_events(
         self, model: str, messages: list[LLMMessage], config: "CompletionConfig"
     ) -> Iterator[StreamEvent]:

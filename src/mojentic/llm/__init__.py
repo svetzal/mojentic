@@ -37,10 +37,12 @@ from .recovery_stream import (
     StreamOutcome as StreamOutcome,
 )
 from .registry.llm_registry import LLMRegistry  # noqa: F401
+from .stream_timing import ClientTiming
 
 # Preserve the existing wildcard surface while declaring the additive exports.
 __all__ = [
     "CaptureError",
+    "ClientTiming",
     "LengthTerminationError",
     "ModelContextWindow",
     "ReasoningEffort",

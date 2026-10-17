@@ -205,3 +205,10 @@ for bounded delays, cancellation, safe reports, and caller-owned wire capture.
 Anthropic supports opt-in ordinary completion recovery; structured output, streaming and tools remain unsupported.
 Cloud retries may proceed without an admission hook; local retries still require explicit admission.
 Raw stream-event APIs retain their existing single-request compatibility behavior.
+
+Supported streams report client-measured `time_to_first_token_ms`,
+`first_token_kind` and `request_duration_ms` independently of provider metrics.
+Read terminal event metadata/metrics, or `last_stream_metrics` after consuming a
+legacy gateway, broker or session text stream. Timing starts at HTTP dispatch,
+spans admitted retries, and resets for tool continuations. See
+[stream timing](docs/streaming.md#client-measured-timing).

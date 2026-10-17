@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Client-measured `time_to_first_token_ms`, `first_token_kind` and
+  `request_duration_ms` on supported stream terminal evidence. Legacy gateway,
+  broker and session text streams expose `last_stream_metrics` without adding
+  text chunks. Timing starts at actual HTTP dispatch after request capture,
+  excludes lazy construction, includes admitted retries, and resets on tool
+  continuations. Provider metrics remain separate and unchanged.
+- `py-stream-first-token-v1` public API loopback verification and a fresh-wheel
+  consumer check under the October 17 library self-validation policy. Older
+  external/counterpart checks of this unreleased library are superseded;
+  coordinated publication remains held until all ports are ready and the owner
+  authorizes release.
+
 - Provider context discovery: `get_model_context_window(model)` returns advertised
   metadata from configured oMLX/Ollama HTTP endpoints or exact OpenAI registry
   entries, with distinct transport, HTTP and malformed-response errors. Unsupported
@@ -16,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   precedence and advertised-window clamping without changing completion requests.
 - Reuse `context-window-v1` for real HTTP semantic/request verification and
   contract-derived doubles, including same-model completion request comparisons.
-  External paired verification remains unfinished; coordinated publication stays on hold.
+  Verified locally under the library self-validation policy; publication stays on hold.
 
 ### Fixed
 
@@ -26,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   verify the public recovery error and inspectable cause, unchanged caller
   messages, zero tool executions and a single request; a completed-response
   control verifies retained reasoning and exactly one tool execution.
-  External counterpart verification remains unfinished; publication stays on hold.
+  Library self-validation applies; publication stays on hold.
 
 ### Changed
 
@@ -35,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with real Ollama, OpenAI and oMLX gateways. Regression assertions check exact
   outbound controls and returned content, one successful terminal event, and
   ordered session history after consumption. Runtime behavior is unchanged;
-  external counterpart verification and the publication hold remain open.
+  the coordinated publication hold remains in place.
 
 ### Breaking changes and migration
 
@@ -55,7 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   4096 for unknown models; explicit limits win. oMLX omits unset output limits.
   See [request fidelity migration](docs/broker.md#request-fidelity-in-30).
   Shared-contract loopback verification does not establish external provider
-  compatibility; paired verification and the coordinated publication hold remain.
+  compatibility. Library self-validation applies; the publication hold remains.
 
 - Native reasoning now exposes `ReasoningEffort.Disabled`, `Enabled`, `Low`,
   `Medium`, `High` and `XHigh` (the corresponding lowercase strings remain valid).
@@ -87,8 +99,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `ValidationError`, `CaptureError` or `LengthTerminationError` through
   `RecoveryError.inspect_cause()`. Ordinary SDK behavior is preserved; tools and
   streaming remain separate work. `anthropic-structured-v1` verifies real HTTP
-  gateway and in-repository broker roles; external paired verification remains
-  unfinished and the coordinated publication hold remains.
+  gateway and in-repository broker roles under library self-validation;
+  the coordinated publication hold remains.
 - Invalid `RecoveryPolicy` construction and validation now raise
   `RecoveryPolicyError` with input-free formatting instead of Pydantic's
   `ValidationError`. Gateways validate supplied policies at construction;

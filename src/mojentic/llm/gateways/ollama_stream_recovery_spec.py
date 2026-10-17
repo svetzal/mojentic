@@ -8,6 +8,7 @@ from mojentic.llm.gateways.models import LLMMessage
 from mojentic.llm.gateways.ollama import OllamaGateway
 from mojentic.llm.gateways.ollama_recovery_spec import frame, scripted_http
 from mojentic.llm.recovery import RecoveryError, RecoveryPolicy
+from mojentic.llm.stream_timing import ClientTiming
 
 
 class DescribeOllamaStreamRecovery:
@@ -368,7 +369,9 @@ class DescribeStreamTelemetry:
         }
         assert events[1].metrics.provider_model == "reported-model"
         assert events[1].metrics.finish_reason == "length"
-        assert events[1].metrics.model_dump(exclude_none=True) == {
+        assert events[1].metrics.model_dump(
+            exclude_none=True, exclude=set(ClientTiming.model_fields)
+        ) == {
             "provider": "ollama",
             "prompt_eval_count": 12,
             "eval_count": 4,
@@ -443,14 +446,25 @@ class DescribeStreamTelemetry:
         assert response.model == "actual-model"
         assert response.finish_reason == "stop"
         assert response.usage == {"eval_count": 3}
-        assert response.metadata == {"load_duration": 8, "eval_duration": 50}
+        assert {
+            key: value
+            for key, value in response.metadata.items()
+            if key not in ClientTiming.model_fields
+        } == {"load_duration": 8, "eval_duration": 50}
+        assert response.metadata["first_token_kind"] == "content"
+        assert (
+            response.metadata["time_to_first_token_ms"]
+            <= response.metadata["request_duration_ms"]
+        )
         assert events[-1].report.progress.delivered_content == 2
         assert [event.frame_index for event in events if event.kind == "progress"] == [
             1,
             2,
         ]
         assert events[-2].metrics.finish_reason == "stop"
-        assert events[-2].metrics.model_dump(exclude_none=True) == {
+        assert events[-2].metrics.model_dump(
+            exclude_none=True, exclude=set(ClientTiming.model_fields)
+        ) == {
             "provider": "ollama",
             "eval_count": 3,
             "eval_duration": 50,

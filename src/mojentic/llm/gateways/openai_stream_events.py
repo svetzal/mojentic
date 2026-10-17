@@ -17,6 +17,7 @@ from mojentic.llm.gateways.stream_events import (
     StreamErrorReason,
     StreamEvent,
 )
+from mojentic.llm.stream_timing import observe_stream
 
 DONE_MARKER = "[DONE]"
 
@@ -75,6 +76,7 @@ def _done(evidence: CompletionMetadata) -> StreamEvent:
 def _parse_frame(data: str, evidence: CompletionMetadata) -> FrameResult:
     try:
         frame = json.loads(data)
+        observe_stream(frame)
     except json.JSONDecodeError:
         return [
             StreamError(reason=StreamErrorReason.INVALID_STREAM_EVENT, detail=data)

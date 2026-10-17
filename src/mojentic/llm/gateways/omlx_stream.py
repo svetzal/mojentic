@@ -16,6 +16,7 @@ import structlog
 from mojentic.llm.gateways.models import LLMToolCall
 from mojentic.llm.gateways.ollama import StreamingResponse
 from mojentic.llm.gateways.openai_stream_events import DONE_MARKER, sse_data
+from mojentic.llm.stream_timing import observe_stream
 
 logger = structlog.get_logger()
 
@@ -87,6 +88,7 @@ def omlx_stream_chunks(
         if data is None:
             continue
         frame = json.loads(data)
+        observe_stream(frame)
         if frame.get("error") is not None:
             if retain_reasoning:
                 raise ValueError(

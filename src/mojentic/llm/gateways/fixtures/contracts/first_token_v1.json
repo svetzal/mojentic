@@ -1,0 +1,120 @@
+{
+  "id": "py-stream-first-token-v1",
+  "binding": "MODEL-METADATA-2026-10.md section 2",
+  "reference": "ts-stream-first-token-v1 (read-only behavioral reference)",
+  "cases": [
+    {
+      "name": "thinking-success",
+      "kind": "thinking",
+      "openai": "data: {\"model\": \"keepalive\", \"choices\": []}\n\ndata: {\"choices\": [{\"index\": 0, \"delta\": {}}]}\n\ndata: {\"model\": \"gpt-4o\", \"choices\": [{\"index\": 0, \"delta\": {\"content\": \"answer\", \"reasoning_content\": \"plan\", \"tool_calls\": [{\"index\": 0, \"id\": \"call-1\", \"type\": \"function\", \"function\": {\"name\": \"count\", \"arguments\": \"{\\\"value\\\":\\\"next-π\\\"}\"}}]}}]}\n\ndata: {\"model\": \"gpt-4o\", \"choices\": [{\"index\": 0, \"delta\": {}, \"finish_reason\": \"stop\"}], \"usage\": {\"time_to_first_token\": 0.7}}\n\ndata: [DONE]\n\n",
+      "ollama": "{\"model\": \"gpt-4o\", \"message\": {\"role\": \"assistant\", \"content\": \"\"}, \"done\": false}\n{\"model\": \"gpt-4o\", \"message\": {\"role\": \"assistant\", \"content\": \"answer\", \"thinking\": \"plan\", \"tool_calls\": [{\"function\": {\"name\": \"count\", \"arguments\": {\"value\": \"next-π\"}}}]}, \"done\": false}\n{\"model\": \"gpt-4o\", \"message\": {\"role\": \"assistant\", \"content\": \"\"}, \"done\": true, \"done_reason\": \"stop\", \"eval_duration\": 123}\n",
+      "expected_kinds": {
+        "ollama": "thinking",
+        "openai": "thinking",
+        "omlx": "thinking"
+      }
+    },
+    {
+      "name": "thinking-failure",
+      "kind": "thinking",
+      "openai": "data: {\"model\": \"keepalive\", \"choices\": []}\n\ndata: {\"choices\": [{\"index\": 0, \"delta\": {}}]}\n\ndata: {\"model\": \"gpt-4o\", \"choices\": [{\"index\": 0, \"delta\": {\"content\": \"answer\", \"reasoning_content\": \"plan\", \"tool_calls\": [{\"index\": 0, \"id\": \"call-1\", \"type\": \"function\", \"function\": {\"name\": \"count\", \"arguments\": \"{\\\"value\\\":\\\"next-π\\\"}\"}}]}}]}\n\ndata: {\"error\": \"failed\"}\n\ndata: [DONE]\n\n",
+      "ollama": "{\"model\": \"gpt-4o\", \"message\": {\"role\": \"assistant\", \"content\": \"\"}, \"done\": false}\n{\"model\": \"gpt-4o\", \"message\": {\"role\": \"assistant\", \"content\": \"answer\", \"thinking\": \"plan\", \"tool_calls\": [{\"function\": {\"name\": \"count\", \"arguments\": {\"value\": \"next-π\"}}}]}, \"done\": false}\n{\"error\": \"failed\"}\n",
+      "expected_kinds": {
+        "ollama": "thinking",
+        "openai": "thinking",
+        "omlx": "thinking"
+      }
+    },
+    {
+      "name": "content-success",
+      "kind": "content",
+      "openai": "data: {\"model\": \"keepalive\", \"choices\": []}\n\ndata: {\"choices\": [{\"index\": 0, \"delta\": {}}]}\n\ndata: {\"model\": \"gpt-4o\", \"choices\": [{\"index\": 0, \"delta\": {\"content\": \"answer\", \"tool_calls\": [{\"index\": 0, \"id\": \"call-1\", \"type\": \"function\", \"function\": {\"name\": \"count\", \"arguments\": \"{\\\"value\\\":\\\"next-π\\\"}\"}}]}}]}\n\ndata: {\"model\": \"gpt-4o\", \"choices\": [{\"index\": 0, \"delta\": {}, \"finish_reason\": \"stop\"}], \"usage\": {\"time_to_first_token\": 0.7}}\n\ndata: [DONE]\n\n",
+      "ollama": "{\"model\": \"gpt-4o\", \"message\": {\"role\": \"assistant\", \"content\": \"\"}, \"done\": false}\n{\"model\": \"gpt-4o\", \"message\": {\"role\": \"assistant\", \"content\": \"answer\", \"thinking\": \"\", \"tool_calls\": [{\"function\": {\"name\": \"count\", \"arguments\": {\"value\": \"next-π\"}}}]}, \"done\": false}\n{\"model\": \"gpt-4o\", \"message\": {\"role\": \"assistant\", \"content\": \"\"}, \"done\": true, \"done_reason\": \"stop\", \"eval_duration\": 123}\n",
+      "expected_kinds": {
+        "ollama": "content",
+        "openai": "content",
+        "omlx": "content"
+      }
+    },
+    {
+      "name": "content-failure",
+      "kind": "content",
+      "openai": "data: {\"model\": \"keepalive\", \"choices\": []}\n\ndata: {\"choices\": [{\"index\": 0, \"delta\": {}}]}\n\ndata: {\"model\": \"gpt-4o\", \"choices\": [{\"index\": 0, \"delta\": {\"content\": \"answer\", \"tool_calls\": [{\"index\": 0, \"id\": \"call-1\", \"type\": \"function\", \"function\": {\"name\": \"count\", \"arguments\": \"{\\\"value\\\":\\\"next-π\\\"}\"}}]}}]}\n\ndata: {\"error\": \"failed\"}\n\ndata: [DONE]\n\n",
+      "ollama": "{\"model\": \"gpt-4o\", \"message\": {\"role\": \"assistant\", \"content\": \"\"}, \"done\": false}\n{\"model\": \"gpt-4o\", \"message\": {\"role\": \"assistant\", \"content\": \"answer\", \"thinking\": \"\", \"tool_calls\": [{\"function\": {\"name\": \"count\", \"arguments\": {\"value\": \"next-π\"}}}]}, \"done\": false}\n{\"error\": \"failed\"}\n",
+      "expected_kinds": {
+        "ollama": "content",
+        "openai": "content",
+        "omlx": "content"
+      }
+    },
+    {
+      "name": "arguments-success",
+      "kind": "tool_call",
+      "openai": "data: {\"model\": \"keepalive\", \"choices\": []}\n\ndata: {\"choices\": [{\"index\": 0, \"delta\": {}}]}\n\ndata: {\"model\": \"gpt-4o\", \"choices\": [{\"index\": 0, \"delta\": {\"tool_calls\": [{\"index\": 0, \"id\": \"call-1\", \"type\": \"function\", \"function\": {\"name\": \"count\", \"arguments\": \"{\"}}]}}]}\n\ndata: {\"model\": \"gpt-4o\", \"choices\": [{\"index\": 0, \"delta\": {}, \"finish_reason\": \"stop\"}], \"usage\": {\"time_to_first_token\": 0.7}}\n\ndata: [DONE]\n\n",
+      "ollama": "{\"model\": \"gpt-4o\", \"message\": {\"role\": \"assistant\", \"content\": \"\"}, \"done\": false}\n{\"model\": \"gpt-4o\", \"message\": {\"role\": \"assistant\", \"content\": \"\", \"thinking\": \"\", \"tool_calls\": [{\"function\": {\"name\": \"count\", \"arguments\": {\"value\": \"next-π\"}}}]}, \"done\": false}\n{\"model\": \"gpt-4o\", \"message\": {\"role\": \"assistant\", \"content\": \"\"}, \"done\": true, \"done_reason\": \"stop\", \"eval_duration\": 123}\n",
+      "expected_kinds": {
+        "ollama": "tool_call",
+        "openai": "tool_call",
+        "omlx": "tool_call"
+      }
+    },
+    {
+      "name": "arguments-failure",
+      "kind": "tool_call",
+      "openai": "data: {\"model\": \"keepalive\", \"choices\": []}\n\ndata: {\"choices\": [{\"index\": 0, \"delta\": {}}]}\n\ndata: {\"model\": \"gpt-4o\", \"choices\": [{\"index\": 0, \"delta\": {\"tool_calls\": [{\"index\": 0, \"id\": \"call-1\", \"type\": \"function\", \"function\": {\"name\": \"count\", \"arguments\": \"{\"}}]}}]}\n\ndata: {\"error\": \"failed\"}\n\ndata: [DONE]\n\n",
+      "ollama": "{\"model\": \"gpt-4o\", \"message\": {\"role\": \"assistant\", \"content\": \"\"}, \"done\": false}\n{\"model\": \"gpt-4o\", \"message\": {\"role\": \"assistant\", \"content\": \"\", \"thinking\": \"\", \"tool_calls\": [{\"function\": {\"name\": \"count\", \"arguments\": {\"value\": \"next-π\"}}}]}, \"done\": false}\n{\"error\": \"failed\"}\n",
+      "expected_kinds": {
+        "ollama": "tool_call",
+        "openai": "tool_call",
+        "omlx": "tool_call"
+      }
+    },
+    {
+      "name": "name-only-success",
+      "kind": null,
+      "openai": "data: {\"model\": \"keepalive\", \"choices\": []}\n\ndata: {\"choices\": [{\"index\": 0, \"delta\": {}}]}\n\ndata: {\"model\": \"gpt-4o\", \"choices\": [{\"index\": 0, \"delta\": {\"tool_calls\": [{\"index\": 0, \"id\": \"call-1\", \"type\": \"function\", \"function\": {\"name\": \"count\", \"arguments\": \"\"}}]}}]}\n\ndata: {\"model\": \"gpt-4o\", \"choices\": [{\"index\": 0, \"delta\": {}, \"finish_reason\": \"stop\"}], \"usage\": {\"time_to_first_token\": 0.7}}\n\ndata: [DONE]\n\n",
+      "ollama": "{\"model\": \"gpt-4o\", \"message\": {\"role\": \"assistant\", \"content\": \"\"}, \"done\": false}\n{\"model\": \"gpt-4o\", \"message\": {\"role\": \"assistant\", \"content\": \"\", \"thinking\": \"\", \"tool_calls\": [{\"function\": {\"name\": \"count\", \"arguments\": {\"value\": \"next-π\"}}}]}, \"done\": false}\n{\"model\": \"gpt-4o\", \"message\": {\"role\": \"assistant\", \"content\": \"\"}, \"done\": true, \"done_reason\": \"stop\", \"eval_duration\": 123}\n",
+      "expected_kinds": {
+        "ollama": "tool_call",
+        "openai": null,
+        "omlx": null
+      }
+    },
+    {
+      "name": "name-only-failure",
+      "kind": null,
+      "openai": "data: {\"model\": \"keepalive\", \"choices\": []}\n\ndata: {\"choices\": [{\"index\": 0, \"delta\": {}}]}\n\ndata: {\"model\": \"gpt-4o\", \"choices\": [{\"index\": 0, \"delta\": {\"tool_calls\": [{\"index\": 0, \"id\": \"call-1\", \"type\": \"function\", \"function\": {\"name\": \"count\", \"arguments\": \"\"}}]}}]}\n\ndata: {\"error\": \"failed\"}\n\ndata: [DONE]\n\n",
+      "ollama": "{\"model\": \"gpt-4o\", \"message\": {\"role\": \"assistant\", \"content\": \"\"}, \"done\": false}\n{\"model\": \"gpt-4o\", \"message\": {\"role\": \"assistant\", \"content\": \"\", \"thinking\": \"\", \"tool_calls\": [{\"function\": {\"name\": \"count\", \"arguments\": {\"value\": \"next-π\"}}}]}, \"done\": false}\n{\"error\": \"failed\"}\n",
+      "expected_kinds": {
+        "ollama": "tool_call",
+        "openai": null,
+        "omlx": null
+      }
+    },
+    {
+      "name": "empty-success",
+      "kind": null,
+      "openai": "data: {\"model\": \"keepalive\", \"choices\": []}\n\ndata: {\"choices\": [{\"index\": 0, \"delta\": {}}]}\n\ndata: {\"model\": \"gpt-4o\", \"choices\": [{\"index\": 0, \"delta\": {}}]}\n\ndata: {\"model\": \"gpt-4o\", \"choices\": [{\"index\": 0, \"delta\": {}, \"finish_reason\": \"stop\"}], \"usage\": {\"time_to_first_token\": 0.7}}\n\ndata: [DONE]\n\n",
+      "ollama": "{\"model\": \"gpt-4o\", \"message\": {\"role\": \"assistant\", \"content\": \"\"}, \"done\": false}\n{\"model\": \"gpt-4o\", \"message\": {\"role\": \"assistant\", \"content\": \"\", \"thinking\": \"\"}, \"done\": false}\n{\"model\": \"gpt-4o\", \"message\": {\"role\": \"assistant\", \"content\": \"\"}, \"done\": true, \"done_reason\": \"stop\", \"eval_duration\": 123}\n",
+      "expected_kinds": {
+        "ollama": null,
+        "openai": null,
+        "omlx": null
+      }
+    },
+    {
+      "name": "empty-failure",
+      "kind": null,
+      "openai": "data: {\"model\": \"keepalive\", \"choices\": []}\n\ndata: {\"choices\": [{\"index\": 0, \"delta\": {}}]}\n\ndata: {\"model\": \"gpt-4o\", \"choices\": [{\"index\": 0, \"delta\": {}}]}\n\ndata: {\"error\": \"failed\"}\n\ndata: [DONE]\n\n",
+      "ollama": "{\"model\": \"gpt-4o\", \"message\": {\"role\": \"assistant\", \"content\": \"\"}, \"done\": false}\n{\"model\": \"gpt-4o\", \"message\": {\"role\": \"assistant\", \"content\": \"\", \"thinking\": \"\"}, \"done\": false}\n{\"error\": \"failed\"}\n",
+      "expected_kinds": {
+        "ollama": null,
+        "openai": null,
+        "omlx": null
+      }
+    }
+  ],
+  "routes": [
+    "complete_stream_events"
+  ]
+}

@@ -43,6 +43,12 @@ from mojentic.llm.recovery_stream import (
 if TYPE_CHECKING:
     from mojentic.llm.completion_config import ResponseFormat
 
+from mojentic.llm.stream_timing import (
+    dispatch_stream,
+    observe_stream,
+    timed_stream,
+)
+
 logger = structlog.get_logger()
 
 
@@ -153,7 +159,12 @@ class OllamaGateway(LLMGateway):
         )
         self._recovery_headers = dict(headers or {})
         self._recovery_timeout = timeout
-        self.client = Client(host=host, headers=headers, timeout=timeout)
+        self.client = Client(
+            host=host,
+            headers=headers,
+            timeout=timeout,
+            event_hooks={"request": [dispatch_stream]},
+        )
         self.stream_transport = stream_transport or OllamaStreamTransport(self.client)
 
     def _extract_options_from_args(self, args):
@@ -368,6 +379,7 @@ class OllamaGateway(LLMGateway):
             metadata=ollama_metadata(frame) or {},
         )
 
+    @timed_stream
     def complete_stream(self, **args) -> Iterator[StreamingResponse]:
         """
         Stream the LLM response from Ollama service.
@@ -398,7 +410,11 @@ class OllamaGateway(LLMGateway):
             with closing(events):
                 for event in events:
                     if event.kind == "failed":
+                        event.error.stream_metrics = event.metrics
+                        self.last_stream_metrics = event.metrics
                         raise event.error
+                    if event.kind == "completed":
+                        self.last_stream_metrics = event.metrics
                     if event.kind == "content":
                         yield StreamingResponse(content=event.text)
                     elif event.kind == "reasoning":
@@ -421,6 +437,7 @@ class OllamaGateway(LLMGateway):
         stream = self.client.chat(**ollama_args)
 
         for chunk in stream:
+            observe_stream(chunk.model_dump(exclude_none=True))
             if chunk.message:
                 # Yield content chunks as they arrive
                 if chunk.message.content:
@@ -512,6 +529,7 @@ class OllamaGateway(LLMGateway):
         ]
         return response
 
+    @timed_stream
     def complete_stream_events(
         self, model: str, messages: list[LLMMessage], config: "CompletionConfig"
     ) -> Iterator[StreamEvent]:

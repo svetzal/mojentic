@@ -12,12 +12,15 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from mojentic.llm.stream_timing import ClientTiming
 
-class CompletionMetadata(BaseModel):
+
+class CompletionMetadata(ClientTiming):
     """
-    What the provider reported about how a turn ended.
+    Provider completion evidence and client-measured stream timing.
 
-    Every field is None when the provider did not report it. Nothing is estimated.
+    Provider fields are None when not reported. Inherited client timing fields
+    measure elapsed monotonic milliseconds, independently of provider durations.
 
     Attributes
     ----------

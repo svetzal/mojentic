@@ -27,6 +27,7 @@ from mojentic.llm.gateways.stream_events import (
     TerminalStreamEvent,
 )
 from mojentic.llm.gateways.tokenizer_gateway import TokenizerGateway
+from mojentic.llm.stream_timing import ClientTiming
 from mojentic.llm.tools.runner import (
     SerialToolRunner,
     ToolRunContext,
@@ -281,6 +282,15 @@ class LLMBroker:
         )
 
         return result
+
+    @property
+    def last_stream_metrics(self) -> ClientTiming | None:
+        """Latest dispatched stream evidence, including failure and local close."""
+        return getattr(self.adapter, "last_stream_metrics", None)
+
+    @last_stream_metrics.setter
+    def last_stream_metrics(self, value: ClientTiming | None) -> None:
+        self.adapter.last_stream_metrics = value
 
     def generate_stream(
         self,
@@ -559,6 +569,7 @@ class LLMBroker:
                     content += event.text
                     yield event
                     continue
+                self.last_stream_metrics = event.metadata
                 self._record_stream_events_response(
                     content, event, start_time, correlation_id
                 )

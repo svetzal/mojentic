@@ -47,6 +47,8 @@ from mojentic.llm.tools.llm_tool import LLMTool
 if TYPE_CHECKING:
     from mojentic.llm.completion_config import CompletionConfig
 
+from mojentic.llm.stream_timing import dispatch_stream, timed_stream
+
 logger = structlog.get_logger()
 
 
@@ -74,6 +76,7 @@ class OMLXTransport:
             headers=settings.headers,
             timeout=settings.timeout,
             transport=http_transport,
+            event_hooks={"request": [dispatch_stream]},
         )
 
     def get(self, path: str) -> httpx.Response:
@@ -381,6 +384,7 @@ class OMLXGateway(LLMGateway):
         )
         return warning
 
+    @timed_stream
     def complete_stream(
         self,
         model: str,
@@ -425,7 +429,11 @@ class OMLXGateway(LLMGateway):
             with closing(events):
                 for event in events:
                     if event.kind == "failed":
+                        event.error.stream_metrics = event.metrics
+                        self.last_stream_metrics = event.metrics
                         raise event.error
+                    if event.kind == "completed":
+                        self.last_stream_metrics = event.metrics
                     if event.kind == "content":
                         yield StreamingResponse(content=event.text)
                     elif event.kind == "reasoning":
@@ -443,6 +451,7 @@ class OMLXGateway(LLMGateway):
                 drop_keepalive_frames(lines), config.retain_reasoning
             )
 
+    @timed_stream
     def complete_stream_events(
         self, model: str, messages: list[LLMMessage], config: "CompletionConfig"
     ) -> Iterator[StreamEvent]:

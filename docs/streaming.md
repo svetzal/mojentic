@@ -16,6 +16,7 @@ The `LLMBroker.generate_stream()` method mirrors the `generate()` method but yie
 | Gateway | Streaming Support | Tool Support | Notes |
 |---------|------------------|--------------|-------|
 | **OllamaGateway** | ✅ Full | ✅ Full | Tool calls arrive complete |
+| **OMLXGateway** | ✅ Full | ✅ Full | OpenAI-compatible SSE, keepalives ignored |
 | **OpenAIGateway** | ✅ Full | ✅ Full | Handles incremental tool arguments |
 | **AnthropicGateway** | ❌ Not yet | ❌ N/A | Coming soon |
 
@@ -312,6 +313,60 @@ for event in broker.generate_stream_events(messages, config):
 `CompletionMetadata` holds `finish_reason`, `usage`, `provider_model` and a
 provider `metadata` map (for example Ollama's durations). Each field is `None`
 when the provider did not report it.
+
+### Client-measured timing
+
+Every dispatched completion on Ollama, OpenAI and oMLX reports independent
+monotonic client timing, in milliseconds:
+
+| Field | Meaning |
+| --- | --- |
+| `time_to_first_token_ms` | First dispatch to the first nonempty token-bearing frame; `None` without a token |
+| `first_token_kind` | `thinking`, `content` or `tool_call`; `None` without a token |
+| `request_duration_ms` | First dispatch to terminal success/failure; `None` if never dispatched |
+
+For `generate_stream_events`, read these fields directly on terminal
+`event.metadata` (`CompletionMetadata`). For recovery streams, use terminal
+`event.metrics` (`StreamMetrics`); completed response metadata also carries the
+measured fields. Existing provider usage and durations retain their original
+names, units and values, including oMLX `usage.time_to_first_token` in seconds.
+
+Legacy `complete_stream`, `LLMBroker.generate_stream` and
+`ChatSession.send_stream` keep their existing chunk/text ordering. Read
+`gateway.last_stream_metrics`, `broker.last_stream_metrics` or
+`session.last_stream_metrics` after consumption, failure or supported local
+close. Legacy exceptions retain their original types and expose
+`error.stream_metrics` when timing is available. These properties describe the
+latest operation on the shared gateway; use per-event terminal evidence when
+consuming concurrent streams. Never treat a measured duration as proof of
+successful completion.
+
+```python
+for text in session.send_stream("Hello"):
+    print(text, end="", flush=True)
+metrics = session.last_stream_metrics
+if metrics is not None:
+    print(metrics.first_token_kind, metrics.time_to_first_token_ms,
+          metrics.request_duration_ms)
+```
+
+Stream construction, request building and potentially blocking initial request
+capture/attempt callbacks are excluded. The first actual HTTP dispatch starts
+the clock. It continues through admitted retries, their delays and callbacks;
+each request returning tool results starts a fresh clock. Tool execution time
+belongs to neither completion. Keepalives, empty frames, tool names and empty
+argument strings do not count. The first argument fragment counts before a tool
+call is assembled; Ollama's complete argument objects count, including `{}`.
+Within the first token-bearing frame the precedence is thinking, content, then
+tool arguments, regardless of delivery order.
+
+Success and failure after dispatch carry duration even without tokens. Closing
+a synchronous iterator yields no synthetic terminal event; direct event-stream
+local close leaves timing on the gateway. Recovery `RecoveryCall.cancel()`
+produces the existing typed cancelled terminal with timing if dispatched;
+`aclose()` releases resources without inventing a terminal. Remote termination
+remains unknown. Anthropic streaming and unsupported model/routes remain
+unsupported and produce no dispatch timing.
 
 ### Completion rules
 

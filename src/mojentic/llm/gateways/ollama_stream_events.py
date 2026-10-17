@@ -16,6 +16,7 @@ from mojentic.llm.gateways.stream_events import (
     StreamErrorReason,
     StreamEvent,
 )
+from mojentic.llm.stream_timing import observe_stream
 
 OLLAMA_USAGE_FIELDS = ("prompt_eval_count", "eval_count")
 OLLAMA_METADATA_FIELDS = (
@@ -53,6 +54,7 @@ def parse_ollama_stream(frames: Iterable[object]) -> Iterator[StreamEvent]:
     """
     evidence = CompletionMetadata()
     for frame in frames:
+        observe_stream(frame)
         events = _frame_events(frame, evidence)
         yield from events
         if events and not isinstance(events[-1], StreamContent):

@@ -117,7 +117,11 @@ def legacy_chunks(gateway: "OpenAIGateway", args: dict) -> Iterator[StreamingRes
     with closing(events):
         for event in events:
             if event.kind == "failed":
+                gateway.last_stream_metrics = event.metrics
+                event.error.stream_metrics = event.metrics
                 raise event.error
+            if event.kind == "completed":
+                gateway.last_stream_metrics = event.metrics
             if event.kind == "content":
                 yield StreamingResponse(content=event.text)
             elif event.kind == "reasoning":

@@ -1,9 +1,17 @@
 # Python 3.0.0 partial parity
 
+The October 17 library self-validation policy supersedes historical external
+counterpart requirements in the rows below. Python validates its public API and
+packaged artifact against its binding contracts/fixtures. Dependents verify
+released versions when adopting them; other-port readiness is not asserted here.
+Cross-repository running-service boundaries still require shared executable
+contracts on both sides. The coordinated publication hold remains in force.
+
 | Owner decision | Python verification | Cross-port status |
 | --- | --- | --- |
+| Part 3: section 2 first-token timing | `first_token_spec.py`, `py-stream-first-token-v1`: production HTTP through gateways, recovery, broker and session; thinking/content/argument precedence, no-token/failure/cancellation evidence, dispatch capture exclusion, retry inclusion and exact tool continuations; fresh-wheel public API consumer | TypeScript reference consulted read-only. Python self-validates; no other-port executable snapshot required. Publication held until all ports are ready and owner authorization arrives. |
 | Part 3: section 1 context discovery | `context_window_spec.py`: unchanged `context-window-v1` (53 HTTP cases), registry-only exact lookup, helper precedence, contract-derived doubles and unchanged same-model completion requests | Python local verification passes; Elixir read-only contract JSON hash matches. Available manifest differs from the reported snapshot; external server/consumer verification remains unfinished. Publication hold retained. |
-| Part 3: section 3 request fidelity | `request_fidelity_spec.py` executes unchanged `request-fidelity-v1` through captured real HTTP gateway, broker, session, structured/stream routes, retries and tool continuations; every shared case also directly exercises `ChatSession.send_stream` and `LLMBroker.generate_stream_events` on Ollama/OpenAI/oMLX, checking exact controls/content, terminal success and ordered session history; Anthropic registry/4096 fallback | Local Python consumer/provider roles verified; external paired verification and Anthropic cross-port registry table alignment unfinished. Context discovery and first-token timing are separate objectives. Publication remains on hold. |
+| Part 3: section 3 request fidelity | `request_fidelity_spec.py` executes unchanged `request-fidelity-v1` through captured real HTTP gateway, broker, session, structured/stream routes, retries and tool continuations; every shared case also directly exercises `ChatSession.send_stream` and `LLMBroker.generate_stream_events` on Ollama/OpenAI/oMLX, checking exact controls/content, terminal success and ordered session history; Anthropic registry/4096 fallback | Local Python consumer/provider roles verified; external paired verification and Anthropic cross-port registry table alignment unfinished. First-token timing is verified separately in section 2. Publication remains on hold. |
 | Part 2: native reasoning | `native_reasoning_spec.py` executes shared `native-reasoning-v1` controls and broker continuations through real HTTP, profiles, structured output, recovery, cancellation and unsupported OpenAI requests; incomplete Ollama recovery cannot retain history or execute tools, with a completed continuation control | Rust reference consulted read-only; local consumer/provider roles verified together; external counterpart and live server verification unfinished |
 | Part 1: Anthropic structured recovery and immutable requests | `anthropic-structured-v1` in `anthropic_structured_spec.py`: exact HTTP schema/history/control bytes, gateway and broker recovery, optional fields, typed terminal failures and bounded attempts | Local provider and broker consumer roles use the same executable set; live Anthropic and external consumer counterpart verification remain unfinished; tools/streaming separate |
 | October 12 Typed errors decision | `python-typed-errors-v1` in `typed_errors_spec.py`: policy validation, capture and length types through supported gateways, brokers and sessions; real HTTP and exact request/history/progress assertions | Python provider and in-repository callers verified together; external consumers, other ports and live provider verification remain unavailable; not the Elixir `typed-errors-v1` executable set |
@@ -12,7 +20,6 @@
 | Remote no-hook retries, local admission unless evidenced nonacceptance, and distinct undecided admission | [Recovery admission decision map](CONFORMANCE-3.0.0.md); ordinary, structured and supported stream APIs | Other ports and paired consumer verification remain unverified here |
 
 The October 12 root recovery amendment governs these decisions. Exception
-types alone do not establish nonacceptance. First-token timing and remaining initiative work
-are separate objectives. The coordinated publication
-hold remains until all six ports satisfy owner scope and required paired
-consumer/provider verification is available.
+types alone do not establish nonacceptance. Remaining initiative work stays separate. The coordinated publication
+hold remains until all six ports satisfy owner scope and the owner authorizes
+release.

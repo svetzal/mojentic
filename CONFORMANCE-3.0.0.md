@@ -4,6 +4,22 @@ This is a partial decision map for the owner scope in
 `mojentic-unify/RELEASE-3.0.0.md`. It does not declare Python or the
 coordinated release ready. Versions and publication remain on hold.
 
+## October 17 library self-validation policy (current)
+
+This policy supersedes every older external/counterpart/paired verification
+requirement for this unreleased package in the historical records below.
+Library readiness is established by public API tests against binding documents
+and identifiable fixtures, real production gateways against controlled HTTP,
+and a fresh consumer installation of the packaged artifact. Dependents verify
+when they adopt a released version; another port's executable snapshot is not
+a prerequisite. Historical missing external checks remain accurate descriptions
+of what was not run, but are no longer library readiness blockers. Changed
+boundaries between running applications/services retain the shared versioned
+producer/consumer contract requirement, with each repository separately
+authorized. No live vendor compatibility or other port's readiness is claimed.
+Publication remains on hold until all six ports satisfy owner scope and the
+owner authorizes release.
+
 ## October 12 Capabilities decision
 
 This correction implements only the Capabilities decision in part 1 of the
@@ -1082,3 +1098,170 @@ case-count assertions stand in for semantic verification.
 
 Tool caches were redirected to writable temporary directories; no dependencies,
 Git refs, versions, sibling repositories or publication state were changed.
+
+## Section 2: client-measured first-token timing (October 17)
+
+### Characterized public surfaces and dispatch boundary
+
+Before implementation, Ollama/OpenAI/oMLX exposed synchronous legacy chunks,
+single-turn `complete_stream_events` terminals (`CompletionMetadata`), and
+owned recovery stream terminals (`RecoveryStreamEvent`). `StreamMetrics`
+previously held provider counters/durations; completed recovery responses also
+had provider metadata. Broker/session text streams yielded strings without a
+terminal object. Anthropic had no supported streaming route; model capability
+checks and unsupported structured routes rejected before sending.
+
+The rejecting production-loopback probe
+`DescribeFirstTokenTiming.should_exclude_capture_and_lazy_delay_at_actual_dispatch`
+failed because the completed recovery event had no timing metrics. The corrected
+probe verifies a 250ms request-capture callback and 250ms lazy-consumption delay
+are excluded, a 40ms delayed HTTP response is measured, thinking wins over
+content in the same frame, and Ollama's `eval_duration=123` survives. Both actual
+exit codes (1 then 0) and complete logs were retained for Foundry review.
+
+Synchronous gateway methods now use a clock scoped only to advancing their
+iterator. HTTP request hooks start it at send; raw frame observation precedes
+splitting thinking/content/tool chunks. Scope is removed while the caller is
+paused. Owned recovery starts its own clock immediately before `client.send`,
+after request capture and lifecycle callbacks and their dispatch checks; the
+same clock survives admitted retries. Frame observation precedes body capture
+so capture failure/cancellation does not erase already-observed first-token
+evidence. Clock observation stops at terminal proof, including when extra
+frames follow in the same received chunk.
+
+### Section-2 executable decision map
+
+All new named tests below are in
+`src/mojentic/llm/gateways/first_token_spec.py::DescribeFirstTokenTiming`.
+They consume production gateways over a controlled loopback HTTP server,
+without SDK mocks or private-method patches.
+
+| Binding decision | Named verification and measured assertions |
+| --- | --- |
+| Timing on supported gateway/broker/session APIs | `should_measure_supported_public_routes`: Ollama/OpenAI/oMLX event, legacy, broker and session routes; content kind and measured first-token/duration ordering |
+| Monotonic clock starts at send; lazy construction and blocking initial capture excluded | `should_exclude_capture_and_lazy_delay_at_actual_dispatch`: measured 25–200ms bounds exclude both 250ms delays; production request reaches `/api/chat` |
+| Keepalives, empty frames, name-only/empty argument strings are not tokens | `should_measure_first_wire_frame_and_terminal_errors`: versioned fixture cases assert exact first kind or absent first-token time, plus dispatched duration; Ollama's complete argument objects count |
+| Thinking > content > tool arguments within the first token frame | `should_measure_first_wire_frame_and_terminal_errors`: combined-kind fixtures on every streaming provider; proof probe also verifies thinking/content on recovery |
+| First argument fragment counts before call assembly | `should_measure_argument_fragment_before_later_failure`: OpenAI/oMLX recovery observe `{` at 25ms, fail after an additional 150ms; kind is `tool_call`, duration exceeds first-token time by at least 100ms, observed fragment progress is retained |
+| Empty completion; failure before and after tokens | `should_measure_first_wire_frame_and_terminal_errors` and `should_report_dispatched_failure_without_inventing_tokens`: empty success/error, provider errors, HTTP errors and malformed response bodies; first-token fields stay null without a token, duration remains measured |
+| No post-terminal tokens are invented | `should_ignore_token_frames_after_terminal_proof`: empty completion followed by token-bearing frames in one HTTP body still has no first token, across all three recovery providers |
+| Admitted retries retain the initial clock | `should_include_admitted_retry_delay_on_one_clock`: real 503 followed by admitted resend, a 120ms admission delay and 30ms token delay yield at least 140ms first-token time; resent request bytes are identical |
+| Tool continuations start fresh clocks | `should_reset_continuation_clock_and_preserve_exact_tool_history`: all providers, recovery on/off; first request >=100ms, 200ms tool execution excluded from second request's <180ms duration; exact full continuation request and tool history, including existing Ollama SDK/recovery encoding differences |
+| Provider metrics preserved | Proof probe retains Ollama `eval_duration`; existing `DescribeStreamTelemetry.should_emit_exact_length_terminal_progress_metrics_then_failure` and `should_preserve_only_reported_completion_evidence` assert exact provider projections and unchanged response evidence alongside new timing fields; all original stream-provider evidence specs still run |
+| Supported cancellation/close evidence | `should_keep_timing_on_explicit_recovery_cancellation`: cancelled at headers or body, no invented token before body, measured content after body observation; `should_keep_local_close_evidence_without_a_synthetic_terminal`: synchronous iterator close retains timing, closes resources and yields no fabricated terminal |
+| Never dispatched means no invented duration | `should_not_report_duration_if_request_capture_rejects_dispatch`: rejecting capture, zero HTTP requests, no duration/kind; `should_not_invent_dispatch_evidence_for_unsupported_model`: unchanged unsupported error, no metadata, no request |
+| Old evidence remains readable; new fields optional | `should_accept_old_evidence_without_optional_client_fields`: both public terminal models accept old evidence with all three new fields absent |
+| Packaged public API is usable from a fresh consumer | `scripts/verify_stream_timing.py`: imported installed wheel path outside source tree; event empty-completion evidence, session content timing and recovery terminal timing for all three providers |
+
+Legacy streams preserve their exact chunk/text ordering and exception types.
+`last_stream_metrics` exposes terminal/local-close diagnostics through gateway,
+broker and session, with `stream_metrics` attached to legacy exceptions. Event
+APIs use terminal `CompletionMetadata`; recovery terminals use `StreamMetrics`
+and completed response metadata. Closing an async recovery iterator releases
+resources without yielding a synthetic terminal; explicit `RecoveryCall`
+cancellation keeps the existing typed terminal. Remote termination is unknown.
+No provider streaming capability, retry admission rule, reasoning retention,
+model discovery behavior or request parameter/default changed.
+
+### Contract identities and self-validation roles
+
+The binding `MODEL-METADATA-2026-10.md` was read at SHA-256
+`d9945dca45ce09e2163843263a75b5e93028b00ee1baf191fc3ff13396830e9c`.
+The initiative brief's recorded SHA-256 was verified as
+`ea6a0efa56bfb3cd74b5ce728f80cc33c6fbd853114bec94b8aabe79f5d28e6e`.
+`ts-stream-first-token-v1` and its raw-frame observation rules were consulted
+read-only as the behavioral reference; no TypeScript executable snapshot or
+external consumer verification is required under the October 17 policy.
+
+The local versioned executable set is **`py-stream-first-token-v1`**, implemented
+by the named tests and `fixtures/contracts/first_token_v1.json` beside them.
+Its declared per-provider expected kinds account for Ollama's complete argument
+objects. It reuses **`request-fidelity-v1`** for successful provider response
+frames, exact request controls and the shared tool call/history identity. The
+fresh-wheel consumer uses the same two contract fixtures; Ollama envelopes add
+the required assistant role without changing the shared semantic content.
+OpenAI recovery receives its supported OpenAI envelope; oMLX-specific keepalive
+acceptance is preserved only where already supported. Provider-side verification
+runs the real gateways against those fixtures at HTTP; in-repository broker and
+session consumers exercise the same implementation and wire inputs. These are
+library self-validation roles, not claims that a live vendor server or another
+repository verified this contract.
+
+No unresolved section-2 contract ambiguity was found. Other ports' readiness,
+live provider behavior outside the declared fixtures, and owner release
+authorization remain unverified here. The coordinated publication hold remains.
+
+### Tested source, fixture and artifact identities
+
+Tested baseline commit: **`34b0dc9242b8e01e5311a4a919b8ed29cce3083e`**, plus
+this uncommitted correction. Reproduce the corrected source identity with:
+
+```bash
+uv run python scripts/verify_stream_timing.py --source-id
+```
+
+The manifest hashes sorted `src/` Python/JSON/SSE files, `pyproject.toml`,
+`uv.lock`, and the consumer verifier (paths and SHA-256 bytes). Its SHA-256 is
+**`cec93bbdf90fa893cce1a5dba0b1a8e301bf29ab7e9b2e93787f0e1fb6615e75`**.
+This identifies the actual tested worktree rather than claiming a nonexistent
+new commit. Documentation is recorded separately here.
+
+| Input/artifact | SHA-256 |
+| --- | --- |
+| `fixtures/contracts/first_token_v1.json` (`py-stream-first-token-v1`) | `c508e719670e851cf0a1eb7d89fbcfe2eae0ab5859df1ab0ddcbe7681140ac3e` |
+| `fixtures/contracts/request_fidelity_v1.json` (`request-fidelity-v1`, unchanged) | `6f02088311f50707b9c12154d888f844928c23d359043cb2e5d5654bf7e5eaea` |
+| Built `mojentic-2.1.0-py3-none-any.whl` | `580bfa19c9d3c31c51afca1ff0a67815b04c5a11e760bd7399a04c3587b02e49` |
+
+The wheel retains the existing version because Foundry forbids version bumps
+or publication in this task. It is an unpublished candidate containing the
+identified correction, installed into a newly created temporary virtualenv.
+The verifier prints the installed `site-packages/mojentic/__init__.py` location
+and rejects imports from this checkout's `src`. For the final check that location
+was `/tmp/mojentic-timing-verified.pxsGbi/.venv/lib/python3.13/site-packages/mojentic/__init__.py`.
+All three providers passed empty event, content session and recovery terminal
+timing assertions against the recorded contracts. No dependent or sibling
+repository was edited or asked to verify an unreleased version.
+
+### Actual verification commands and results
+
+Commands were captured with Foundry, with writable temporary uv/audit cache
+directories selected by environment variables because the default home caches
+are read-only in this worktree. No advisory suppression was added. `ruff` was
+added to the uv development group so the mandated lint command is reproducible.
+
+| Command | Actual result |
+| --- | --- |
+| `uv run pytest src/mojentic/llm/gateways/first_token_spec.py --no-cov -q` | Exit 0; 78 passed, measured values and exact histories asserted |
+| `uv run flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics` | Exit 0; required lint gate, zero errors |
+| `uv run pytest` | Exit 0; required test gate, 2,543 passed, 86% coverage |
+| `uv run pytest --cov --cov-fail-under=85` | Exit 0; 2,543 passed, 87.44% coverage exceeds enforced 85% minimum; timing module 99% |
+| `uv run flake8 src` | Exit 0; full lint, zero findings |
+| `uv run ruff check src` | Exit 0; zero findings |
+| `uv run ruff format src` and final formatting of changed sources | Exit 0; unrelated pre-existing formatting in `file_manager_spec.py` restored to keep this correction scoped |
+| `uv run flake8 src/mojentic/llm/stream_timing.py --max-complexity=10` | Exit 0; new timing module satisfies the complexity bound |
+| `uv run bandit -c .bandit -r src` | Exit 0; security-scan gate, zero issues |
+| `uv run pip-audit` | Exit 0; dependency-audit gate, no known vulnerabilities |
+| `uv export --format requirements-txt --no-emit-project \| uvx pip-audit -r /dev/stdin --disable-pip` under `bash -o pipefail` | Exit 0; locked dependencies, no known vulnerabilities |
+| `uv pip list --outdated` | Exit 0; inventory reviewed, no advisory-driven upgrade required; unrelated upgrades left outside scope |
+| `uv run mkdocs build` | Exit 0; documentation builds |
+| `uv build` | Exit 0; sdist and wheel built, no version change |
+| `git diff --check` | Exit 0 |
+
+The fresh-install verification commands were (all exit 0):
+
+```bash
+uv venv "$consumer_dir/.venv"
+uv pip install --python "$consumer_dir/.venv/bin/python" dist/mojentic-2.1.0-py3-none-any.whl
+uv run --no-project --directory "$consumer_dir" \
+  --python "$consumer_dir/.venv/bin/python" \
+  "$checkout/scripts/verify_stream_timing.py" \
+  "$checkout/src/mojentic/llm/gateways/fixtures/contracts/first_token_v1.json"
+```
+
+Here `consumer_dir` was a fresh `mktemp -d` directory and `checkout` this
+worktree. Source-side gateway/provider and broker/session consumer verification
+use the same source identity and fixtures above; artifact-side verification uses
+the wheel SHA-256 and the same fixture identities. This is the required library
+self-validation, with no assertion of external running-service compatibility.
+The behavioral proof's JSON types, captured exit codes, nonempty logs and
+referenced complete stdout/stderr logs were validated before handoff.

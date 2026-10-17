@@ -1,7 +1,5 @@
 import json
 import math
-import os
-from unittest.mock import patch
 
 import httpx
 import pytest
@@ -24,97 +22,47 @@ class DescribeOpenAIGateway:
     """
 
     class DescribeInitialization:
-        """
-        Tests for OpenAI gateway initialization
-        """
+        @pytest.mark.parametrize("explicit_key", [None, "explicit-key"])
+        @pytest.mark.parametrize("explicit_host", [False, True])
+        def should_apply_environment_and_explicit_settings_at_dispatch(
+            self, monkeypatch, explicit_key, explicit_host
+        ):
+            from mojentic.llm.gateways.ollama_recovery_spec import scripted_http
+            from mojentic.llm.gateways.request_fidelity_spec import reply
 
-        def should_initialize_with_api_key(self, mocker):
-            api_key = "test-api-key"
-            mock_openai = mocker.patch("mojentic.llm.gateways.openai.OpenAI")
-
-            gateway = OpenAIGateway(api_key=api_key)
-
-            mock_openai.assert_called_once_with(api_key=api_key, base_url=None)
-            assert gateway.client is not None
-
-        def should_initialize_with_api_key_and_base_url(self, mocker):
-            api_key = "test-api-key"
-            base_url = "https://custom.openai.com"
-            mock_openai = mocker.patch("mojentic.llm.gateways.openai.OpenAI")
-
-            gateway = OpenAIGateway(api_key=api_key, base_url=base_url)
-
-            mock_openai.assert_called_once_with(api_key=api_key, base_url=base_url)
-            assert gateway.client is not None
-
-        def should_read_api_key_from_environment_variable(self, mocker):
-            api_key = "test-api-key-from-env"
-            mock_openai = mocker.patch("mojentic.llm.gateways.openai.OpenAI")
-
-            with patch.dict(os.environ, {"OPENAI_API_KEY": api_key}):
-                gateway = OpenAIGateway()
-
-            mock_openai.assert_called_once_with(api_key=api_key, base_url=None)
-            assert gateway.client is not None
-
-        def should_read_base_url_from_environment_variable(self, mocker):
-            api_key = "test-api-key"
-            endpoint = "https://corporate.openai.com"
-            mock_openai = mocker.patch("mojentic.llm.gateways.openai.OpenAI")
-
-            with patch.dict(os.environ, {"OPENAI_API_ENDPOINT": endpoint}):
-                gateway = OpenAIGateway(api_key=api_key)
-
-            mock_openai.assert_called_once_with(api_key=api_key, base_url=endpoint)
-            assert gateway.client is not None
-
-        def should_read_both_from_environment_variables(self, mocker):
-            api_key = "test-api-key-from-env"
-            endpoint = "https://corporate.openai.com"
-            mock_openai = mocker.patch("mojentic.llm.gateways.openai.OpenAI")
-
-            with patch.dict(
-                os.environ, {"OPENAI_API_KEY": api_key, "OPENAI_API_ENDPOINT": endpoint}
+            with scripted_http([(200, {}, reply("openai", "events"))]) as (
+                host,
+                requests,
             ):
-                gateway = OpenAIGateway()
+                monkeypatch.setenv("OPENAI_API_KEY", "environment-key")
+                monkeypatch.setenv("OPENAI_API_ENDPOINT", host + "/v1")
+                base_url = host + "/explicit" if explicit_host else None
+                gateway = OpenAIGateway(api_key=explicit_key, base_url=base_url)
+                terminal = list(
+                    gateway.complete_stream_events(
+                        "gpt-4o", [LLMMessage(content="hello")], CompletionConfig()
+                    )
+                )[-1]
 
-            mock_openai.assert_called_once_with(api_key=api_key, base_url=endpoint)
-            assert gateway.client is not None
-
-        def should_prefer_explicit_api_key_over_environment_variable(self, mocker):
-            api_key_env = "test-api-key-from-env"
-            api_key_explicit = "test-api-key-explicit"
-            mock_openai = mocker.patch("mojentic.llm.gateways.openai.OpenAI")
-
-            with patch.dict(os.environ, {"OPENAI_API_KEY": api_key_env}):
-                gateway = OpenAIGateway(api_key=api_key_explicit)
-
-            mock_openai.assert_called_once_with(api_key=api_key_explicit, base_url=None)
-            assert gateway.client is not None
-
-        def should_prefer_explicit_base_url_over_environment_variable(self, mocker):
-            api_key = "test-api-key"
-            endpoint_env = "https://corporate.openai.com"
-            endpoint_explicit = "https://explicit.openai.com"
-            mock_openai = mocker.patch("mojentic.llm.gateways.openai.OpenAI")
-
-            with patch.dict(os.environ, {"OPENAI_API_ENDPOINT": endpoint_env}):
-                gateway = OpenAIGateway(api_key=api_key, base_url=endpoint_explicit)
-
-            mock_openai.assert_called_once_with(
-                api_key=api_key, base_url=endpoint_explicit
+            assert terminal.type == "completed"
+            assert terminal.metadata.first_token_kind == "content"
+            assert (
+                requests[0][0]
+                == {False: "/v1/chat/completions", True: "/explicit/chat/completions"}[
+                    explicit_host
+                ]
             )
-            assert gateway.client is not None
+            assert requests[0][2]["authorization"] == "Bearer " + (
+                explicit_key or "environment-key"
+            )
 
-        def should_use_none_when_no_endpoint_specified(self, mocker):
-            api_key = "test-api-key"
-            mock_openai = mocker.patch("mojentic.llm.gateways.openai.OpenAI")
+        def should_use_default_endpoint_when_unspecified(self, monkeypatch):
+            monkeypatch.delenv("OPENAI_API_ENDPOINT", raising=False)
+            monkeypatch.delenv("OPENAI_BASE_URL", raising=False)
 
-            with patch.dict(os.environ, {}, clear=True):
-                gateway = OpenAIGateway(api_key=api_key)
+            gateway = OpenAIGateway(api_key="test-key")
 
-            mock_openai.assert_called_once_with(api_key=api_key, base_url=None)
-            assert gateway.client is not None
+            assert str(gateway.client.base_url) == "https://api.openai.com/v1/"
 
 
 def _generator(items):

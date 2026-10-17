@@ -29,15 +29,20 @@ def scripted_http(replies):
             delay = 0
             if isinstance(data, tuple):
                 delay, data = data
+            chunks = data if isinstance(data, list) else [(delay, data)]
             self.send_response(status)
             for key, value in headers.items():
                 self.send_header(key, value)
             if "Content-Length" not in headers:
-                self.send_header("Content-Length", str(len(data)))
+                self.send_header(
+                    "Content-Length", str(sum(len(chunk) for _, chunk in chunks))
+                )
             self.end_headers()
-            time.sleep(delay)
             try:
-                self.wfile.write(data)
+                for pause, chunk in chunks:
+                    time.sleep(pause)
+                    self.wfile.write(chunk)
+                    self.wfile.flush()
             except (BrokenPipeError, ConnectionResetError):
                 pass
             self.close_connection = True

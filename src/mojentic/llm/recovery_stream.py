@@ -31,6 +31,7 @@ from mojentic.llm.recovery import (
     _Recovery,
     parse_retry_after,
 )
+from mojentic.llm.stream_timing import ClientTiming, StreamClock
 
 Decode = Callable[[dict], LLMGatewayResponse]
 
@@ -61,8 +62,8 @@ class StreamFrameProgress(SafeModel):
     accumulated_tool_call_count: int
 
 
-class StreamMetrics(SafeModel):
-    """Reported provider counters and durations; missing values stay absent.
+class StreamMetrics(SafeModel, ClientTiming):
+    """Provider counters/durations and client-measured stream timing.
 
     Model and finish strings are sensitive provider evidence, excluded from default
     formatting and serialization. oMLX usage retains provider keys privately.
@@ -85,7 +86,8 @@ class StreamMetrics(SafeModel):
 class RecoveryStreamEvent(BaseModel):
     """Typed stream event. Semantic fields require explicit inspection to serialize.
 
-    Progress and metrics carry validated provider evidence, never inferred counts.
+    Progress and provider metrics carry validated evidence, never inferred counts.
+    Terminal metrics also include independent monotonic client timing.
     Failed events retain a privacy-safe exception with private cause inspection.
     """
 
@@ -308,6 +310,8 @@ class _StreamRecovery(_Recovery):
         self, policy: RecoveryPolicy, call: RecoveryCall, queue: asyncio.Queue
     ) -> None:
         super().__init__(policy, call, "streaming")
+        self.clock = StreamClock()
+        self.last_metrics = None
         self.queue = queue
         self.attempt = None
         self.terminal_failure = None
@@ -318,6 +322,18 @@ class _StreamRecovery(_Recovery):
 
     async def deliver(self, event: RecoveryStreamEvent, attempt: _Attempt) -> None:
         self.check_cancelled()
+        if event.kind in {"metrics", "completed"}:
+            metrics = (
+                event.metrics
+                or self.last_metrics
+                or StreamMetrics(provider=self.provider)
+            )
+            event = event.model_copy(
+                update={"metrics": metrics.model_copy(update=self.clock.evidence())}
+            )
+        if event.response is not None and event.metrics is not None:
+            event.response.metadata.update(self.clock.evidence())
+        self.last_metrics = event.metrics or self.last_metrics
         acknowledged = asyncio.Event()
         await self.queue.put((event, acknowledged, attempt))
         await acknowledged.wait()
@@ -363,6 +379,7 @@ class _StreamRecovery(_Recovery):
         self.check_dispatch()
         self.emit("attempt_started", attempt)
         self.check_dispatch()
+        self.clock.dispatch()
         attempt.sent, attempt.phase = True, "awaiting_headers"
         response = await client.send(request, stream=True, auth=httpx.Auth())
         pending = b""
@@ -400,6 +417,7 @@ class _StreamRecovery(_Recovery):
                     parsed, parse_error = self.observe_chunk(
                         lines, pending, decoder, attempt
                     )
+                self.clock.observe_frames(parsed)
                 self.capture(
                     WireEvent(kind="body", identity=attempt.identity, body=chunk),
                     attempt,
@@ -626,6 +644,9 @@ class _StreamRecovery(_Recovery):
                         progress=error.report.progress,
                         report=error.report,
                         error=error,
+                        metrics=(
+                            self.last_metrics or StreamMetrics(provider=self.provider)
+                        ).model_copy(update=self.clock.evidence()),
                         outcome=StreamOutcome(error.report.outcome),
                     ),
                     None,
