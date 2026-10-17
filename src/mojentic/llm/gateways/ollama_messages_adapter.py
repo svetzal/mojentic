@@ -17,18 +17,16 @@ def adapt_messages_to_ollama(messages: list[LLMMessage]):
             new_messages.append(msg)
         elif m.role == MessageRole.Assistant:
             msg = {"role": "assistant", "content": m.content or ""}
+            if m.thinking is not None:
+                msg["thinking"] = m.thinking
             if m.tool_calls is not None:
                 msg["tool_calls"] = [
                     {
-                        # 'id': m.tool_calls[0].id,
+                        **({"id": call.id} if call.id is not None else {}),
                         "type": "function",
-                        "function": {
-                            "name": m.tool_calls[0].name,
-                            "arguments": {
-                                k: v for k, v in m.tool_calls[0].arguments.items()
-                            },
-                        },
+                        "function": {"name": call.name, "arguments": call.arguments},
                     }
+                    for call in m.tool_calls
                 ]
             new_messages.append(msg)
         elif m.role == MessageRole.Tool:

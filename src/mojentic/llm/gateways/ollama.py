@@ -23,6 +23,7 @@ from mojentic.llm.gateways.stream_events import (
     StreamErrorReason,
     StreamEvent,
 )
+from mojentic.llm.reasoning import reasoning_controls
 from mojentic.llm.recovery import (
     Capabilities,
     RecoveryCall,
@@ -79,11 +80,15 @@ class StreamingResponse(BaseModel):
         Tool calls from the LLM response (raw ollama format).
     thinking : Optional[str]
         Thinking/reasoning trace from the LLM response.
+    completed : bool
+        Explicit safe terminal evidence for opt-in broker history retention.
+        False for partial chunks; never inferred from visible text.
     """
 
     content: str | None = None
     tool_calls: list | None = None
     thinking: str | None = None
+    completed: bool = False
 
 
 class OllamaStreamTransport:
@@ -209,6 +214,11 @@ class OllamaGateway(LLMGateway):
         ollama_args = self._completion_request(args)
 
         response: ChatResponse = self.client.chat(**ollama_args)
+        config = args.get("config")
+        if config and config.retain_reasoning and not response.done:
+            raise ValueError(
+                "Cannot retain reasoning from an incomplete Ollama response"
+            )
 
         structured_object = None
 
@@ -236,15 +246,9 @@ class OllamaGateway(LLMGateway):
             "options": options,
         }
 
-        # Handle reasoning effort - if config has reasoning_effort set, enable thinking
-        config = args.get("config", None)
-        if config and config.reasoning_effort is not None:
-            ollama_args["think"] = True
-            if self.recovery_policy is None:
-                logger.info(
-                    "Enabling extended thinking for Ollama",
-                    reasoning_effort=config.reasoning_effort,
-                )
+        config = args.get("config")
+        if config:
+            ollama_args.update(reasoning_controls(config.reasoning_effort, "ollama"))
 
         if "object_model" in args and args["object_model"] is not None:
             ollama_args["format"] = args["object_model"].model_json_schema()
@@ -336,11 +340,9 @@ class OllamaGateway(LLMGateway):
         if response.message.tool_calls is not None:
             tool_calls = [
                 LLMToolCall(
+                    id=getattr(t, "id", None),
                     name=t.function.name,
-                    arguments={
-                        str(k): str(t.function.arguments[k])
-                        for k in t.function.arguments
-                    },
+                    arguments=t.function.arguments,
                 )
                 for t in response.message.tool_calls
             ]
@@ -398,7 +400,9 @@ class OllamaGateway(LLMGateway):
                     elif event.kind == "reasoning":
                         yield StreamingResponse(thinking=event.text)
                     elif event.kind == "completed" and event.response.tool_calls:
-                        yield StreamingResponse(tool_calls=event.response.tool_calls)
+                        yield StreamingResponse(
+                            tool_calls=event.response.tool_calls, completed=True
+                        )
             return
 
         logger.info("Delegating to Ollama for streaming completion", **args)
@@ -425,6 +429,13 @@ class OllamaGateway(LLMGateway):
                 # Yield tool calls when they arrive
                 if chunk.message.tool_calls:
                     yield StreamingResponse(tool_calls=chunk.message.tool_calls)
+            if (
+                args.get("config")
+                and args["config"].retain_reasoning
+                and chunk.done
+                and chunk.done_reason in ("stop", "tool_calls")
+            ):
+                yield StreamingResponse(completed=True)
 
     async def complete_stream_with_recovery(
         self, call: RecoveryCall | None = None, **args
@@ -549,14 +560,9 @@ class OllamaGateway(LLMGateway):
             "options": self._extract_options_from_args(args),
         }
 
-        # Handle reasoning effort - if config has reasoning_effort set, enable thinking
-        config = args.get("config", None)
-        if config and config.reasoning_effort is not None:
-            request["think"] = True
-            logger.info(
-                "Enabling extended thinking for Ollama streaming",
-                reasoning_effort=config.reasoning_effort,
-            )
+        config = args.get("config")
+        if config:
+            request.update(reasoning_controls(config.reasoning_effort, "ollama"))
 
         response_format = ollama_format(config.response_format if config else None)
         if response_format is not None:

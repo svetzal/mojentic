@@ -195,6 +195,12 @@ class LLMBroker:
                 LLMMessage(
                     role=MessageRole.Assistant,
                     content=result.content,
+                    thinking=(
+                        result.thinking
+                        if config.retain_reasoning
+                        and result.finish_reason in ("stop", "tool_calls")
+                        else None
+                    ),
                     tool_calls=result.tool_calls,
                 )
             )
@@ -399,6 +405,8 @@ class LLMBroker:
 
             # Accumulate content and tool calls from stream
             accumulated_content = ""
+            accumulated_thinking = ""
+            stream_completed = False
             accumulated_tool_calls = []
 
             stream = self.adapter.complete_stream(
@@ -417,6 +425,11 @@ class LLMBroker:
                 if close is not None:
                     resources.callback(close)
                 for chunk in stream:
+                    stream_completed = stream_completed or getattr(
+                        chunk, "completed", False
+                    )
+                    if config.retain_reasoning and getattr(chunk, "thinking", None):
+                        accumulated_thinking += chunk.thinking
                     # Handle content chunks
                     if hasattr(chunk, "content") and chunk.content:
                         accumulated_content += chunk.content
@@ -464,6 +477,11 @@ class LLMBroker:
                     LLMMessage(
                         role=MessageRole.Assistant,
                         content=accumulated_content,
+                        thinking=(
+                            accumulated_thinking or None
+                            if config.retain_reasoning and stream_completed
+                            else None
+                        ),
                         tool_calls=normalized_calls,
                     )
                 )

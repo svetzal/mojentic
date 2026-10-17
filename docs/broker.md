@@ -261,7 +261,9 @@ response = llm.generate(messages, config=config)
 - **num_ctx** (int): Context window size in tokens. Default: 32768
 - **max_tokens** (int): Maximum tokens to generate. Default: 16384
 - **num_predict** (int): Tokens to predict (-1 = no limit). Default: -1
-- **reasoning_effort** (str | None): Extended thinking level — `"low"`, `"medium"`, `"high"`, or `None`. Default: None
+- **reasoning_effort** (`ReasoningEffort` | None): Distinct disabled/enabled/low/medium/high/xhigh controls. Default: None (unspecified)
+- **reasoning_profile** (`ReasoningProfile` | None): Caller-selected effort/history capabilities, validated before requests. Default: None
+- **retain_reasoning** (bool): Keep completed native reasoning in broker tool continuations for Ollama/oMLX. Default: False
 - **response_format** (`ResponseFormat` | None): Output format to request from the provider. Default: None
 
 For details on reasoning effort, see [Reasoning Effort Control](reasoning_effort.md).

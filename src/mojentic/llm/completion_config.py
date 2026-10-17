@@ -2,6 +2,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
+from mojentic.llm.reasoning import ReasoningEffort, ReasoningProfile
+
 
 class ResponseFormat(BaseModel):
     """
@@ -55,15 +57,16 @@ class CompletionConfig(BaseModel):
     num_predict : int
         The number of tokens to predict. A value of -1 means no limit.
         Defaults to -1.
-    reasoning_effort : Optional[Literal["low", "medium", "high"]]
-        Controls the reasoning effort level for models that support extended thinking.
-        - "low": Quick, minimal reasoning
-        - "medium": Balanced reasoning effort
-        - "high": Deep, thorough reasoning
-        Provider-specific behavior:
-        - Ollama: Maps to `think: true` parameter for all levels
-        - OpenAI: Maps to `reasoning_effort` API parameter for reasoning models
-        Defaults to None (no extended reasoning).
+    reasoning_effort : ReasoningEffort | None
+        Disabled, Enabled, Low, Medium, High or XHigh. None leaves effort unspecified.
+        Ollama sends exact booleans/levels; oMLX sends enable_thinking or reasoning_effort.
+        OpenAI retains legacy Low/Medium/High behavior and rejects new controls.
+    reasoning_profile : ReasoningProfile | None
+        Explicit caller-selected capabilities. Unsupported efforts/history raise ValueError
+        during configuration validation. Model names never select a profile.
+    retain_reasoning : bool
+        Opt in to completed native assistant reasoning in broker tool history. Default False.
+        oMLX also requests chat_template_kwargs.preserve_thinking; server settings may override it.
     max_tool_iterations : int
         Maximum number of tool-call recursion steps allowed before raising
         MaxToolIterationsExceededError. Defaults to 10.
@@ -80,7 +83,7 @@ class CompletionConfig(BaseModel):
     num_predict: int = Field(
         default=-1, description="Number of tokens to predict (-1 = no limit)"
     )
-    reasoning_effort: Literal["low", "medium", "high"] | None = Field(
+    reasoning_effort: ReasoningEffort | None = Field(
         default=None, description="Reasoning effort level for extended thinking"
     )
     max_tool_iterations: int | None = Field(
@@ -91,3 +94,14 @@ class CompletionConfig(BaseModel):
         default=None,
         description="Requested output format; None leaves the provider default",
     )
+
+    reasoning_profile: ReasoningProfile | None = None
+    retain_reasoning: bool = False
+
+    @model_validator(mode="after")
+    def _validate_reasoning(self) -> "CompletionConfig":
+        if self.reasoning_profile is not None:
+            self.reasoning_profile.validate_controls(
+                self.reasoning_effort, self.retain_reasoning
+            )
+        return self

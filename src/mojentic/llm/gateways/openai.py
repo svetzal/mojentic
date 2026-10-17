@@ -32,6 +32,7 @@ from mojentic.llm.gateways.stream_events import (
     StreamEvent,
 )
 from mojentic.llm.gateways.tokenizer_gateway import TokenizerGateway
+from mojentic.llm.reasoning import validate_openai_reasoning
 from mojentic.llm.recovery import Capabilities, RecoveryCall, RecoveryPolicy
 from mojentic.llm.recovery_stream import RecoveryStreamEvent
 
@@ -198,6 +199,7 @@ class OpenAIGateway(LLMGateway):
     def _recovery_body(self, args: dict, streaming: bool) -> bytes:
         self._validate_recovery_args(args, streaming)
         config = args.get("config")
+        validate_openai_reasoning(config, args["messages"])
         controls = {
             "model": args["model"],
             "tools": args.get("tools"),
@@ -506,6 +508,7 @@ class OpenAIGateway(LLMGateway):
         LLMGatewayResponse
             The response from the OpenAI service.
         """
+        validate_openai_reasoning(kwargs.get("config"), kwargs.get("messages"))
         if self.recovery_policy is not None:
             return asyncio.run(self.complete_with_recovery(**kwargs))
         # Extract parameters from kwargs with defaults
@@ -697,6 +700,7 @@ class OpenAIGateway(LLMGateway):
         Iterator[StreamingResponse]
             An iterator of StreamingResponse objects containing response chunks.
         """
+        validate_openai_reasoning(kwargs.get("config"), kwargs.get("messages"))
         if self.recovery_policy is not None:
             yield from cloud_recovery.legacy_chunks(self, kwargs)
             return
@@ -706,6 +710,7 @@ class OpenAIGateway(LLMGateway):
         object_model = kwargs.get("object_model", None)
         tools = kwargs.get("tools", None)
         config = kwargs.get("config", None)
+        validate_openai_reasoning(config, messages)
 
         # Use config if provided, otherwise use individual kwargs
         if config:
@@ -956,6 +961,7 @@ class OpenAIGateway(LLMGateway):
     def _adapted_stream_args(
         self, model: str, messages: list[LLMMessage], config: "CompletionConfig"
     ) -> dict:
+        validate_openai_reasoning(config, messages)
         args = {
             "model": model,
             "messages": messages,

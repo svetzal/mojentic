@@ -55,7 +55,9 @@ def _decoded_frame(line: str) -> object | None:
         return None
 
 
-def omlx_stream_chunks(lines: Iterable[str]) -> Iterator[StreamingResponse]:
+def omlx_stream_chunks(
+    lines: Iterable[str], retain_reasoning: bool = False
+) -> Iterator[StreamingResponse]:
     """
     Yield legacy streaming chunks for one oMLX chat completions stream.
 
@@ -75,14 +77,27 @@ def omlx_stream_chunks(lines: Iterable[str]) -> Iterator[StreamingResponse]:
         Content, thinking and tool call chunks. Reading stops at ``data: [DONE]``.
     """
     tool_calls: dict[int, dict] = {}
+    finished = False
     for line in lines:
         data = sse_data(line)
         if data == DONE_MARKER:
+            if finished and retain_reasoning:
+                yield StreamingResponse(completed=True)
             return
         if data is None:
             continue
-        choices = json.loads(data).get("choices") or []
+        frame = json.loads(data)
+        if frame.get("error") is not None:
+            if retain_reasoning:
+                raise ValueError(
+                    "oMLX stream failed before completed reasoning history"
+                )
+            finished = False
+            continue
+        choices = frame.get("choices") or []
         for choice in choices:
+            if choice.get("finish_reason") is not None:
+                finished = choice["finish_reason"] in ("stop", "tool_calls")
             yield from _choice_chunks(choice, tool_calls)
 
 

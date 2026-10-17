@@ -579,7 +579,7 @@ class DescribeRecoveryBoundaries:
         assert requests[0][0] == requests[1][0] == "/api/chat"
         assert requests[0][1] == requests[1][1]
         request = json.loads(requests[0][1])
-        assert request["think"] is True
+        assert request["think"] == "high"
         assert request["options"] == {
             "temperature": 0.3,
             "num_ctx": 1024,

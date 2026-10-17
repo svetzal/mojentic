@@ -227,8 +227,8 @@ until this gap and all six ports' owner scope are satisfied.
 - Remaining October 12 robustness decisions are **unverified by this decision
   map**; the older recovery map and provider specs are prior evidence, not a
   completed 3.0.0 audit.
-- Native reasoning, model metadata/request fidelity and remaining initiative audit
-  fixes remain **unverified here** and outside this correction. Anthropic history
+- Native reasoning is mapped in the part-2 section below. Model metadata/request
+  fidelity and remaining initiative audit fixes remain **unverified here**. Anthropic history
   (part 5, issue #2) is verified locally below.
 - Actual connection timeout, Unix-socket and TLS failure paths are **not
   exercised** by the deterministic TCP-refusal tests. Remote execution,
@@ -603,3 +603,134 @@ runs passed, including that assertion. Intermediate contract assertions were
 corrected to match exact SDK schema serialization and the existing no-hook
 lifecycle. These failures were not suppressed. Source, tests and documentation
 remain uncommitted for Foundry; no Git refs or sibling repositories were changed.
+
+## Native reasoning — release part 2
+
+The binding source is `REASONING-PROTOTYPE-2026-10.md`, SHA-256
+`0a40f3ad45c593bc779411021e45db569e73d3ecce86c99b201e7f8ebb656809`,
+authorized by release part 2. The Foundry initiative brief was read and its
+recorded SHA-256 verified:
+`ea6a0efa56bfb3cd74b5ce728f80cc33c6fbd853114bec94b8aabe79f5d28e6e`.
+Python starts at `03a8ca4237ad45b5faedcf284b05c96b73d2afac`; verification below
+applies to the uncommitted correction in this worktree. Foundry owns finalization.
+Rust was consulted read-only at `17ad0cb1a6b5895f5dbe9f758189d61b266bb336`
+(`reasoning.rs` and `tests/reasoning_contract.rs`). No Rust run or modification
+is claimed.
+
+### Characterization before implementation
+
+The starting Python `CompletionConfig` accepted only low/medium/high. Ollama's
+ordinary and stream builders collapsed all three to `think: true`; oMLX sent
+named effort directly. Gateway responses already separated `thinking` from
+content, but `LLMMessage` had no native reasoning field. Ordinary and streamed
+broker tool continuations retained visible content and tool calls without
+reasoning. The first HTTP-boundary probe failed because the broker's second
+oMLX request lacked `reasoning_content`; the same probe passed after adding
+opt-in completed history. Existing captured oMLX responses from the root
+`63409fa` fixture set supplied this proof case.
+
+### Verified decisions mapped to executable tests
+
+All names below are in `src/mojentic/llm/gateways/native_reasoning_spec.py`.
+The provider tests send public requests through actual SDK/HTTP transports;
+broker consumer tests send the continuation through the same gateway boundary.
+
+| Part-2 decision | Named executable behavior |
+| --- | --- |
+| Six distinct efforts; omitted effort stays unspecified; no model-name inference | `should_send_exact_controls_without_model_inference`: shared null/disabled/enabled/low/medium/high/xhigh matrix, exact Ollama/oMLX request controls, separate response reasoning and content |
+| Caller-selected profiles validate supported effort/history | `should_accept_exact_qwen_profile_controls`, `should_reject_unsupported_qwen_controls`, `should_reject_history_for_a_profile_without_history`, `should_reject_named_effort_for_boolean_only_profile`; Qwen accepts only omitted/disabled/low/medium/xhigh and rejects enabled/high |
+| Native assistant history separate from visible content and tool results | `should_retain_native_history_separately_through_tool_continuation` and `should_preserve_distinct_payloads_in_broker_tool_history`: exact native field, content, typed arguments and serialized result; oMLX call IDs and continuation result IDs |
+| Broker retention opt-in for completed ordinary and streamed tool turns | `should_preserve_distinct_payloads_in_broker_tool_history`: both providers, retention on/off, ordinary/stream, recovery on/off |
+| oMLX requests preserve_thinking; server enforcement not implied | Same continuation test checks the exact `chat_template_kwargs` request; no server override/enforcement claim |
+| Structured output uses equivalent controls | `should_send_exact_controls_without_model_inference[structured-*]`: schema request plus exact shared effort matrix |
+| Interrupted, failed, capped and cancelled responses never fabricate retained history | `should_not_retain_unfinished_stream_history`, `should_not_fabricate_history_on_stream_failure_or_close`, `should_discard_partial_native_history_when_caller_closes`, `should_reject_incomplete_ordinary_ollama_history`, `should_exclude_capped_ordinary_reasoning_from_history`, `should_discard_reasoning_after_provider_error_frame` |
+| Content, tool identity, argument types, ordering and results stay distinct | Continuation tests plus `should_preserve_ordered_multiple_native_tool_calls`; oMLX carries IDs, while the Ollama SDK protocol uses function names/arguments without native call IDs. Ordinary Ollama arguments retain JSON types and all assistant tool calls survive in order |
+| OpenAI rejects new controls/history explicitly; legacy behavior remains | `should_reject_new_openai_controls_before_http` and `should_reject_native_history_on_openai`; existing OpenAI specs verify legacy low/medium/high/model adaptation alongside the full regression suite |
+
+The additive `StreamingResponse.completed` signal allows the broker to retain
+reasoning only after a safe provider terminal (Ollama done/stop; oMLX safe finish
+plus `[DONE]`; recovery completed). It does not change raw recovery admission,
+retry policy or provider capabilities. Legacy streams without retention continue
+to expose their previous content/thinking/tool chunks. Existing temperature,
+context and token defaults remain unchanged; metadata/request fidelity is
+separate work. Ordinary capped responses keep legacy handling but contribute no
+retained reasoning. Retention requires an explicit completion signal and never
+extracts native reasoning from visible content.
+
+### Shared contract identities and verification roles
+
+Reuse `native-reasoning-v1` from Elixir revision
+`98b54a0cf0b028b82d38655ac59ebafcd7988077`, copied without modification to
+`src/mojentic/llm/gateways/fixtures/contracts/native_reasoning_v1.json`.
+SHA-256: `be212ff011125f1d0927e3a65a0d7cd87eedbf9f5ff69e803b4112a80ae6b1f6`.
+The source hash inside it matches the binding reasoning contract above. The
+Python executable set derives controls, tool request, tool result, native
+reasoning and visible content from this same fixture; these are behavioral HTTP
+checks, not schema-only or independently authored gateway mocks.
+
+Local provider adapter verification:
+
+```bash
+uv run pytest src/mojentic/llm/gateways/native_reasoning_spec.py -k 'exact_controls or qwen or profile or openai or ordered_multiple' --no-cov
+```
+
+Local broker consumer verification against the same executable set:
+
+```bash
+uv run pytest src/mojentic/llm/gateways/native_reasoning_spec.py -k 'tool_continuation or broker_tool_history or unfinished or failure_or_close or partial_native or incomplete_ordinary or capped_ordinary or provider_error_frame' --no-cov
+```
+
+The ordinary `uv run pytest` repository gate executes both roles. Exact command
+results and the final executable-set hash are recorded below.
+
+**Unfinished external counterpart verification:** the oMLX/Ollama servers and
+external consumers have not run this executable set here. Their tested revisions,
+commands and results are unavailable. Elixir's counterpart command is
+`scripts/verify-native-reasoning-contract`, but it was only inspected, not run.
+Rust reference tests were only read. The shared fixture alone does not establish
+cross-port or live-provider compatibility. Forced server thinking settings,
+model efficacy, stochastic benchmarks and external outer-turn retention remain
+unverified. Coordinate those runs in their authorized repositories; no sibling
+repository was changed. Preserve the coordinated publication hold until all six
+ports satisfy the owner scope and required paired verification is available.
+
+### Native reasoning correction verification results
+
+Executable Python set SHA-256 (`native_reasoning_spec.py`):
+`59a73d635c3fc8c7186df15662c8eb821eca5e53fae8c79b016ff1c6d8a9e4d5`.
+Both local roles below ran on Python base
+`03a8ca4237ad45b5faedcf284b05c96b73d2afac` plus this uncommitted correction,
+against the shared `native-reasoning-v1` fixture hash above.
+
+| Verification command | Result |
+| --- | --- |
+| Local provider command above | PASS: 202 passed, 29 deselected |
+| Local broker consumer command above | PASS: 29 passed, 202 deselected |
+| `.hone-gates.json` lint: `uv run flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics` | PASS: 0 errors |
+| `.hone-gates.json` test: `uv run pytest` | PASS: 1,802 tests; 85% coverage over `src` |
+| Required explicit coverage run: `uv run pytest --cov` | PASS: 1,802 tests; 87% over imported modules (bare `--cov` differs from the configured `--cov=src` scope) |
+| Full lint: `uv run flake8 src` | PASS |
+| `uv run --with ruff ruff check src` | PASS: zero findings; Ruff supplied ephemerally without dependency changes |
+| `uv run --with ruff ruff format` on the changed Python files | PASS; formatting scoped to this correction |
+| `.hone-gates.json` security scan: `uv run bandit -c .bandit -r src` | PASS: no issues |
+| `.hone-gates.json` dependency audit: `uv run pip-audit` | PASS: no known vulnerabilities |
+| `uv export --format requirements-txt --no-emit-project \| uvx pip-audit -r /dev/stdin --disable-pip` with shell pipefail | PASS: no known vulnerabilities in exported locked dependencies |
+| `uv pip list --outdated` | PASS: inventory reviewed; no advisory finding required an upgrade in this correction |
+| `uv run mkdocs build` | PASS |
+| `git diff --check` | PASS |
+
+The repository has no configured coverage minimum. The full source coverage
+figure above includes unimported modules. In this restricted worktree, commands
+used a writable `UV_CACHE_DIR` under `/tmp`; the ephemeral audit also used writable
+`UV_TOOL_DIR`/`UV_TOOL_BIN_DIR`. An initial default-cache permission failure was
+resolved by those paths, without changing dependencies or suppressing advisories.
+The first full regression run exposed seven recovery assertions for the obsolete
+`think: true` mapping of `high`; they now assert exact `"high"` while preserving
+immutable retry bytes and the original recovery checks.
+
+Behavioral proof JSON and its rejecting/passing logs were validated for their
+shape, types, observed exit codes (1 and 0), existence and actual failure/pass
+results. They remain Foundry scratch evidence, outside committed project paths.
+External counterpart verification remains **unfinished** as described above;
+these local results do not authorize publication, and no Git finalization or
+version change was performed.

@@ -74,6 +74,8 @@ class LLMMessage(BaseModel):
         The role of the message in the conversation.
     content : Optional[str]
         The content of the message.
+    thinking : str | None
+        Native assistant reasoning history, separate from visible content and tool results.
     object : Optional[BaseModel]
         The object representation of the message.
     tool_calls : Optional[List[LLMToolCall]]
@@ -86,6 +88,7 @@ class LLMMessage(BaseModel):
 
     role: MessageRole = MessageRole.User
     content: str | None = None
+    thinking: str | None = None
     object: BaseModel | None = None
     tool_calls: list[LLMToolCall] | None = None
     image_paths: list[str] | None = None

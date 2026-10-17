@@ -130,7 +130,7 @@ class DescribeStreamingWireEvidence:
         assert requests[0][1] == requests[1][1]
         payload = json.loads(requests[0][1])
         assert payload["stream"] is True
-        assert payload["think"] is True
+        assert payload["think"] == "high"
         assert payload["options"]["temperature"] == 0.2
         sent = [capture for capture in captures if capture.kind == "request"]
         assert [capture.body for capture in sent] == [

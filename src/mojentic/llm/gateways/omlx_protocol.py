@@ -16,6 +16,7 @@ from pydantic import BaseModel, ConfigDict
 from mojentic.llm.gateways.models import LLMGatewayResponse, LLMMessage, LLMToolCall
 from mojentic.llm.gateways.openai import openai_response_format
 from mojentic.llm.gateways.openai_messages_adapter import adapt_messages_to_openai
+from mojentic.llm.reasoning import reasoning_controls
 from mojentic.llm.tools.llm_tool import LLMTool
 
 if TYPE_CHECKING:
@@ -131,8 +132,12 @@ def omlx_chat_body(
         "temperature": config.temperature,
         "max_tokens": config.max_tokens,
     }
-    if config.reasoning_effort is not None:
-        body["reasoning_effort"] = config.reasoning_effort
+    for original, adapted in zip(messages, body["messages"]):
+        if original.role.value == "assistant" and original.thinking is not None:
+            adapted["reasoning_content"] = original.thinking
+    body.update(
+        reasoning_controls(config.reasoning_effort, "omlx", config.retain_reasoning)
+    )
     response_format = _response_format(config, object_model)
     if response_format is not None:
         body["response_format"] = response_format

@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking changes and migration
 
+- Native reasoning now exposes `ReasoningEffort.Disabled`, `Enabled`, `Low`,
+  `Medium`, `High` and `XHigh` (the corresponding lowercase strings remain valid).
+  Ollama sends exact booleans or level strings; low/medium/high no longer all
+  become `think: true`. Use `Enabled` to request the former boolean behavior.
+  Omitted effort remains unspecified. Select `ReasoningProfile.qwen3_8()`
+  explicitly to validate disabled/low/medium/xhigh and native history support;
+  model names never select profiles. OpenAI rejects the new efforts, profiles
+  and native history while retaining its existing low/medium/high behavior.
+- `LLMMessage.thinking` carries native assistant history separately from content.
+  Set `CompletionConfig(retain_reasoning=True)` to retain completed broker tool
+  responses in ordinary and streamed continuations. Retention defaults to off;
+  cancellation, failed, incomplete and capped responses never supply retained
+  reasoning. oMLX sends `chat_template_kwargs.preserve_thinking: true` when enabled;
+  server overrides remain possible. Structured output uses the same controls.
+  Ollama history preserves all tool calls in order and ordinary tool arguments
+  retain JSON types rather than being converted to strings. See
+  [migration and controls](docs/reasoning_effort.md). Shared-contract local
+  verification does not establish live-provider or external-consumer compatibility;
+  the coordinated 3.0.0 publication hold remains.
+
 - Anthropic recovery now accepts Pydantic `object_model` requests through
   `complete_with_recovery` and `LLMBroker.generate_object` when a recovery policy
   is configured. It freezes native `output_config.format` JSON schema, ordered

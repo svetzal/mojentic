@@ -18,6 +18,8 @@ from .gateways.stream_events import (  # noqa: F401
 )
 from .llm_broker import LLMBroker  # noqa: F401
 from .message_composers import FileTypeSensor, MessageBuilder  # noqa: F401
+from .reasoning import ReasoningEffort as ReasoningEffort
+from .reasoning import ReasoningProfile as ReasoningProfile
 from .recovery import CaptureError as CaptureError
 from .recovery import LengthTerminationError as LengthTerminationError
 from .recovery import RecoveryPolicyError as RecoveryPolicyError
@@ -39,6 +41,8 @@ from .registry.llm_registry import LLMRegistry  # noqa: F401
 __all__ = [
     "CaptureError",
     "LengthTerminationError",
+    "ReasoningEffort",
+    "ReasoningProfile",
     "RecoveryPolicyError",
     "RecoveryStreamEvent",
     "StreamFrameProgress",

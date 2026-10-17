@@ -433,7 +433,9 @@ class OMLXGateway(LLMGateway):
                     elif event.kind == "reasoning":
                         yield StreamingResponse(thinking=event.text)
                     elif event.kind == "completed" and event.response.tool_calls:
-                        yield StreamingResponse(tool_calls=event.response.tool_calls)
+                        yield StreamingResponse(
+                            tool_calls=event.response.tool_calls, completed=True
+                        )
             return
         config = config or _config_from_arguments(
             temperature, num_ctx, max_tokens, num_predict
@@ -441,7 +443,9 @@ class OMLXGateway(LLMGateway):
         body = omlx_chat_body(model, messages, config, tools=tools) | {"stream": True}
         lines = self.transport.stream_lines("/chat/completions", body)
         with closing(lines):
-            yield from omlx_stream_chunks(drop_keepalive_frames(lines))
+            yield from omlx_stream_chunks(
+                drop_keepalive_frames(lines), config.retain_reasoning
+            )
 
     def complete_stream_events(
         self, model: str, messages: list[LLMMessage], config: "CompletionConfig"
