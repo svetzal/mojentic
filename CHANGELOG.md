@@ -17,7 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   when a resend is authorized. Pending hooks still wait until a decision,
   cancellation, or budget/deadline expiration.
 - Eligible Ollama/oMLX connection-establishment failures now report acceptance
-  `no` and can retry without a hook. Install an admission hook to retain caller
+  `no` only with transport connection trace evidence and can retry without a
+  hook. Caller validation and capture-hook connection-shaped exceptions after
+  HTTP 200 retain acceptance `unknown`, status, progress and the inspectable
+  cause, without resending. Install an admission hook to retain caller
   control over those retries. Ambiguous local failures still require admission;
   eligible OpenAI/Anthropic no-hook retry behavior is preserved. Request payloads
   and eligibility rules are unchanged.

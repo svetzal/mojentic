@@ -1,0 +1,11 @@
+# Python recovery admission parity
+
+| Owner decision | Python verification | Cross-port status |
+| --- | --- | --- |
+| Remote no-hook retries, local admission unless evidenced nonacceptance, and distinct undecided admission | [Recovery admission decision map](CONFORMANCE-3.0.0.md); ordinary, structured and supported stream APIs | Other ports and paired consumer verification remain unverified here |
+
+The October 12 root recovery amendment governs these decisions. Exception
+types alone do not establish nonacceptance. Native reasoning, metadata and
+other initiative work are outside this correction. The coordinated publication
+hold remains until all six ports satisfy owner scope and required paired
+consumer/provider verification is available.

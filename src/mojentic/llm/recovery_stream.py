@@ -347,6 +347,7 @@ class _StreamRecovery(_Recovery):
         self.check_dispatch()
         request = self.build_request(client, url, body, headers)
         attempt.bind_request(request)
+        request.extensions["trace"] = attempt.trace_connection
         self.capture(
             WireEvent(
                 kind="request",

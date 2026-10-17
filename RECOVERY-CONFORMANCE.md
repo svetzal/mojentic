@@ -721,3 +721,16 @@ reconciliation, including the explicit unavailable-provenance limitation.
 - Ordinary finish handling and disabled-reasoning parity.
 - Remote cancellation/termination and inference idempotency remain unsupported or unknown.
 - Live inference, experiment restarts, releases and Git finalization are outside this task.
+
+## Connection nonacceptance evidence correction
+
+Shared ordinary and streaming failures use transport connection-establishment
+trace evidence, never an exception class alone, for dispatched acceptance `no`.
+`DescribeRecoveryAdmission.should_keep_acceptance_unknown_when_caller_validation_fails`
+uses real HTTP 200 structured responses across Ollama, oMLX and OpenAI before
+a caller validator raises ConnectError or ConnectTimeout. It asserts status,
+raw/header progress, the original cause, conservative acceptance and no resend.
+Capture-hook cases cover both exception types across all supported recovery
+operations; real refused-connection cases continue proving eligible no-hook
+recovery, including streams. See [CONFORMANCE-3.0.0.md](CONFORMANCE-3.0.0.md)
+for the versioned local set and the outstanding consumer verification finding.

@@ -58,8 +58,13 @@ streaming ends with a failed event whose `StreamOutcome` is
 `ADMISSION_UNDECIDED` and whose report carries the same value.
 
 Without a hook, ambiguous local acceptance yields `admission_required`. An
-eligible local connection-establishment failure (`httpx.ConnectError` or
-`httpx.ConnectTimeout`) supplies acceptance `no` and may retry without a hook.
+eligible local failure with transport trace evidence that TCP, Unix-socket or
+TLS connection establishment failed supplies acceptance `no` and may retry
+without a hook. An exception type alone is insufficient: caller validators or
+capture hooks can raise `httpx.ConnectError` or `httpx.ConnectTimeout` after an
+HTTP 200. Such failures retain the observed status, progress and inspectable
+cause, remain acceptance `unknown`, and cannot resend a completed response.
+Transports without connection trace evidence retain conservative acceptance.
 HTTP statuses, response bodies, read/write failures, silence and generated IDs
 are not evidence of nonacceptance. Other dispatched failures retain acceptance
 `unknown`. A supplied hook is still consulted even when acceptance is `no`.

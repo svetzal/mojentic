@@ -338,6 +338,18 @@ class _Attempt(BaseModel):
     reason: str = "transient"
     cause: BaseException | None = Field(default=None, repr=False)
     sent: bool = False
+    connection_failed: bool = False
+
+    async def trace_connection(self, event: str, info: dict[str, object]) -> None:
+        """Record transport evidence that connection establishment failed."""
+        if event.endswith(".send_request_headers.started"):
+            self.connection_failed = False
+        elif event in {
+            "connection.connect_tcp.failed",
+            "connection.connect_unix_socket.failed",
+            "connection.start_tls.failed",
+        }:
+            self.connection_failed = True
 
     def bind_request(self, request: httpx.Request) -> None:
         """Retain immutable outbound spellings solely for rejecting metadata echoes."""
@@ -492,18 +504,11 @@ class _Attempt(BaseModel):
             retry_after=self.retry_after,
             phase=self.phase,
             progress=self.progress,
-            # Connection establishment failed before completion request bytes
-            # could be sent. Read/write failures and HTTP statuses prove no such
-            # thing, even when the response suggests a transient server error.
+            # Only transport connection evidence proves dispatched bytes could
+            # not reach the provider. Decoder and caller exceptions do not.
             acceptance=(
                 "no"
-                if not self.sent
-                or (
-                    self.reason == "transient"
-                    and isinstance(
-                        self.cause, (httpx.ConnectError, httpx.ConnectTimeout)
-                    )
-                )
+                if not self.sent or (self.connection_failed and self.status is None)
                 else "unknown"
             ),
             eligible=eligible,
@@ -709,6 +714,7 @@ class _Recovery:
                 )
             )
         attempt.bind_request(request)
+        request.extensions["trace"] = attempt.trace_connection
         self.capture(
             WireEvent(
                 kind="request",

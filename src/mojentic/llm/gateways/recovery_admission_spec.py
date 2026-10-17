@@ -1,4 +1,4 @@
-"""Admission contract v1: public recovery APIs over actual loopback HTTP."""
+"""Admission contract v2 (retaining v1 cases): public recovery APIs over actual loopback HTTP."""
 
 import asyncio
 import json
@@ -7,6 +7,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import httpx
 import pytest
+from pydantic import BaseModel, model_validator
 
 from mojentic.llm.gateways.anthropic import AnthropicGateway
 from mojentic.llm.gateways.cloud_recovery_spec import success as cloud_success
@@ -338,15 +339,16 @@ class DescribeRecoveryAdmission:
         assert_wire(requests, captures, lifecycle, report, provider, operation)
 
     @pytest.mark.parametrize("provider,operation", CASES)
+    @pytest.mark.parametrize("error_type", [httpx.ConnectError, httpx.ConnectTimeout])
     async def should_not_invent_nonacceptance_from_a_capture_hook_exception(
-        self, provider, operation
+        self, provider, operation, error_type
     ):
         lifecycle, captures = [], []
 
         def capture(event):
             captures.append(event)
             if event.kind == "body":
-                raise httpx.ConnectError("private-error")
+                raise error_type("private-error")
 
         policy = RecoveryPolicy(
             max_attempts=2,
@@ -365,7 +367,43 @@ class DescribeRecoveryAdmission:
         assert report.outcome == "interrupted"
         assert report.final_failure.acceptance == "unknown"
         assert report.final_failure.http_status == 200
-        assert isinstance(report.final_failure.inspect_cause(), httpx.ConnectError)
+        assert isinstance(report.final_failure.inspect_cause(), error_type)
+        assert report.final_failure.progress.headers_received
+        assert report.final_failure.progress.raw_bytes > 0
         assert not report.final_failure.eligible
         assert len(requests) == 1
         assert_wire(requests, captures, lifecycle, report, provider, operation)
+
+    @pytest.mark.parametrize("provider", ["ollama", "omlx", "openai"])
+    @pytest.mark.parametrize("error_type", [httpx.ConnectError, httpx.ConnectTimeout])
+    async def should_keep_acceptance_unknown_when_caller_validation_fails(
+        self, provider, error_type
+    ):
+        cause = error_type("private-validator-error")
+
+        class ValidatedResult(BaseModel):
+            answer: str
+
+            @model_validator(mode="after")
+            def validate_answer(self):
+                raise cause
+
+        policy = RecoveryPolicy(max_attempts=2, base_delay=0)
+        body = response_for(provider, "structured")
+        with scripted_http([(200, {}, body)]) as (host, requests):
+            gateway = gateway_for(provider, host, policy, RecoveryCall())
+            with pytest.raises(RecoveryError) as caught:
+                await gateway.complete_with_recovery(
+                    model="test",
+                    messages=[LLMMessage(content="private-payload")],
+                    object_model=ValidatedResult,
+                )
+
+        failure = caught.value.report.final_failure
+        assert failure.http_status == 200
+        assert failure.progress.headers_received
+        assert failure.progress.raw_bytes == len(body)
+        assert failure.inspect_cause() is cause
+        assert failure.acceptance == "unknown"
+        assert not failure.eligible
+        assert len(requests) == 1
