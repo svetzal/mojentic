@@ -27,7 +27,7 @@ CONTRACT = json.loads(CONTRACT_PATH.read_text())
 
 
 @contextmanager
-def metadata_server(replies):
+def metadata_server(replies, raw_requests=None):
     requests = []
 
     class Handler(BaseHTTPRequestHandler):
@@ -39,6 +39,8 @@ def metadata_server(replies):
 
         def respond(self):
             body = self.rfile.read(int(self.headers.get("Content-Length", 0)))
+            if raw_requests is not None:
+                raw_requests.append(body)
             requests.append(
                 {
                     "method": self.command,
@@ -210,12 +212,13 @@ class DescribeContextWindowContract:
     ):
         provider = case["provider"]
         success = reply(provider, "complete")
+        raw_requests = []
         replies = [
             (200, success),
             (case["status"], case["response"].encode()),
             (200, success),
         ]
-        with metadata_server(replies) as (host, requests):
+        with metadata_server(replies, raw_requests) as (host, requests):
             gateway = gateway_for_case(case, host)
             args = {
                 "model": case["model"],
@@ -228,6 +231,7 @@ class DescribeContextWindowContract:
             after = gateway.complete(**args)
 
         assert before.content == after.content == "answer"
+        assert raw_requests[0] == raw_requests[-1]
         assert requests[0] == requests[-1]
         assert requests[0]["body"]["model"] == case["model"]
         assert_controls(requests[0]["body"], provider, controls)

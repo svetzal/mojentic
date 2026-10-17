@@ -21,7 +21,8 @@ class ClientTiming(BaseModel):
 class StreamClock:
     """Start at first dispatch, observe raw frames, and retain time across retries."""
 
-    def __init__(self) -> None:
+    def __init__(self, clock: Callable[[], float] | None = None) -> None:
+        self._clock = clock or time.monotonic
         self.started: float | None = None
         self.first: float | None = None
         self.kind: str | None = None
@@ -30,7 +31,7 @@ class StreamClock:
     def dispatch(self) -> None:
         """Record the first actual send, after all pre-dispatch callbacks."""
         if self.started is None:
-            self.started = time.monotonic()
+            self.started = self._clock()
 
     def observe(self, frame: object) -> None:
         """Choose thinking, content, then argument fragments within one wire frame."""
@@ -71,7 +72,7 @@ class StreamClock:
         }
         self.kind = next((kind for kind, present in kinds.items() if present), None)
         if self.kind is not None and self.started is not None:
-            self.first = time.monotonic()
+            self.first = self._clock()
 
     def observe_frames(self, frames: list[object]) -> None:
         """Observe complete frames in transport order before capture callbacks."""
@@ -87,7 +88,7 @@ class StreamClock:
         """Return only measured evidence; unsent requests have no duration."""
         if self.started is None:
             return {}
-        result = {"request_duration_ms": (time.monotonic() - self.started) * 1000}
+        result = {"request_duration_ms": (self._clock() - self.started) * 1000}
         if self.first is not None:
             result |= {
                 "time_to_first_token_ms": (self.first - self.started) * 1000,

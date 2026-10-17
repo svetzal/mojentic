@@ -1,3 +1,9 @@
+The October 17 library self-validation policy supersedes historical counterpart
+requirements below. These unchanged contracts are exercised through Python public
+APIs, production gateways against controlled HTTP and a fresh installed wheel.
+Current commands, identities and limits are in `CONFORMANCE-3.0.0.md` at the
+repository root. External adoption verifies released versions in its own scope.
+
 # Native reasoning contract v1
 
 `native_reasoning_v1.json` is an unchanged copy of

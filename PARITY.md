@@ -1,4 +1,4 @@
-# Python 3.0.0 partial parity
+# Python 3.0.0 parity assessment
 
 The October 17 library self-validation policy supersedes historical external
 counterpart requirements in the rows below. Python validates its public API and
@@ -9,6 +9,7 @@ contracts on both sides. The coordinated publication hold remains in force.
 
 | Owner decision | Python verification | Cross-port status |
 | --- | --- | --- |
+| Final Python readiness assessment, RELEASE parts 1–5 | [Current decision map and actual results](CONFORMANCE-3.0.0.md): all October 12 amendments; `readiness_boundary_spec.py` adds public HTTP 500/502, selected eligibility and partial semantic interruption; raw metadata side-effect comparison; deterministic clock tests; fresh installed-wheel recovery/reasoning/metadata/fidelity/timing probes | Python self-validates the library; part 4 is Kotlin-specific. Historical external gaps below do not block this unreleased library. Other ports and owner release authorization remain outside this assessment. |
 | Part 3: section 2 first-token timing | `first_token_spec.py`, `py-stream-first-token-v1`: production HTTP through gateways, recovery, broker and session; thinking/content/argument precedence, no-token/failure/cancellation evidence, dispatch capture exclusion, retry inclusion and exact tool continuations; cycle-13 malformed choices and immediate recovery-backed public-close regressions; fresh-wheel public API consumer | TypeScript reference consulted read-only. Python self-validates; no other-port executable snapshot required. Publication held until all ports are ready and owner authorization arrives. |
 | Part 3: section 1 context discovery | `context_window_spec.py`: unchanged `context-window-v1` (53 HTTP cases), registry-only exact lookup, helper precedence, contract-derived doubles and unchanged same-model completion requests | Python local verification passes; Elixir read-only contract JSON hash matches. Available manifest differs from the reported snapshot; external server/consumer verification remains unfinished. Publication hold retained. |
 | Part 3: section 3 request fidelity | `request_fidelity_spec.py` executes unchanged `request-fidelity-v1` through captured real HTTP gateway, broker, session, structured/stream routes, retries and tool continuations; every shared case also directly exercises `ChatSession.send_stream` and `LLMBroker.generate_stream_events` on Ollama/OpenAI/oMLX, checking exact controls/content, terminal success and ordered session history; Anthropic registry/4096 fallback | Local Python consumer/provider roles verified; external paired verification and Anthropic cross-port registry table alignment unfinished. First-token timing is verified separately in section 2. Publication remains on hold. |

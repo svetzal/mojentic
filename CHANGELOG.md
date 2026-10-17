@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Opt-in transient completion recovery for Ollama, oMLX and OpenAI ordinary,
+  structured and supported tool streams, and Anthropic ordinary and structured
+  completions. Recovery freezes each request, bounds attempts, preserves typed
+  causes and validated metadata, supports admission/cancellation and never replays
+  delivered semantic output or executes a tool twice. Anthropic streaming, tools
+  and JSON-mode recovery remain unsupported and fail before dispatch.
 - Client-measured `time_to_first_token_ms`, `first_token_kind` and
   `request_duration_ms` on supported stream terminal evidence. Legacy gateway,
   broker and session text streams expose `last_stream_metrics` without adding
@@ -32,6 +38,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Anthropic ordinary completions preserve ordered user and assistant history,
+  including empty assistant content, through SDK and recovery routes. Two-turn
+  sessions include the prior assistant answer; recovery resends identical bytes.
+- Send Anthropic temperature through SDK `extra_body`, preserving the explicit
+  caller value with the locked SDK.
 - Malformed OpenAI/oMLX `choices` retain the parser's typed stream failure
   instead of raising from timing observation. Closing a recovery-backed gateway,
   broker or session stream after content retains measured timing and available
@@ -46,6 +57,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Readiness validation now covers HTTP 500/502 and caller-selected eligibility,
+  public broker/session interruption of all semantic channels, byte-identical
+  completion bodies across metadata lookup, and a fresh wheel consumer across
+  recovery, reasoning, metadata, request fidelity and streaming timing.
+  Deterministic injected-clock tests supplement real HTTP timing checks.
+- Refresh dependency locks, modernize type annotations and normalize Python
+  formatting across the library and examples.
 - Extend unchanged `request-fidelity-v1` loopback HTTP verification to every
   shared case through `ChatSession.send_stream` and `LLMBroker.generate_stream_events`
   with real Ollama, OpenAI and oMLX gateways. Regression assertions check exact
@@ -144,22 +162,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   control over those retries. Ambiguous local failures still require admission;
   eligible OpenAI/Anthropic no-hook retry behavior is preserved. Request payloads
   and eligibility rules are unchanged.
-
-### Added
-
-- Opt-in transient completion recovery for `OpenAIGateway`: ordinary, structured and tool-capable streaming completions route through owned HTTP when a `recovery_policy` is set. Existing broker and chat session return types are unchanged. Cloud retries may proceed without an admission hook; ambiguous local retries still require explicit admission.
-- Recovered responses and recovery errors carry validated provider metadata (provider request IDs and provider error codes) where the provider supplies them.
-- Opt-in ordinary completion recovery for the Anthropic gateway. Structured output, tools and streaming remain unsupported and are refused before dispatch.
-
-### Fixed
-
-- Anthropic ordinary completions now preserve user and assistant history in order,
-  including empty assistant content, through the SDK and opt-in recovery paths.
-  Two-turn chat sessions send the first assistant answer with the second query;
-  recovery resends the same full-history request bytes. System extraction, image
-  serialization and completion controls retain their existing behavior.
-- Send the existing Anthropic temperature control through SDK `extra_body` so
-  locked SDK 1.15.0 reaches HTTP without rejecting an unsupported keyword.
 
 ### Security
 

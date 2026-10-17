@@ -1,8 +1,312 @@
-# Python 3.0.0 conformance — partial decision map
+# Python 3.0.0 readiness self-assessment — October 17, 2026
 
-This is a partial decision map for the owner scope in
-`mojentic-unify/RELEASE-3.0.0.md`. It does not declare Python or the
-coordinated release ready. Versions and publication remain on hold.
+This assessment supersedes the partial status and historical unverified statements
+below. It evaluates RELEASE-3.0.0 parts 1–5 from Python baseline
+`44e416eb87b30859cc5628a0d51b6ff95d987048` plus the working-tree changes identified
+in [the source manifest](docs/release_3_0_0_source.sha256). No version or Git ref
+was changed. The unpublished candidate still identifies itself as **2.1.0**;
+it must not be confused with the released 2.1.0 package.
+
+The assessment covers library readiness, not live vendor certification or the
+readiness of any other port. Publication remains held until all six ports meet
+owner scope and the owner authorizes the coordinated release. Current commands,
+results, artifact identities and import provenance appear in the verification
+record following the decision maps.
+
+## Binding inputs and authorization
+
+The Foundry initiative brief was read and its recorded SHA-256 verified:
+`ea6a0efa56bfb3cd74b5ce728f80cc33c6fbd853114bec94b8aabe79f5d28e6e`.
+The read-only authoritative `mojentic-unify` checkout was at
+`ef9339c6a9682ed5f060bd690b738f6b8eea1d2d`. Its binding documents hash to:
+
+| Document | SHA-256 |
+| --- | --- |
+| RELEASE-3.0.0.md | `ea6a0efa56bfb3cd74b5ce728f80cc33c6fbd853114bec94b8aabe79f5d28e6e` |
+| TRANSIENT-RECOVERY-2026-10.md, including October 12 | `a53a3a4eb118fa4687dd703d6ce918dd40dd6cb4eda796abc6c429a6e932e7a3` |
+| REASONING-PROTOTYPE-2026-10.md | `0a40f3ad45c593bc779411021e45db569e73d3ecce86c99b201e7f8ebb656809` |
+| MODEL-METADATA-2026-10.md, including October 17 timing decisions | `d9945dca45ce09e2163843263a75b5e93028b00ee1baf191fc3ff13396830e9c` |
+
+AGENTS.md already records Stacey's October 15 authorization for the full 3.0.0
+scope, the October 17 library self-validation policy and coordinated publication
+hold. Its narrower timing-correction description is historical task context,
+not a restriction on this explicitly authorized final assessment. No additional
+authorization is required for this assessment. Part 4 (removing iOS targets) is
+**Kotlin-specific**. Part 5's Python issue #2 is verified below; Rust issue #3
+and TypeScript issue #4 belong to those ports and are not claimed here.
+
+## Current executable decision map
+
+Names below are executable pytest methods; file names refer to
+`src/mojentic/llm/gateways/` unless prefixed by `llm/`. Each listed test passed in
+the final suite. All supported provider variants are collected by the normal
+pytest gate. These reuse the existing executable contracts and captured provider
+fixtures; no binding contract or shared JSON was changed.
+
+### Part 1: base recovery contract
+
+| Binding decision | Named executable evidence |
+| --- | --- |
+| Recovery owns one completion, never agent/tool replay; retries off by default | `ollama_recovery_spec.py::should_preserve_legacy_success_and_one_send_by_default`, `should_execute_tool_once_and_recover_only_the_subsequent_completion`; `ollama_stream_recovery_spec.py::should_keep_raw_event_api_single_turn_with_recovery_configured`, `should_keep_retry_accounting_separate_from_tool_depth` |
+| Stable provider/operation/category, numeric status, phase/acceptance, identity, bounded history and private inspectable cause | `cloud_recovery_spec.py::should_recover_503_with_literal_bytes_private_evidence_and_exact_lifecycle`, `should_bound_504_with_complete_history`; `provider_metadata_spec.py::should_preserve_exact_validated_metadata_in_terminal_public_evidence` |
+| Headers/raw bytes vs observed/delivered reasoning, content, fragments and completed tools; keepalive is raw only | `ollama_stream_recovery_spec.py::should_retain_observed_evidence_on_capture_failure_without_replay`; `completed_tool_recovery_spec.py::should_report_completed_calls_and_execute_each_once`; `omlx_recovery_spec.py::should_require_admission_after_keepalive_and_reset_frame_indices` |
+| Safe default strings/repr/JSON/logs/events exclude payloads, credentials, arguments and causes | `omlx_recovery_spec.py::should_keep_echoed_secrets_out_of_safe_errors_events_and_logs`; `ollama_recovery_spec.py::should_keep_uuid_shaped_secret_echoes_private`; `llm/recovery_spec.py::should_keep_callback_secrets_out_of_policy_serialization_and_repr` |
+| Positive attempts; delay/budget configuration validated; capped exponential full jitter, overflow avoided | `llm/recovery_spec.py::should_reject_invalid_recovery_policy`, `should_bound_exponential_jitter_without_overflow`; `ollama_recovery_spec.py::should_honor_retry_after_without_shortening_minima` |
+| Default transport/429/500/502/503/504 eligibility; caller category/status controls; permanent authentication/request and malformed responses excluded | `omlx_429_recovery_spec.py::should_recover_429_only_after_admission_with_exact_wire_evidence`; `readiness_boundary_spec.py::should_apply_selected_eligibility_and_recover_server_errors`; `cloud_recovery_spec.py::should_bound_504_with_complete_history`; `ollama_recovery_spec.py::should_never_replay_permanent_status_even_when_body_transport_fails`, `should_reject_malformed_provider_responses_without_replay` |
+| Retry-After seconds, HTTP dates, past/invalid/absent values; provider minimum never shortened by ceiling or budget | `llm/recovery_spec.py::should_parse_retry_after_without_serializing_untrusted_text`; `ollama_recovery_spec.py::should_honor_retry_after_without_shortening_minima`; `ollama_stream_recovery_spec.py::should_refuse_excessive_retry_after_without_admitting` |
+| Budget starts on first failure, deadline constrains admission/backoff/resend, never times out admitted active generation | `ollama_recovery_spec.py::should_expire_budget_while_admission_is_pending`, `should_refuse_admission_that_consumed_the_recovery_budget`, `should_allow_active_generation_to_finish_after_recovery_deadline`, `should_refuse_callback_expiry_without_phantom_retry`; `cloud_recovery_spec.py::should_leave_active_generation_without_a_fixed_read_timeout` |
+| Cancellation authoritative before dispatch, active HTTP, admission and delay; local resources close; no remote termination claim | `ollama_recovery_spec.py::should_cancel_before_dispatch_without_inventing_wire_attempt`, `should_cancel_active_request_retaining_headers_and_raw_progress`, `should_cancel_pending_waits_and_never_resend`, `should_make_native_task_cancellation_authoritative`; `openai_recovery_lifecycle_spec.py::should_cancel_active_request_and_close_local_socket` |
+| Hook receives exact identity/progress; allow/reject/wait; local ambiguity needs permission, remote may retry | `recovery_admission_spec.py::should_apply_admission_without_changing_retry_bytes`, `should_stop_pending_admission`; `openai_recovery_lifecycle_spec.py::should_leave_admission_pending_until_explicit_allow` |
+| Connection nonacceptance requires actual trace evidence; timeout/empty output/504 cannot prove termination | `recovery_admission_spec.py::should_retry_evidenced_connection_refusal_without_hook`, `should_not_invent_nonacceptance_from_a_capture_hook_exception`, `should_keep_acceptance_unknown_when_caller_validation_fails`; `ollama_recovery_spec.py::should_require_admission_after_an_actual_read_timeout` |
+| Logical ID stable, attempts unique, one-based wire counts; no invented idempotency or hidden SDK retries/redirects | `recovery_admission_spec.py::should_apply_admission_without_changing_retry_bytes`; `cloud_recovery_spec.py::should_not_follow_redirects`; `ollama_recovery_spec.py::should_not_follow_redirects_or_count_hidden_attempts`; exact literal request/header assertions and capability tests |
+| Immutable ordinary/structured/streaming payload, including messages, images, schema, tools, reasoning and sampling | `cloud_recovery_spec.py::should_reuse_frozen_literal_bytes_after_admission_mutates_caller_inputs`, `should_freeze_model_specific_controls_and_tool_capabilities`; `ollama_recovery_spec.py::should_freeze_images_and_controls_once_before_admission`; `anthropic_structured_spec.py::should_freeze_schema_and_history_before_admission_mutates_inputs` |
+| After any semantic output, report interruption with failure/progress/history; exhaustion never succeeds | `readiness_boundary_spec.py::should_surface_partial_semantics_without_replay_through_public_streams`; `ollama_stream_recovery_spec.py::should_bound_persistent_504_history`; `openai_recovery_lifecycle_spec.py::should_interrupt_observed_semantics_without_replay` |
+| Completed tools execute once; continuation recovery does not reset tool depth; session never inserts incomplete assistant | `completed_tool_recovery_spec.py::should_report_completed_calls_and_execute_each_once`; `ollama_stream_recovery_spec.py::should_execute_completed_tool_once_and_preserve_subsequent_failure`, `should_keep_retry_accounting_separate_from_tool_depth`; `readiness_boundary_spec.py::should_surface_partial_semantics_without_replay_through_public_streams` |
+| Typed lifecycle transitions with exact IDs, phase/progress, delay and safe failure fields; explicit opt-in wire trace including final failures | `cloud_recovery_spec.py::should_recover_503_with_literal_bytes_private_evidence_and_exact_lifecycle`; `ollama_recovery_spec.py::should_capture_the_authenticated_request_actually_sent`; `readiness_boundary_spec.py::should_apply_selected_eligibility_and_recover_server_errors` |
+| Typed capture/observer failures do not authorize replay; exact original evidence remains inspectable | `typed_errors_spec.py::should_preserve_capture_type_original_and_evidence_through_public_callers`; `ollama_recovery_spec.py::should_keep_observer_exceptions_private_and_prohibit_replay`; `cloud_recovery_spec.py::should_observe_content_before_failing_capture_without_delivery_or_replay` |
+
+Harness experiment registration, Generation45 preservation and live efficacy are
+application/experiment responsibilities; no harness, stopped benchmark or remote
+application was changed. No claim about the original 504's origin is made.
+
+### Part 1: every October 12 robustness decision
+
+| Amendment decision | Named executable evidence |
+| --- | --- |
+| 1. No-hook remote retries; ambiguous local admission-required except proven nonacceptance | `recovery_admission_spec.py::should_apply_admission_without_changing_retry_bytes`, `should_retry_evidenced_connection_refusal_without_hook` |
+| 2. Hook ends without decision: distinct `admission_undecided`, never permission or rejection | Same admission matrix and `should_surface_undecided_through_synchronous_public_apis` |
+| 3. Five facilities on all four gateways; endpoint citations/date/basis; exact termination unknown | `recovery_capabilities_spec.py::should_report_local_cancellation_with_endpoint_evidence`, `should_report_remote_cancellation_with_endpoint_evidence`, `should_report_request_status_with_endpoint_evidence`, `should_report_idempotency_with_endpoint_evidence`, `should_report_exact_attempt_termination_with_endpoint_evidence`; legacy/new round-trip tests preserve supported serialized versions |
+| 4. Allowlisted provider codes; IDs never credential/payload echoes; native provider field names | `provider_metadata_spec.py::should_reject_uuid_shaped_outbound_echoes_but_keep_private_wire`, `should_reject_recognized_error_code_echoes`, `should_preserve_anthropic_request_id_and_error_type`, `should_propagate_exact_metadata_through_public_broker_and_session` |
+| 5. IMF-fixdate, RFC 850, asctime dates | `llm/recovery_spec.py::should_parse_retry_after_without_serializing_untrusted_text`; injected wall clocks and exact delay assertions in provider Retry-After specifications |
+| 6. Closed provider and ordinary/structured/streaming operation vocabularies | `recovery_admission_spec.py::should_apply_admission_without_changing_retry_bytes` checks all supported provider/operation pairs; `typed_errors_spec.py::should_preserve_capture_type_original_and_evidence_through_public_callers` propagates typed Failure/RecoveryReport models; closed Literal fields enforce the vocabulary |
+| 7. oMLX keepalive changes only raw progress, not frame index or provider metadata | `omlx_recovery_spec.py::should_require_admission_after_keepalive_and_reset_frame_indices`; `first_token_spec.py::should_measure_first_wire_frame_and_terminal_errors`; `omlx_stream_spec.py::should_drop_frames_whose_model_is_keepalive` |
+| 8. Typed policy error on every validation/entrypoint; typed capture/length through broker/session | `typed_errors_spec.py::should_reject_missing_policy_with_the_same_type_before_dispatch`, `should_validate_policy_at_gateway_construction_without_disclosing_input`, `should_use_one_safe_policy_error_across_validation_entrypoints`, `should_preserve_capture_type_original_and_evidence_through_public_callers`, `should_preserve_length_cause_through_stream_consumers`; Anthropic structured decode/length tests |
+| 9. Public broker/session partial reasoning/content/tools, safe lifecycle fields, selected categories/statuses, HTTP 500/502 | `readiness_boundary_spec.py::should_surface_partial_semantics_without_replay_through_public_streams`, `should_apply_selected_eligibility_and_recover_server_errors`: real HTTP, exact relevant request bodies, private original response, typed terminal and exact safe failure fields/delays |
+| Python default formatting/reflection idiom, cancellation scope, naming | Privacy tests above cover repr/serialization/logging and explicit inspection; `openai_recovery_lifecycle_spec.py::should_cancel_while_terminal_telemetry_consumption_is_paused`; `ollama_stream_recovery_spec.py::should_close_local_resources_when_iterator_is_closed`; no remote inference termination is inferred from local close |
+
+### Part 2: native reasoning
+
+All names in this table are in `native_reasoning_spec.py`.
+
+| Binding decision | Named executable evidence |
+| --- | --- |
+| Separate native reasoning/content/tool results; exact provider fields | `should_send_exact_controls_without_model_inference`, `should_preserve_distinct_payloads_in_broker_tool_history`, `should_preserve_ordered_multiple_native_tool_calls` |
+| Disabled/Enabled/Low/Medium/High/XHigh remain distinct; omission unknown | `should_send_exact_controls_without_model_inference`: unchanged shared null and six-effort matrix through ordinary/structured/streaming/recovery, exact wire controls |
+| Caller selects profile, never inferred from alias; supported efforts/history validated | `should_accept_exact_qwen_profile_controls`, `should_reject_unsupported_qwen_controls`, `should_reject_history_for_a_profile_without_history`, `should_reject_named_effort_for_boolean_only_profile`; generic alias control matrix |
+| Qwen3.8 accepts disabled/low/medium/xhigh and native history | Exact Qwen profile acceptance/rejection tests above |
+| Retention opt-in; completed ordinary and streamed tool responses only | `should_preserve_distinct_payloads_in_broker_tool_history` with retention on/off and recovery on/off; `should_retain_completed_recovery_ollama_history_and_execute_tool_once` |
+| Never fabricate native history from cancelled, erroneous, incomplete or capped replies | `should_not_retain_unfinished_stream_history`, `should_not_fabricate_history_on_stream_failure_or_close`, `should_discard_partial_native_history_when_caller_closes`, `should_reject_incomplete_ordinary_ollama_history`, `should_reject_incomplete_recovery_ollama_history`, `should_exclude_capped_ordinary_reasoning_from_history`, `should_discard_reasoning_after_provider_error_frame` |
+| oMLX preserve_thinking requested with retention, not proof of forced server enforcement | `should_retain_native_history_separately_through_tool_continuation`, `should_preserve_distinct_payloads_in_broker_tool_history` |
+| Structured controls match ordinary/streaming | `should_send_exact_controls_without_model_inference[structured-*]` and `[recovery_structured-*]` |
+| OpenAI new controls/history fail explicitly; legacy model adaptation retained | `should_reject_new_openai_controls_before_http`, `should_reject_native_history_on_openai`; existing OpenAI and request fidelity model-control specifications |
+
+No local model, stochastic benchmark, harness context-accounting or outer-turn
+retention experiment is certified by these library tests.
+
+### Part 3: metadata, request fidelity and client timing
+
+| Binding decision | Named executable evidence |
+| --- | --- |
+| Single-purpose context lookup returns positive window/source, None for unadvertised, typed error for malformed/non-2xx/transport | `context_window_spec.py::should_verify_provider_semantics_and_exact_http_request`, `should_distinguish_transport_failure`, `should_return_not_advertised_for_unsupported_gateway`: all unchanged context-window-v1 cases |
+| oMLX authenticated configured endpoint, exact model ID; Ollama POST show, any architecture suffix, optional model_num_ctx; OpenAI exact registry/no HTTP | `context_window_spec.py::should_select_exact_model_through_authenticated_http`, `should_verify_provider_semantics_and_exact_http_request`, `should_lookup_only_exact_registry_entries_without_http` |
+| Effective window caller/model/default precedence and clamp; unknown remains None, advertised-only is upper bound | `context_window_spec.py::should_apply_helper_precedence_and_clamping` |
+| Discovery changes no subsequent completion bytes | `context_window_spec.py::should_leave_same_model_completion_request_unchanged_after_discovery`: now compares raw completion bodies as well as parsed semantics for every provider case and control combination; `should_preserve_registry_completion_semantics_after_discovery` |
+| Omitted/null temperature/num_ctx/max_tokens off wire; zero preserved; sole output limit max_tokens maps once per provider | `request_fidelity_spec.py::should_execute_shared_cases`, `should_preserve_controls_through_broker_events`, `should_preserve_controls_and_history_through_session_stream`; `llm/completion_config_spec.py::should_use_default_values` |
+| No gateway/deprecated broker defaults; session trimming budget remains local | `request_fidelity_spec.py::should_omit_controls_for_gateway_keywords_without_config`, `should_forward_only_explicit_deprecated_broker_keywords`, `should_omit_unset_session_controls_at_http_boundary`; session trimming specifications |
+| top_p all gateways; top_k Ollama/oMLX/Anthropic; fixed temperature adapts only explicit controls; unsupported effort warns/drops | Shared fidelity cases plus `should_adapt_only_explicit_temperature_to_registered_fixed_value`, `should_warn_and_drop_effort_for_non_reasoning_model` |
+| Required Anthropic output limit uses registry maximum/unknown 4096; oMLX has none; explicit values win | `request_fidelity_spec.py::should_apply_only_required_fallback_and_explicit_controls`, `should_reproduce_supported_former_sdk_and_config_limits`; shared unset/null cases |
+| Migration reproduces supported old controls; immutable controls/history across retries/tool continuations | `request_fidelity_spec.py::should_forward_only_explicit_deprecated_broker_keywords`, `should_keep_controls_and_tool_history_on_admitted_resend`; Unreleased migration notes and broker guide |
+| Monotonic clock starts at dispatch after request capture, not lazy construction; optional first-token kind/time and terminal duration on success/failure | `first_token_spec.py::should_exclude_capture_and_lazy_delay_at_actual_dispatch`, `should_measure_supported_public_routes`, `should_report_dispatched_failure_without_inventing_tokens`; `llm/stream_timing_spec.py::should_measure_exact_first_token_and_duration_with_injected_monotonic_clock`, `should_report_empty_completion_without_inventing_a_first_token`, `should_not_read_the_clock_before_dispatch` |
+| First token only; ignore keepalive/empty frames; thinking > content > tool arguments in a shared frame | `first_token_spec.py::should_measure_first_wire_frame_and_terminal_errors`, `should_measure_argument_fragment_before_later_failure`, `should_ignore_token_frames_after_terminal_proof`; deterministic injected-clock tests above |
+| Retry clock stays on first logical dispatch; continuation gets new clock; provider metrics retained separately | `first_token_spec.py::should_include_admitted_retry_delay_on_one_clock`, `should_reset_continuation_clock_and_preserve_exact_tool_history`; `ollama_stream_recovery_spec.py::should_emit_exact_length_terminal_progress_metrics_then_failure`, `should_preserve_only_reported_completion_evidence` |
+| Supported close/cancellation retains timing, unsent closes do not invent it; malformed choices preserve parser errors; old optional metadata readable | `first_token_spec.py::should_retain_recovery_timing_immediately_after_public_close`, `should_leave_unsent_recovery_close_without_timing`, `should_keep_timing_on_explicit_recovery_cancellation`, `should_preserve_invalid_stream_event_for_noniterable_choices`, `should_preserve_content_timing_before_invalid_choices`, `should_accept_old_evidence_without_optional_client_fields` |
+| Public guides, changelog and parity records for all three capabilities | `docs/model_context_window.md`, `docs/streaming.md`, `docs/broker.md`, `CHANGELOG.md` Unreleased and `PARITY.md`; MkDocs build verifies documentation wiring |
+
+The deterministic clock checks supplement the real HTTP timing acceptance suite;
+no library internals are mocked. StreamClock accepts an optional clock solely to
+make exact timing semantics testable; its production default remains monotonic.
+The hardest public HTTP timing test rejected an intentionally constant production
+clock (0ms rather than measured dispatch-to-thinking delay), then passed after
+restoring the monotonic default. The temporary fault is absent from the candidate.
+
+### Part 5 Python history audit and release records
+
+`anthropic_history_spec.py::should_preserve_ordered_history_system_images_controls_and_response`
+verifies ordinary SDK and recovery-backed public calls with exact expected full
+history, Unicode, empty assistant messages, system extraction, images, controls
+and response semantics. `should_resend_identical_full_history_with_stable_logical_identity`
+compares literal UTF-8 HTTP bodies across a 503 retry and verifies full failure
+metadata and actual stable/unique identities. The same file's two-turn session
+tests verify prior assistant history through ordinary and recovery public routes.
+Anthropic structured recovery is additionally exercised in `anthropic_structured_spec.py`.
+
+CHANGELOG Unreleased was reconciled against `git log v2.1.0..HEAD` and the source
+diff, including recovery, native reasoning, metadata, timing, request fidelity,
+Anthropic history/SDK adaptation, FileManager containment, dependency maintenance,
+formatting, and breaking API/migration notes. The stale ordinary-only Anthropic
+entry was removed. Repeated Added/Fixed headings were consolidated. AGENTS.md's
+3.0.0 authorization and PARITY.md rows already match owner scope; no artificial
+rewrite or version bump was needed.
+
+## Reconciliation and remaining limits
+
+Historical entries below describe the source and commands at their own dates;
+their source/artifact manifests are not claims about this candidate. In particular:
+
+- Ordinary-only Anthropic recovery is superseded by ordinary **and structured**
+  recovery; streaming/tools/JSON-mode recovery remain explicitly unsupported.
+- The old metadata source hash predates the October 17 timing amendment. Current
+  behavior tests the three added rules; shared fixture identities are unchanged.
+- Old statements that metadata/request fidelity/reasoning/timing are future work
+  are superseded by the current decision map and final executions.
+- Old missing counterpart snapshots, external consumer runs and manifest mismatch
+  observations remain historical facts, but are not unreleased-library blockers
+  under the October 17 self-validation policy. No changed running service boundary
+  needs another repository's authorization or contract verification in this task.
+- Vendor live behavior, remote termination of an exact inference attempt, forced
+  oMLX server settings, stochastic efficacy and the readiness of other ports are
+  unverified. Capabilities retain their documented unsupported/unknown values.
+- Python supports 3.11+; this run uses Python 3.13.15 on Linux. Other interpreters
+  and platforms are not certified by this local run. Existing complexity debt is
+  reported with the quality results; it is not suppressed.
+
+No genuine unresolved contract ambiguity was found. No dependent adoption,
+external executable snapshot, benchmark or live vendor credential is required
+to establish this library's declared fixture behavior. The coordinated owner
+publication hold remains authoritative.
+
+
+## Current verification record and recommendation
+
+**Python's owner feature scope is implemented and its library self-validation
+passes. Recommend escalation to the owner for the coordinated release go-ahead.**
+This is a readiness recommendation, not permission to publish: Foundry still
+owns Git finalization and candidate CI, every other port must satisfy owner
+scope, and the owner must authorize the coordinated release. Existing baseline
+formatting/complexity debt below is explicitly retained for review.
+
+The final source manifest SHA-256 is
+`a8a7a7a3dde1d69f5aa6fb8167a3b6c66e0981795e84587cb613fc85093cc610`.
+It identifies runtime code, tests, fixtures, verifier scripts and build/test
+configuration; the evolving assessment/results themselves are excluded to avoid
+self-referential hashes. Every manifest entry was rehashed successfully, and all
+Python files in the final wheel were compared byte-for-byte with current source.
+The older context-window source manifest remains historical, not a current
+snapshot assertion. Machine-readable outcomes and log-content hashes are in
+[the validation record](docs/release_3_0_0_validation.json).
+
+| Executable contract | Current SHA-256 / identity |
+| --- | --- |
+| context-window-v1 | `cfeee4702c0dd3b18e02fbd0c8bad82ae58ee1ca7eadcfd21683479ba24f3dc4` |
+| native-reasoning-v1 | `be212ff011125f1d0927e3a65a0d7cd87eedbf9f5ff69e803b4112a80ae6b1f6` |
+| request-fidelity-v1 | `6f02088311f50707b9c12154d888f844928c23d359043cb2e5d5654bf7e5eaea` |
+| py-stream-first-token-v1 | `c508e719670e851cf0a1eb7d89fbcfe2eae0ab5859df1ab0ddcbe7681140ac3e` |
+| recovery-admission-v2, recovery-capabilities-v1, python-typed-errors-v1, anthropic-history-v1, anthropic-structured-v1 | Existing in-code executable sets, identified by their named spec files in the current source manifest; the added public-boundary and deterministic-clock specs are identified there too |
+
+Both the library provider role (production gateway over controlled HTTP) and
+consumer roles (gateway/broker/session public calls and fresh installed package)
+verify this same Python source/artifact and unchanged fixture set. The final
+JUnit results were checked against the current map: **all 129 named methods
+exist in the executed suite and passed**, comprising their collected variants.
+No independent mock or other port's executable run substitutes for these checks.
+The TypeScript timing reference and fixture provenance remain recorded in the
+historical timing section; its executable snapshot is not a prerequisite.
+
+Commands ran from this worktree using `foundry capture` for verbose output, with
+`UV_CACHE_DIR=/tmp/mojentic-uv-cache` and, for uvx, `UV_TOOL_DIR=/tmp/mojentic-uv-tools`.
+The initial default uv cache attempt failed because the host cache is read-only;
+redirecting the cache resolved it. The first new public-boundary test draft used
+an invalid session call signature and an incorrect expected HTTP-body phase;
+these verifier errors were corrected to the existing public contract. The first
+fresh verifier compared serialized tool-argument whitespace; it now checks the
+exact function name, typed argument values and continuation IDs/content. No
+production semantics were weakened to satisfy those assertions.
+
+| Final command/check | Actual result |
+| --- | --- |
+| `uv run flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics` | Exit 0; required hone lint gate |
+| `uv run pytest` | Exit 0; 2,636 passed, 86% configured source coverage; required hone test gate |
+| `uv run pytest --cov --cov-report=term --junitxml=<scratch-result>` | Exit 0; 2,636 passed, 87% total coverage; metadata module 100%, timing module 99%. No repository fail-under threshold is configured; no threshold is invented or claimed |
+| `uv run bandit -c .bandit -r src` | Exit 0; zero issues; hone security gate |
+| `uv run pip-audit` | Exit 0; no known vulnerabilities; hone dependency gate |
+| `uv run flake8 src` | Exit 0; zero findings |
+| `uv run ruff check src scripts/verify_readiness.py` | Exit 0; zero findings |
+| `uv run ruff format` and `ruff format --check` on all changed Python files | Exit 0; formatted and verified |
+| `uv run ruff format --check src scripts/verify_readiness.py` | Exit 1; one pre-existing formatting mismatch in unchanged `file_manager_spec.py`; 231 files already formatted. No unrelated formatting rewrite was made |
+| `uv run flake8 src --max-complexity=10` | Exit 1; 13 pre-existing C901 findings in examples, adapters, Ollama/OpenAI gateway functions, registry, broker, recovery stream and realtime session. No suppression added |
+| `uv run flake8 <all five changed Python files> --max-complexity=10` | Exit 0; includes new public boundary tests and installed-package verifier |
+| `uv export --format requirements-txt --no-emit-project \| uvx pip-audit -r /dev/stdin --disable-pip` under `bash -o pipefail` | Exit 0; locked dependencies have no known vulnerabilities |
+| `uv pip list --outdated` | Exit 0; 17 newer packages listed; inventory reviewed, no advisory-driven upgrade required by either audit |
+| `uv run mkdocs build` | Exit 0; existing Material/MkDocs notice only |
+| `uv build` | Exit 0; final wheel and sdist built without a version change |
+| Manifest, artifact/source and proof validation | Passed; actual rejecting exit 1 and corrected exit 0 logs exist; behavioral proof JSON field types and content checked |
+| `git diff --check` | Exit 0 |
+
+The full-repository complexity findings are unchanged functions:
+`audit_openai_capabilities.main` (16), `tracer_demo.main` (13),
+`TracerViewer._format_event_details` (11), `adapt_messages_to_anthropic` (11),
+`OllamaGateway.complete_stream` (15), `OpenAIGateway.complete` (25),
+`OpenAIGateway.complete_stream` (28), `adapt_messages_to_openai` (13),
+`OpenAIModelRegistry._initialize_default_models` (13),
+`LLMBroker.generate_stream` (12), `_StreamRecovery.run_stream` (12),
+`RealtimeSession._handle_server_event` (30), and
+`RealtimeSession._run_tool_batch_for_turn` (11). Their refactoring is outside
+this bounded readiness correction; the record does not claim a clean optional
+repository-wide complexity/formatting check.
+
+### Fresh consumer installation of the final artifact
+
+| Artifact (unpublished 2.1.0 candidate filename) | SHA-256 |
+| --- | --- |
+| `mojentic-2.1.0-py3-none-any.whl` | `27fc3261c33c849831ecb881a802a2e0582b775e2e17ba917083f3affc83e2db` |
+| `mojentic-2.1.0.tar.gz` | `369c08f3e3fd7492fdf77465afc60acd01256b26ec5a7bc5c9f9b0380c0edab5` |
+
+All commands below exited 0. `checkout` means this assessment's absolute
+worktree path. The consumer directory is outside the checkout, with no editable
+install or checkout production imports. JSON contracts are read-only inputs from
+the identified fixture paths; they are not injected production modules.
+
+```bash
+uv venv /tmp/mojentic-c14-consumer/.venv
+uv pip install --python /tmp/mojentic-c14-consumer/.venv/bin/python \
+  dist/mojentic-2.1.0-py3-none-any.whl
+# After the final source change/build, reinstall the final candidate:
+uv pip install --reinstall --python /tmp/mojentic-c14-consumer/.venv/bin/python \
+  dist/mojentic-2.1.0-py3-none-any.whl
+uv run --no-project --directory /tmp/mojentic-c14-consumer \
+  --python /tmp/mojentic-c14-consumer/.venv/bin/python \
+  "$checkout/scripts/verify_readiness.py" "$checkout"
+uv run --no-project --directory /tmp/mojentic-c14-consumer \
+  --python /tmp/mojentic-c14-consumer/.venv/bin/python \
+  "$checkout/scripts/verify_stream_timing.py" \
+  "$checkout/src/mojentic/llm/gateways/fixtures/contracts/first_token_v1.json"
+```
+
+Both verifiers report installed provenance:
+`/tmp/mojentic-c14-consumer/.venv/lib/python3.13/site-packages/mojentic/__init__.py`.
+The readiness verifier rejects checkout imports and an in-checkout working
+directory. It verifies all metadata provider cases, exact request semantics,
+registry/no-network lookup, effective clamping, distinct reasoning controls,
+structured responses and retained native tool continuation, omitted/default and
+explicit zero request controls, Anthropic SDK/recovery history, byte-identical
+retry and permanent HTTP failure. The timing verifier exercises every supported
+streaming provider through event/session/recovery routes, empty completion,
+parser failure, immediate close and unsent closure. Fixture IDs/hashes are printed
+by the verifiers. The final wheel itself supplies all runtime Python modules;
+no production file was altered in the fresh environment.
+
+### Available CI evidence
+
+Read-only `gh run list --repo svetzal/mojentic --limit 5 --json ...` and
+`gh run view 39076064756 --repo svetzal/mojentic --json headSha,conclusion,url,jobs`
+exited 0. [Validate, Test, and Publish run 39076064756](https://github.com/svetzal/mojentic/actions/runs/39076064756)
+succeeded for baseline `44e416eb87b30859cc5628a0d51b6ff95d987048`: lint, test and
+security jobs all succeeded; release-build, docs deploy and PyPI publish were
+skipped. This does **not** certify CI for the uncommitted candidate. Foundry must
+obtain candidate CI after finalization. No commit, push, merge, rebase, ref change,
+version bump, tag or publication was performed in this task.
+
+## Historical correction evidence (superseded where noted above)
 
 ## October 17 library self-validation policy (current)
 
