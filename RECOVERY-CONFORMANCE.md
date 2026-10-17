@@ -40,8 +40,9 @@ loopback HTTP, with exact accepted values rather than masked or count-only proof
   for all four providers. Anthropic request-id and error-type are asserted directly.
 
 The early rejecting run observed missing exact IDs through all ten supported
-paths. An additional unsupported Anthropic structured case characterized existing
-zero-dispatch behavior and was removed from the supported-path matrix. The
+paths. An additional unsupported Anthropic structured case characterized the
+then-existing zero-dispatch behavior and was removed from that matrix. Structured
+recovery is now covered by `anthropic-structured-v1` (see CONFORMANCE-3.0.0.md). The
 corrected probe passed before fixture/documentation expansion. The prior Ollama
 null-only UUID characterization now expects the exact non-echoed UUID; its
 existing credential/payload echo tests remain rejecting assertions.
@@ -102,7 +103,7 @@ is rebuilt or changed. oMLX structured null-content tool turns still reject.
 
 `LLMBroker.generate_object` does not offer tools and `ChatSession` has no
 structured entrypoint, so neither supports a combined schema/tool probe.
-OpenAI and oMLX structured streaming and Anthropic structured/tool/stream
+OpenAI and oMLX structured streaming and Anthropic tool/stream
 completion remain unsupported. The migration guide names these limits.
 
 Independent source review and whole-mission assessment compare both mission
@@ -193,7 +194,7 @@ from production request builders. All inference traffic stays on loopback HTTP.
 | OpenAI `DescribeOpenAIStreamSafety`, `DescribeOpenAICaptureEvidence`, paused terminal/consumer tests | Comment-only keepalive recovery resets frame indices; OpenAI model metadata named `keepalive` cannot mask observed content/reasoning/tools (the synthetic marker belongs only to oMLX); observed content/reasoning/tool fragments prevent replay. Capture failure retains observed but undelivered semantics and original cause/bytes. Safe finish plus `[DONE]` completes tools; malformed/incomplete streams fail. Actual usage/model/finish evidence is retained with OpenAI identity; absent provider counters remain absent. Cancellation takes precedence while terminal telemetry is paused, and closing a paused consumer closes its socket without an explicit call cancellation. |
 | OpenAI `DescribeOpenAIPublicCallers` | `LLMBroker.generate`, `generate_response`, `generate_object`, `generate_stream`, `ChatSession.send` and `send_stream` recover through existing synchronous paths. Completed-tool-then-failed-completion cases cover the four tool-executing paths (`generate`, `generate_stream`, `send`, `send_stream`): one tool execution, unchanged caller depth, logical completion depths `[2, 1]`, three wire sends with failed-completion bytes equal, and identities distinguishing tool rounds from retries. `generate_response` returns tool requests without executing them. Raw `generate_stream_events` remains a single 503 or 307 send with policy configured; the default SDK transport disables redirects as well as hidden retries. |
 | `DescribeCloudPrivacy`, preparation/capture cases | Credentials/payload echoes are absent from safe error strings, repr, JSON reports/events and logs. Opt-in request/header/body evidence and typed original causes remain explicitly inspectable. Invalid preparation has no wire request/history; malformed tools and unsafe structured finishes never resend. |
-| `DescribeAnthropicCapabilityBoundary` | Ordinary native, broker `generate`/`generate_response`, and session `send` paths recover. Schema, configured JSON output and nonempty tools reject before HTTP with private original `NotImplementedError`; capabilities report false structured/streaming recovery and streaming methods remain absent. |
+| `DescribeAnthropicCapabilityBoundary`, `DescribeAnthropicStructuredContract` | Ordinary native, broker `generate`/`generate_response`, and session `send` paths recover. Structured native and broker `generate_object` recover frozen native JSON schema requests. Configured JSON output and nonempty tools still reject before HTTP with private original `NotImplementedError`; capabilities report true structured/false streaming recovery and streaming methods remain absent. |
 
 ### Rust comparison and limits
 

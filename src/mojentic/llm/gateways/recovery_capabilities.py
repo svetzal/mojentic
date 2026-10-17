@@ -68,7 +68,7 @@ def completion_capabilities(provider: RecoveryProvider) -> Capabilities:
     }
     return Capabilities(
         ordinary_recovery=True,
-        structured_recovery=provider != "anthropic",
+        structured_recovery=True,
         streaming_recovery=provider != "anthropic",
         local_cancellation="unknown",
         remote_cancellation="unsupported",

@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking changes and migration
 
+- Anthropic recovery now accepts Pydantic `object_model` requests through
+  `complete_with_recovery` and `LLMBroker.generate_object` when a recovery policy
+  is configured. It freezes native `output_config.format` JSON schema, ordered
+  history and controls for eligible resends and validates the original model.
+  `structured_recovery` changes from false to true; older capability records
+  remain readable. Use `RecoveryPolicy()` for one attempt. Malformed or invalid
+  JSON, capture failure and `max_tokens` termination are terminal; inspect
+  `ValidationError`, `CaptureError` or `LengthTerminationError` through
+  `RecoveryError.inspect_cause()`. Ordinary SDK behavior is preserved; tools and
+  streaming remain separate work. `anthropic-structured-v1` verifies real HTTP
+  gateway and in-repository broker roles; external paired verification remains
+  unfinished and the coordinated publication hold remains.
 - Invalid `RecoveryPolicy` construction and validation now raise
   `RecoveryPolicyError` with input-free formatting instead of Pydantic's
   `ValidationError`. Gateways validate supplied policies at construction;

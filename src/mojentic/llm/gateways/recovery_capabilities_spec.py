@@ -9,6 +9,7 @@ from mojentic.llm.gateways.anthropic import AnthropicGateway
 from mojentic.llm.gateways.ollama import OllamaGateway
 from mojentic.llm.gateways.omlx import OMLXGateway
 from mojentic.llm.gateways.openai import OpenAIGateway
+from mojentic.llm.recovery import Capabilities
 
 
 @pytest.fixture(params=["ollama", "omlx", "openai", "anthropic"])
@@ -135,7 +136,7 @@ class DescribeRecoveryCapabilitiesV1:
     ):
         legacy = {
             "ordinary_recovery": True,
-            "structured_recovery": endpoint_contract[5],
+            "structured_recovery": True,
             "streaming_recovery": endpoint_contract[5],
             "remote_cancellation": "unsupported",
             "request_status": "unsupported",
@@ -153,6 +154,14 @@ class DescribeRecoveryCapabilitiesV1:
         assert restored.model_dump(exclude={"local_cancellation", "evidence"}) == legacy
         assert restored.local_cancellation == "unknown"
         assert restored.evidence == {}
+
+    def should_accept_old_anthropic_unsupported_structured_projection(self):
+        legacy = {"structured_recovery": False, "streaming_recovery": False}
+
+        restored = Capabilities.model_validate(legacy)
+
+        assert not restored.structured_recovery
+        assert not restored.streaming_recovery
 
     def should_round_trip_new_evidence_in_python_and_json(self, capabilities):
         assert (

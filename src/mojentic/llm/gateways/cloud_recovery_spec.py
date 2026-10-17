@@ -923,7 +923,7 @@ class DescribeAnthropicCapabilityBoundary:
         assert requests[0][1] == requests[1][1]
         assert all(path == "/v1/messages" for path, body, headers in requests)
 
-    @pytest.mark.parametrize("operation", ["structured", "tools"])
+    @pytest.mark.parametrize("operation", ["tools"])
     async def should_reject_unsupported_recovery_before_dispatch(
         self, operation, counter_tool
     ):
@@ -931,7 +931,6 @@ class DescribeAnthropicCapabilityBoundary:
             gateway = cloud_gateway(host, "anthropic", RecoveryPolicy(max_attempts=3))
             args = {"model": "claude-test", "messages": [LLMMessage(content="private")]}
             args |= {
-                "structured": {"object_model": Result},
                 "tools": {"tools": [counter_tool]},
                 "streaming": {},
             }[operation]
@@ -942,7 +941,7 @@ class DescribeAnthropicCapabilityBoundary:
         assert requests == []
         capabilities = gateway.recovery_capabilities()
         assert capabilities.ordinary_recovery
-        assert not capabilities.structured_recovery
+        assert capabilities.structured_recovery
         assert not capabilities.streaming_recovery
         assert not hasattr(gateway, "complete_stream")
         assert not hasattr(gateway, "complete_stream_with_recovery")

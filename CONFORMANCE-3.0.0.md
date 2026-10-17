@@ -61,7 +61,9 @@ they are not active probes of caller-selected deployments.
 The existing pytest specification mechanism is reused for the versioned
 executable set **recovery-capabilities-v1**:
 [recovery_capabilities_spec.py](src/mojentic/llm/gateways/recovery_capabilities_spec.py).
-SHA-256: `c780d497a8202fa4fb509b543a02e39bb06f8ae923e4752c3b42ce6ac503252c`.
+Original SHA-256: `c780d497a8202fa4fb509b543a02e39bb06f8ae923e4752c3b42ce6ac503252c`.
+The Anthropic structured correction below records the updated artifact identity;
+the original results in this section describe the earlier tested revision.
 It runs in the required `.hone-gates.json` pytest gate. There are no new test
 doubles or independent consumer mocks.
 
@@ -488,3 +490,116 @@ The rejecting run failed on generic `ValueError` after delivered OpenAI content;
 the final corrected run passed all 101 contract cases, including that probe.
 Changes remain uncommitted in this worktree for Foundry. No sibling edits,
 Git ref updates, version bumps, publication or advisory suppressions occurred.
+
+## Anthropic structured recovery correction — 2026-10-17
+
+This correction implements RELEASE-3.0.0 part 1, “Streaming and immutable
+payloads”, for Anthropic Pydantic completion only. It supersedes earlier
+ordinary-only support statements. The starting and tested base revision is
+`1633b145bc5f8161c161782feb543e6c0cfbf5c5`; the corrected implementation is the
+uncommitted worktree on that revision, pending Foundry finalization. The
+initiative brief SHA-256 was verified as
+`ea6a0efa56bfb3cd74b5ce728f80cc33c6fbd853114bec94b8aabe79f5d28e6e`.
+The authoritative root recovery amendment and release scope were read from
+the initiative repository; no files there were changed.
+
+### Verified decisions and executable contract
+
+The existing versioned pytest specification/loopback HTTP mechanism is reused.
+Contract `anthropic-structured-v1` is
+`src/mojentic/llm/gateways/anthropic_structured_spec.py`, SHA-256
+`3b58a2f05c0a7513747291fb3faa1f8924c9ddc6423d0b7cd4e6b71002926686`.
+Its scripted provider responses and expected requests are shared by both roles;
+neither role mocks SDK internals. Provider verification exercises the real
+AnthropicGateway HTTP implementation; the in-repository consumer calls
+`LLMBroker.generate_object` through that same implementation and contract cases.
+
+| Decision | Named executable evidence in `DescribeAnthropicStructuredContract` |
+| --- | --- |
+| Native JSON schema, exact UTF-8 request bytes, ordered assistant/user history and controls; stable logical and distinct attempt identity; safe lifecycle and report metadata | `should_replay_frozen_schema_history_and_controls_at_http_boundary` |
+| Same 503-then-success contract and typed result through gateway and broker | `should_verify_identical_recovery_contract_for_gateway_and_broker` |
+| One default attempt, bounded exhaustion, permanent 400/401 failures | `should_bound_attempts_and_refuse_permanent_errors` |
+| Malformed JSON and schema violations retain `ValidationError`; max_tokens retains `LengthTerminationError` even for valid JSON; no replay | `should_preserve_typed_decode_failures_without_replay` |
+| Capture failure preserves observed/undelivered content and `CaptureError` with original cause; no replay | `should_stop_on_capture_failure_with_original_cause` |
+| Optional fields present/absent and original Pydantic validation after SDK schema transformation | `should_validate_optional_fields_with_original_pydantic_model`, `should_validate_constraints_removed_from_provider_schema` |
+| Schema, history and controls frozen before admission changes caller inputs; explicit rejection/undecided hook never resends | `should_freeze_schema_and_history_before_admission_mutates_inputs`, `should_require_explicit_admission_decision_when_hook_is_present` |
+
+Provider-supported semantics use `output_config.format` (`json_schema`) and
+the SDK's public `transform_schema`; local validation retains the original
+model's constraints. Source inspected:
+[Anthropic structured outputs](https://platform.claude.com/docs/en/build-with-claude/structured-outputs).
+This is documentation evidence for request shape, not a live service check.
+The existing `anthropic-version: 2023-06-01` remains the wire version. Ordinary
+SDK history/control/default/length behavior remains covered by
+`DescribeAnthropicHistory` at actual HTTP. Configured arbitrary JSON formats,
+tools and streaming remain unsupported. `DescribeAnthropicCapabilityBoundary`
+retains their appropriate rejection/absence assertions. Structured capability
+is now true; `should_accept_old_anthropic_unsupported_structured_projection`
+keeps old false capability records readable. Facility evidence values remain
+unchanged and are still verified by `DescribeRecoveryCapabilitiesV1`.
+The updated `recovery-capabilities-v1` artifact SHA-256 is
+`6025e3995d4c01e825c5d6a7dec3dc44aa43920a300d9e943aae7dec45f93c7a`;
+this identifies the precise operation-flag change and added legacy-record case
+without changing the five documented facility guarantees.
+
+Migration: configure a recovery policy for structured requests, including
+`RecoveryPolicy()` for one attempt; use the explicit async entrypoint or broker
+`generate_object`. No-policy SDK completion retains its existing behavior.
+Error consumers inspect the typed cause through `RecoveryError.inspect_cause()`.
+
+### Unfinished counterpart verification and publication hold
+
+Both local roles test the uncommitted Python implementation on the revision
+above. No external Anthropic provider revision is available or tested, and no
+authorized external consumer repository has verified this executable set.
+External counterpart commands/results are **unavailable, not run**. This is an
+unfinished initiative coordination finding, not evidence of compatibility with
+the service, another port, or downstream repositories. Coordinate verification
+against this identical version/hash, recording both tested revisions, commands
+and results; preserve old/new capability projections and optional/error cases.
+Streaming, tools and unrelated initiative work remain separate. The coordinated
+publication hold remains until all six ports and required paired contracts meet
+owner scope. No contract ambiguity or unilateral root-contract change was needed.
+
+### Commands and results on the corrected worktree
+
+All verbose checks used `foundry capture`. `UV_CACHE_DIR` was redirected to
+`/tmp/mojentic-uv-cache` because the default cache is read-only in this sandbox;
+the ephemeral audit also used writable `UV_TOOL_DIR` and `UV_TOOL_BIN_DIR`.
+No dependency or version changes were needed.
+
+| Command | Result |
+| --- | --- |
+| `uv run pytest src/mojentic/llm/gateways/anthropic_structured_spec.py -q` | Exit 0; 30 cases, including shared roles and HTTP proof |
+| `uv run pytest src/mojentic/llm/gateways/anthropic_structured_spec.py -q -k 'provider and not consumer'` | Exit 0; 13 provider cases, 17 deselected; contract hash above |
+| `uv run pytest src/mojentic/llm/gateways/anthropic_structured_spec.py -q -k consumer` | Exit 0; the same 13 consumer cases, 17 deselected; same hash and tested base/worktree |
+| `uv run pytest src/mojentic/llm/gateways/recovery_capabilities_spec.py --no-cov -q` | Exit 0; 54 cases against the updated capability artifact hash above |
+| `uv run flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics` | Exit 0; required hone lint gate |
+| `uv run pytest` | Exit 0; 1,571 passed; required hone test gate |
+| `uv run pytest --cov` | Exit 0; 1,571 passed; 86% overall, Anthropic gateway 94%; no numeric fail-under threshold is configured |
+| `uv run flake8 src` | Exit 0 |
+| `uv run --with ruff ruff check src` | Exit 0; zero warnings |
+| `uv run ruff check src` | Exit 0; zero warnings |
+| `uv run bandit -c .bandit -r src` | Exit 0; hone security gate |
+| `uv run pip-audit` | Exit 0; no known vulnerabilities; hone audit gate |
+| `uv export --format requirements-txt --no-emit-project \| uvx pip-audit -r /dev/stdin --disable-pip` (bash pipefail) | Exit 0; locked dependencies, no known vulnerabilities |
+| `uv pip list --outdated` | Exit 0; newer versions listed, no audit findings requiring updates |
+| `uv run mkdocs build` | Exit 0 |
+| `git diff --check` | Exit 0 |
+
+Changed Python files were formatted with `uv run --with ruff ruff format`;
+their format check and C901 check with maximum complexity 10 both pass.
+The broader C901 diagnostic reports ten pre-existing violations in untouched
+example, Ollama/OpenAI, broker and realtime functions. Whole-source format check
+reports the untouched `file_manager_spec.py`. Both diagnostics reproduce on
+files extracted from the tested base revision; this correction does not change
+them, add suppressions or relax rules. They remain outside this scoped correction.
+
+The behavioral proof records the original rejection (actual exit 1) and
+corrected HTTP behavior (actual exit 0); JSON shape/types and both existing logs
+were validated and inspected. An early overlapping test run interfered with
+coverage storage and hit a read-timeout assertion; subsequent isolated full
+runs passed, including that assertion. Intermediate contract assertions were
+corrected to match exact SDK schema serialization and the existing no-hook
+lifecycle. These failures were not suppressed. Source, tests and documentation
+remain uncommitted for Foundry; no Git refs or sibling repositories were changed.

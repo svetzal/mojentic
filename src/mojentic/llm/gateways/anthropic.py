@@ -1,7 +1,7 @@
 import asyncio
 
 import structlog
-from anthropic import Anthropic
+from anthropic import Anthropic, transform_schema
 from pydantic import BaseModel
 
 from mojentic.llm.gateways import cloud_recovery
@@ -9,13 +9,18 @@ from mojentic.llm.gateways.anthropic_messages_adapter import adapt_messages_to_a
 from mojentic.llm.gateways.llm_gateway import LLMGateway
 from mojentic.llm.gateways.models import LLMGatewayResponse, LLMToolCall, MessageRole
 from mojentic.llm.gateways.recovery_capabilities import completion_capabilities
-from mojentic.llm.recovery import Capabilities, RecoveryCall, RecoveryPolicy
+from mojentic.llm.recovery import (
+    Capabilities,
+    LengthTerminationError,
+    RecoveryCall,
+    RecoveryPolicy,
+)
 
 logger = structlog.get_logger()
 
 
 class AnthropicGateway(LLMGateway):
-    """Anthropic ordinary completion with optional owned HTTP recovery.
+    """Anthropic completion with optional owned HTTP recovery.
 
     Parameters
     ----------
@@ -24,8 +29,8 @@ class AnthropicGateway(LLMGateway):
     base_url : str, optional
         Service root; defaults to the SDK's configured endpoint.
     recovery_policy : RecoveryPolicy, optional
-        Opt in for ordinary completion only. Structured output, streaming and tools
-        remain unsupported. Recovery bypasses SDK retries and redirects.
+        Opt in for ordinary and structured completion. Streaming and tools remain
+        unsupported. Recovery bypasses SDK retries and redirects.
     recovery_call : RecoveryCall, optional
         Cancellation for a synchronous operation. Use a fresh call per operation.
     """
@@ -62,13 +67,13 @@ class AnthropicGateway(LLMGateway):
         }
 
     def recovery_capabilities(self) -> Capabilities:
-        """Report ordinary recovery only; structured output and tools remain unsupported."""
+        """Report ordinary and structured recovery; streaming and tools remain unsupported."""
         return completion_capabilities("anthropic")
 
     def _recovery_body(self, args: dict, streaming: bool) -> bytes:
-        if streaming or args.get("object_model") is not None or args.get("tools"):
+        if streaming or args.get("tools"):
             raise NotImplementedError(
-                "Anthropic recovery supports ordinary completion only"
+                "Anthropic recovery does not support streaming or tools"
             )
         config = args.get("config")
         if config and config.response_format and config.response_format.type != "text":
@@ -91,6 +96,13 @@ class AnthropicGateway(LLMGateway):
             if config
             else args.get("max_tokens", args.get("num_predict", 2000)),
         }
+        if args.get("object_model") is not None:
+            payload["output_config"] = {
+                "format": {
+                    "type": "json_schema",
+                    "schema": transform_schema(args["object_model"]),
+                }
+            }
         return cloud_recovery.freeze_request(payload)
 
     @staticmethod
@@ -100,10 +112,15 @@ class AnthropicGateway(LLMGateway):
         from anthropic.types import Message
 
         response = Message.model_validate(frame)
+        if object_model is not None and response.stop_reason == "max_tokens":
+            raise LengthTerminationError("completion length limit reached")
         if not response.content or response.content[0].type != "text":
             raise ValueError("expected ordinary text completion")
         return LLMGatewayResponse(
             content=response.content[0].text,
+            object=object_model.model_validate_json(response.content[0].text)
+            if object_model is not None
+            else None,
             usage=response.usage.model_dump(),
             model=response.model,
             finish_reason=response.stop_reason,
@@ -112,7 +129,7 @@ class AnthropicGateway(LLMGateway):
     async def complete_with_recovery(
         self, call: RecoveryCall | None = None, **args
     ) -> LLMGatewayResponse:
-        """Recover ordinary completion; reject unsupported operations before dispatch.
+        """Recover ordinary or Pydantic completion; reject streaming and tools before dispatch.
 
         Parameters
         ----------
@@ -124,12 +141,12 @@ class AnthropicGateway(LLMGateway):
         Returns
         -------
         LLMGatewayResponse
-            Provider text and telemetry with a typed recovery report.
+            Provider text, validated object and telemetry with a typed recovery report.
 
         Raises
         ------
         RecoveryError
-            Request failed or was cancelled; unsupported schema/tool requests retain
+            Request failed or was cancelled; unsupported tool requests retain
             an original ``NotImplementedError`` through private cause inspection.
         ValueError
             No recovery policy is configured.

@@ -107,6 +107,35 @@ a later attempt. The opted-in path raises `RecoveryError` with outcome `cancelle
 including when its task is cancelled. Closing the request does not establish
 that the provider terminated generation.
 
+## Anthropic structured recovery
+
+Configure an `AnthropicGateway` with a `RecoveryPolicy` to enable Pydantic output
+through `await gateway.complete_with_recovery(object_model=YourModel, ...)` or
+`broker.generate_object(messages, YourModel)`. Use a model supporting Anthropic
+[JSON outputs](https://platform.claude.com/docs/en/build-with-claude/structured-outputs).
+The request uses `output_config.format` with `type: "json_schema"`, transformed
+by the SDK's public `transform_schema` helper. Local validation always uses the
+original Pydantic model, including constraints removed from the provider schema.
+The schema, system prompt, ordered user/assistant history, images and caller
+controls are encoded once before dispatch and admission. Retries resend those
+bytes even if admission changes the original inputs.
+
+Migration: `structured_recovery` now reports `true` for Anthropic; older serialized
+records reporting `false` remain readable. Set `recovery_policy=RecoveryPolicy()`
+for a single attempt, or explicitly choose a larger bound for eligible recovery.
+Without a policy the ordinary SDK path retains its existing behavior; structured
+support is offered through the recovery path. Arbitrary configured JSON formats,
+tools and streaming remain unsupported. Malformed JSON and schema violations
+retain Pydantic `ValidationError` through `RecoveryError.inspect_cause()`;
+`max_tokens` termination retains `LengthTerminationError`. Capture failures retain
+`CaptureError` and its original inspectable cause. None of these failures replay.
+
+`anthropic-structured-v1` in `anthropic_structured_spec.py` runs the same scripted
+HTTP cases against the gateway provider role and broker consumer role. The
+conformance record identifies its hash and tested revision. These local checks
+do not verify the Anthropic service or external consumers; paired counterpart
+verification remains unfinished, and the coordinated publication hold remains.
+
 ## Reports and explicit wire capture
 
 `generate_response` and the async gateway return a response with a typed
@@ -174,9 +203,9 @@ from other unsafe stream finishes for Ollama, oMLX and OpenAI, including the
 OpenAI decoder's reuse of oMLX machinery. OpenAI structured completion uses it
 when rejecting a length finish, including through `generate_object`.
 Ordinary completions continue returning length metadata successfully; oMLX
-and Ollama structured parsing retain their existing behavior. Anthropic still
-supports only ordinary recovery; structured output, tools and streaming are
-refused. `ChatSession` has no structured-output operation. Raw single-turn
+and Ollama structured parsing retain their existing behavior. Anthropic structured
+recovery uses the same type for `max_tokens` termination, even if the text parses.
+Anthropic tools and streaming remain unsupported. `ChatSession` has no structured-output operation. Raw single-turn
 event APIs retain their existing contract.
 
 Default error strings, representations, traceback formatting and serialized
@@ -252,8 +281,8 @@ The existing operation support remains:
 | OpenAI ordinary / structured / tool-capable streaming | Opt-in owned HTTP; model controls adapted before immutable encoding | Unsupported / unsupported / unknown / unsupported |
 | oMLX / OpenAI structured streaming | Unsupported; rejected before dispatch | No recovery claim |
 | OpenAI raw stream events | Existing single-turn API; recovery policy is ignored | Recovery configuration does not enable retries |
-| Anthropic ordinary completion | Opt-in owned HTTP; ordered user/assistant history; system instructions extracted separately | Unsupported / unsupported / unknown / unsupported |
-| Anthropic structured / tools / streaming | Unsupported; schema/tool recovery requests fail before dispatch, no streaming entrypoint | No new provider capability |
+| Anthropic ordinary and structured completion | Opt-in owned HTTP; ordered user/assistant history; immutable schema and controls; validated Pydantic objects | Unsupported / unsupported / unknown / unsupported |
+| Anthropic tools / streaming | Unsupported; tool recovery requests fail before dispatch, no streaming entrypoint | No new provider facility |
 | Embeddings and realtime voice | Outside completion recovery scope | No recovery claim |
 
 The existing `LLMMessage` and Ollama adapter do not represent native reasoning in
