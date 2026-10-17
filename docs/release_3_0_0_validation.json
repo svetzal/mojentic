@@ -2,14 +2,14 @@
   "date": "2026-10-17",
   "assessment": "Python owner feature scope implemented; self-validation passed. Recommend owner escalation for coordinated release go-ahead; publication held.",
   "source": {
-    "baseline_commit": "44e416eb87b30859cc5628a0d51b6ff95d987048",
+    "baseline_commit": "a3637ba7aad18ac0688a5aa98c6708648988eb69",
     "working_tree_changes": true,
     "manifest": "docs/release_3_0_0_source.sha256",
-    "manifest_sha256": "a8a7a7a3dde1d69f5aa6fb8167a3b6c66e0981795e84587cb613fc85093cc610"
+    "manifest_sha256": "bb7f81d1984b36541e33d2f4805177c3d1cf69fb7ae03e219f399a04a79ac7f7"
   },
   "artifacts": {
-    "mojentic-2.1.0-py3-none-any.whl": "27fc3261c33c849831ecb881a802a2e0582b775e2e17ba917083f3affc83e2db",
-    "mojentic-2.1.0.tar.gz": "369c08f3e3fd7492fdf77465afc60acd01256b26ec5a7bc5c9f9b0380c0edab5"
+    "mojentic-2.1.0-py3-none-any.whl": "6406b8fa60ea2f47e3e89041458f16c309fc942c2a6372d239153f3618446211",
+    "mojentic-2.1.0.tar.gz": "29eb7262d4b5c0cba5b8448b71db0cd448e695c0857d3957d10e8a2914c1fc06"
   },
   "contracts": {
     "src/mojentic/llm/contracts/context_window_v1.json": "cfeee4702c0dd3b18e02fbd0c8bad82ae58ee1ca7eadcfd21683479ba24f3dc4",
@@ -21,56 +21,57 @@
     "provider": "Production Python gateways against controlled HTTP",
     "consumer": "Public broker/session/gateway API tests and fresh installed wheel",
     "tested_identity": "Both roles use the source manifest and artifact hashes in this record",
-    "external_repository_boundary_changed": false
+    "external_repository_boundary_changed": false,
+    "packaged_raw_request_probe": "Fresh installed runtime against controlled HTTP, sharing verify_readiness.endpoint and unchanged request-fidelity-v1 response bytes; scratch probe SHA-256 recorded with its command."
   },
   "python": "3.13.15",
   "platform": "Linux",
-  "installed_import": "/tmp/mojentic-c14-consumer/.venv/lib/python3.13/site-packages/mojentic/__init__.py",
+  "installed_import": "/tmp/mojentic-c15-consumer-lcn2_j02/.venv/lib/python3.13/site-packages/mojentic/__init__.py",
   "pytest": {
     "passed": 2636,
     "mapped_named_methods_passed": 129,
-    "coverage_percent": 87,
-    "configured_fail_under": null,
-    "junit_sha256": "c7624472c02b2e73b9d0c0792a811d3a2b44e312935789bc2a10c5b80bf52f12"
+    "coverage_percent": 87.46,
+    "enforced_fail_under": 85,
+    "junit_sha256": "03a99cb282eab60d05f1fb2ec13ac8b9e86a8102bd489fd4d49521fccbe6e089"
   },
   "checks": [
     {
-      "name": "hone-lint",
+      "name": "lint",
       "command": "uv run flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics",
       "exit_code": 0,
       "stdout_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     {
-      "name": "hone-test",
+      "name": "test",
       "command": "uv run pytest",
       "exit_code": 0,
-      "stdout_sha256": "da3960d75e805d3d9e49ab66b8309297426d58dccc54fb8079ca983fcc48520f",
+      "stdout_sha256": "6dabd37965ffc04611f05dcbec93fb32d54e3c6d74328447484c909c9e3f5ab1",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     {
-      "name": "hone-security-scan",
+      "name": "security-scan",
       "command": "uv run bandit -c .bandit -r src",
       "exit_code": 0,
-      "stdout_sha256": "9fff12e9697f91da0ac3e724b73b8fd9df37782c0ac3c1c3d91e827a7aaa271f",
-      "stderr_sha256": "ebce31cc6155a3bbe391821edb1f84392fa3c23d1e64427bdfdf7cbec0a43667"
+      "stdout_sha256": "1a58b2a3a7f7781bcd12c2e15387ba5b680fd2e7da73dc6f4eb34663eaa22a82",
+      "stderr_sha256": "fb9860c0fcba128aef0e924eb2a9567bcf2171beecd895062ab157b571f84d17"
     },
     {
-      "name": "hone-dependency-audit",
+      "name": "dependency-audit",
       "command": "uv run pip-audit",
       "exit_code": 0,
       "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "stderr_sha256": "fedac127381c13df4882036e23899bc574d9c33328ef56993475845a1e5a2900"
+      "stderr_sha256": "15950a68a7ed99c59779717acefdceb3f69cfd31bde67d2c954f2a3cea4d7955"
     },
     {
       "name": "coverage",
-      "command": "uv run pytest --cov --cov-report=term --junitxml=<scratch-result>",
+      "command": "uv run pytest --cov --cov-fail-under=85 --cov-report=term --junitxml=.foundry/readiness-junit.xml",
       "exit_code": 0,
-      "stdout_sha256": "b5abf4f6aef7ece1a95a7138225efb7d5f6a778a0138250cc1912e908e53afa9",
+      "stdout_sha256": "705653a215959c43c92c373c483cff6c3da150f9d2caf82d10d39b1c657e9c1d",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     {
-      "name": "full-flake8",
+      "name": "flake8",
       "command": "uv run flake8 src",
       "exit_code": 0,
       "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -84,39 +85,32 @@
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     {
-      "name": "format-changed",
-      "command": "uv run ruff format --check <five changed Python files>",
+      "name": "format",
+      "command": "uv run ruff format src/mojentic/llm/gateways/context_window_spec.py",
       "exit_code": 0,
-      "stdout_sha256": "f114d83b30c5c657ee43a847a45bafccaea255d82673feb87c26d252c61e29c1",
+      "stdout_sha256": "413a709001976657cb743636fd34e48fc41d8d302d665460d3f874b3313da127",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     {
-      "name": "format-all",
-      "command": "uv run ruff format --check src scripts/verify_readiness.py",
-      "exit_code": 1,
-      "stdout_sha256": "eac7896061790f634739d7857901fb6c785968c3cd6154aa8fe6e8c7c537348e",
+      "name": "format-check",
+      "command": "uv run ruff format --check src/mojentic/llm/gateways/context_window_spec.py",
+      "exit_code": 0,
+      "stdout_sha256": "fd2299c9f1c6dc869070883e281051bfe93aacf66c1a3b0069f45b4aa410ca50",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     {
-      "name": "complexity-all",
-      "command": "uv run flake8 src --max-complexity=10",
-      "exit_code": 1,
-      "stdout_sha256": "a6eabe404abf8fc7d1dfa8604f25f2211ac8ac96d75c5f304d802b2f7e3726ca",
-      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    },
-    {
-      "name": "complexity-changed",
-      "command": "uv run flake8 <five changed Python files> --max-complexity=10",
+      "name": "complexity",
+      "command": "uv run flake8 src/mojentic/llm/gateways/context_window_spec.py --max-complexity=10",
       "exit_code": 0,
       "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     {
       "name": "locked-audit",
-      "command": "bash -o pipefail -c \"uv export --format requirements-txt --no-emit-project | uvx pip-audit -r /dev/stdin --disable-pip\"",
+      "command": "uv export --format requirements-txt --no-emit-project | uvx pip-audit -r /dev/stdin --disable-pip",
       "exit_code": 0,
       "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "stderr_sha256": "24a02f0e875767346d355416c5fd0f4c9cac2c6a2b823fbf084cc11346f03cdf"
+      "stderr_sha256": "8d24b3b727944f3fe2804bcf2203fea4010fa922270688317c75c5cc91cc137b"
     },
     {
       "name": "outdated",
@@ -130,28 +124,57 @@
       "command": "uv run mkdocs build",
       "exit_code": 0,
       "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "stderr_sha256": "76df205ad587ab0b15892701502610da5ec675e7662009e8af418b823585896a"
+      "stderr_sha256": "c66ae5f7b99cd71c7da044f5c8f757c2ea62bf00a5e3ddcc85d77b22ed41eea5"
     },
     {
       "name": "build",
       "command": "uv build",
       "exit_code": 0,
       "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "stderr_sha256": "dc2fa8a4091fbfc24236ec9eaf664ce075a1b048da16e3e11dc1734227599711"
+      "stderr_sha256": "5b10c1c9f46d5dfc69d7da70becc33ad8c6190251ebd3be363dd1d830f8f124a"
+    },
+    {
+      "name": "fresh-venv",
+      "command": "uv venv /tmp/mojentic-c15-consumer-lcn2_j02/.venv",
+      "exit_code": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "2723c9a6d9eeb55dcea70f4ec2c1e545319da7280bd49e3f49eed4befee6a865"
+    },
+    {
+      "name": "fresh-install",
+      "command": "uv pip install --python /tmp/mojentic-c15-consumer-lcn2_j02/.venv/bin/python /home/svetzal/.foundry/worktrees/mojentic-py/mojentic-3-0-py-c15-8c5055/dist/mojentic-2.1.0-py3-none-any.whl",
+      "exit_code": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "fd8543f495edd1e10c06a91c577576e2da71ebd218f8273f87a0a95b860d25e8"
     },
     {
       "name": "fresh-consumer",
-      "command": "uv run --no-project --directory /tmp/mojentic-c14-consumer --python /tmp/mojentic-c14-consumer/.venv/bin/python <checkout>/scripts/verify_readiness.py <checkout>",
+      "command": "uv run --no-project --directory /tmp/mojentic-c15-consumer-lcn2_j02 --python /tmp/mojentic-c15-consumer-lcn2_j02/.venv/bin/python /home/svetzal/.foundry/worktrees/mojentic-py/mojentic-3-0-py-c15-8c5055/scripts/verify_readiness.py /home/svetzal/.foundry/worktrees/mojentic-py/mojentic-3-0-py-c15-8c5055",
       "exit_code": 0,
-      "stdout_sha256": "be77b1449771e7fb5a29e20f6f3380ae7d91cb750c8964557e1b7b2b68f9ba15",
-      "stderr_sha256": "33be37150e2ef533ac701b13eb47ebffd42c6175df5a7bf783b47679eb9c6bfe"
+      "stdout_sha256": "cd3111db2a3ea7a3755abce6c2a47e8065c8a0e06f6f34d601ac2f81c179d84d",
+      "stderr_sha256": "c61bab705a5e65efe60c31373a5b131ba6617c83af2f6d70b8eaa65f12d9bc04"
     },
     {
       "name": "fresh-timing",
-      "command": "uv run --no-project --directory /tmp/mojentic-c14-consumer --python /tmp/mojentic-c14-consumer/.venv/bin/python <checkout>/scripts/verify_stream_timing.py <checkout>/src/mojentic/llm/gateways/fixtures/contracts/first_token_v1.json",
+      "command": "uv run --no-project --directory /tmp/mojentic-c15-consumer-lcn2_j02 --python /tmp/mojentic-c15-consumer-lcn2_j02/.venv/bin/python /home/svetzal/.foundry/worktrees/mojentic-py/mojentic-3-0-py-c15-8c5055/scripts/verify_stream_timing.py /home/svetzal/.foundry/worktrees/mojentic-py/mojentic-3-0-py-c15-8c5055/src/mojentic/llm/gateways/fixtures/contracts/first_token_v1.json",
       "exit_code": 0,
-      "stdout_sha256": "95c4a41f1a74410cd57d2348204ea6cf675a9752de16c4879f7329215e1e9e9e",
-      "stderr_sha256": "891f4b9477606c6ea8b3397c52401157be22f8b8eb64949bedc410ab9fdccca8"
+      "stdout_sha256": "1a8cddf6f23a42d78a05c5396279d068bc21aa8a4d610388bfb5cd7943362729",
+      "stderr_sha256": "a06bfacfb842b2ef1f5188151dbce92390e153eee5ec49f4f75135601699c7a3"
+    },
+    {
+      "name": "fresh-openai-raw-corrected",
+      "command": "uv run --no-project --directory /tmp/mojentic-c15-consumer-lcn2_j02 --python /tmp/mojentic-c15-consumer-lcn2_j02/.venv/bin/python /tmp/mojentic-c15-consumer-lcn2_j02/verify_openai_raw.py /home/svetzal/.foundry/worktrees/mojentic-py/mojentic-3-0-py-c15-8c5055",
+      "exit_code": 0,
+      "probe_sha256": "8aa69aa43a23c917fe6d1c7f8a39ed90c430125fcbdf60efebc25a3a9b04ee1c",
+      "stdout_sha256": "bc3e2a4ef56ffed491303371215b42d1354200dd826793b7ae87fd81e55485db",
+      "stderr_sha256": "88c33e32a6c4f72e568e0cc4c90898bb935962590cd120673d7dd1835a6f38a7"
+    },
+    {
+      "name": "final-docs",
+      "command": "uv run mkdocs build",
+      "exit_code": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "9437a7221a861e9e50b5aa714b1dab625a8507472c51023040c4bc6b078f2657"
     }
   ],
   "ci": {
@@ -169,13 +192,68 @@
       "deploy-docs",
       "pypi-publish"
     ],
-    "dirty_candidate_ci": "Not run; requires Foundry finalization"
+    "dirty_candidate_ci": "Not run; requires Foundry finalization; CI record above is historical baseline evidence"
   },
   "limitations": [
     "Live provider behavior and exact remote inference termination unverified",
     "Other ports and owner release authorization outside this assessment",
-    "Full-tree optional complexity check: 13 unchanged functions exceed 10; changed files pass",
-    "Full-tree formatter check: unchanged file_manager_spec.py differs; changed files pass",
-    "Only Linux Python 3.13.15 exercised locally; no numeric coverage threshold configured"
-  ]
+    "Only Linux Python 3.13.15 exercised locally; 85% minimum explicitly enforced in this correction",
+    "Historical full-tree formatting/complexity debt remains outside this regression-only correction; current changed-file checks pass.",
+    "No initial rejecting acceptance recovered; original 111-test passing probe and later clock mutation are separately identified."
+  ],
+  "historical_acceptance": {
+    "record": "docs/release_3_0_0_acceptance.json",
+    "sha256": "b11e7843219f5c56ceabf066758cacb6c19828d0357cc5362295e3a115fb9385",
+    "original_probe_exit_code": 0,
+    "original_probe_passed": 111,
+    "initial_rejecting_run": "Not recovered; later constant-clock rejection is a separate event"
+  },
+  "raw_request_regression": {
+    "command": "uv run pytest src/mojentic/llm/gateways/context_window_spec.py -k should_preserve_registry_completion_semantics_after_discovery --no-cov -v",
+    "variants": [
+      "gpt-5.4",
+      "o1-custom"
+    ],
+    "rejected_whitespace_only_mutation": {
+      "exit_code": 1,
+      "failed": 2
+    },
+    "corrected": {
+      "exit_code": 0,
+      "passed": 2
+    },
+    "production_and_binding_contracts_changed": false
+  },
+  "stream_timing_manifest_sha256": "7a37c558d2b3d703cdc1bde2679e6596aae67fdbfafa805dca04406efa81bd3f",
+  "verifier_errors": [
+    {
+      "exit_code": 1,
+      "reason": "Initial whitespace mutation harness used an httpx ByteStream with the SDK httpx2 client; transport RuntimeError, not behavioral rejection.",
+      "stdout_sha256": "3d415e265338de1ab6881e262940424910e7ffbac38d5a06eb055813ec837e95",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "exit_code": 1,
+      "reason": "Both packaged raw HTTP cases passed, then diagnostic print accessed nonexistent contract id key; corrected label and reran all assertions successfully.",
+      "stdout_sha256": "384f244db30e2e044970485e11af0cbadd13b45eef94c27f273ae89ee0032b21",
+      "stderr_sha256": "475dd66126e1134ca1f5390b56b3c11660807ff213e2d54806a51a586efd04d4"
+    }
+  ],
+  "format_all": {
+    "command": "uv run ruff format src",
+    "exit_code": 0,
+    "unrelated_change_restored": "src/mojentic/llm/tools/file_manager_spec.py",
+    "candidate_unchanged_by_full_formatter": true
+  },
+  "behavioral_proof": {
+    "rejecting": {
+      "exit_code": 1,
+      "output_sha256": "51176880fe16c4ac7ddf762bd6fbf0904990a38bd601d931ffe0a1724740ed32"
+    },
+    "corrected": {
+      "exit_code": 0,
+      "output_sha256": "57e30848e5bd1648eef5770ddf01aacac8dafc79aa94d285665ec530d6274ad1"
+    }
+  },
+  "final_evidence_validation": "Passed: proof JSON field types, actual nonzero/zero outcomes, full logs, all source/contract/artifact hashes, packaged source equality and clean whitespace."
 }

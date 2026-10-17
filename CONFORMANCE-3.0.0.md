@@ -2,7 +2,7 @@
 
 This assessment supersedes the partial status and historical unverified statements
 below. It evaluates RELEASE-3.0.0 parts 1–5 from Python baseline
-`44e416eb87b30859cc5628a0d51b6ff95d987048` plus the working-tree changes identified
+`a3637ba7aad18ac0688a5aa98c6708648988eb69` plus the working-tree changes identified
 in [the source manifest](docs/release_3_0_0_source.sha256). No version or Git ref
 was changed. The unpublished candidate still identifies itself as **2.1.0**;
 it must not be confused with the released 2.1.0 package.
@@ -110,7 +110,7 @@ retention experiment is certified by these library tests.
 | Single-purpose context lookup returns positive window/source, None for unadvertised, typed error for malformed/non-2xx/transport | `context_window_spec.py::should_verify_provider_semantics_and_exact_http_request`, `should_distinguish_transport_failure`, `should_return_not_advertised_for_unsupported_gateway`: all unchanged context-window-v1 cases |
 | oMLX authenticated configured endpoint, exact model ID; Ollama POST show, any architecture suffix, optional model_num_ctx; OpenAI exact registry/no HTTP | `context_window_spec.py::should_select_exact_model_through_authenticated_http`, `should_verify_provider_semantics_and_exact_http_request`, `should_lookup_only_exact_registry_entries_without_http` |
 | Effective window caller/model/default precedence and clamp; unknown remains None, advertised-only is upper bound | `context_window_spec.py::should_apply_helper_precedence_and_clamping` |
-| Discovery changes no subsequent completion bytes | `context_window_spec.py::should_leave_same_model_completion_request_unchanged_after_discovery`: now compares raw completion bodies as well as parsed semantics for every provider case and control combination; `should_preserve_registry_completion_semantics_after_discovery` |
+| Discovery changes no subsequent completion bytes | `context_window_spec.py::should_leave_same_model_completion_request_unchanged_after_discovery`: now compares raw completion bodies as well as parsed semantics for every provider case and control combination; `should_preserve_registry_completion_semantics_after_discovery`: both OpenAI registry variants compare literal HTTP completion bodies, exact model and token-limit semantics, and exactly two completion POSTs |
 | Omitted/null temperature/num_ctx/max_tokens off wire; zero preserved; sole output limit max_tokens maps once per provider | `request_fidelity_spec.py::should_execute_shared_cases`, `should_preserve_controls_through_broker_events`, `should_preserve_controls_and_history_through_session_stream`; `llm/completion_config_spec.py::should_use_default_values` |
 | No gateway/deprecated broker defaults; session trimming budget remains local | `request_fidelity_spec.py::should_omit_controls_for_gateway_keywords_without_config`, `should_forward_only_explicit_deprecated_broker_keywords`, `should_omit_unset_session_controls_at_http_boundary`; session trimming specifications |
 | top_p all gateways; top_k Ollama/oMLX/Anthropic; fixed temperature adapts only explicit controls; unsupported effort warns/drops | Shared fidelity cases plus `should_adapt_only_explicit_temperature_to_registered_fixed_value`, `should_warn_and_drop_effort_for_non_reasoning_model` |
@@ -125,9 +125,13 @@ retention experiment is certified by these library tests.
 The deterministic clock checks supplement the real HTTP timing acceptance suite;
 no library internals are mocked. StreamClock accepts an optional clock solely to
 make exact timing semantics testable; its production default remains monotonic.
-The hardest public HTTP timing test rejected an intentionally constant production
-clock (0ms rather than measured dispatch-to-thinking delay), then passed after
-restoring the monotonic default. The temporary fault is absent from the candidate.
+A later public HTTP timing mutation check rejected an intentionally constant
+production clock (0ms rather than measured dispatch-to-thinking delay), then passed
+after restoring the monotonic default. It followed the initial 111-test passing
+acceptance and the first full suite; it is not evidence of an initial rejecting
+probe. The recovered command, selected identities and actual results, including
+separate verifier errors, are in [the acceptance record](docs/release_3_0_0_acceptance.json).
+The temporary fault is absent from the candidate.
 
 ### Part 5 Python history audit and release records
 
@@ -176,7 +180,120 @@ to establish this library's declared fixture behavior. The coordinated owner
 publication hold remains authoritative.
 
 
-## Current verification record and recommendation
+## OpenAI raw-request evidence correction (cycle 15)
+
+The regression in `context_window_spec.py` now captures the literal request bodies
+received over HTTP from production `OpenAIGateway.complete` before and after
+public `get_model_context_window`. Both `gpt-5.4` and `o1-custom` retain response
+content, exact model identity, the registry-selected token-limit parameter with
+value 17, parsed request equality and exactly two POSTs to `/v1/chat/completions`.
+Literal byte equality is asserted after those checks; metadata lookup sends no
+HTTP request. Production source, dependency versions and binding fixtures are
+unchanged.
+
+Before broader validation, the focused two-case command was exercised against a
+temporary production mutation that appended one space to the second request body
+after metadata lookup. All preceding semantic assertions passed; both literal
+byte assertions failed (exit 1, two failed/229 deselected). Restoring production
+source passed the same command (exit 0, two passed/229 deselected):
+
+```bash
+uv run pytest src/mojentic/llm/gateways/context_window_spec.py \
+  -k should_preserve_registry_completion_semantics_after_discovery --no-cov -v
+```
+
+The initial mutation harness used an `httpx` stream with the SDK's `httpx2` client
+and raised a transport type error. That verifier error is retained separately;
+it is not the behavioral rejection. The corrected mutation preserves the actual
+request stream type and reaches the HTTP server. No mutation remains in source.
+Foundry retains complete rejecting/passing logs, actual process exit codes and
+validated behavioral proof separately from repository documentation.
+
+The [recovered historical acceptance record](docs/release_3_0_0_acceptance.json)
+identifies the original session and archived log hashes. The earliest recovered
+command selected all of `anthropic_history_spec.py` and `first_token_spec.py`,
+passing 111 cases in 14.59s on clean baseline `44e416eb87b30859cc5628a0d51b6ff95d987048`
+before expansion. Its focused coverage was 47%, not whole-suite coverage. Its
+quiet output has no individual node IDs; all 111 identities were recovered from
+the archived final JUnit, with both module sources verified byte-identical to
+that baseline. The original command was:
+
+```bash
+UV_CACHE_DIR=/tmp/mojentic-uv-cache foundry capture --log-dir .foundry/logs -- \
+  uv run pytest src/mojentic/llm/gateways/anthropic_history_spec.py \
+  src/mojentic/llm/gateways/first_token_spec.py -q
+```
+
+That original command includes its historical scratch log argument for faithful
+provenance; it is not a repository artifact reference. The first full suite
+subsequently passed 2,565 tests. Expanded test drafts separately produced session
+signature/expected-phase verifier errors, and the injected-clock draft produced
+five unsupported-parameter TypeErrors. The later constant-clock HTTP mutation
+failed one test with 99 deselected and passed after restoration. These are
+separate events. No initial rejecting acceptance run was recovered; chronology
+beyond the retained session and logs is unverified.
+
+### Final candidate identities and validation
+
+Tested baseline is `a3637ba7aad18ac0688a5aa98c6708648988eb69` plus this
+uncommitted correction. The refreshed [source manifest](docs/release_3_0_0_source.sha256)
+hashes to `bb7f81d1984b36541e33d2f4805177c3d1cf69fb7ae03e219f399a04a79ac7f7`.
+The narrower timing verifier's `--source-id` manifest reports
+`7a37c558d2b3d703cdc1bde2679e6596aae67fdbfafa805dca04406efa81bd3f`.
+All 129 named decision-map methods passed among 2,636 collected cases. The
+unchanged context-window-v1 and request-fidelity-v1 fixture hashes remain
+`cfeee4702c0dd3b18e02fbd0c8bad82ae58ee1ca7eadcfd21683479ba24f3dc4`
+and `6f02088311f50707b9c12154d888f844928c23d359043cb2e5d5654bf7e5eaea`.
+
+| Final command/check | Actual result |
+| --- | --- |
+| Focused OpenAI regression command above | Exit 0; 2 passed, 229 deselected, after the byte-only rejecting mutation |
+| All four `.hone-gates.json` commands | Exit 0 each: critical Flake8 lint, `uv run pytest` (2,636 passed), Bandit (zero issues), `uv run pip-audit` (no known vulnerabilities) |
+| `uv run pytest --cov --cov-fail-under=85 --cov-report=term --junitxml=<scratch-result>` | Exit 0; 2,636 passed, 87.46% coverage, enforced 85% minimum |
+| `uv run flake8 src` and `uv run ruff check src scripts/verify_readiness.py` | Exit 0 each; zero findings |
+| Ruff format/check and Flake8 `--max-complexity=10` on the changed regression | Exit 0 each |
+| `uv run ruff format src` | Exit 0; unchanged `file_manager_spec.py` formatting restored to preserve scope; candidate source unchanged |
+| Locked requirements export piped to `uvx pip-audit -r /dev/stdin --disable-pip`, with pipefail | Exit 0; no known vulnerabilities, no suppressions |
+| `uv pip list --outdated` | Exit 0; inventory reviewed; no advisory-driven upgrade required by either audit |
+| `uv run mkdocs build` and `uv build` | Exit 0 each |
+
+All commands and stdout/stderr hashes are in the refreshed
+[validation record](docs/release_3_0_0_validation.json). Commands use writable
+`UV_CACHE_DIR=/tmp/mojentic-c15-uv` and separate temporary tool/audit caches.
+Existing full-tree optional formatting/complexity debt remains historical;
+this correction changes only the regression and evidence records.
+
+| Unpublished artifact, unchanged version | SHA-256 |
+| --- | --- |
+| `mojentic-2.1.0-py3-none-any.whl` | `6406b8fa60ea2f47e3e89041458f16c309fc942c2a6372d239153f3618446211` |
+| `mojentic-2.1.0.tar.gz` | `29eb7262d4b5c0cba5b8448b71db0cd448e695c0857d3957d10e8a2914c1fc06` |
+
+A new virtual environment at `/tmp/mojentic-c15-consumer-lcn2_j02/.venv`
+installed this wheel with `uv pip install --python <consumer-python> <wheel>`.
+Both existing public consumer verifiers passed through `uv run --no-project
+--directory <consumer> --python <consumer-python>`: `scripts/verify_readiness.py
+<checkout>` and `scripts/verify_stream_timing.py <first-token-fixture>`.
+Imports resolved to `/tmp/mojentic-c15-consumer-lcn2_j02/.venv/lib/python3.13/site-packages/mojentic/__init__.py`;
+all 165 packaged Python sources match this candidate byte-for-byte.
+
+An additional temporary consumer probe, identified by its exact command and
+SHA-256 in the validation record, reused the existing verifier's HTTP endpoint
+and request-fidelity-v1 response bytes with the installed OpenAI gateway. Both
+`gpt-5.4` and `o1-custom` passed literal before/after body equality, content,
+model/token-limit assertions and exactly two completion POSTs. Its first run
+passed those assertions but failed a diagnostic print on a nonexistent fixture
+`id` key; correcting that print and rerunning passed (exit 0). This verifier
+error is recorded separately from behavioral outcomes.
+
+Provider and consumer roles therefore verify the same source, artifact and
+unchanged contracts through real HTTP. No other repository boundary changed.
+Live vendors, other ports, and owner release authorization remain unverified;
+the coordinated publication hold remains. No production source, version,
+contract, Git ref or sibling checkout was changed.
+
+The cycle-14 tables that follow are historical and do not identify this candidate.
+
+## Historical cycle-14 verification record and recommendation
 
 **Python's owner feature scope is implemented and its library self-validation
 passes. Recommend escalation to the owner for the coordinated release go-ahead.**

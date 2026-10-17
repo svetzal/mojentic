@@ -242,7 +242,11 @@ class DescribeContextWindowContract:
     @pytest.mark.parametrize("model", ["gpt-5.4", "o1-custom"])
     def should_preserve_registry_completion_semantics_after_discovery(self, model):
         success = reply("openai", "complete")
-        with metadata_server([(200, success), (200, success)]) as (host, requests):
+        raw_requests = []
+        with metadata_server([(200, success), (200, success)], raw_requests) as (
+            host,
+            requests,
+        ):
             gateway = OpenAIGateway(api_key="test-key", base_url=host + "/v1")
             args = {
                 "model": model,
@@ -260,3 +264,7 @@ class DescribeContextWindowContract:
         assert requests[0]["body"]["model"] == model
         assert requests[0]["body"][capabilities.get_token_limit_param()] == 17
         assert len(requests) == 2
+        assert [(request["method"], request["path"]) for request in requests] == [
+            ("POST", "/v1/chat/completions"),
+        ] * 2
+        assert raw_requests[0] == raw_requests[1]
