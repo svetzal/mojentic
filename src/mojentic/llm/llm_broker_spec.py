@@ -11,6 +11,7 @@ from mojentic.llm.gateways.models import (
     MessageRole,
 )
 from mojentic.llm.llm_broker import LLMBroker, MaxToolIterationsExceededError
+from scripts.inprocess_http import InProcessTokenizer
 
 
 class SimpleModel(BaseModel):
@@ -36,7 +37,9 @@ def mock_gateway(mocker):
 
 @pytest.fixture
 def llm_broker(mock_gateway):
-    return LLMBroker(model="test-model", gateway=mock_gateway)
+    return LLMBroker(
+        tokenizer=InProcessTokenizer(), model="test-model", gateway=mock_gateway
+    )
 
 
 class DescribeLLMBroker:
@@ -493,6 +496,7 @@ class DescribeNativeResponse:
         broker = LLMBroker(
             "test",
             mock_gateway,
+            tokenizer=InProcessTokenizer(),
             tool_context=ToolRunContext(
                 cancel_event=cancelled,
                 on_call_complete=outcomes.append,
@@ -523,7 +527,10 @@ class DescribeResponseEvidenceInTraces:
     @pytest.fixture
     def broker(self, evidence_gateway, tracer):
         return LLMBroker(
-            model="configured-model", gateway=evidence_gateway, tracer=tracer
+            tokenizer=InProcessTokenizer(),
+            model="configured-model",
+            gateway=evidence_gateway,
+            tracer=tracer,
         )
 
     @pytest.fixture
@@ -615,7 +622,10 @@ class DescribeStreamEvents:
     @pytest.fixture
     def broker(self, openai_gateway, tracer):
         return LLMBroker(
-            model="configured-model", gateway=openai_gateway, tracer=tracer
+            tokenizer=InProcessTokenizer(),
+            model="configured-model",
+            gateway=openai_gateway,
+            tracer=tracer,
         )
 
     @staticmethod
@@ -699,7 +709,12 @@ class DescribeStreamEvents:
         from mojentic.tracer.tracer_events import LLMCallTracerEvent
 
         gateway = mocker.Mock(spec=AnthropicGateway)
-        broker = LLMBroker(model="claude", gateway=gateway, tracer=tracer)
+        broker = LLMBroker(
+            tokenizer=InProcessTokenizer(),
+            model="claude",
+            gateway=gateway,
+            tracer=tracer,
+        )
 
         events = list(broker.generate_stream_events(messages, correlation_id="c-1"))
 
@@ -815,6 +830,7 @@ class DescribeStreamEvents:
         transport.stream_lines.side_effect = lines
         mocker.patch("mojentic.llm.gateways.openai.OpenAI")
         broker = LLMBroker(
+            tokenizer=InProcessTokenizer(),
             model="gpt-4o",
             gateway=OpenAIGateway(api_key="k", stream_transport=transport),
             tracer=tracer,
@@ -846,7 +862,12 @@ class DescribeMissingCorrelationId:
 
     @pytest.fixture
     def broker(self, gateway, tracer):
-        return LLMBroker(model="configured-model", gateway=gateway, tracer=tracer)
+        return LLMBroker(
+            tokenizer=InProcessTokenizer(),
+            model="configured-model",
+            gateway=gateway,
+            tracer=tracer,
+        )
 
     @pytest.fixture
     def messages(self):

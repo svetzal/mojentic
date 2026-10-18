@@ -1,5 +1,3 @@
-import time
-
 from mojentic import Event
 from mojentic.tracer.event_store import EventStore
 from mojentic.tracer.tracer_events import TracerEvent
@@ -72,7 +70,7 @@ class DescribeEventStore:
         """
         # Given
         event_store = EventStore()
-        now = time.time()
+        now = 1700000000.0
         event1 = TestTracerEvent(
             source=DescribeEventStore, timestamp=now - 100, value=1
         )

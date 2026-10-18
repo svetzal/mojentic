@@ -22,6 +22,7 @@ from mojentic.llm.gateways.stream_events import (
 from mojentic.llm.llm_broker import LLMBroker
 from mojentic.llm.tools.llm_tool import LLMTool
 from mojentic.tracer import TracerSystem
+from scripts.inprocess_http import InProcessTokenizer
 
 FIXTURES = Path(__file__).parent / "fixtures" / "omlx"
 MODEL = "Qwen3.8-27B-MLX-8bit"
@@ -271,7 +272,9 @@ class DescribeOMLXGateway:
                 ok(load_fixture("chat_tool_call.json")),
                 ok(load_fixture("chat_after_tool_result.json")),
             ]
-            broker = LLMBroker(model=MODEL, gateway=gateway)
+            broker = LLMBroker(
+                tokenizer=InProcessTokenizer(), model=MODEL, gateway=gateway
+            )
 
             answer = broker.generate(messages, tools=[ResolveDate()])
 
@@ -670,7 +673,12 @@ class DescribeOMLXGateway:
                 fixture_lines("stream_thinking.sse")
             )
             tracer = TracerSystem()
-            broker = LLMBroker(model=MODEL, gateway=gateway, tracer=tracer)
+            broker = LLMBroker(
+                tokenizer=InProcessTokenizer(),
+                model=MODEL,
+                gateway=gateway,
+                tracer=tracer,
+            )
 
             list(broker.generate_stream_events(messages))
 

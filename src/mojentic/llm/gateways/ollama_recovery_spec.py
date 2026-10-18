@@ -1,13 +1,10 @@
-"""Recovery specifications exercise actual loopback HTTP through public callers."""
+"""Recovery specifications exercise in-process HTTP transports through public callers."""
 
 import asyncio
 import base64
 import json
 import os
 import threading
-import time
-from contextlib import contextmanager
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 import pytest
@@ -15,67 +12,7 @@ import pytest
 from mojentic.llm.gateways.models import LLMMessage, MessageRole
 from mojentic.llm.gateways.ollama import OllamaGateway
 from mojentic.llm.llm_broker import LLMBroker
-
-
-@contextmanager
-def scripted_http(replies):
-    requests = []
-
-    class Handler(BaseHTTPRequestHandler):
-        def do_POST(self):
-            body = self.rfile.read(int(self.headers["Content-Length"]))
-            requests.append((self.path, body, dict(self.headers)))
-            status, headers, data = replies[len(requests) - 1]
-            delay = 0
-            if isinstance(data, tuple):
-                delay, data = data
-            chunks = data if isinstance(data, list) else [(delay, data)]
-            self.send_response(status)
-            for key, value in headers.items():
-                self.send_header(key, value)
-            if "Content-Length" not in headers:
-                self.send_header(
-                    "Content-Length", str(sum(len(chunk) for _, chunk in chunks))
-                )
-            self.end_headers()
-            try:
-                for pause, chunk in chunks:
-                    time.sleep(pause)
-                    self.wfile.write(chunk)
-                    self.wfile.flush()
-            except (BrokenPipeError, ConnectionResetError):
-                pass
-            self.close_connection = True
-
-        def log_message(self, *args):
-            pass
-
-    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
-    thread = threading.Thread(
-        target=lambda: server.serve_forever(poll_interval=0.01), daemon=True
-    )
-    thread.start()
-    try:
-        yield f"http://127.0.0.1:{server.server_port}", requests
-    finally:
-        server.shutdown()
-        server.server_close()
-        thread.join()
-        if os.environ.get("MOJENTIC_RECOVERY_EVIDENCE") == "1":
-            evidence = {
-                "test": os.environ.get("PYTEST_CURRENT_TEST"),
-                "endpoint": f"http://127.0.0.1:{server.server_port}",
-                "received_requests": [
-                    {
-                        "path": path,
-                        "body_base64": base64.b64encode(body).decode(),
-                        "headers": headers,
-                    }
-                    for path, body, headers in requests
-                ],
-            }
-            with Path(".foundry/logs/loopback.jsonl").open("a") as log:
-                log.write(json.dumps(evidence) + "\n")
+from scripts.inprocess_http import clock, scripted_http, virtual_sleep
 
 
 def frame(content="answer", **message):
@@ -136,6 +73,9 @@ class DescribeHttpBoundaryCorrection:
             gateway = OllamaGateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
                     deadline=0,
                     monotonic=lambda: 1,
                     observer=observe,
@@ -174,6 +114,10 @@ class DescribeHttpBoundaryCorrection:
             gateway = OllamaGateway(
                 host=host.replace("http://", "http://username:password@"),
                 recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
                     max_attempts=2,
                     base_delay=0,
                     admission=allow,
@@ -236,6 +180,10 @@ class DescribeHttpBoundaryCorrection:
             gateway = OllamaGateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
                     max_attempts=3,
                     admission=allow,
                     wire_observer=capture,
@@ -331,6 +279,9 @@ class DescribeHttpBoundaryCorrection:
             gateway = OllamaGateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
                     max_attempts=2,
                     base_delay=0,
                     admission=allow,
@@ -367,6 +318,10 @@ class DescribeHttpBoundaryCorrection:
             gateway = OllamaGateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
                     wire_observer=captured.append,
                     observer=events.append,
                 ),
@@ -419,6 +374,10 @@ class DescribeHttpBoundaryCorrection:
             gateway = OllamaGateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
                     max_attempts=2,
                     base_delay=0,
                     admission=allow,
@@ -473,7 +432,13 @@ class DescribePublicRecoveryProof:
             gateway = OllamaGateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
-                    max_attempts=3, wire_observer=capture, observer=events.append
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                    wire_observer=capture,
+                    observer=events.append,
                 ),
             )
             tokenizer = mocker.Mock(spec=TokenizerGateway)
@@ -553,6 +518,10 @@ class DescribeRecoveryBoundaries:
             gateway = OllamaGateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
                     max_attempts=2,
                     base_delay=0,
                     admission=allow,
@@ -636,6 +605,10 @@ class DescribeRecoveryBoundaries:
                     host=host,
                     headers={"Authorization": secret.decode()},
                     recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
                         max_attempts=3,
                         base_delay=0,
                         admission=allow,
@@ -715,6 +688,10 @@ class DescribeRecoveryBoundaries:
             gateway = OllamaGateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
                     max_attempts=3,
                     retryable_statuses=frozenset({status}),
                     admission=allow,
@@ -753,6 +730,10 @@ class DescribeRecoveryBoundaries:
             gateway = OllamaGateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
                     max_attempts=3,
                     admission=allow,
                     retryable_categories=frozenset({"protocol", "provider_response"}),
@@ -780,7 +761,16 @@ class DescribeRecoveryBoundaries:
             requests,
         ):
             broker = broker_factory(
-                OllamaGateway(host=host, recovery_policy=RecoveryPolicy(max_attempts=3))
+                OllamaGateway(
+                    host=host,
+                    recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        max_attempts=3,
+                    ),
+                )
             )
 
             with pytest.raises(RecoveryError) as caught:
@@ -808,7 +798,13 @@ class DescribeRecoveryBoundaries:
             gateway = OllamaGateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
-                    max_attempts=2, admission=admission, observer=events.append
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=2,
+                    admission=admission,
+                    observer=events.append,
                 ),
             )
 
@@ -855,6 +851,7 @@ class DescribeRecoveryBoundaries:
             gateway = OllamaGateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
                     max_attempts=2,
                     base_delay=1,
                     jitter=lambda ceiling: ceiling / 2,
@@ -885,7 +882,15 @@ class DescribeRecoveryBoundaries:
         from mojentic.llm.recovery import RecoveryError, RecoveryPolicy
 
         with scripted_http([(307, {"Location": "/api/chat"}, b"")]) as (host, requests):
-            gateway = OllamaGateway(host=host, recovery_policy=RecoveryPolicy())
+            gateway = OllamaGateway(
+                host=host,
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                ),
+            )
 
             with pytest.raises(RecoveryError) as caught:
                 gateway.complete(model="test", messages=messages)
@@ -917,7 +922,13 @@ class DescribeRecoveryBoundaries:
             gateway = OllamaGateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
-                    max_attempts=2, base_delay=0, admission=allow
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=2,
+                    base_delay=0,
+                    admission=allow,
                 ),
             )
             response = gateway.complete(model="test", messages=messages)
@@ -964,17 +975,23 @@ class DescribeRecoveryCancellation:
             gateway = OllamaGateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
-                    max_attempts=2, base_delay=0, admission=admission
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=2,
+                    base_delay=0,
+                    admission=admission,
                 ),
             )
             task = asyncio.create_task(
                 gateway.complete_with_recovery(model="test", messages=messages)
             )
-            await asyncio.wait_for(pending.wait(), 2)
+            await pending.wait()
             assert len(requests) == 1
             assert not task.done()
             release.set()
-            response = await asyncio.wait_for(task, 2)
+            response = await task
 
         assert response.content == "answer"
         assert len(requests) == 2
@@ -1015,6 +1032,9 @@ class DescribeRecoveryCancellation:
                 closed.set()
 
         policy = RecoveryPolicy(
+            monotonic=clock,
+            wall=lambda: 0,
+            jitter=lambda ceiling: ceiling / 2,
             max_attempts=2,
             admission=wait if phase == "admission" else allow,
             sleeper=wait if phase == "backoff" else asyncio.sleep,
@@ -1027,10 +1047,10 @@ class DescribeRecoveryCancellation:
                     call=call, model="test", messages=messages
                 )
             )
-            await asyncio.wait_for(entered.wait(), 2)
+            await entered.wait()
             call.cancel()
             with pytest.raises(RecoveryError) as caught:
-                await asyncio.wait_for(task, 1)
+                await task
 
         assert closed.is_set()
         assert len(requests) == 1
@@ -1055,6 +1075,10 @@ class DescribeRecoveryCancellation:
             gateway = OllamaGateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
                     max_attempts=3,
                     wire_observer=capture,
                     observer=events.append,
@@ -1066,10 +1090,10 @@ class DescribeRecoveryCancellation:
                     call=call, model="test", messages=messages
                 )
             )
-            await asyncio.wait_for(entered.wait(), 2)
+            await entered.wait()
             call.cancel()
             with pytest.raises(RecoveryError) as caught:
-                await asyncio.wait_for(task, 1)
+                await task
 
         assert entered.is_set()
         assert len(requests) == 1
@@ -1091,7 +1115,14 @@ class DescribeRecoveryCancellation:
         call.cancel()
         with scripted_http([]) as (host, requests):
             gateway = OllamaGateway(
-                host=host, recovery_policy=RecoveryPolicy(max_attempts=3)
+                host=host,
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                ),
             )
             with pytest.raises(RecoveryError) as caught:
                 await gateway.complete_with_recovery(
@@ -1103,13 +1134,22 @@ class DescribeRecoveryCancellation:
         assert caught.value.report.identity.attempt_id is None
         assert caught.value.report.history == ()
 
-    async def should_expire_budget_while_admission_is_pending(self, messages):
+    async def should_expire_budget_while_admission_is_pending(
+        self, messages, monkeypatch
+    ):
         from mojentic.llm.recovery import RecoveryError, RecoveryPolicy
 
         closed = asyncio.Event()
+        from scripts.inprocess_http import VirtualClock
+
+        loop = asyncio.get_running_loop()
+        scheduler = VirtualClock()
+        scheduler.now = loop.time()
+        monkeypatch.setattr(loop, "time", scheduler)
 
         async def admission(context):
             try:
+                scheduler.advance(1)
                 await asyncio.Event().wait()
             finally:
                 closed.set()
@@ -1118,13 +1158,18 @@ class DescribeRecoveryCancellation:
             gateway = OllamaGateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
-                    max_attempts=2, budget=0.02, base_delay=0, admission=admission
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=2,
+                    budget=0.02,
+                    base_delay=0,
+                    admission=admission,
                 ),
             )
             with pytest.raises(RecoveryError) as caught:
-                await asyncio.wait_for(
-                    gateway.complete_with_recovery(model="test", messages=messages), 2
-                )
+                await gateway.complete_with_recovery(model="test", messages=messages)
 
         assert closed.is_set()
         assert len(requests) == 1
@@ -1177,6 +1222,10 @@ class DescribeRecoveryToolSafety:
             gateway = OllamaGateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
                     max_attempts=2,
                     base_delay=0,
                     admission=allow,
@@ -1241,7 +1290,13 @@ class DescribeRecoveryToolSafety:
                 OllamaGateway(
                     host=host,
                     recovery_policy=RecoveryPolicy(
-                        max_attempts=2, base_delay=0, admission=allow
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        max_attempts=2,
+                        base_delay=0,
+                        admission=allow,
                     ),
                 )
             )
@@ -1274,7 +1329,12 @@ class DescribeRecoveryEdgeEvidence:
         from mojentic.llm.recovery import RecoveryError, RecoveryPolicy
 
         events = []
-        with scripted_http([(200, {}, (0.1, frame())), (200, {}, frame())]) as (
+        with scripted_http(
+            [
+                (200, {}, [(0, httpx.ReadTimeout("scripted read timeout"))]),
+                (200, {}, frame()),
+            ]
+        ) as (
             host,
             requests,
         ):
@@ -1282,6 +1342,10 @@ class DescribeRecoveryEdgeEvidence:
                 host=host,
                 timeout=httpx.Timeout(0.03),
                 recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
                     max_attempts=2,
                     base_delay=0,
                     admission=admission,
@@ -1320,17 +1384,24 @@ class DescribeRecoveryEdgeEvidence:
         with scripted_http([(504, {}, b"")]) as (host, requests):
             gateway = OllamaGateway(
                 host=host,
-                recovery_policy=RecoveryPolicy(max_attempts=2, admission=admission),
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=2,
+                    admission=admission,
+                ),
             )
             task = asyncio.create_task(
                 gateway.complete_with_recovery(model="test", messages=messages)
             )
-            await asyncio.wait_for(pending.wait(), 2)
+            await pending.wait()
             assert len(requests) == 1
             assert not task.done()
             decide.set()
             with pytest.raises(RecoveryError) as caught:
-                await asyncio.wait_for(task, 2)
+                await task
 
         assert len(requests) == 1
         assert caught.value.report.outcome == "admission_rejected"
@@ -1366,7 +1437,13 @@ class DescribeRecoveryEdgeEvidence:
             gateway = OllamaGateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
-                    max_attempts=3, wire_observer=capture, admission=allow
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                    wire_observer=capture,
+                    admission=allow,
                 ),
             )
             with pytest.raises(RecoveryError) as caught:
@@ -1407,7 +1484,13 @@ class DescribeRecoveryEdgeEvidence:
             gateway = OllamaGateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
-                    max_attempts=3, wire_observer=capture, admission=allow
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                    wire_observer=capture,
+                    admission=allow,
                 ),
             )
             with pytest.raises(RecoveryError) as caught:
@@ -1443,7 +1526,14 @@ class DescribeRecoveryEdgeEvidence:
         with scripted_http([replies[transition]]) as (host, requests):
             gateway = OllamaGateway(
                 host=host,
-                recovery_policy=RecoveryPolicy(max_attempts=3, observer=observe),
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                    observer=observe,
+                ),
             )
             with pytest.raises(RecoveryError) as caught:
                 gateway.complete(model="test", messages=messages)
@@ -1475,7 +1565,13 @@ class DescribeRecoveryEdgeEvidence:
             gateway = OllamaGateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
-                    max_attempts=2, base_delay=0, admission=admission
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=2,
+                    base_delay=0,
+                    admission=admission,
                 ),
             )
             gateway.complete(model="test", messages=messages, config=config)
@@ -1505,6 +1601,9 @@ class DescribeRecoveryEdgeEvidence:
             gateway = OllamaGateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
                     max_attempts=2,
                     base_delay=0,
                     admission=allow,
@@ -1532,6 +1631,9 @@ class DescribeRecoveryEdgeEvidence:
             gateway = OllamaGateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
                     max_attempts=2,
                     base_delay=0,
                     admission=admission,
@@ -1560,12 +1662,19 @@ class DescribeRecoveryEdgeEvidence:
         with scripted_http([(503, {}, b"")]) as (host, requests):
             gateway = OllamaGateway(
                 host=host,
-                recovery_policy=RecoveryPolicy(max_attempts=2, admission=admission),
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=2,
+                    admission=admission,
+                ),
             )
             task = asyncio.create_task(
                 gateway.complete_with_recovery(model="test", messages=messages)
             )
-            await asyncio.wait_for(entered.wait(), 2)
+            await entered.wait()
             task.cancel()
             with pytest.raises(RecoveryError) as caught:
                 await task
@@ -1588,7 +1697,7 @@ class DescribePublicCancellationAndMetadata:
         async def admission(context):
             entered.set()
             try:
-                await asyncio.sleep(100)
+                await asyncio.Event().wait()
             finally:
                 finished.set()
 
@@ -1596,14 +1705,21 @@ class DescribePublicCancellationAndMetadata:
             gateway = OllamaGateway(
                 host=host,
                 recovery_call=call,
-                recovery_policy=RecoveryPolicy(max_attempts=3, admission=admission),
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                    admission=admission,
+                ),
             )
             session = ChatSession(broker_factory(gateway))
             task = asyncio.create_task(asyncio.to_thread(session.send, "hello"))
-            await asyncio.wait_for(asyncio.to_thread(entered.wait, 2), 3)
+            await asyncio.to_thread(entered.wait)
             call.cancel()
             with pytest.raises(RecoveryError) as caught:
-                await asyncio.wait_for(task, 1)
+                await task
 
         assert entered.is_set() and finished.is_set()
         assert len(requests) == 1
@@ -1630,7 +1746,15 @@ class DescribePublicCancellationAndMetadata:
             host,
             requests,
         ):
-            gateway = OllamaGateway(host=host, recovery_policy=RecoveryPolicy())
+            gateway = OllamaGateway(
+                host=host,
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                ),
+            )
             with pytest.raises(RecoveryError) as caught:
                 gateway.complete(model="test", messages=messages)
 
@@ -1645,7 +1769,15 @@ class DescribePublicCancellationAndMetadata:
 
         messages[0].image_paths = [str(tmp_path / "secret-missing.png")]
         with scripted_http([]) as (host, requests):
-            gateway = OllamaGateway(host=host, recovery_policy=RecoveryPolicy())
+            gateway = OllamaGateway(
+                host=host,
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                ),
+            )
             with pytest.raises(RecoveryError) as caught:
                 gateway.complete(model="test", messages=messages)
 

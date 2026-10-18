@@ -1,9 +1,7 @@
-"""Admission contract v2 (retaining v1 cases): public recovery APIs over actual loopback HTTP."""
+"""Admission contract v2 (retaining v1 cases): public recovery APIs over in-process HTTP transports."""
 
 import asyncio
 import json
-import threading
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import httpx
 import pytest
@@ -18,6 +16,7 @@ from mojentic.llm.gateways.omlx import OMLXGateway
 from mojentic.llm.gateways.omlx_recovery_spec import Result, completion, stream
 from mojentic.llm.gateways.openai import OpenAIGateway
 from mojentic.llm.recovery import RecoveryCall, RecoveryError, RecoveryPolicy
+from scripts.inprocess_http import clock, virtual_sleep
 
 CASES = [
     (provider, operation)
@@ -138,6 +137,10 @@ class DescribeRecoveryAdmission:
             return decision
 
         policy = RecoveryPolicy(
+            monotonic=clock,
+            wall=lambda: 0,
+            jitter=lambda ceiling: ceiling / 2,
+            sleeper=virtual_sleep,
             max_attempts=2,
             base_delay=0,
             admission=None if decision == "absent" else admission,
@@ -180,20 +183,34 @@ class DescribeRecoveryAdmission:
 
     @pytest.mark.parametrize("provider,operation", CASES)
     @pytest.mark.parametrize("termination", ["cancelled", "budget_exhausted"])
-    async def should_stop_pending_admission(self, provider, operation, termination):
+    async def should_stop_pending_admission(
+        self, provider, operation, termination, monkeypatch
+    ):
         lifecycle, captures = [], []
         call = RecoveryCall()
         hook_closed = asyncio.Event()
+        from scripts.inprocess_http import VirtualClock
+
+        loop = asyncio.get_running_loop()
+        scheduler = VirtualClock()
+        scheduler.now = loop.time()
+        monkeypatch.setattr(loop, "time", scheduler)
 
         async def pending(context):
             try:
                 if termination == "cancelled":
                     call.cancel()
+                else:
+                    scheduler.advance(1)
                 await asyncio.Event().wait()
             finally:
                 hook_closed.set()
 
         policy = RecoveryPolicy(
+            monotonic=clock,
+            wall=lambda: 0,
+            jitter=lambda ceiling: ceiling / 2,
+            sleeper=virtual_sleep,
             max_attempts=2,
             base_delay=0,
             budget=0.2,
@@ -216,54 +233,44 @@ class DescribeRecoveryAdmission:
     async def should_retry_evidenced_connection_refusal_without_hook(
         self, provider, operation
     ):
+        import errno
+
+        from scripts.inprocess_http import Body, transport
+
         requests, captures, lifecycle = [], [], []
-        body = response_for(provider, operation)
+        sends = []
 
-        class Handler(BaseHTTPRequestHandler):
-            def do_POST(self):
-                requests.append(
-                    (
-                        self.path,
-                        self.rfile.read(int(self.headers["Content-Length"])),
-                        dict(self.headers),
-                    )
-                )
-                self.send_response(200)
-                self.send_header("Content-Length", str(len(body)))
-                self.end_headers()
-                self.wfile.write(body)
-
-            def log_message(self, *args):
-                pass
-
-        # Bound but not listening: the first connection is really refused; no
-        # request reaches a provider. Start listening only after that failure.
-        server = ThreadingHTTPServer(("127.0.0.1", 0), Handler, bind_and_activate=False)
-        server.server_bind()
-        thread = threading.Thread(target=server.serve_forever, daemon=True)
-
-        def observe(event):
-            lifecycle.append(event)
-            if event.transition == "attempt_failed":
-                server.server_activate()
-                thread.start()
+        async def respond(request):
+            sends.append(request)
+            trace = request.extensions["trace"]
+            if len(sends) == 1:
+                cause = ConnectionRefusedError(errno.ECONNREFUSED, "Connection refused")
+                await trace("connection.connect_tcp.failed", {"exception": cause})
+                raise httpx.ConnectError(
+                    "Connection refused", request=request
+                ) from cause
+            requests.append(
+                (request.url.raw_path.decode(), request.content, dict(request.headers))
+            )
+            return httpx.Response(
+                200, stream=Body([(0, response_for(provider, operation))], {})
+            )
 
         policy = RecoveryPolicy(
+            monotonic=clock,
+            wall=lambda: 0,
+            jitter=lambda ceiling: ceiling / 2,
+            sleeper=virtual_sleep,
             max_attempts=2,
             base_delay=0,
-            observer=observe,
+            observer=lifecycle.append,
             wire_observer=captures.append,
         )
-        try:
-            host = f"http://127.0.0.1:{server.server_address[1]}"
+        with transport(respond):
             report = await invoke(
-                gateway_for(provider, host, policy, RecoveryCall()), operation
+                gateway_for(provider, "http://provider.test", policy, RecoveryCall()),
+                operation,
             )
-        finally:
-            if thread.is_alive():
-                server.shutdown()
-                thread.join()
-            server.server_close()
 
         assert report.outcome == "succeeded"
         assert report.history[0].acceptance == "no"
@@ -286,6 +293,10 @@ class DescribeRecoveryAdmission:
             return "allow"
 
         policy = RecoveryPolicy(
+            monotonic=clock,
+            wall=lambda: 0,
+            jitter=lambda ceiling: ceiling / 2,
+            sleeper=virtual_sleep,
             max_attempts=3,
             base_delay=0,
             admission=allow,
@@ -320,6 +331,10 @@ class DescribeRecoveryAdmission:
             return None
 
         policy = RecoveryPolicy(
+            monotonic=clock,
+            wall=lambda: 0,
+            jitter=lambda ceiling: ceiling / 2,
+            sleeper=virtual_sleep,
             max_attempts=2,
             base_delay=0,
             admission=undecided,
@@ -351,6 +366,10 @@ class DescribeRecoveryAdmission:
                 raise error_type("private-error")
 
         policy = RecoveryPolicy(
+            monotonic=clock,
+            wall=lambda: 0,
+            jitter=lambda ceiling: ceiling / 2,
+            sleeper=virtual_sleep,
             max_attempts=2,
             base_delay=0,
             observer=lifecycle.append,
@@ -390,7 +409,14 @@ class DescribeRecoveryAdmission:
             def validate_answer(self):
                 raise cause
 
-        policy = RecoveryPolicy(max_attempts=2, base_delay=0)
+        policy = RecoveryPolicy(
+            monotonic=clock,
+            wall=lambda: 0,
+            jitter=lambda ceiling: ceiling / 2,
+            sleeper=virtual_sleep,
+            max_attempts=2,
+            base_delay=0,
+        )
         body = response_for(provider, "structured")
         with scripted_http([(200, {}, body)]) as (host, requests):
             gateway = gateway_for(provider, host, policy, RecoveryCall())

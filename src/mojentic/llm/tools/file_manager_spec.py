@@ -288,7 +288,9 @@ class DescribeFilesystemGateway:
 
 class DescribeFileManager:
     @pytest.mark.parametrize("operation", ["read", "write", "ls", "list_all_files"])
-    def should_reject_sibling_paths_sharing_the_sandbox_prefix(self, tmp_path, operation):
+    def should_reject_sibling_paths_sharing_the_sandbox_prefix(
+        self, tmp_path, operation
+    ):
         sandbox = tmp_path / "sb"
         sibling = tmp_path / "sb2"
         sandbox.mkdir()
@@ -302,10 +304,14 @@ class DescribeFileManager:
             "list_all_files": ("../sb2",),
         }
 
-        with pytest.raises(ValueError, match=r"^Path ../sb2 attempts to escape the sandbox$"):
+        with pytest.raises(
+            ValueError, match=r"^Path ../sb2 attempts to escape the sandbox$"
+        ):
             getattr(manager, operation)(*arguments[operation])
 
-    def should_reject_creating_a_directory_in_a_sibling_sharing_the_sandbox_prefix(self, tmp_path):
+    def should_reject_creating_a_directory_in_a_sibling_sharing_the_sandbox_prefix(
+        self, tmp_path
+    ):
         sandbox = tmp_path / "sb"
         sandbox.mkdir()
         tool = CreateDirectoryTool(FilesystemGateway(str(sandbox)))
@@ -315,7 +321,9 @@ class DescribeFileManager:
         assert result == "Error: Path ../sb2/new attempts to escape the sandbox"
         assert not (tmp_path / "sb2").exists()
 
-    def should_accept_root_and_descendants_with_a_normalized_relative_base(self, tmp_path, monkeypatch):
+    def should_accept_root_and_descendants_with_a_normalized_relative_base(
+        self, tmp_path, monkeypatch
+    ):
         sandbox = tmp_path / "sb"
         sandbox.mkdir()
         (sandbox / "nested").mkdir()

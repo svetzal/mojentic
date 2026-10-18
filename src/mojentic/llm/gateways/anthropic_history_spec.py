@@ -12,6 +12,7 @@ from mojentic.llm.gateways.cloud_recovery_spec import success
 from mojentic.llm.gateways.models import LLMMessage, MessageRole
 from mojentic.llm.gateways.ollama_recovery_spec import scripted_http
 from mojentic.llm.recovery import RecoveryPolicy
+from scripts.inprocess_http import clock, virtual_sleep
 
 broker_factory = recovery_fixtures.broker_factory
 
@@ -41,7 +42,13 @@ class DescribeAnthropicHistory:
             "max_tokens": 17,
         }
         policy = RecoveryPolicy(
-            max_attempts=2, base_delay=0, wire_observer=captures.append
+            monotonic=clock,
+            wall=lambda: 0,
+            jitter=lambda ceiling: ceiling / 2,
+            sleeper=virtual_sleep,
+            max_attempts=2,
+            base_delay=0,
+            wire_observer=captures.append,
         )
         with scripted_http([(503, {}, b"busy"), (200, {}, success("anthropic"))]) as (
             host,
@@ -77,7 +84,19 @@ class DescribeAnthropicHistory:
             == sent[0].identity.logical_request_id
         )
 
-    @pytest.mark.parametrize("policy", [None, RecoveryPolicy(max_attempts=1)])
+    @pytest.mark.parametrize(
+        "policy",
+        [
+            None,
+            RecoveryPolicy(
+                monotonic=clock,
+                wall=lambda: 0,
+                jitter=lambda ceiling: ceiling / 2,
+                sleeper=virtual_sleep,
+                max_attempts=1,
+            ),
+        ],
+    )
     def should_preserve_ordered_history_system_images_controls_and_response(
         self, policy, tmp_path
     ):
@@ -144,7 +163,19 @@ class DescribeAnthropicHistory:
         assert response.tool_calls == []
         assert response.object is None
 
-    @pytest.mark.parametrize("policy", [None, RecoveryPolicy(max_attempts=1)])
+    @pytest.mark.parametrize(
+        "policy",
+        [
+            None,
+            RecoveryPolicy(
+                monotonic=clock,
+                wall=lambda: 0,
+                jitter=lambda ceiling: ceiling / 2,
+                sleeper=virtual_sleep,
+                max_attempts=1,
+            ),
+        ],
+    )
     @pytest.mark.parametrize(
         "controls,expected",
         [
@@ -182,7 +213,19 @@ class DescribeAnthropicHistory:
             }
         ]
 
-    @pytest.mark.parametrize("policy", [None, RecoveryPolicy(max_attempts=1)])
+    @pytest.mark.parametrize(
+        "policy",
+        [
+            None,
+            RecoveryPolicy(
+                monotonic=clock,
+                wall=lambda: 0,
+                jitter=lambda ceiling: ceiling / 2,
+                sleeper=virtual_sleep,
+                max_attempts=1,
+            ),
+        ],
+    )
     def should_send_first_assistant_answer_in_second_chat_turn(
         self, policy, broker_factory
     ):

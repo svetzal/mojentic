@@ -1,4 +1,4 @@
-"""Validated metadata crosses real HTTP and public recovery surfaces."""
+"""Validated metadata crosses in-process HTTP and public recovery surfaces."""
 
 import asyncio
 import json
@@ -17,6 +17,7 @@ from mojentic.llm.gateways.ollama_recovery_spec import (
 from mojentic.llm.gateways.omlx import OMLXGateway
 from mojentic.llm.gateways.openai import OpenAIGateway
 from mojentic.llm.recovery import RecoveryError, RecoveryPolicy
+from scripts.inprocess_http import clock, virtual_sleep
 
 
 async def allow(context):
@@ -102,7 +103,13 @@ class DescribeProviderMetadata:
                 provider,
                 host,
                 RecoveryPolicy(
-                    max_attempts=3, observer=lifecycle.append, wire_observer=wire.append
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                    observer=lifecycle.append,
+                    wire_observer=wire.append,
                 ),
             )
             with pytest.raises(RecoveryError) as caught:
@@ -152,6 +159,10 @@ class DescribeProviderMetadata:
                 provider,
                 host,
                 RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
                     max_attempts=3,
                     admission=allow,
                     base_delay=0,
@@ -208,7 +219,14 @@ class DescribeProviderMetadata:
             gateway = gateway_for(
                 provider,
                 host,
-                RecoveryPolicy(observer=lifecycle.append, wire_observer=wire.append),
+                RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    observer=lifecycle.append,
+                    wire_observer=wire.append,
+                ),
                 credential,
             )
             with pytest.raises(RecoveryError) as caught:
@@ -251,7 +269,19 @@ class DescribeProviderMetadata:
             pytest.raises(RecoveryError) as caught,
         ):
             asyncio.run(
-                invoke(gateway_for(provider, host, RecoveryPolicy()), operation)
+                invoke(
+                    gateway_for(
+                        provider,
+                        host,
+                        RecoveryPolicy(
+                            monotonic=clock,
+                            wall=lambda: 0,
+                            jitter=lambda ceiling: ceiling / 2,
+                            sleeper=virtual_sleep,
+                        ),
+                    ),
+                    operation,
+                )
             )
         assert caught.value.report.final_failure.provider_request_id is None
         assert caught.value.report.final_failure.provider_code is None
@@ -273,7 +303,14 @@ class DescribeProviderMetadata:
                     gateway_for(
                         provider,
                         host,
-                        RecoveryPolicy(max_attempts=3, admission=allow),
+                        RecoveryPolicy(
+                            monotonic=clock,
+                            wall=lambda: 0,
+                            jitter=lambda ceiling: ceiling / 2,
+                            sleeper=virtual_sleep,
+                            max_attempts=3,
+                            admission=allow,
+                        ),
                     ),
                     operation,
                 )
@@ -299,7 +336,19 @@ class DescribeProviderMetadata:
             pytest.raises(RecoveryError) as caught,
         ):
             asyncio.run(
-                invoke(gateway_for("anthropic", host, RecoveryPolicy()), "ordinary")
+                invoke(
+                    gateway_for(
+                        "anthropic",
+                        host,
+                        RecoveryPolicy(
+                            monotonic=clock,
+                            wall=lambda: 0,
+                            jitter=lambda ceiling: ceiling / 2,
+                            sleeper=virtual_sleep,
+                        ),
+                    ),
+                    "ordinary",
+                )
             )
         assert caught.value.report.final_failure.provider_code == "overloaded_error"
         assert caught.value.report.final_failure.provider_request_id == REQUEST_ID
@@ -321,7 +370,16 @@ class DescribeProviderMetadata:
             host,
             requests,
         ):
-            gateway = gateway_for(provider, host, RecoveryPolicy())
+            gateway = gateway_for(
+                provider,
+                host,
+                RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                ),
+            )
             broker = LLMBroker(model="test", gateway=gateway, tokenizer=tokenizer)
             session = ChatSession(broker, tokenizer_gateway=tokenizer)
             with pytest.raises(RecoveryError) as caught:
@@ -356,7 +414,13 @@ class DescribeProviderMetadata:
             gateway = gateway_for(
                 "ollama",
                 host,
-                RecoveryPolicy(observer=lifecycle.append),
+                RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    observer=lifecycle.append,
+                ),
                 credentials[source],
             )
             with pytest.raises(RecoveryError) as caught:
@@ -387,7 +451,17 @@ class DescribeProviderMetadata:
         ):
             asyncio.run(
                 invoke(
-                    gateway_for("ollama", host, RecoveryPolicy(), credential),
+                    gateway_for(
+                        "ollama",
+                        host,
+                        RecoveryPolicy(
+                            monotonic=clock,
+                            wall=lambda: 0,
+                            jitter=lambda ceiling: ceiling / 2,
+                            sleeper=virtual_sleep,
+                        ),
+                        credential,
+                    ),
                     "ordinary",
                 )
             )
@@ -405,7 +479,19 @@ class DescribeProviderMetadata:
             pytest.raises(RecoveryError) as caught,
         ):
             asyncio.run(
-                invoke(gateway_for(provider, host, RecoveryPolicy()), operation)
+                invoke(
+                    gateway_for(
+                        provider,
+                        host,
+                        RecoveryPolicy(
+                            monotonic=clock,
+                            wall=lambda: 0,
+                            jitter=lambda ceiling: ceiling / 2,
+                            sleeper=virtual_sleep,
+                        ),
+                    ),
+                    operation,
+                )
             )
         assert caught.value.report.final_failure.provider_request_id is None
         assert len(requests) == 1
@@ -424,7 +510,15 @@ class DescribeProviderMetadata:
             asyncio.run(
                 invoke(
                     gateway_for(
-                        provider, host, RecoveryPolicy(observer=lifecycle.append)
+                        provider,
+                        host,
+                        RecoveryPolicy(
+                            monotonic=clock,
+                            wall=lambda: 0,
+                            jitter=lambda ceiling: ceiling / 2,
+                            sleeper=virtual_sleep,
+                            observer=lifecycle.append,
+                        ),
                     ),
                     operation,
                 )

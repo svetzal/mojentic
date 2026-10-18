@@ -26,6 +26,7 @@ from mojentic.llm.recovery import (
     RecoveryPolicy,
     RecoveryPolicyError,
 )
+from scripts.inprocess_http import clock, virtual_sleep
 
 broker_factory = shared_broker_factory
 SECRET = "sentinel"
@@ -185,7 +186,13 @@ class DescribeTypedErrorsV1:
             gateway = OpenAIGateway(
                 api_key="sentinel",
                 base_url=host + "/v1",
-                recovery_policy=RecoveryPolicy(max_attempts=3),
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                ),
             )
 
             events = [
@@ -236,6 +243,10 @@ class DescribeTypedErrorsV1:
                 provider,
                 host,
                 RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
                     max_attempts=3,
                     wire_observer=capture,
                     observer=lifecycle.append,
@@ -300,7 +311,16 @@ class DescribeTypedErrorsV1:
         body = response_body(provider, "streaming", "length")
         with scripted_http([(200, {}, body)]) as (host, requests):
             gateway = gateway_for(
-                provider, host, RecoveryPolicy(max_attempts=3, admission=allow)
+                provider,
+                host,
+                RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                    admission=allow,
+                ),
             )
             broker = broker_factory(gateway)
             session = ChatSession(
@@ -349,7 +369,14 @@ class DescribeTypedErrorsV1:
                 provider,
                 host,
                 RecoveryPolicy(
-                    max_attempts=3, admission=allow, base_delay=0, wire_observer=capture
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                    admission=allow,
+                    base_delay=0,
+                    wire_observer=capture,
                 ),
             )
             with pytest.raises(RecoveryError) as caught:
@@ -401,7 +428,15 @@ class DescribeTypedErrorsV1:
             gateway = gateway_for(
                 provider,
                 host,
-                RecoveryPolicy(max_attempts=3, admission=allow, wire_observer=capture),
+                RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                    admission=allow,
+                    wire_observer=capture,
+                ),
             )
             with pytest.raises(RecoveryError) as caught:
                 await gateway.complete_with_recovery(
@@ -423,7 +458,17 @@ class DescribeTypedErrorsV1:
     ):
         body = completion('{"answer":"sentinel"}')
         with scripted_http([(200, {}, body)]) as (host, requests):
-            gateway = gateway_for("openai", host, RecoveryPolicy(max_attempts=3))
+            gateway = gateway_for(
+                "openai",
+                host,
+                RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                ),
+            )
             broker = broker_factory(gateway)
             with pytest.raises(RecoveryError) as caught:
                 public_request(gateway, "structured", entrypoint, broker, None)
@@ -441,7 +486,17 @@ class DescribeTypedErrorsV1:
             "openai": completion("sentinel"),
         }[provider]
         with scripted_http([(200, {}, body)]) as (host, requests):
-            gateway = gateway_for(provider, host, RecoveryPolicy(max_attempts=3))
+            gateway = gateway_for(
+                provider,
+                host,
+                RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                ),
+            )
 
             result = await gateway.complete_with_recovery(
                 model="test", messages=[LLMMessage(content="prompt")], config=CONFIG
@@ -481,7 +536,13 @@ class DescribeTypedErrorsV1:
     @pytest.mark.parametrize(
         "construct",
         [
-            lambda: RecoveryPolicy(max_attempts=SECRET),
+            lambda: RecoveryPolicy(
+                monotonic=clock,
+                wall=lambda: 0,
+                jitter=lambda ceiling: ceiling / 2,
+                sleeper=virtual_sleep,
+                max_attempts=SECRET,
+            ),
             lambda: RecoveryPolicy.model_validate({"max_attempts": SECRET}),
             lambda: RecoveryPolicy.model_validate_json(
                 json.dumps({"max_attempts": SECRET})

@@ -20,6 +20,7 @@ from mojentic.llm.gateways.omlx_recovery_spec import (
 from mojentic.llm.gateways.openai import OpenAIGateway
 from mojentic.llm.recovery import RecoveryError, RecoveryPolicy
 from mojentic.llm.tools.llm_tool import LLMTool
+from scripts.inprocess_http import clock, virtual_sleep
 
 broker_factory = recovery_fixtures.broker_factory
 
@@ -110,6 +111,10 @@ class DescribeStrictStructuredToolRecovery:
         responses += [(200, {}, TOOL_RESPONSE)]
         events, captures = [], []
         policy = RecoveryPolicy(
+            monotonic=clock,
+            wall=lambda: 0,
+            jitter=lambda ceiling: ceiling / 2,
+            sleeper=virtual_sleep,
             max_attempts=2,
             base_delay=0,
             admission=allow,
@@ -176,7 +181,13 @@ class DescribeStrictStructuredToolRecovery:
             gateway = OpenAIGateway(
                 api_key="loopback",
                 base_url=host + "/v1",
-                recovery_policy=RecoveryPolicy(max_attempts=3),
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                ),
             )
             with pytest.raises(RecoveryError) as caught:
                 await gateway.complete_with_recovery(**arguments())
@@ -196,7 +207,13 @@ class DescribeStrictStructuredToolRecovery:
             gateway = OpenAIGateway(
                 api_key="loopback",
                 base_url=host + "/v1",
-                recovery_policy=RecoveryPolicy(max_attempts=3),
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                ),
             )
             with pytest.raises(RecoveryError) as caught:
                 await gateway.complete_with_recovery(**arguments())
@@ -213,7 +230,13 @@ class DescribeStrictStructuredToolRecovery:
             gateway = OpenAIGateway(
                 api_key="loopback",
                 base_url=host + "/v1",
-                recovery_policy=RecoveryPolicy(max_attempts=3),
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                ),
             )
             with pytest.raises(RecoveryError) as caught:
                 await gateway.complete_with_recovery(**arguments())
@@ -230,7 +253,13 @@ class DescribeStrictStructuredToolRecovery:
             gateway = OpenAIGateway(
                 api_key="loopback",
                 base_url=host + "/v1",
-                recovery_policy=RecoveryPolicy(max_attempts=3),
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                ),
             )
             with pytest.raises(RecoveryError) as caught:
                 await gateway.complete_with_recovery(**arguments())
@@ -251,7 +280,13 @@ class DescribeStrictStructuredToolRecovery:
             gateway = OpenAIGateway(
                 api_key="loopback",
                 base_url=host + "/v1",
-                recovery_policy=RecoveryPolicy(max_attempts=3),
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                ),
             )
             with pytest.raises(RecoveryError) as caught:
                 await gateway.complete_with_recovery(**args)
@@ -263,7 +298,14 @@ class DescribeStrictStructuredToolRecovery:
     async def should_preserve_omlx_structured_tool_only_rejection(self):
         with scripted_http([(200, {}, TOOL_RESPONSE)]) as (host, requests):
             gateway = OMLXGateway(
-                host=host, recovery_policy=RecoveryPolicy(max_attempts=3)
+                host=host,
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                ),
             )
             with pytest.raises(RecoveryError) as caught:
                 await gateway.complete_with_recovery(**arguments())
@@ -273,7 +315,14 @@ class DescribeStrictStructuredToolRecovery:
     async def should_preserve_omlx_ordinary_tool_only_success(self):
         with scripted_http([(200, {}, TOOL_RESPONSE)]) as (host, requests):
             gateway = OMLXGateway(
-                host=host, recovery_policy=RecoveryPolicy(max_attempts=3)
+                host=host,
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                ),
             )
             result = await gateway.complete_with_recovery(
                 **(arguments() | {"object_model": None})
@@ -289,7 +338,12 @@ class DescribeStrictStructuredToolRecovery:
             gateway = OpenAIGateway(
                 api_key="loopback",
                 base_url=host + "/v1",
-                recovery_policy=RecoveryPolicy(),
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                ),
             )
             broker = broker_factory(gateway)
             result = broker.generate_response(
@@ -314,7 +368,14 @@ class DescribeStrictStructuredToolRecovery:
             gateway = OpenAIGateway(
                 api_key="loopback",
                 base_url=host + "/v1",
-                recovery_policy=RecoveryPolicy(max_attempts=2, base_delay=0),
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=2,
+                    base_delay=0,
+                ),
             )
             broker = broker_factory(gateway)
             session = ChatSession(

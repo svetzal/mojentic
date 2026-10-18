@@ -1,8 +1,7 @@
-"""Client timing measured through production HTTP, section 2."""
+"""Client timing measured through production gateways with virtual timing, section 2."""
 
 import asyncio
 import json
-import time
 from pathlib import Path
 
 import pytest
@@ -27,6 +26,7 @@ from mojentic.llm.gateways.stream_events import (
 from mojentic.llm.llm_broker import LLMBroker
 from mojentic.llm.recovery import RecoveryCall, RecoveryPolicy
 from mojentic.llm.recovery_stream import StreamMetrics
+from scripts.inprocess_http import InProcessTokenizer, clock, virtual_sleep
 
 TIMING_CONTRACT = json.loads(
     (Path(__file__).parent / "fixtures/contracts/first_token_v1.json").read_text()
@@ -56,7 +56,7 @@ class DescribeFirstTokenTiming:
     @pytest.mark.parametrize("provider", ["openai", "omlx"])
     def should_preserve_invalid_stream_event_for_noniterable_choices(self, provider):
         body = b'data: {"choices":1}\n\n'
-        with scripted_http([(200, {}, (0.025, body))]) as (host, requests):
+        with scripted_http([(200, {}, (0.03125, body))]) as (host, requests):
             gateway = gateway_for(provider, host)
             events = list(
                 gateway.complete_stream_events(
@@ -67,7 +67,7 @@ class DescribeFirstTokenTiming:
         assert len(events) == 1
         assert isinstance(events[0], StreamError)
         assert events[0].reason == StreamErrorReason.INVALID_STREAM_EVENT
-        assert events[0].metadata.request_duration_ms >= 15
+        assert events[0].metadata.request_duration_ms == 31.25
         assert events[0].metadata.time_to_first_token_ms is None
         assert events[0].metadata.first_token_kind is None
         assert len(requests) == 1
@@ -76,7 +76,7 @@ class DescribeFirstTokenTiming:
     def should_preserve_content_timing_before_invalid_choices(self, provider):
         content = b'data: {"choices":[{"index":0,"delta":{"content":"answer"}}]}\n\n'
         invalid = b'data: {"choices":1}\n\n'
-        with scripted_http([(200, {}, [(0.025, content), (0.05, invalid)])]) as (
+        with scripted_http([(200, {}, [(0.03125, content), (0.0625, invalid)])]) as (
             host,
             requests,
         ):
@@ -92,11 +92,8 @@ class DescribeFirstTokenTiming:
         assert isinstance(events[1], StreamError)
         assert events[1].reason == StreamErrorReason.INVALID_STREAM_EVENT
         assert events[1].metadata.first_token_kind == "content"
-        assert (
-            15
-            <= events[1].metadata.time_to_first_token_ms
-            <= events[1].metadata.request_duration_ms
-        )
+        assert events[1].metadata.time_to_first_token_ms == 31.25
+        assert events[1].metadata.request_duration_ms == 93.75
         assert len(requests) == 1
 
     @pytest.mark.parametrize("provider", ["ollama", "omlx", "openai"])
@@ -105,12 +102,14 @@ class DescribeFirstTokenTiming:
         self, provider, route, incomplete_stream
     ):
         body, expected = incomplete_stream
-        with scripted_http([(200, {}, [(0.025, body), (0.2, b"\n")])]) as (
+        with scripted_http([(200, {}, [(0.03125, body), (0.25, b"\n")])]) as (
             host,
             requests,
         ):
             gateway = gateway_for(provider, host, True)
-            broker = LLMBroker(model="gpt-4o", gateway=gateway)
+            broker = LLMBroker(
+                tokenizer=InProcessTokenizer(), model="gpt-4o", gateway=gateway
+            )
             owner, stream = close_route(gateway, broker, route)
 
             chunk = next(stream)
@@ -119,7 +118,9 @@ class DescribeFirstTokenTiming:
             metrics = owner.last_stream_metrics
             assert metrics is not None
             assert metrics.first_token_kind == "content"
-            assert 15 <= metrics.time_to_first_token_ms <= metrics.request_duration_ms
+            assert (
+                metrics.time_to_first_token_ms == metrics.request_duration_ms == 31.25
+            )
             assert metrics.metadata == expected
             assert len(requests) == 1
 
@@ -128,7 +129,9 @@ class DescribeFirstTokenTiming:
     def should_leave_unsent_recovery_close_without_timing(self, provider, route):
         with scripted_http([]) as (host, requests):
             gateway = gateway_for(provider, host, True)
-            broker = LLMBroker(model="gpt-4o", gateway=gateway)
+            broker = LLMBroker(
+                tokenizer=InProcessTokenizer(), model="gpt-4o", gateway=gateway
+            )
             owner, stream = close_route(gateway, broker, route)
 
             stream.close()
@@ -139,16 +142,23 @@ class DescribeFirstTokenTiming:
     def should_exclude_capture_and_lazy_delay_at_actual_dispatch(self):
         def capture(event):
             if event.kind == "request":
-                time.sleep(0.25)
+                clock.advance(0.25)
 
         async def consume(host):
             gateway = OllamaGateway(
-                host=host, recovery_policy=RecoveryPolicy(wire_observer=capture)
+                host=host,
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    wire_observer=capture,
+                ),
             )
             stream = gateway.complete_stream_with_recovery(
                 model="test", messages=[LLMMessage(content="hello")]
             )
-            await asyncio.sleep(0.25)
+            clock.advance(0.25)
             return [event async for event in stream]
 
         body = (
@@ -156,21 +166,21 @@ class DescribeFirstTokenTiming:
             b'"content":"answer"},"done":true,"done_reason":"stop",'
             b'"eval_duration":123}\n'
         )
-        with scripted_http([(200, {}, (0.04, body))]) as (host, requests):
+        with scripted_http([(200, {}, (0.0625, body))]) as (host, requests):
             events = asyncio.run(consume(host))
 
         metrics = events[-1].metrics
         assert metrics is not None
         assert metrics.first_token_kind == "thinking"
-        assert 25 <= metrics.time_to_first_token_ms < 200
-        assert metrics.time_to_first_token_ms <= metrics.request_duration_ms < 200
+        assert metrics.time_to_first_token_ms == 62.5
+        assert metrics.request_duration_ms == 62.5
         assert metrics.eval_duration == 123
         assert requests[0][0] == "/api/chat"
 
     @pytest.mark.parametrize("provider", ["ollama", "omlx", "openai"])
     @pytest.mark.parametrize("route", ["events", "legacy", "broker", "session"])
     def should_measure_supported_public_routes(self, provider, route):
-        with scripted_http([(200, {}, (0.03, reply(provider, "events")))]) as (
+        with scripted_http([(200, {}, (0.03125, reply(provider, "events")))]) as (
             host,
             requests,
         ):
@@ -178,7 +188,9 @@ class DescribeFirstTokenTiming:
             metrics = public_route_metrics(gateway, route)
 
         assert metrics["first_token_kind"] == "content"
-        assert 20 <= metrics["time_to_first_token_ms"] <= metrics["request_duration_ms"]
+        assert (
+            metrics["time_to_first_token_ms"] == metrics["request_duration_ms"] == 31.25
+        )
         assert len(requests) == 1
 
     @pytest.mark.parametrize("provider", ["ollama", "omlx", "openai"])
@@ -187,7 +199,7 @@ class DescribeFirstTokenTiming:
     )
     def should_measure_first_wire_frame_and_terminal_errors(self, provider, case):
         protocol = "ollama" if provider == "ollama" else "openai"
-        with scripted_http([(200, {}, (0.025, case[protocol].encode()))]) as (
+        with scripted_http([(200, {}, (0.03125, case[protocol].encode()))]) as (
             host,
             requests,
         ):
@@ -201,14 +213,19 @@ class DescribeFirstTokenTiming:
         metrics = events[-1].metadata
         expected = case["expected_kinds"][provider]
         assert metrics.first_token_kind == expected
-        assert metrics.request_duration_ms >= 15
-        assert (metrics.time_to_first_token_ms is None) == (expected is None)
+        assert metrics.request_duration_ms == 31.25
+        assert (
+            metrics.time_to_first_token_ms
+            == {None: None, "content": 31.25, "thinking": 31.25, "tool_call": 31.25}[
+                expected
+            ]
+        )
         assert len(requests) == 1
 
     @pytest.mark.parametrize("provider", ["ollama", "omlx", "openai"])
     def should_include_admitted_retry_delay_on_one_clock(self, provider):
         async def admission(context):
-            await asyncio.sleep(0.12)
+            clock.advance(0.125)
             return "allow"
 
         async def consume(gateway):
@@ -222,28 +239,31 @@ class DescribeFirstTokenTiming:
         with scripted_http(
             [
                 (503, {}, b'{"error":"busy"}'),
-                (200, {}, (0.03, reply(provider, "events"))),
+                (200, {}, (0.03125, reply(provider, "events"))),
             ]
         ) as (host, requests):
             gateway = gateway_for(provider, host)
             gateway.recovery_policy = RecoveryPolicy(
-                max_attempts=2, base_delay=0, admission=admission
+                monotonic=clock,
+                wall=lambda: 0,
+                jitter=lambda ceiling: ceiling / 2,
+                sleeper=virtual_sleep,
+                max_attempts=2,
+                base_delay=0,
+                admission=admission,
             )
             terminal = asyncio.run(consume(gateway))[-1]
 
         assert terminal.kind == "completed"
         assert terminal.metrics.first_token_kind == "content"
-        assert terminal.metrics.time_to_first_token_ms >= 140
-        assert (
-            terminal.metrics.request_duration_ms
-            >= terminal.metrics.time_to_first_token_ms
-        )
+        assert terminal.metrics.time_to_first_token_ms == 156.25
+        assert terminal.metrics.request_duration_ms == 156.25
         assert requests[0][1] == requests[1][1]
 
     @pytest.mark.parametrize("provider", ["ollama", "omlx", "openai"])
     @pytest.mark.parametrize("body", [b'{"error":"failed"}\n', b"not-json\n"])
     def should_report_dispatched_failure_without_inventing_tokens(self, provider, body):
-        with scripted_http([(500, {}, (0.03, body))]) as (host, requests):
+        with scripted_http([(500, {}, (0.03125, body))]) as (host, requests):
             terminal = list(
                 gateway_for(provider, host).complete_stream_events(
                     "gpt-4o", [LLMMessage(content="hello")], CompletionConfig()
@@ -251,14 +271,14 @@ class DescribeFirstTokenTiming:
             )[-1]
 
         assert terminal.type == "error"
-        assert terminal.metadata.request_duration_ms >= 20
+        assert terminal.metadata.request_duration_ms == 31.25
         assert terminal.metadata.first_token_kind is None
         assert terminal.metadata.time_to_first_token_ms is None
         assert len(requests) == 1
 
     @pytest.mark.parametrize("provider", ["ollama", "omlx", "openai"])
     def should_keep_local_close_evidence_without_a_synthetic_terminal(self, provider):
-        with scripted_http([(200, {}, (0.025, reply(provider, "events")))]) as (
+        with scripted_http([(200, {}, (0.03125, reply(provider, "events")))]) as (
             host,
             requests,
         ):
@@ -270,7 +290,7 @@ class DescribeFirstTokenTiming:
             stream.close()
 
         assert gateway.last_stream_metrics.first_token_kind == "content"
-        assert gateway.last_stream_metrics.request_duration_ms >= 15
+        assert gateway.last_stream_metrics.request_duration_ms == 31.25
         assert len(requests) == 1
 
     @pytest.mark.parametrize("provider", ["omlx", "openai"])
@@ -289,7 +309,7 @@ class DescribeFirstTokenTiming:
                 )
             ]
 
-        with scripted_http([(200, {}, [(0.025, first), (0.15, failure)])]) as (
+        with scripted_http([(200, {}, [(0.03125, first), (0.1875, failure)])]) as (
             host,
             requests,
         ):
@@ -297,11 +317,8 @@ class DescribeFirstTokenTiming:
 
         assert terminal.kind == "failed"
         assert terminal.metrics.first_token_kind == "tool_call"
-        assert 15 <= terminal.metrics.time_to_first_token_ms < 130
-        assert (
-            terminal.metrics.request_duration_ms
-            >= terminal.metrics.time_to_first_token_ms + 100
-        )
+        assert terminal.metrics.time_to_first_token_ms == 31.25
+        assert terminal.metrics.request_duration_ms == 218.75
         assert terminal.report.progress.observed_tool_fragments == 1
         assert len(requests) == 1
 
@@ -312,11 +329,13 @@ class DescribeFirstTokenTiming:
     ):
         first = streaming_tool_reply(provider)
         with scripted_http(
-            [(200, {}, (0.12, first)), (200, {}, (0.025, reply(provider, "events")))]
+            [(200, {}, (0.125, first)), (200, {}, (0.03125, reply(provider, "events")))]
         ) as (host, requests):
             gateway = gateway_for(provider, host, recovery)
             tool = SlowCount(gateway)
-            broker = LLMBroker(model="gpt-4o", gateway=gateway)
+            broker = LLMBroker(
+                tokenizer=InProcessTokenizer(), model="gpt-4o", gateway=gateway
+            )
 
             assert (
                 "".join(
@@ -327,9 +346,9 @@ class DescribeFirstTokenTiming:
 
         metrics = broker.last_stream_metrics
         assert metrics.first_token_kind == "content"
-        assert 15 <= metrics.time_to_first_token_ms <= metrics.request_duration_ms < 180
+        assert metrics.time_to_first_token_ms == metrics.request_duration_ms == 31.25
         assert tool.first_metrics.first_token_kind == "tool_call"
-        assert tool.first_metrics.time_to_first_token_ms >= 100
+        assert tool.first_metrics.time_to_first_token_ms == 125
         assert tool.calls == ["next-π"]
         initial = json.loads(requests[0][1])
         continuation = json.loads(requests[1][1])
@@ -368,16 +387,22 @@ class DescribeFirstTokenTiming:
                 )
             ]
 
-        with scripted_http([(200, {}, (0.025, reply(provider, "events")))]) as (
+        with scripted_http([(200, {}, (0.03125, reply(provider, "events")))]) as (
             host,
             requests,
         ):
             gateway = gateway_for(provider, host)
-            gateway.recovery_policy = RecoveryPolicy(wire_observer=capture)
+            gateway.recovery_policy = RecoveryPolicy(
+                monotonic=clock,
+                wall=lambda: 0,
+                jitter=lambda ceiling: ceiling / 2,
+                sleeper=virtual_sleep,
+                wire_observer=capture,
+            )
             terminal = asyncio.run(consume(gateway))[-1]
 
         assert terminal.outcome.value == "cancelled"
-        assert terminal.metrics.request_duration_ms >= 0
+        assert terminal.metrics.request_duration_ms == 31.25
         assert (
             terminal.metrics.first_token_kind
             == {"headers": None, "body": "content"}[phase]
@@ -400,7 +425,13 @@ class DescribeFirstTokenTiming:
 
         with scripted_http([]) as (host, requests):
             gateway = gateway_for(provider, host)
-            gateway.recovery_policy = RecoveryPolicy(wire_observer=capture)
+            gateway.recovery_policy = RecoveryPolicy(
+                monotonic=clock,
+                wall=lambda: 0,
+                jitter=lambda ceiling: ceiling / 2,
+                sleeper=virtual_sleep,
+                wire_observer=capture,
+            )
             terminal = asyncio.run(consume(gateway))[-1]
 
         assert terminal.kind == "failed"
@@ -434,13 +465,13 @@ class DescribeFirstTokenTiming:
                 )
             ]
 
-        with scripted_http([(200, {}, (0.025, payload))]) as (host, requests):
+        with scripted_http([(200, {}, (0.03125, payload))]) as (host, requests):
             terminal = asyncio.run(consume(gateway_for(provider, host, True)))[-1]
 
         assert terminal.kind == "completed"
         assert terminal.metrics.first_token_kind is None
         assert terminal.metrics.time_to_first_token_ms is None
-        assert terminal.metrics.request_duration_ms >= 15
+        assert terminal.metrics.request_duration_ms == 31.25
         assert len(requests) == 1
 
 
@@ -452,7 +483,7 @@ class SlowCount(Count):
 
     def run(self, value: str) -> str:
         self.first_metrics = self.gateway.last_stream_metrics
-        time.sleep(0.2)
+        clock.advance(0.2)
         return super().run(value)
 
 
@@ -510,7 +541,7 @@ def close_route(gateway, broker, route):
 
 
 def public_route_metrics(gateway, route: str) -> dict:
-    broker = LLMBroker(model="gpt-4o", gateway=gateway)
+    broker = LLMBroker(tokenizer=InProcessTokenizer(), model="gpt-4o", gateway=gateway)
     messages = [LLMMessage(content="hello")]
     if route == "events":
         terminal = list(

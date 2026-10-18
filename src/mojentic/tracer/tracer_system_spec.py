@@ -1,5 +1,3 @@
-import time
-
 from mojentic.tracer.event_store import EventStore
 from mojentic.tracer.tracer_events import (
     AgentInteractionTracerEvent,
@@ -182,7 +180,7 @@ class DescribeTracerSystem:
         tracer_system = TracerSystem()
 
         # Create events with specific timestamps
-        now = time.time()
+        now = 1700000000.0
         correlation_id = "test-correlation-id"
         tracer_system.event_store.store(
             LLMCallTracerEvent(

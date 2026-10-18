@@ -9,6 +9,7 @@ from mojentic.llm.gateways.ollama import OllamaGateway
 from mojentic.llm.gateways.ollama_recovery_spec import frame, scripted_http
 from mojentic.llm.recovery import RecoveryError, RecoveryPolicy
 from mojentic.llm.stream_timing import ClientTiming
+from scripts.inprocess_http import clock, virtual_sleep
 
 
 class DescribeOllamaStreamRecovery:
@@ -26,7 +27,13 @@ class DescribeOllamaStreamRecovery:
             gateway = OllamaGateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
-                    max_attempts=3, wire_observer=capture, observer=lifecycle.append
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                    wire_observer=capture,
+                    observer=lifecycle.append,
                 ),
             )
             with pytest.raises(RecoveryError) as caught:
@@ -105,6 +112,8 @@ class DescribeStreamingWireEvidence:
                 host=host.replace("http://", "http://user:password@"),
                 headers={"X-Payload": "payload-sentinel"},
                 recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    jitter=lambda ceiling: ceiling / 2,
                     max_attempts=2,
                     base_delay=0,
                     wall=lambda: 0,
@@ -178,7 +187,13 @@ class DescribeStreamingWireEvidence:
                 OllamaGateway(
                     host=host,
                     recovery_policy=RecoveryPolicy(
-                        max_attempts=3, base_delay=0, admission=admission
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        max_attempts=3,
+                        base_delay=0,
+                        admission=admission,
                     ),
                 )
             )
@@ -216,7 +231,13 @@ class DescribeStreamingWireEvidence:
                 OllamaGateway(
                     host=host,
                     recovery_policy=RecoveryPolicy(
-                        max_attempts=2, delay_ceiling=5, admission=admit
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        max_attempts=2,
+                        delay_ceiling=5,
+                        admission=admit,
                     ),
                 )
             )
@@ -238,6 +259,10 @@ class DescribeStreamingWireEvidence:
                 OllamaGateway(
                     host=host,
                     recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
                         max_attempts=3,
                         admission=allow,
                         retryable_statuses=frozenset({status}),
@@ -277,7 +302,14 @@ class DescribeStreamingWireEvidence:
             events = await collect(
                 OllamaGateway(
                     host=host,
-                    recovery_policy=RecoveryPolicy(max_attempts=3, admission=allow),
+                    recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        max_attempts=3,
+                        admission=allow,
+                    ),
                 )
             )
         assert len(requests) == 1
@@ -298,7 +330,13 @@ class DescribeStreamingWireEvidence:
                 OllamaGateway(
                     host=host,
                     recovery_policy=RecoveryPolicy(
-                        max_attempts=2, base_delay=0, admission=allow
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        max_attempts=2,
+                        base_delay=0,
+                        admission=allow,
                     ),
                 )
             )
@@ -320,7 +358,14 @@ class DescribeStreamingWireEvidence:
             events = await collect(
                 OllamaGateway(
                     host=host,
-                    recovery_policy=RecoveryPolicy(max_attempts=3, admission=reject),
+                    recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        max_attempts=3,
+                        admission=reject,
+                    ),
                 )
             )
         assert len(requests) == 1
@@ -354,7 +399,14 @@ class DescribeStreamTelemetry:
             events = await collect(
                 OllamaGateway(
                     host=host,
-                    recovery_policy=RecoveryPolicy(max_attempts=3, admission=allow),
+                    recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        max_attempts=3,
+                        admission=allow,
+                    ),
                 )
             )
         assert len(requests) == 1
@@ -423,7 +475,14 @@ class DescribeStreamTelemetry:
             events = await collect(
                 OllamaGateway(
                     host=host,
-                    recovery_policy=RecoveryPolicy(max_attempts=2, admission=allow),
+                    recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        max_attempts=2,
+                        admission=allow,
+                    ),
                 )
             )
         assert len(requests) == 1
@@ -439,7 +498,15 @@ class DescribeStreamTelemetry:
         )
         with scripted_http([(200, {}, data)]) as (host, requests):
             events = await collect(
-                OllamaGateway(host=host, recovery_policy=RecoveryPolicy())
+                OllamaGateway(
+                    host=host,
+                    recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                    ),
+                )
             )
         response = events[-1].response
         assert len(requests) == 1
@@ -494,6 +561,9 @@ class DescribeStreamCancellation:
                 closed.set()
 
         policy = RecoveryPolicy(
+            monotonic=clock,
+            wall=lambda: 0,
+            jitter=lambda ceiling: ceiling / 2,
             max_attempts=3,
             base_delay=0,
             observer=lifecycle.append,
@@ -504,11 +574,11 @@ class DescribeStreamCancellation:
             task = asyncio.create_task(
                 collect(OllamaGateway(host=host, recovery_policy=policy), call)
             )
-            await asyncio.wait_for(entered.wait(), 2)
+            await entered.wait()
             assert len(requests) == 1
             assert not task.done()
             call.cancel()
-            events = await asyncio.wait_for(task, 2)
+            events = await task
         error = events[-1].error
         assert closed.is_set()
         assert len(requests) == 1
@@ -560,7 +630,13 @@ class DescribeStreamCancellation:
         with scripted_http([(200, {}, terminal)]) as (host, requests):
             gateway = OllamaGateway(
                 host=host,
-                recovery_policy=RecoveryPolicy(observer=observe),
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    observer=observe,
+                ),
                 recovery_call=call,
             )
             stream = gateway.complete_stream_with_recovery(
@@ -571,7 +647,7 @@ class DescribeStreamCancellation:
                 :consumed
             ]
             call.cancel()
-            assert await asyncio.to_thread(cancelled.wait, 2)
+            await asyncio.to_thread(cancelled.wait)
             remaining = [event async for event in stream]
         assert len(requests) == 1
         assert [event.kind for event in remaining] == ["failed"]
@@ -602,7 +678,12 @@ class DescribeStreamCancellation:
                 OllamaGateway(
                     host=host,
                     recovery_policy=RecoveryPolicy(
-                        wire_observer=capture, observer=lifecycle.append
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        wire_observer=capture,
+                        observer=lifecycle.append,
                     ),
                 ),
                 call,
@@ -618,62 +699,31 @@ class DescribeStreamCancellation:
         assert events[-1].report.progress.raw_bytes == len(frame("") + b"\n")
 
     async def should_close_active_request_on_cancellation(self):
-        import asyncio
-        import threading
-        from contextlib import contextmanager
-        from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-
         from mojentic.llm.recovery import RecoveryCall
-
-        entered, socket_closed = threading.Event(), threading.Event()
-        requests = []
-
-        class Handler(BaseHTTPRequestHandler):
-            def do_POST(self):
-                requests.append(self.rfile.read(int(self.headers["Content-Length"])))
-                self.send_response(200)
-                self.send_header("Content-Length", "100")
-                self.end_headers()
-                self.wfile.flush()
-                entered.set()
-                self.connection.settimeout(2)
-                if self.rfile.read(1) == b"":
-                    socket_closed.set()
-
-            def log_message(self, *args):
-                pass
-
-        @contextmanager
-        def active_http():
-            server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
-            thread = threading.Thread(
-                target=lambda: server.serve_forever(poll_interval=0.01), daemon=True
-            )
-            thread.start()
-            try:
-                yield f"http://127.0.0.1:{server.server_port}"
-            finally:
-                server.shutdown()
-                server.server_close()
-                thread.join()
+        from scripts.inprocess_http import unfinished_http
 
         call, lifecycle = RecoveryCall(), []
-        with active_http() as host:
+        with unfinished_http() as (host, requests, entered, transport_closed):
             task = asyncio.create_task(
                 collect(
                     OllamaGateway(
                         host=host,
                         recovery_policy=RecoveryPolicy(
-                            max_attempts=3, observer=lifecycle.append
+                            monotonic=clock,
+                            wall=lambda: 0,
+                            jitter=lambda ceiling: ceiling / 2,
+                            sleeper=virtual_sleep,
+                            max_attempts=3,
+                            observer=lifecycle.append,
                         ),
                     ),
                     call,
                 )
             )
-            assert await asyncio.to_thread(entered.wait, 2)
+            await entered.wait()
             call.cancel()
-            events = await asyncio.wait_for(task, 2)
-            assert await asyncio.to_thread(socket_closed.wait, 2)
+            events = await task
+            await transport_closed.wait()
         assert len(requests) == 1
         assert [event.kind for event in events] == ["failed"]
         assert events[-1].outcome.value == "cancelled"
@@ -745,6 +795,10 @@ class DescribeStreamCallerSafety:
             gateway = OllamaGateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
                     max_attempts=2,
                     base_delay=0,
                     admission=allow,
@@ -825,6 +879,10 @@ class DescribeStreamCallerSafety:
                 gateway=OllamaGateway(
                     host=host,
                     recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
                         max_attempts=2,
                         base_delay=0,
                         admission=allow,
@@ -892,7 +950,14 @@ class DescribeStreamCallerSafety:
         with scripted_http([(503, {}, b'{"error":"busy"}')]) as (host, requests):
             gateway = OllamaGateway(
                 host=host,
-                recovery_policy=RecoveryPolicy(max_attempts=3, admission=allow),
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                    admission=allow,
+                ),
             )
             events = list(
                 gateway.complete_stream_events(
@@ -951,6 +1016,10 @@ class DescribeStreamPrivacyAndCapture:
                     host=host,
                     headers={"Authorization": "credential-sentinel"},
                     recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
                         max_attempts=3,
                         admission=allow,
                         wire_observer=capture,
@@ -1008,7 +1077,14 @@ class DescribeStreamPrivacyAndCapture:
         ):
             events = await collect(
                 OllamaGateway(
-                    host=host, recovery_policy=RecoveryPolicy(observer=lifecycle.append)
+                    host=host,
+                    recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        observer=lifecycle.append,
+                    ),
                 )
             )
         assert len(requests) == 1
@@ -1029,7 +1105,14 @@ class DescribeStreamPrivacyAndCapture:
             events = await collect(
                 OllamaGateway(
                     host=host,
-                    recovery_policy=RecoveryPolicy(max_attempts=3, admission=allow),
+                    recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        max_attempts=3,
+                        admission=allow,
+                    ),
                 )
             )
         assert len(requests) == 1
@@ -1054,7 +1137,13 @@ class DescribeStreamPrivacyAndCapture:
                 OllamaGateway(
                     host=host,
                     recovery_policy=RecoveryPolicy(
-                        max_attempts=3, admission=allow, wire_observer=capture
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        max_attempts=3,
+                        admission=allow,
+                        wire_observer=capture,
                     ),
                 )
             )
@@ -1076,7 +1165,14 @@ class DescribeStreamPrivacyAndCapture:
         with scripted_http([(200, {}, frame("") + b"\n")]) as (host, requests):
             events = await collect(
                 OllamaGateway(
-                    host=host, recovery_policy=RecoveryPolicy(observer=observe)
+                    host=host,
+                    recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        observer=observe,
+                    ),
                 )
             )
         assert len(requests) == 1
@@ -1097,7 +1193,15 @@ class DescribeStreamPrivacyAndCapture:
             requests,
         ):
             events = await collect(
-                OllamaGateway(host=host, recovery_policy=RecoveryPolicy())
+                OllamaGateway(
+                    host=host,
+                    recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                    ),
+                )
             )
         assert len(requests) == 1
         response = events[-1].response
@@ -1121,7 +1225,12 @@ class DescribeStreamPrivacyAndCapture:
                 OllamaGateway(
                     host=host,
                     recovery_policy=RecoveryPolicy(
-                        wire_observer=capture, observer=lifecycle.append
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        wire_observer=capture,
+                        observer=lifecycle.append,
                     ),
                 ),
                 call,
@@ -1144,7 +1253,13 @@ class DescribeStreamPrivacyAndCapture:
             events = await collect(
                 OllamaGateway(
                     host=host,
-                    recovery_policy=RecoveryPolicy(deadline=0, monotonic=lambda: 1),
+                    recovery_policy=RecoveryPolicy(
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        deadline=0,
+                        monotonic=lambda: 1,
+                    ),
                 )
             )
         assert requests == []
@@ -1156,7 +1271,14 @@ class DescribeStreamPrivacyAndCapture:
         lifecycle = []
         with scripted_http([(200, {}, frame("partial") + b"\n")]) as (host, requests):
             stream = OllamaGateway(
-                host=host, recovery_policy=RecoveryPolicy(observer=lifecycle.append)
+                host=host,
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    observer=lifecycle.append,
+                ),
             ).complete_stream_with_recovery(
                 model="test", messages=[LLMMessage(content="query")]
             )
@@ -1182,7 +1304,13 @@ class DescribeStreamPrivacyAndCapture:
                 OllamaGateway(
                     host=host,
                     recovery_policy=RecoveryPolicy(
-                        max_attempts=2, base_delay=0, admission=allow
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        max_attempts=2,
+                        base_delay=0,
+                        admission=allow,
                     ),
                 )
             )
@@ -1213,7 +1341,13 @@ class DescribeStreamPrivacyAndCapture:
                 OllamaGateway(
                     host=host,
                     recovery_policy=RecoveryPolicy(
-                        max_attempts=3, admission=allow, wire_observer=capture
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        max_attempts=3,
+                        admission=allow,
+                        wire_observer=capture,
                     ),
                 )
             )

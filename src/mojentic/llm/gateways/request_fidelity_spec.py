@@ -1,4 +1,4 @@
-"""Request fidelity v1 exercised through captured loopback HTTP requests."""
+"""Request fidelity v1 exercised through captured in-process HTTP requests."""
 
 import asyncio
 import json
@@ -26,6 +26,7 @@ from mojentic.llm.llm_broker import LLMBroker
 from mojentic.llm.recovery import RecoveryPolicy
 from mojentic.llm.tools.llm_tool import LLMTool
 from mojentic.tracer import TracerSystem
+from scripts.inprocess_http import InProcessTokenizer, clock, virtual_sleep
 
 CONTRACT = json.loads(
     (Path(__file__).parent / "fixtures/contracts/request_fidelity_v1.json").read_text()
@@ -39,8 +40,17 @@ class DescribeRequestFidelity:
         reply = json.dumps(frame).encode()
         with scripted_http([(200, {}, reply)]) as (host, requests):
             broker = LLMBroker(
+                tokenizer=InProcessTokenizer(),
                 model="test",
-                gateway=OllamaGateway(host=host, recovery_policy=RecoveryPolicy()),
+                gateway=OllamaGateway(
+                    host=host,
+                    recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                    ),
+                ),
                 tracer=TracerSystem(),
             )
             session = ChatSession(broker, max_context=8192)
@@ -66,7 +76,15 @@ def reply(provider: str, operation: str) -> bytes:
 
 def gateway_for(provider: str, host: str, recovery: bool = False):
     policy = (
-        RecoveryPolicy(max_attempts=2, base_delay=0, admission=allow)
+        RecoveryPolicy(
+            monotonic=clock,
+            wall=lambda: 0,
+            jitter=lambda ceiling: ceiling / 2,
+            sleeper=virtual_sleep,
+            max_attempts=2,
+            base_delay=0,
+            admission=allow,
+        )
         if recovery
         else None
     )
@@ -119,6 +137,7 @@ class DescribeSharedRequestFidelity:
     def should_preserve_controls_through_broker_events(self, case, provider):
         with scripted_http([(200, {}, reply(provider, "events"))]) as (host, requests):
             broker = LLMBroker(
+                tokenizer=InProcessTokenizer(),
                 model="gpt-4o",
                 gateway=gateway_for(provider, host),
                 tracer=TracerSystem(),
@@ -150,6 +169,7 @@ class DescribeSharedRequestFidelity:
     ):
         with scripted_http([(200, {}, reply(provider, "legacy"))]) as (host, requests):
             broker = LLMBroker(
+                tokenizer=InProcessTokenizer(),
                 model="gpt-4o",
                 gateway=gateway_for(provider, host),
                 tracer=TracerSystem(),
@@ -222,6 +242,7 @@ class DescribeSharedRequestFidelity:
         }[route]
         with scripted_http([(200, {}, reply(provider, operation))]) as (host, requests):
             broker = LLMBroker(
+                tokenizer=InProcessTokenizer(),
                 model="gpt-4o",
                 gateway=gateway_for(provider, host),
                 tracer=TracerSystem(),
@@ -319,6 +340,7 @@ class DescribeContinuationFidelity:
         tool = Count()
         with scripted_http(replies) as (host, requests):
             broker = LLMBroker(
+                tokenizer=InProcessTokenizer(),
                 model="gpt-4o",
                 gateway=gateway_for(provider, host, True),
                 tracer=TracerSystem(),
@@ -355,6 +377,7 @@ class DescribeMigrationFidelity:
             requests,
         ):
             broker = LLMBroker(
+                tokenizer=InProcessTokenizer(),
                 model="gpt-4o",
                 gateway=gateway_for(provider, host),
                 tracer=TracerSystem(),
@@ -459,7 +482,15 @@ class DescribeAnthropicFidelity:
         replies = scripted_replies((200, {}, anthropic_reply(operation)), recovery)
         with scripted_http(replies) as (host, requests):
             policy = (
-                RecoveryPolicy(max_attempts=2, base_delay=0, admission=allow)
+                RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=2,
+                    base_delay=0,
+                    admission=allow,
+                )
                 if recovery
                 else None
             )
@@ -501,7 +532,12 @@ def anthropic_route(
 ) -> str:
     if route == "gateway":
         return gateway.complete(model=model, messages=messages, config=config).content
-    broker = LLMBroker(model=model, gateway=gateway, tracer=TracerSystem())
+    broker = LLMBroker(
+        tokenizer=InProcessTokenizer(),
+        model=model,
+        gateway=gateway,
+        tracer=TracerSystem(),
+    )
     return public_route(broker, route, config, messages)
 
 
@@ -530,7 +566,13 @@ class DescribeAnthropicMigration:
                 api_key="loopback",
                 base_url=host,
                 recovery_policy=RecoveryPolicy(
-                    max_attempts=2, base_delay=0, admission=allow
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=2,
+                    base_delay=0,
+                    admission=allow,
                 )
                 if recovery
                 else None,

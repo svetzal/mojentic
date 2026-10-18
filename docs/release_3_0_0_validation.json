@@ -1,259 +1,203 @@
 {
-  "date": "2026-10-17",
-  "assessment": "Python owner feature scope implemented; self-validation passed. Recommend owner escalation for coordinated release go-ahead; publication held.",
+  "status": "passed",
   "source": {
-    "baseline_commit": "a3637ba7aad18ac0688a5aa98c6708648988eb69",
-    "working_tree_changes": true,
+    "base_commit": "d37a4cac069f5b2f514299132842f842820f8721",
+    "working_tree_source_id": "503e85601f3aca1e3b440b52ceeb57da8cc423d1c53dbe5828576e5b78012637",
     "manifest": "docs/release_3_0_0_source.sha256",
-    "manifest_sha256": "bb7f81d1984b36541e33d2f4805177c3d1cf69fb7ae03e219f399a04a79ac7f7"
+    "manifest_sha256": "5f7a3c11552546f768a91f31609aca702a0099bda9ce8c96325c8effc8e24a7f",
+    "state": "uncommitted correction; source ID includes public consumers, providers, specs, both verification scripts and transport helper"
   },
-  "artifacts": {
-    "mojentic-2.1.0-py3-none-any.whl": "6406b8fa60ea2f47e3e89041458f16c309fc942c2a6372d239153f3618446211",
-    "mojentic-2.1.0.tar.gz": "29eb7262d4b5c0cba5b8448b71db0cd448e695c0857d3957d10e8a2914c1fc06"
+  "contract_parent_revision": "4ae2f73a0a5465b0f6509b87e1148d254f3f64cd",
+  "root_contract_hashes": {
+    "TRANSIENT-RECOVERY-2026-10.md": "141d4ee5fcfbc18c940a7e7fe8d5ba9e381abc41a6d03f300f541e0fd5236f9d",
+    "MODEL-METADATA-2026-10.md": "d9945dca45ce09e2163843263a75b5e93028b00ee1baf191fc3ff13396830e9c",
+    "REASONING-PROTOTYPE-2026-10.md": "0a40f3ad45c593bc779411021e45db569e73d3ecce86c99b201e7f8ebb656809"
   },
-  "contracts": {
-    "src/mojentic/llm/contracts/context_window_v1.json": "cfeee4702c0dd3b18e02fbd0c8bad82ae58ee1ca7eadcfd21683479ba24f3dc4",
-    "src/mojentic/llm/gateways/fixtures/contracts/first_token_v1.json": "c508e719670e851cf0a1eb7d89fbcfe2eae0ab5859df1ab0ddcbe7681140ac3e",
-    "src/mojentic/llm/gateways/fixtures/contracts/native_reasoning_v1.json": "be212ff011125f1d0927e3a65a0d7cd87eedbf9f5ff69e803b4112a80ae6b1f6",
-    "src/mojentic/llm/gateways/fixtures/contracts/request_fidelity_v1.json": "6f02088311f50707b9c12154d888f844928c23d359043cb2e5d5654bf7e5eaea"
+  "contracts": [
+    {
+      "path": "TRANSIENT-RECOVERY-2026-10.md",
+      "version": "root-recovery@4ae2f73",
+      "sha256": "141d4ee5fcfbc18c940a7e7fe8d5ba9e381abc41a6d03f300f541e0fd5236f9d"
+    },
+    {
+      "path": "src/mojentic/llm/contracts/context_window_v1.json",
+      "version": "context-window-v1",
+      "sha256": "f93a35e4de9c55e87c0a55551d4ab735289b040bbb673d87269fd3b4b8e41466"
+    },
+    {
+      "path": "src/mojentic/llm/gateways/fixtures/contracts/first_token_v1.json",
+      "version": "py-stream-first-token-v1",
+      "sha256": "78dc6691c65ba84faa6e9a3490e6361bc3330dfd8341a27de5a4d7c2af833ab5"
+    },
+    {
+      "path": "src/mojentic/llm/gateways/fixtures/contracts/native_reasoning_v1.json",
+      "version": "native-reasoning-v1",
+      "sha256": "be212ff011125f1d0927e3a65a0d7cd87eedbf9f5ff69e803b4112a80ae6b1f6"
+    },
+    {
+      "path": "src/mojentic/llm/gateways/fixtures/contracts/request_fidelity_v1.json",
+      "version": "request-fidelity-v1",
+      "sha256": "6a5ebca721a9f9e84323d0118b543d5dc71c7f68bb7067b2cdf6ad40daddcfc8"
+    }
+  ],
+  "consumer_verification": {
+    "repository": "mojentic-py",
+    "source": {
+      "base_commit": "d37a4cac069f5b2f514299132842f842820f8721",
+      "working_tree_source_id": "503e85601f3aca1e3b440b52ceeb57da8cc423d1c53dbe5828576e5b78012637",
+      "manifest": "docs/release_3_0_0_source.sha256",
+      "manifest_sha256": "5f7a3c11552546f768a91f31609aca702a0099bda9ce8c96325c8effc8e24a7f",
+      "state": "uncommitted correction; source ID includes public consumers, providers, specs, both verification scripts and transport helper"
+    },
+    "commands": [
+      "pytest",
+      "coverage",
+      "wheel-readiness",
+      "wheel-timing"
+    ],
+    "result": "passed"
   },
-  "verification_roles": {
-    "provider": "Production Python gateways against controlled HTTP",
-    "consumer": "Public broker/session/gateway API tests and fresh installed wheel",
-    "tested_identity": "Both roles use the source manifest and artifact hashes in this record",
-    "external_repository_boundary_changed": false,
-    "packaged_raw_request_probe": "Fresh installed runtime against controlled HTTP, sharing verify_readiness.endpoint and unchanged request-fidelity-v1 response bytes; scratch probe SHA-256 recorded with its command."
+  "provider_verification": {
+    "repository": "mojentic-py",
+    "source": {
+      "base_commit": "d37a4cac069f5b2f514299132842f842820f8721",
+      "working_tree_source_id": "503e85601f3aca1e3b440b52ceeb57da8cc423d1c53dbe5828576e5b78012637",
+      "manifest": "docs/release_3_0_0_source.sha256",
+      "manifest_sha256": "5f7a3c11552546f768a91f31609aca702a0099bda9ce8c96325c8effc8e24a7f",
+      "state": "uncommitted correction; source ID includes public consumers, providers, specs, both verification scripts and transport helper"
+    },
+    "implementation": "Production gateways, SDK request encoders, decoders, recovery and streaming engines against the same versioned contract-derived transport responses",
+    "commands": [
+      "pytest",
+      "coverage",
+      "wheel-readiness",
+      "wheel-timing"
+    ],
+    "result": "passed"
   },
-  "python": "3.13.15",
-  "platform": "Linux",
-  "installed_import": "/tmp/mojentic-c15-consumer-lcn2_j02/.venv/lib/python3.13/site-packages/mojentic/__init__.py",
-  "pytest": {
-    "passed": 2636,
-    "mapped_named_methods_passed": 129,
-    "coverage_percent": 87.46,
-    "enforced_fail_under": 85,
-    "junit_sha256": "03a99cb282eab60d05f1fb2ec13ac8b9e86a8102bd489fd4d49521fccbe6e089"
+  "execution_only_outputs": "JUnit and runtime lock-export paths in command records are execution scratch, not committed proof links; this record retains the permanent results.",
+  "boundary": "Library self-validation under October 17 policy; no changed running-service or cross-repository application boundary; no external adoption/provider execution claimed.",
+  "artifact": {
+    "filename": "mojentic-3.0.0-py3-none-any.whl",
+    "sha256": "756ff3c7bc17d6e71a342e7d771e08d62233b4d1c92507e893d9e73ce25445af",
+    "installed_environment": "/tmp/mojentic-inprocess-consumer/.venv",
+    "imports": "site-packages only; verifiers assert production imports are outside checkout"
   },
+  "runtime_guards": [
+    "AF_INET/AF_INET6 socket construction denied",
+    "DNS/connect/connect_ex/bind denied",
+    "Blocking sleeps denied",
+    "Async sleeper cooperates without timers",
+    "Virtual wall/monotonic/retry/scheduler clocks",
+    "Explicit in-process tokenizer gateway; no cache downloads"
+  ],
   "checks": [
     {
-      "name": "lint",
+      "name": "gate-lint",
       "command": "uv run flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics",
-      "exit_code": 0,
-      "stdout_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
-      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      "exit_code": 0
     },
     {
-      "name": "test",
+      "name": "pytest",
       "command": "uv run pytest",
-      "exit_code": 0,
-      "stdout_sha256": "6dabd37965ffc04611f05dcbec93fb32d54e3c6d74328447484c909c9e3f5ab1",
-      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      "exit_code": 0
     },
     {
-      "name": "security-scan",
+      "name": "bandit",
       "command": "uv run bandit -c .bandit -r src",
       "exit_code": 0,
-      "stdout_sha256": "1a58b2a3a7f7781bcd12c2e15387ba5b680fd2e7da73dc6f4eb34663eaa22a82",
-      "stderr_sha256": "fb9860c0fcba128aef0e924eb2a9567bcf2171beecd895062ab157b571f84d17"
+      "result": "No issues identified."
     },
     {
-      "name": "dependency-audit",
+      "name": "pip-audit",
       "command": "uv run pip-audit",
       "exit_code": 0,
-      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "stderr_sha256": "15950a68a7ed99c59779717acefdceb3f69cfd31bde67d2c954f2a3cea4d7955"
+      "result": "No known vulnerabilities found"
     },
     {
       "name": "coverage",
-      "command": "uv run pytest --cov --cov-fail-under=85 --cov-report=term --junitxml=.foundry/readiness-junit.xml",
+      "command": "uv run pytest --cov --cov-fail-under=85 --junitxml=.foundry/results.xml",
       "exit_code": 0,
-      "stdout_sha256": "705653a215959c43c92c373c483cff6c3da150f9d2caf82d10d39b1c657e9c1d",
-      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      "coverage_percent": 88.13,
+      "passed": 2657
     },
     {
       "name": "flake8",
       "command": "uv run flake8 src",
-      "exit_code": 0,
-      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      "exit_code": 0
     },
     {
       "name": "ruff",
-      "command": "uv run ruff check src scripts/verify_readiness.py",
-      "exit_code": 0,
-      "stdout_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
-      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      "command": "uv run ruff check src scripts",
+      "exit_code": 0
     },
     {
       "name": "format",
-      "command": "uv run ruff format src/mojentic/llm/gateways/context_window_spec.py",
-      "exit_code": 0,
-      "stdout_sha256": "413a709001976657cb743636fd34e48fc41d8d302d665460d3f874b3313da127",
-      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      "command": "uv run ruff format src scripts",
+      "exit_code": 0
     },
     {
       "name": "format-check",
-      "command": "uv run ruff format --check src/mojentic/llm/gateways/context_window_spec.py",
-      "exit_code": 0,
-      "stdout_sha256": "fd2299c9f1c6dc869070883e281051bfe93aacf66c1a3b0069f45b4aa410ca50",
-      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    },
-    {
-      "name": "complexity",
-      "command": "uv run flake8 src/mojentic/llm/gateways/context_window_spec.py --max-complexity=10",
-      "exit_code": 0,
-      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      "command": "uv run ruff format --check src scripts",
+      "exit_code": 0
     },
     {
       "name": "locked-audit",
       "command": "uv export --format requirements-txt --no-emit-project | uvx pip-audit -r /dev/stdin --disable-pip",
       "exit_code": 0,
-      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "stderr_sha256": "8d24b3b727944f3fe2804bcf2203fea4010fa922270688317c75c5cc91cc137b"
+      "result": "No known vulnerabilities found"
     },
     {
       "name": "outdated",
       "command": "uv pip list --outdated",
       "exit_code": 0,
-      "stdout_sha256": "8fcda5afbccbba18ce9a94fea171bb4a044587026154e059451215e69e1a6f9e",
-      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    },
-    {
-      "name": "docs",
-      "command": "uv run mkdocs build",
-      "exit_code": 0,
-      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "stderr_sha256": "c66ae5f7b99cd71c7da044f5c8f757c2ea62bf00a5e3ddcc85d77b22ed41eea5"
+      "result": "Package            Version   Latest     Type\n------------------ --------- ---------- -----\nbackrefs           8.0       8.1        wheel\ncertifi            2026.7.22 2026.10.18 wheel\ncharset-normalizer 3.5.1     3.5.2      wheel\ncoverage           7.16.1    7.16.2     wheel\nfilelock           4.2.0     4.2.2      wheel\ngriffelib          2.3.0     2.3.2      wheel\nhttpcore2          2.13.1    2.14.0     wheel\nhttpx2             2.13.1    2.14.0     wheel\niniconfig          2.3.0     2.3.1      wheel\nmarkdown           3.10.3    3.11.1     wheel\nmarkupsafe         3.0.3     3.0.4      wheel\nmsgpack            1.2.2     1.2.3      wheel\nopenai             3.33.0    3.35.1     wheel\nplatformdirs       4.11.13   4.13.4     wheel\npluggy             1.6.0     1.7.0      wheel\npyflakes           4.0.0     4.0.3      wheel\npytest-mock        3.16.0    3.17.0     wheel\nregex              2026.9.10 2026.9.29  wheel\ntomli              2.4.1     2.5.0      wheel\ntruststore         0.10.4    0.10.5     wheel",
+      "decision": "Inventory only; audits report no fixed advisory requiring dependency changes."
     },
     {
       "name": "build",
       "command": "uv build",
-      "exit_code": 0,
-      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "stderr_sha256": "5b10c1c9f46d5dfc69d7da70becc33ad8c6190251ebd3be363dd1d830f8f124a"
+      "exit_code": 0
     },
     {
-      "name": "fresh-venv",
-      "command": "uv venv /tmp/mojentic-c15-consumer-lcn2_j02/.venv",
-      "exit_code": 0,
-      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "stderr_sha256": "2723c9a6d9eeb55dcea70f4ec2c1e545319da7280bd49e3f49eed4befee6a865"
+      "name": "install",
+      "command": "uv pip install --reinstall-package mojentic --python /tmp/mojentic-inprocess-consumer/.venv/bin/python -r .foundry/runtime-requirements.txt dist/mojentic-3.0.0-py3-none-any.whl",
+      "exit_code": 0
     },
     {
-      "name": "fresh-install",
-      "command": "uv pip install --python /tmp/mojentic-c15-consumer-lcn2_j02/.venv/bin/python /home/svetzal/.foundry/worktrees/mojentic-py/mojentic-3-0-py-c15-8c5055/dist/mojentic-2.1.0-py3-none-any.whl",
+      "name": "wheel-readiness",
+      "command": "uv run --offline --no-project --no-sync --directory /tmp/mojentic-inprocess-consumer --python /tmp/mojentic-inprocess-consumer/.venv/bin/python /home/svetzal/.foundry/worktrees/mojentic-py/mojentic-py-no-network-tests-c1-83a9e0/scripts/verify_readiness.py /home/svetzal/.foundry/worktrees/mojentic-py/mojentic-py-no-network-tests-c1-83a9e0",
       "exit_code": 0,
-      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "stderr_sha256": "fd8543f495edd1e10c06a91c577576e2da71ebd218f8273f87a0a95b860d25e8"
+      "result": "installed: /tmp/mojentic-inprocess-consumer/.venv/lib/python3.13/site-packages/mojentic/__init__.py\ncontract: context_window_v1.json f93a35e4de9c55e87c0a55551d4ab735289b040bbb673d87269fd3b4b8e41466\ncontract: first_token_v1.json 78dc6691c65ba84faa6e9a3490e6361bc3330dfd8341a27de5a4d7c2af833ab5\ncontract: native_reasoning_v1.json be212ff011125f1d0927e3a65a0d7cd87eedbf9f5ff69e803b4112a80ae6b1f6\ncontract: request_fidelity_v1.json 6a5ebca721a9f9e84323d0118b543d5dc71c7f68bb7067b2cdf6ad40daddcfc8\nmetadata: all provider cases and exact requests passed\nreasoning: distinct controls, structured output, native tool continuation passed\nrecovery/history: SDK success, admitted byte-identical retry and permanent failure passed\nwarning: `--no-sync` has no effect when used alongside `--no-project`"
     },
     {
-      "name": "fresh-consumer",
-      "command": "uv run --no-project --directory /tmp/mojentic-c15-consumer-lcn2_j02 --python /tmp/mojentic-c15-consumer-lcn2_j02/.venv/bin/python /home/svetzal/.foundry/worktrees/mojentic-py/mojentic-3-0-py-c15-8c5055/scripts/verify_readiness.py /home/svetzal/.foundry/worktrees/mojentic-py/mojentic-3-0-py-c15-8c5055",
+      "name": "wheel-timing",
+      "command": "uv run --offline --no-project --no-sync --directory /tmp/mojentic-inprocess-consumer --python /tmp/mojentic-inprocess-consumer/.venv/bin/python /home/svetzal/.foundry/worktrees/mojentic-py/mojentic-py-no-network-tests-c1-83a9e0/scripts/verify_stream_timing.py /home/svetzal/.foundry/worktrees/mojentic-py/mojentic-py-no-network-tests-c1-83a9e0/src/mojentic/llm/gateways/fixtures/contracts/first_token_v1.json",
       "exit_code": 0,
-      "stdout_sha256": "cd3111db2a3ea7a3755abce6c2a47e8065c8a0e06f6f34d601ac2f81c179d84d",
-      "stderr_sha256": "c61bab705a5e65efe60c31373a5b131ba6617c83af2f6d70b8eaa65f12d9bc04"
+      "result": "installed: /tmp/mojentic-inprocess-consumer/.venv/lib/python3.13/site-packages/mojentic/__init__.py\ncontract: py-stream-first-token-v1 78dc6691c65ba84faa6e9a3490e6361bc3330dfd8341a27de5a4d7c2af833ab5\nollama events/session/recovery: passed\nollama malformed events/public recovery close: passed\nomlx events/session/recovery: passed\nomlx malformed events/public recovery close: passed\nopenai events/session/recovery: passed\nopenai malformed events/public recovery close: passed\nwarning: `--no-sync` has no effect when used alongside `--no-project`"
     },
     {
-      "name": "fresh-timing",
-      "command": "uv run --no-project --directory /tmp/mojentic-c15-consumer-lcn2_j02 --python /tmp/mojentic-c15-consumer-lcn2_j02/.venv/bin/python /home/svetzal/.foundry/worktrees/mojentic-py/mojentic-3-0-py-c15-8c5055/scripts/verify_stream_timing.py /home/svetzal/.foundry/worktrees/mojentic-py/mojentic-3-0-py-c15-8c5055/src/mojentic/llm/gateways/fixtures/contracts/first_token_v1.json",
-      "exit_code": 0,
-      "stdout_sha256": "1a8cddf6f23a42d78a05c5396279d068bc21aa8a4d610388bfb5cd7943362729",
-      "stderr_sha256": "a06bfacfb842b2ef1f5188151dbce92390e153eee5ec49f4f75135601699c7a3"
+      "name": "manifest",
+      "command": "sha256sum --check docs/release_3_0_0_source.sha256",
+      "exit_code": 0
     },
     {
-      "name": "fresh-openai-raw-corrected",
-      "command": "uv run --no-project --directory /tmp/mojentic-c15-consumer-lcn2_j02 --python /tmp/mojentic-c15-consumer-lcn2_j02/.venv/bin/python /tmp/mojentic-c15-consumer-lcn2_j02/verify_openai_raw.py /home/svetzal/.foundry/worktrees/mojentic-py/mojentic-3-0-py-c15-8c5055",
-      "exit_code": 0,
-      "probe_sha256": "8aa69aa43a23c917fe6d1c7f8a39ed90c430125fcbdf60efebc25a3a9b04ee1c",
-      "stdout_sha256": "bc3e2a4ef56ffed491303371215b42d1354200dd826793b7ae87fd81e55485db",
-      "stderr_sha256": "88c33e32a6c4f72e568e0cc4c90898bb935962590cd120673d7dd1835a6f38a7"
+      "name": "context-manifest",
+      "command": "sha256sum --check src/mojentic/llm/contracts/context_window_v1.manifest.sha256",
+      "exit_code": 0
     },
     {
-      "name": "final-docs",
+      "name": "documentation",
       "command": "uv run mkdocs build",
       "exit_code": 0,
-      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "stderr_sha256": "9437a7221a861e9e50b5aa714b1dab625a8507472c51023040c4bc6b078f2657"
+      "result": "Documentation built successfully."
     }
   ],
-  "ci": {
-    "run_id": 39076064756,
-    "commit": "44e416eb87b30859cc5628a0d51b6ff95d987048",
-    "url": "https://github.com/svetzal/mojentic/actions/runs/39076064756",
-    "conclusion": "success",
-    "successful_jobs": [
-      "lint",
-      "test",
-      "security"
-    ],
-    "skipped_jobs": [
-      "release-build",
-      "deploy-docs",
-      "pypi-publish"
-    ],
-    "dirty_candidate_ci": "Not run; requires Foundry finalization; CI record above is historical baseline evidence"
-  },
-  "limitations": [
-    "Live provider behavior and exact remote inference termination unverified",
-    "Other ports and owner release authorization outside this assessment",
-    "Only Linux Python 3.13.15 exercised locally; 85% minimum explicitly enforced in this correction",
-    "Historical full-tree formatting/complexity debt remains outside this regression-only correction; current changed-file checks pass.",
-    "No initial rejecting acceptance recovered; original 111-test passing probe and later clock mutation are separately identified."
+  "resolved_execution_failures": [
+    "Initial uv cache/tools directories were read-only; redirected UV_CACHE_DIR and UV_TOOL_DIR to writable /tmp locations.",
+    "Authentication-loss red probe rejected all five entrypoints; corrected transport capture preserves exact Authorization and encoded bytes.",
+    "Fixture conversion import placement, SDK httpx2 transport coverage, read-timeout injection and test adapter wiring were corrected; final verification passed.",
+    "Previously dormant dispatcher/aggregator test_* checks did not match configured should_* discovery; enabled and replaced those checks through public APIs. Final 2,657 tests include all 19 restored checks."
   ],
-  "historical_acceptance": {
-    "record": "docs/release_3_0_0_acceptance.json",
-    "sha256": "b11e7843219f5c56ceabf066758cacb6c19828d0357cc5362295e3a115fb9385",
-    "original_probe_exit_code": 0,
-    "original_probe_passed": 111,
-    "initial_rejecting_run": "Not recovered; later constant-clock rejection is a separate event"
-  },
-  "raw_request_regression": {
-    "command": "uv run pytest src/mojentic/llm/gateways/context_window_spec.py -k should_preserve_registry_completion_semantics_after_discovery --no-cov -v",
-    "variants": [
-      "gpt-5.4",
-      "o1-custom"
-    ],
-    "rejected_whitespace_only_mutation": {
-      "exit_code": 1,
-      "failed": 2
-    },
-    "corrected": {
-      "exit_code": 0,
-      "passed": 2
-    },
-    "production_and_binding_contracts_changed": false
-  },
-  "stream_timing_manifest_sha256": "7a37c558d2b3d703cdc1bde2679e6596aae67fdbfafa805dca04406efa81bd3f",
-  "verifier_errors": [
-    {
-      "exit_code": 1,
-      "reason": "Initial whitespace mutation harness used an httpx ByteStream with the SDK httpx2 client; transport RuntimeError, not behavioral rejection.",
-      "stdout_sha256": "3d415e265338de1ab6881e262940424910e7ffbac38d5a06eb055813ec837e95",
-      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    },
-    {
-      "exit_code": 1,
-      "reason": "Both packaged raw HTTP cases passed, then diagnostic print accessed nonexistent contract id key; corrected label and reran all assertions successfully.",
-      "stdout_sha256": "384f244db30e2e044970485e11af0cbadd13b45eef94c27f273ae89ee0032b21",
-      "stderr_sha256": "475dd66126e1134ca1f5390b56b3c11660807ff213e2d54806a51a586efd04d4"
-    }
-  ],
-  "format_all": {
-    "command": "uv run ruff format src",
-    "exit_code": 0,
-    "unrelated_change_restored": "src/mojentic/llm/tools/file_manager_spec.py",
-    "candidate_unchanged_by_full_formatter": true
-  },
-  "behavioral_proof": {
-    "rejecting": {
-      "exit_code": 1,
-      "output_sha256": "51176880fe16c4ac7ddf762bd6fbf0904990a38bd601d931ffe0a1724740ed32"
-    },
-    "corrected": {
-      "exit_code": 0,
-      "output_sha256": "57e30848e5bd1648eef5770ddf01aacac8dafc79aa94d285665ec530d6274ad1"
-    }
-  },
-  "final_evidence_validation": "Passed: proof JSON field types, actual nonzero/zero outcomes, full logs, all source/contract/artifact hashes, packaged source equality and clean whitespace."
+  "finalization": "Working tree left modified for Foundry. No production implementation, package/dependency version, ref or sibling repository changed."
 }

@@ -1,6 +1,6 @@
 {
   "version": "context-window-v1",
-  "source_sha256": "a085da1c0d110f9d587a24ace6ac2854b653e1ac28905b3829d94d665b2c906e",
+  "source_sha256": "d9945dca45ce09e2163843263a75b5e93028b00ee1baf191fc3ff13396830e9c",
   "supported_api": [
     "3.0 optional metadata callback",
     "legacy gateways without callback: not advertised"

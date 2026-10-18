@@ -334,6 +334,7 @@ class DescribeOMLX429Recovery:
             gateway = OMLXGateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
+                    jitter=lambda ceiling: ceiling / 2,
                     max_attempts=2,
                     base_delay=0,
                     wall=lambda: 0,

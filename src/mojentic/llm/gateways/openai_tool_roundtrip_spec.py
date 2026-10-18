@@ -24,6 +24,7 @@ from mojentic.llm.gateways.models import LLMMessage, MessageRole
 from mojentic.llm.gateways.openai import OpenAIGateway
 from mojentic.llm.llm_broker import LLMBroker
 from mojentic.llm.tools.llm_tool import LLMTool
+from scripts.inprocess_http import InProcessTokenizer
 
 _FIXTURES_DIR = Path(__file__).parent / "fixtures" / "openai_tool_roundtrip"
 
@@ -82,7 +83,9 @@ def openai_gateway(mock_openai_client):
 
 @pytest.fixture
 def broker(openai_gateway):
-    return LLMBroker(model="gpt-4o", gateway=openai_gateway)
+    return LLMBroker(
+        tokenizer=InProcessTokenizer(), model="gpt-4o", gateway=openai_gateway
+    )
 
 
 @pytest.fixture
@@ -204,7 +207,9 @@ def should_preserve_json_argument_types_and_provider_metadata(mocker):
     client.chat.completions.create.return_value = ChatCompletion.model_validate(fixture)
     mocker.patch("mojentic.llm.gateways.openai.OpenAI", return_value=client)
     broker = LLMBroker(
-        model="configured-model", gateway=OpenAIGateway(api_key="test-key")
+        tokenizer=InProcessTokenizer(),
+        model="configured-model",
+        gateway=OpenAIGateway(api_key="test-key"),
     )
     response = broker.generate_response(
         [LLMMessage(role=MessageRole.User, content="hi")]
@@ -270,7 +275,11 @@ class DescribeOpenAIStreamingToolCallRoundTrip:
     def should_carry_streamed_tool_call_id_into_follow_up_request(
         self, streaming_client, tool
     ):
-        broker = LLMBroker(model="gpt-4o", gateway=OpenAIGateway(api_key="test-key"))
+        broker = LLMBroker(
+            tokenizer=InProcessTokenizer(),
+            model="gpt-4o",
+            gateway=OpenAIGateway(api_key="test-key"),
+        )
         messages = [
             LLMMessage(role=MessageRole.User, content="What's the weather in Paris?")
         ]
@@ -377,7 +386,7 @@ def parallel_round_trip(request, streaming, mocker):
         transport.post.side_effect = post
         transport.stream_lines.side_effect = stream_lines
         gateway = OMLXGateway(transport=transport)
-    broker = LLMBroker(model="gpt-4o", gateway=gateway)
+    broker = LLMBroker(tokenizer=InProcessTokenizer(), model="gpt-4o", gateway=gateway)
     messages = [
         LLMMessage(role=MessageRole.User, content="Compare Paris and London weather.")
     ]

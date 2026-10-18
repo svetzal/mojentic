@@ -22,6 +22,7 @@ from mojentic.llm.recovery import (
     RecoveryError,
     RecoveryPolicy,
 )
+from scripts.inprocess_http import clock, virtual_sleep
 
 broker_factory = shared_broker_factory
 
@@ -101,6 +102,10 @@ class DescribeAnthropicStructuredContract:
         captures = []
         lifecycle = []
         policy = RecoveryPolicy(
+            monotonic=clock,
+            wall=lambda: 0,
+            jitter=lambda ceiling: ceiling / 2,
+            sleeper=virtual_sleep,
             max_attempts=2,
             base_delay=0,
             wire_observer=captures.append,
@@ -165,7 +170,14 @@ class DescribeAnthropicStructuredContract:
             gateway = AnthropicGateway(
                 api_key="test",
                 base_url=host,
-                recovery_policy=RecoveryPolicy(max_attempts=2, base_delay=0),
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=2,
+                    base_delay=0,
+                ),
             )
 
             result = invoke(role, gateway, broker_factory)
@@ -197,7 +209,12 @@ class DescribeAnthropicStructuredContract:
                 api_key="test",
                 base_url=host,
                 recovery_policy=RecoveryPolicy(
-                    max_attempts=3, observer=lifecycle.append
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                    observer=lifecycle.append,
                 ),
             )
 
@@ -251,7 +268,14 @@ class DescribeAnthropicStructuredContract:
             gateway = AnthropicGateway(
                 api_key="test",
                 base_url=host,
-                recovery_policy=RecoveryPolicy(max_attempts=3, wire_observer=capture),
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                    wire_observer=capture,
+                ),
             )
 
             with pytest.raises(RecoveryError) as caught:
@@ -277,7 +301,14 @@ class DescribeAnthropicStructuredContract:
     ):
         with scripted_http([(200, {}, structured_response(text))]) as (host, requests):
             gateway = AnthropicGateway(
-                api_key="test", base_url=host, recovery_policy=RecoveryPolicy()
+                api_key="test",
+                base_url=host,
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                ),
             )
 
             result = invoke(role, gateway, broker_factory, ScoredAnswer)
@@ -297,7 +328,13 @@ class DescribeAnthropicStructuredContract:
             gateway = AnthropicGateway(
                 api_key="test",
                 base_url=host,
-                recovery_policy=RecoveryPolicy(max_attempts=3),
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                ),
             )
 
             with pytest.raises(RecoveryError) as caught:
@@ -320,6 +357,10 @@ class DescribeAnthropicStructuredContract:
                 api_key="test",
                 base_url=host,
                 recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
                     max_attempts=3,
                     base_delay=0,
                     admission=admission,
@@ -355,7 +396,13 @@ class DescribeAnthropicStructuredContract:
                 api_key="test",
                 base_url=host,
                 recovery_policy=RecoveryPolicy(
-                    max_attempts=2, base_delay=0, admission=admission
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=2,
+                    base_delay=0,
+                    admission=admission,
                 ),
             )
 

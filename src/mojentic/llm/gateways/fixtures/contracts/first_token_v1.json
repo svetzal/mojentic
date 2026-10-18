@@ -116,5 +116,6 @@
   ],
   "routes": [
     "complete_stream_events"
-  ]
+  ],
+  "source_sha256": "d9945dca45ce09e2163843263a75b5e93028b00ee1baf191fc3ff13396830e9c"
 }

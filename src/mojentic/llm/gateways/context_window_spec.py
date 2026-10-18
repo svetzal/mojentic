@@ -1,9 +1,6 @@
 import hashlib
 import json
-import socket
-import threading
 from contextlib import contextmanager
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 import httpx
@@ -28,47 +25,31 @@ CONTRACT = json.loads(CONTRACT_PATH.read_text())
 
 @contextmanager
 def metadata_server(replies, raw_requests=None):
+    from scripts.inprocess_http import Body, transport
+
     requests = []
 
-    class Handler(BaseHTTPRequestHandler):
-        def do_GET(self):
-            self.respond()
-
-        def do_POST(self):
-            self.respond()
-
-        def respond(self):
-            body = self.rfile.read(int(self.headers.get("Content-Length", 0)))
-            if raw_requests is not None:
-                raw_requests.append(body)
-            requests.append(
-                {
-                    "method": self.command,
-                    "path": self.path,
-                    "body": json.loads(body) if body else None,
-                    "authorization": self.headers.get("Authorization"),
-                }
-            )
-            status, data = replies[len(requests) - 1]
-            self.send_response(status)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Content-Length", str(len(data)))
-            self.end_headers()
-            self.wfile.write(data)
-
-        def log_message(self, *args):
-            pass
-
-    with ThreadingHTTPServer(("127.0.0.1", 0), Handler) as server:
-        thread = threading.Thread(
-            target=lambda: server.serve_forever(poll_interval=0.01)
+    def respond(request):
+        body = request.content
+        if raw_requests is not None:
+            raw_requests.append(body)
+        requests.append(
+            {
+                "method": request.method,
+                "path": request.url.raw_path.decode(),
+                "body": json.loads(body) if body else None,
+                "authorization": request.headers.get("Authorization"),
+            }
         )
-        thread.start()
-        try:
-            yield f"http://127.0.0.1:{server.server_port}", requests
-        finally:
-            server.shutdown()
-            thread.join()
+        status, data = replies[len(requests) - 1]
+        return httpx.Response(
+            status,
+            headers={"Content-Type": "application/json"},
+            stream=Body([(0, data)], {}),
+        )
+
+    with transport(respond):
+        yield "http://provider.test", requests
 
 
 class DescribeContextWindow:
@@ -127,7 +108,7 @@ class DescribeContextWindowContract:
     def should_pin_the_shared_executable_contract_identity(self):
         assert CONTRACT["version"] == "context-window-v1"
         assert hashlib.sha256(CONTRACT_PATH.read_bytes()).hexdigest() == (
-            "cfeee4702c0dd3b18e02fbd0c8bad82ae58ee1ca7eadcfd21683479ba24f3dc4"
+            "f93a35e4de9c55e87c0a55551d4ab735289b040bbb673d87269fd3b4b8e41466"
         )
 
     @pytest.mark.parametrize(
@@ -186,9 +167,12 @@ class DescribeContextWindowContract:
 
     @pytest.mark.parametrize("provider", ["ollama", "omlx"])
     def should_distinguish_transport_failure(self, provider):
-        with socket.socket() as endpoint:
-            endpoint.bind(("127.0.0.1", 0))
-            host = f"http://127.0.0.1:{endpoint.getsockname()[1]}"
+        from scripts.inprocess_http import scripted_http
+
+        with scripted_http([(200, {}, httpx.ConnectError("connection refused"))]) as (
+            host,
+            _,
+        ):
             gateway = gateway_for_case({"provider": provider}, host)
 
             with pytest.raises(httpx.TransportError):

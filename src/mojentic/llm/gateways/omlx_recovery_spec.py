@@ -1,4 +1,4 @@
-"""Public oMLX recovery assertions at the loopback HTTP boundary."""
+"""Public oMLX recovery assertions at the in-process transport boundary."""
 
 import asyncio
 import json
@@ -17,6 +17,7 @@ from mojentic.llm.gateways.tokenizer_gateway import TokenizerGateway
 from mojentic.llm.llm_broker import LLMBroker
 from mojentic.llm.recovery import RecoveryCall, RecoveryError, RecoveryPolicy
 from mojentic.llm.tools.llm_tool import LLMTool
+from scripts.inprocess_http import clock, virtual_sleep
 
 
 class DescribeOMLXRecovery:
@@ -33,7 +34,13 @@ class DescribeOMLXRecovery:
             gateway = OMLXGateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
-                    max_attempts=3, wire_observer=capture, observer=lifecycle.append
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                    wire_observer=capture,
+                    observer=lifecycle.append,
                 ),
             )
             with pytest.raises(RecoveryError) as caught:
@@ -275,6 +282,7 @@ class DescribeOMLXWireRecovery:
                 host=host,
                 api_key="credential-sentinel",
                 recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
                     max_attempts=2,
                     base_delay=1,
                     jitter=lambda ceiling: ceiling / 2,
@@ -380,6 +388,10 @@ class DescribeOMLXWireRecovery:
             gateway = OMLXGateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
                     max_attempts=3,
                     base_delay=0,
                     admission=allow,
@@ -418,6 +430,10 @@ class DescribeOMLXWireRecovery:
             gateway = OMLXGateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
                     max_attempts=3,
                     retryable_categories=frozenset({"transport", "http"}),
                     retryable_statuses=frozenset({400, 401, 403}),
@@ -459,7 +475,13 @@ class DescribeOMLXWireRecovery:
             gateway = OMLXGateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
-                    max_attempts=2, base_delay=0, admission=admission
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=2,
+                    base_delay=0,
+                    admission=admission,
                 ),
             )
             try:
@@ -482,7 +504,14 @@ class DescribeOMLXWireRecovery:
             await invoke(
                 OMLXGateway(
                     host=host,
-                    recovery_policy=RecoveryPolicy(max_attempts=3, admission=allow),
+                    recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        max_attempts=3,
+                        admission=allow,
+                    ),
                 ),
                 operation,
             )
@@ -515,7 +544,14 @@ class DescribeOMLXStreamSafety:
             events = await collect(
                 OMLXGateway(
                     host=host,
-                    recovery_policy=RecoveryPolicy(max_attempts=3, admission=allow),
+                    recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        max_attempts=3,
+                        admission=allow,
+                    ),
                 )
             )
         assert len(requests) == 1
@@ -533,7 +569,14 @@ class DescribeOMLXStreamSafety:
             events = await collect(
                 OMLXGateway(
                     host=host,
-                    recovery_policy=RecoveryPolicy(max_attempts=3, admission=allow),
+                    recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        max_attempts=3,
+                        admission=allow,
+                    ),
                 )
             )
         assert len(requests) == 1
@@ -552,7 +595,13 @@ class DescribeOMLXStreamSafety:
                 OMLXGateway(
                     host=host,
                     recovery_policy=RecoveryPolicy(
-                        max_attempts=2, base_delay=0, admission=allow
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        max_attempts=2,
+                        base_delay=0,
+                        admission=allow,
                     ),
                 )
             )
@@ -580,7 +629,14 @@ class DescribeOMLXStreamSafety:
             events = await collect(
                 OMLXGateway(
                     host=host,
-                    recovery_policy=RecoveryPolicy(max_attempts=2, admission=allow),
+                    recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        max_attempts=2,
+                        admission=allow,
+                    ),
                 )
             )
         assert len(requests) == 1
@@ -615,7 +671,15 @@ class DescribeOMLXStreamSafety:
         data += b"data: [DONE]\n\n"
         with scripted_http([(200, {}, data)]) as (host, requests):
             events = await collect(
-                OMLXGateway(host=host, recovery_policy=RecoveryPolicy())
+                OMLXGateway(
+                    host=host,
+                    recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                    ),
+                )
             )
         assert len(requests) == 1
         assert events[-1].kind == "completed"
@@ -648,7 +712,13 @@ class DescribeOMLXPublicCallers:
                 OMLXGateway(
                     host=host,
                     recovery_policy=RecoveryPolicy(
-                        max_attempts=2, base_delay=0, admission=allow
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        max_attempts=2,
+                        base_delay=0,
+                        admission=allow,
                     ),
                 )
             )
@@ -693,6 +763,10 @@ class DescribeOMLXPublicCallers:
                 OMLXGateway(
                     host=host,
                     recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
                         max_attempts=2,
                         base_delay=0,
                         admission=allow,
@@ -756,7 +830,14 @@ class DescribeOMLXPublicCallers:
             broker = broker_factory(
                 OMLXGateway(
                     host=host,
-                    recovery_policy=RecoveryPolicy(max_attempts=3, admission=allow),
+                    recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        max_attempts=3,
+                        admission=allow,
+                    ),
                 )
             )
             events = list(
@@ -784,6 +865,9 @@ class DescribeOMLXCancellation:
                 closed.set()
 
         policy = RecoveryPolicy(
+            monotonic=clock,
+            wall=lambda: 0,
+            jitter=lambda ceiling: ceiling / 2,
             max_attempts=3,
             base_delay=0,
             observer=lifecycle.append,
@@ -793,12 +877,12 @@ class DescribeOMLXCancellation:
         with scripted_http([(504, {}, b"private")]) as (host, requests):
             gateway = OMLXGateway(host=host, recovery_call=call, recovery_policy=policy)
             task = asyncio.create_task(invoke(gateway, operation))
-            await asyncio.wait_for(entered.wait(), 2)
+            await entered.wait()
             assert len(requests) == 1
             assert not task.done()
             call.cancel()
             with pytest.raises(RecoveryError) as caught:
-                await asyncio.wait_for(task, 2)
+                await task
         assert closed.is_set()
         assert len(requests) == 1
         assert caught.value.report.outcome == "cancelled"
@@ -827,15 +911,21 @@ class DescribeOMLXCancellation:
             gateway = OMLXGateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
-                    max_attempts=2, base_delay=0, admission=admission
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=2,
+                    base_delay=0,
+                    admission=admission,
                 ),
             )
             task = asyncio.create_task(invoke(gateway, operation))
-            await asyncio.wait_for(entered.wait(), 2)
+            await entered.wait()
             assert len(requests) == 1
             assert not task.done()
             release.set()
-            result = await asyncio.wait_for(task, 2)
+            result = await task
         assert len(requests) == 2
         assert result.recovery_report.outcome == "succeeded"
 
@@ -859,14 +949,21 @@ class DescribeOMLXCancellation:
         )
         with scripted_http([(200, {}, data)]) as (host, requests):
             gateway = OMLXGateway(
-                host=host, recovery_policy=RecoveryPolicy(observer=observe)
+                host=host,
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    observer=observe,
+                ),
             )
             iterator = gateway.complete_stream_with_recovery(
                 model="test", messages=[], call=call
             )
             received = [await anext(iterator) for _ in range(consumed)]
             call.cancel()
-            assert await asyncio.wait_for(asyncio.to_thread(cancelled.wait, 1), 2)
+            await asyncio.to_thread(cancelled.wait)
             remaining = [event async for event in iterator]
         assert len(requests) == 1
         assert all(event.kind in {"progress", "metrics"} for event in received)
@@ -880,51 +977,28 @@ class DescribeOMLXCancellation:
         assert "attempt_succeeded" not in transitions
 
     @pytest.mark.parametrize("operation", OPERATIONS)
-    async def should_cancel_active_request_and_close_local_socket(self, operation):
-        from contextlib import contextmanager
-        from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-
-        started, closed = threading.Event(), threading.Event()
-        requests = []
-
-        class Handler(BaseHTTPRequestHandler):
-            def do_POST(self):
-                requests.append(self.rfile.read(int(self.headers["Content-Length"])))
-                started.set()
-                self.connection.settimeout(2)
-                assert self.connection.recv(1) == b""
-                closed.set()
-
-            def log_message(self, *args):
-                pass
-
-        @contextmanager
-        def server():
-            http = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
-            thread = threading.Thread(
-                target=lambda: http.serve_forever(poll_interval=0.01), daemon=True
-            )
-            thread.start()
-            try:
-                yield f"http://127.0.0.1:{http.server_port}"
-            finally:
-                http.shutdown()
-                http.server_close()
-                thread.join()
+    async def should_cancel_active_request_and_close_transport(self, operation):
+        from scripts.inprocess_http import unfinished_http
 
         call, lifecycle = RecoveryCall(), []
-        with server() as host:
+        with unfinished_http() as (host, requests, started, closed):
             gateway = OMLXGateway(
                 host=host,
                 recovery_call=call,
-                recovery_policy=RecoveryPolicy(observer=lifecycle.append),
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    observer=lifecycle.append,
+                ),
             )
             task = asyncio.create_task(invoke(gateway, operation))
-            assert await asyncio.wait_for(asyncio.to_thread(started.wait, 1), 2)
+            await started.wait()
             call.cancel()
             with pytest.raises(RecoveryError) as caught:
-                await asyncio.wait_for(task, 1)
-            assert await asyncio.wait_for(asyncio.to_thread(closed.wait, 1), 2)
+                await task
+            await closed.wait()
         assert len(requests) == 1
         assert isinstance(caught.value.inspect_cause(), asyncio.CancelledError)
         assert caught.value.report.identity.wire_attempt == 1
@@ -949,7 +1023,12 @@ class DescribeOMLXPrivacyAndValidation:
                 host=host,
                 api_key=secret,
                 recovery_policy=RecoveryPolicy(
-                    observer=lifecycle.append, wire_observer=captures.append
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    observer=lifecycle.append,
+                    wire_observer=captures.append,
                 ),
             )
             with pytest.raises(RecoveryError) as caught:
@@ -985,7 +1064,15 @@ class DescribeOMLXPrivacyAndValidation:
         )
         with scripted_http([(200, {}, data)]) as (host, requests):
             events = await collect(
-                OMLXGateway(host=host, recovery_policy=RecoveryPolicy())
+                OMLXGateway(
+                    host=host,
+                    recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                    ),
+                )
             )
         assert len(requests) == 1
         assert events[-1].response.usage == usage
@@ -1023,7 +1110,14 @@ class DescribeOMLXPrivacyAndValidation:
         ):
             gateway = OMLXGateway(
                 host=host,
-                recovery_policy=RecoveryPolicy(max_attempts=3, admission=allow),
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                    admission=allow,
+                ),
             )
             with pytest.raises(RecoveryError) as caught:
                 await invoke(gateway, "ordinary")
@@ -1036,7 +1130,13 @@ class DescribeOMLXPrivacyAndValidation:
             [(200, {"Warning": "format fallback"}, completion('{"answer":"ok"}'))]
         ) as (host, requests):
             response = OMLXGateway(
-                host=host, recovery_policy=RecoveryPolicy()
+                host=host,
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                ),
             ).complete(model="test", messages=[], object_model=Result)
         assert len(requests) == 1
         assert response.object == Result(answer="ok")
@@ -1049,7 +1149,14 @@ class DescribeOMLXPrivacyAndValidation:
         ):
             OMLXGateway(
                 host=host,
-                recovery_policy=RecoveryPolicy(max_attempts=3, admission=allow),
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                    admission=allow,
+                ),
             ).complete(model="test", messages=[], object_model=Result)
         assert len(requests) == 1
         assert isinstance(caught.value.inspect_cause(), ValueError)
@@ -1099,6 +1206,10 @@ class DescribeOMLXCaptureEvidence:
             gateway = OMLXGateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
                     max_attempts=3,
                     admission=allow,
                     wire_observer=capture,
@@ -1154,7 +1265,15 @@ class DescribeOMLXCaptureEvidence:
         )
         with scripted_http([(200, {}, data)]) as (host, requests):
             events = await collect(
-                OMLXGateway(host=host, recovery_policy=RecoveryPolicy())
+                OMLXGateway(
+                    host=host,
+                    recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                    ),
+                )
             )
         assert len(requests) == 1
         assert events[-1].kind == "completed"
@@ -1181,7 +1300,14 @@ class DescribeOMLXMalformedToolFields:
         with scripted_http([(200, {}, data)]) as (host, requests):
             gateway = OMLXGateway(
                 host=host,
-                recovery_policy=RecoveryPolicy(max_attempts=3, admission=allow),
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                    admission=allow,
+                ),
             )
             with pytest.raises(RecoveryError) as caught:
                 await invoke(gateway, operation)
@@ -1199,7 +1325,14 @@ class DescribeOMLXMalformedToolFields:
             events = await collect(
                 OMLXGateway(
                     host=host,
-                    recovery_policy=RecoveryPolicy(max_attempts=3, admission=allow),
+                    recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        max_attempts=3,
+                        admission=allow,
+                    ),
                 )
             )
         assert len(requests) == 1
@@ -1214,7 +1347,15 @@ class DescribeOMLXPreparationPrivacy:
         self, operation
     ):
         with scripted_http([]) as (host, requests):
-            gateway = OMLXGateway(host=host, recovery_policy=RecoveryPolicy())
+            gateway = OMLXGateway(
+                host=host,
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                ),
+            )
             args = {
                 "model": "test",
                 "messages": [],

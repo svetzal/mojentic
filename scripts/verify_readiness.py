@@ -6,12 +6,18 @@ Run outside the checkout, passing its absolute path solely to read contracts.
 import hashlib
 import json
 import sys
-import threading
 from contextlib import contextmanager
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 import httpx
+from inprocess_http import (
+    Body,
+    InProcessTokenizer,
+    clock,
+    offline,
+    transport,
+    virtual_sleep,
+)
 from pydantic import BaseModel
 
 import mojentic
@@ -28,37 +34,24 @@ from mojentic.llm.tools.llm_tool import LLMTool
 
 @contextmanager
 def endpoint(replies: list[tuple[int, bytes]]):
-    """Serve finite fixture responses and capture exact request bodies."""
+    """Capture encoded requests at the transport boundary without sockets."""
     requests = []
 
-    class Handler(BaseHTTPRequestHandler):
-        def do_GET(self) -> None:
-            self.respond()
+    def respond(request):
+        requests.append(
+            (request.method, request.url.raw_path.decode(), request.content)
+        )
+        status, body = replies[len(requests) - 1]
+        if isinstance(body, BaseException):
+            raise body
+        return httpx.Response(
+            status,
+            headers={"Content-Type": "application/json"},
+            stream=Body([(0, body)], {}),
+        )
 
-        def do_POST(self) -> None:
-            self.respond()
-
-        def respond(self) -> None:
-            raw = self.rfile.read(int(self.headers.get("Content-Length", 0)))
-            requests.append((self.command, self.path, raw))
-            status, body = replies[len(requests) - 1]
-            self.send_response(status)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Content-Length", str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
-
-        def log_message(self, *args: object) -> None:
-            pass
-
-    with ThreadingHTTPServer(("127.0.0.1", 0), Handler) as server:
-        thread = threading.Thread(target=lambda: server.serve_forever(0.01))
-        thread.start()
-        try:
-            yield f"http://127.0.0.1:{server.server_port}", requests
-        finally:
-            server.shutdown()
-            thread.join()
+    with transport(respond):
+        yield "http://provider.test", requests
 
 
 class Answer(BaseModel):
@@ -182,7 +175,11 @@ def verify_reasoning(root: Path) -> None:
         first = message | {"content": contract["visible"], "tool_calls": [call]}
         with endpoint([(200, reply(first)), (200, reply(message))]) as (host, requests):
             tool = Count(contract["tool_result"])
-            result = LLMBroker(model="alias", gateway=factory(host=host)).generate(
+            result = LLMBroker(
+                tokenizer=InProcessTokenizer(),
+                model="alias",
+                gateway=factory(host=host),
+            ).generate(
                 [LLMMessage(content="question")],
                 tools=[tool],
                 config=CompletionConfig(retain_reasoning=True),
@@ -225,7 +222,17 @@ def verify_recovery() -> None:
         LLMMessage(role=MessageRole.Assistant, content="prior"),
         LLMMessage(content="continue"),
     ]
-    for policy in (None, RecoveryPolicy(max_attempts=2, base_delay=0)):
+    for policy in (
+        None,
+        RecoveryPolicy(
+            monotonic=clock,
+            wall=lambda: 0,
+            jitter=lambda ceiling: ceiling / 2,
+            sleeper=virtual_sleep,
+            max_attempts=2,
+            base_delay=0,
+        ),
+    ):
         replies = (
             [(200, success)] if policy is None else [(503, b"busy"), (200, success)]
         )
@@ -259,7 +266,13 @@ def verify_recovery() -> None:
         gateway = AnthropicGateway(
             api_key="local",
             base_url=host,
-            recovery_policy=RecoveryPolicy(max_attempts=2),
+            recovery_policy=RecoveryPolicy(
+                monotonic=clock,
+                wall=lambda: 0,
+                jitter=lambda ceiling: ceiling / 2,
+                sleeper=virtual_sleep,
+                max_attempts=2,
+            ),
         )
         try:
             gateway.complete(model="claude-test", messages=messages)
@@ -291,4 +304,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    with offline():
+        main()

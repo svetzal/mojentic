@@ -1,5 +1,4 @@
 import asyncio
-import time
 from typing import Any
 
 import pytest
@@ -54,12 +53,21 @@ class _RaisingTool(LLMTool):
 
 
 class _AsyncSlowTool(LLMTool):
-    """Async tool that sleeps for ``delay_s`` seconds before returning."""
+    """Async tool that yields while tracking concurrent public tool execution."""
+
+    def __init__(self):
+        self.active = 0
+        self.peak = 0
+        self.started = []
 
     async def run(
         self, value: str, delay_s: float = 0.05, ctx: ToolRunContext | None = None
     ) -> dict:
-        await asyncio.sleep(delay_s)
+        self.active += 1
+        self.peak = max(self.peak, self.active)
+        self.started.append(value)
+        await asyncio.sleep(0)
+        self.active -= 1
         if ctx is not None and ctx.cancelled:
             raise asyncio.CancelledError("ctx cancelled")
         return {"value": value, "delay_s": delay_s}
@@ -167,15 +175,13 @@ class DescribeAsyncParallelToolRunner:
                 for i in range(4)
             ]
 
-            start = time.time()
             outcomes = asyncio.run(runner.run_batch(calls, [slow_tool]))
-            elapsed = time.time() - start
 
             assert len(outcomes) == 4
             assert all(o.ok for o in outcomes)
-            assert elapsed < delay * 3, (
-                f"expected parallel dispatch, took {elapsed:.3f}s"
-            )
+            assert slow_tool.peak == 4
+            assert slow_tool.active == 0
+            assert slow_tool.started == ["0", "1", "2", "3"]
 
         def should_respect_max_concurrency(self, slow_tool):
             runner = AsyncParallelToolRunner(max_concurrency=2)
@@ -187,32 +193,53 @@ class DescribeAsyncParallelToolRunner:
                 for i in range(4)
             ]
 
-            start = time.time()
-            asyncio.run(runner.run_batch(calls, [slow_tool]))
-            elapsed = time.time() - start
-
-            assert elapsed >= delay * 1.5, (
-                "expected at least two waves at concurrency=2"
-            )
-
-        def should_preserve_input_order_in_outcomes(self, slow_tool):
-            runner = AsyncParallelToolRunner(max_concurrency=4)
-            calls = [
-                ToolCallExecution(
-                    id="a", name="slow", args={"value": "a", "delay_s": 0.05}
-                ),
-                ToolCallExecution(
-                    id="b", name="slow", args={"value": "b", "delay_s": 0.01}
-                ),
-                ToolCallExecution(
-                    id="c", name="slow", args={"value": "c", "delay_s": 0.03}
-                ),
-            ]
-
             outcomes = asyncio.run(runner.run_batch(calls, [slow_tool]))
 
-            assert [o.id for o in outcomes] == ["a", "b", "c"]
-            assert [o.result["value"] for o in outcomes] == ["a", "b", "c"]
+            assert slow_tool.peak == 2
+            assert slow_tool.active == 0
+            assert [outcome.result["value"] for outcome in outcomes] == [
+                "0",
+                "1",
+                "2",
+                "3",
+            ]
+
+        def should_preserve_input_order_in_outcomes(self):
+            async def run():
+                gates = {value: asyncio.Event() for value in "abc"}
+                finished = {value: asyncio.Event() for value in "abc"}
+                all_started = asyncio.Event()
+                started, completed = [], []
+
+                class ControlledTool(_AsyncSlowTool):
+                    async def run(self, value: str, **kwargs) -> dict:
+                        started.append(value)
+                        if len(started) == 3:
+                            all_started.set()
+                        await gates[value].wait()
+                        completed.append(value)
+                        finished[value].set()
+                        return {"value": value}
+
+                runner = AsyncParallelToolRunner(max_concurrency=3)
+                calls = [
+                    ToolCallExecution(id=value, name="slow", args={"value": value})
+                    for value in "abc"
+                ]
+                pending = asyncio.create_task(
+                    runner.run_batch(calls, [ControlledTool()])
+                )
+                await all_started.wait()
+                for value in "cba":
+                    gates[value].set()
+                    await finished[value].wait()
+                return await pending, completed
+
+            outcomes, completed = asyncio.run(run())
+
+            assert completed == ["c", "b", "a"]
+            assert [outcome.id for outcome in outcomes] == ["a", "b", "c"]
+            assert [outcome.result["value"] for outcome in outcomes] == ["a", "b", "c"]
 
     class DescribeCancellation:
         def should_skip_pending_calls_when_context_cancelled_before_start(

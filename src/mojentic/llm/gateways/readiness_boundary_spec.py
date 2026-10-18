@@ -17,6 +17,7 @@ from mojentic.llm.gateways.typed_errors_spec import (
 )
 from mojentic.llm.llm_broker import LLMBroker
 from mojentic.llm.recovery import RecoveryError, RecoveryPolicy
+from scripts.inprocess_http import InProcessTokenizer, clock, virtual_sleep
 
 
 def outcome_context(eligible: bool):
@@ -85,7 +86,9 @@ class DescribeReadinessBoundary:
             ]
         ) as (host, requests):
             broker = LLMBroker(
-                model="test", gateway=gateway_for(provider, host, policy)
+                tokenizer=InProcessTokenizer(),
+                model="test",
+                gateway=gateway_for(provider, host, policy),
             )
             session = ChatSession(broker, system_prompt="system", config=CONFIG)
 
@@ -137,14 +140,22 @@ class DescribeReadinessBoundary:
         body = partial_stream_body(provider, kind)
         lifecycle = []
         policy = RecoveryPolicy(
-            max_attempts=2, admission=allow, observer=lifecycle.append
+            monotonic=clock,
+            wall=lambda: 0,
+            jitter=lambda ceiling: ceiling / 2,
+            sleeper=virtual_sleep,
+            max_attempts=2,
+            admission=allow,
+            observer=lifecycle.append,
         )
         with scripted_http([(200, {"Content-Length": str(len(body) + 100)}, body)]) as (
             host,
             requests,
         ):
             broker = LLMBroker(
-                model="test", gateway=gateway_for(provider, host, policy)
+                tokenizer=InProcessTokenizer(),
+                model="test",
+                gateway=gateway_for(provider, host, policy),
             )
             session = ChatSession(broker, system_prompt="system", config=CONFIG)
             stream = {

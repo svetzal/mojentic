@@ -1,10 +1,7 @@
-"""Cloud recovery specifications at a real loopback HTTP boundary."""
+"""Cloud recovery specifications at a in-process HTTP transports boundary."""
 
 import asyncio
 import json
-import threading
-from contextlib import contextmanager
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import httpx
 import pytest
@@ -24,6 +21,7 @@ from mojentic.llm.gateways.omlx_recovery_spec import (
 )
 from mojentic.llm.gateways.openai import OpenAIGateway
 from mojentic.llm.recovery import RecoveryCall, RecoveryError, RecoveryPolicy
+from scripts.inprocess_http import clock, unfinished_http, virtual_sleep
 
 counter_tool = recovery_fixtures.counter_tool
 broker_factory = recovery_fixtures.broker_factory
@@ -130,49 +128,6 @@ async def request(gateway, operation, tool, args_override=None):
     return await gateway.complete_with_recovery(**args)
 
 
-@contextmanager
-def unfinished_http(initial=None):
-    started, closed = threading.Event(), threading.Event()
-    requests = []
-
-    class Handler(BaseHTTPRequestHandler):
-        def do_POST(self):
-            requests.append(
-                (
-                    self.path,
-                    self.rfile.read(int(self.headers["Content-Length"])),
-                    dict(self.headers),
-                )
-            )
-            if initial is not None:
-                self.send_response(200)
-                self.send_header("Content-Type", "text/event-stream")
-                self.send_header("Content-Length", "10000")
-                self.end_headers()
-                self.wfile.write(initial)
-                self.wfile.flush()
-            started.set()
-            self.connection.settimeout(3)
-            received = self.connection.recv(1)
-            if received == b"":
-                closed.set()
-
-        def log_message(self, *args):
-            pass
-
-    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
-    thread = threading.Thread(
-        target=lambda: server.serve_forever(poll_interval=0.01), daemon=True
-    )
-    thread.start()
-    try:
-        yield f"http://127.0.0.1:{server.server_port}", requests, started, closed
-    finally:
-        server.shutdown()
-        server.server_close()
-        thread.join()
-
-
 def assert_wire(requests, captures, operation, count):
     path = "/v1/messages" if operation == "anthropic" else "/v1/chat/completions"
     assert [(path_, body) for path_, body, headers in requests] == [
@@ -216,6 +171,10 @@ class DescribeCloudWireRecovery:
             requests,
         ):
             policy = RecoveryPolicy(
+                monotonic=clock,
+                wall=lambda: 0,
+                jitter=lambda ceiling: ceiling / 2,
+                sleeper=virtual_sleep,
                 max_attempts=2,
                 base_delay=0,
                 admission=admit,
@@ -237,15 +196,26 @@ class DescribeCloudWireRecovery:
     async def should_leave_active_generation_without_a_fixed_read_timeout(
         self, operation, counter_tool
     ):
-        captures = []
-        with scripted_http([(200, {}, (0.05, success(operation)))]) as (host, requests):
+        captures, timeouts = [], []
+        with scripted_http(
+            [(200, {}, (0.05, success(operation)))], timeouts=timeouts
+        ) as (host, requests):
             gateway = cloud_gateway(
-                host, operation, RecoveryPolicy(wire_observer=captures.append)
+                host,
+                operation,
+                RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    wire_observer=captures.append,
+                ),
             )
             gateway.client.timeout = httpx.Timeout(1, read=0.001)
             result = await request(gateway, operation, counter_tool)
         assert_wire(requests, captures, operation, 1)
         assert result.recovery_report.outcome == "succeeded"
+        assert timeouts[0]["read"] is None
 
     @pytest.mark.parametrize("finish", ["length", "content_filter"])
     async def should_reject_structured_parse_finish_failures_without_a_resend(
@@ -255,7 +225,17 @@ class DescribeCloudWireRecovery:
             b'"finish_reason": "length"', b'"finish_reason": "' + finish.encode() + b'"'
         )
         with scripted_http([(200, {}, data)]) as (host, requests):
-            gateway = cloud_gateway(host, "structured", RecoveryPolicy(max_attempts=3))
+            gateway = cloud_gateway(
+                host,
+                "structured",
+                RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                ),
+            )
             with pytest.raises(RecoveryError) as caught:
                 await gateway.complete_with_recovery(
                     model="gpt-4o",
@@ -299,7 +279,13 @@ class DescribeCloudWireRecovery:
                 host,
                 "ordinary",
                 RecoveryPolicy(
-                    max_attempts=2, base_delay=0, wire_observer=captures.append
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=2,
+                    base_delay=0,
+                    wire_observer=captures.append,
                 ),
             )
             result = await gateway.complete_with_recovery(
@@ -327,6 +313,10 @@ class DescribeCloudWireRecovery:
             requests,
         ):
             policy = RecoveryPolicy(
+                monotonic=clock,
+                wall=lambda: 0,
+                jitter=lambda ceiling: ceiling / 2,
+                sleeper=virtual_sleep,
                 max_attempts=2,
                 base_delay=0,
                 observer=lifecycle.append,
@@ -368,6 +358,7 @@ class DescribeCloudWireRecovery:
             return "allow"
 
         policy = RecoveryPolicy(
+            monotonic=clock,
             max_attempts=2,
             base_delay=4,
             jitter=lambda ceiling: 0.5,
@@ -491,6 +482,10 @@ class DescribeCloudWireRecovery:
             requests,
         ):
             policy = RecoveryPolicy(
+                monotonic=clock,
+                wall=lambda: 0,
+                jitter=lambda ceiling: ceiling / 2,
+                sleeper=virtual_sleep,
                 max_attempts=2,
                 base_delay=0,
                 admission=allow,
@@ -533,6 +528,10 @@ class DescribeCloudWireRecovery:
         lifecycle, captures = [], []
         with scripted_http([(503, {}, b"private")]) as (host, requests):
             policy = RecoveryPolicy(
+                monotonic=clock,
+                wall=lambda: 0,
+                jitter=lambda ceiling: ceiling / 2,
+                sleeper=virtual_sleep,
                 max_attempts=3,
                 base_delay=0,
                 admission=admission,
@@ -573,6 +572,10 @@ class DescribeCloudWireRecovery:
             [(status, {"Content-Length": "100"}, b"credential-sentinel")]
         ) as (host, requests):
             policy = RecoveryPolicy(
+                monotonic=clock,
+                wall=lambda: 0,
+                jitter=lambda ceiling: ceiling / 2,
+                sleeper=virtual_sleep,
                 max_attempts=3,
                 base_delay=0,
                 admission=admit,
@@ -621,7 +624,13 @@ class DescribeCloudWireRecovery:
             requests,
         ):
             policy = RecoveryPolicy(
-                max_attempts=3, admission=allow, wire_observer=captures.append
+                monotonic=clock,
+                wall=lambda: 0,
+                jitter=lambda ceiling: ceiling / 2,
+                sleeper=virtual_sleep,
+                max_attempts=3,
+                admission=allow,
+                wire_observer=captures.append,
             )
             with pytest.raises(RecoveryError) as caught:
                 await request(
@@ -634,12 +643,16 @@ class DescribeCloudWireRecovery:
 
 class DescribeCloudCancellation:
     @pytest.mark.parametrize("operation", OPERATIONS)
-    async def should_cancel_an_active_request_and_close_the_owned_socket(
+    async def should_cancel_an_active_request_and_close_the_owned_transport(
         self, operation, counter_tool
     ):
         call, captures, lifecycle = RecoveryCall(), [], []
         with unfinished_http() as (host, requests, started, closed):
             policy = RecoveryPolicy(
+                monotonic=clock,
+                wall=lambda: 0,
+                jitter=lambda ceiling: ceiling / 2,
+                sleeper=virtual_sleep,
                 max_attempts=3,
                 admission=allow,
                 observer=lifecycle.append,
@@ -652,12 +665,12 @@ class DescribeCloudCancellation:
                     counter_tool,
                 )
             )
-            assert await asyncio.wait_for(asyncio.to_thread(started.wait, 2), 3)
+            await started.wait()
             assert_wire(requests, captures, operation, 1)
             call.cancel()
             with pytest.raises(RecoveryError) as caught:
-                await asyncio.wait_for(task, 2)
-            assert await asyncio.wait_for(asyncio.to_thread(closed.wait, 2), 3)
+                await task
+            await closed.wait()
         assert_wire(requests, captures, operation, 1)
         assert isinstance(caught.value.inspect_cause(), asyncio.CancelledError)
         assert caught.value.report.outcome == "cancelled"
@@ -674,19 +687,26 @@ class DescribeCloudCancellation:
             gateway = cloud_gateway(
                 host,
                 "streaming",
-                RecoveryPolicy(max_attempts=3, observer=lifecycle.append),
+                RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                    observer=lifecycle.append,
+                ),
             )
             iterator = gateway.complete_stream_with_recovery(
                 model="gpt-4o",
                 messages=[LLMMessage(content="héllo")],
                 config=CompletionConfig(temperature=1.0, max_tokens=16384),
             )
-            first = await asyncio.wait_for(anext(iterator), 2)
+            first = await anext(iterator)
             assert first.kind == "progress"
             assert first.progress.observed_content
             assert first.progress.delivered_content == 0
-            await asyncio.wait_for(iterator.aclose(), 2)
-            assert await asyncio.wait_for(asyncio.to_thread(closed.wait, 2), 3)
+            await iterator.aclose()
+            await closed.wait()
         assert len(requests) == 1
         assert [event.transition for event in lifecycle] == [
             "attempt_started",
@@ -710,6 +730,9 @@ class DescribeCloudCancellation:
                 closed.set()
 
         policy = RecoveryPolicy(
+            monotonic=clock,
+            wall=lambda: 0,
+            jitter=lambda ceiling: ceiling / 2,
             max_attempts=3,
             base_delay=0,
             observer=lifecycle.append,
@@ -725,12 +748,12 @@ class DescribeCloudCancellation:
                     counter_tool,
                 )
             )
-            await asyncio.wait_for(entered.wait(), 2)
+            await entered.wait()
             assert not task.done()
             assert_wire(requests, captures, operation, 1)
             call.cancel()
             with pytest.raises(RecoveryError) as caught:
-                await asyncio.wait_for(task, 2)
+                await task
         assert closed.is_set()
         assert_wire(requests, captures, operation, 1)
         error = caught.value
@@ -763,6 +786,10 @@ class DescribeCloudCancellation:
             requests,
         ):
             policy = RecoveryPolicy(
+                monotonic=clock,
+                wall=lambda: 0,
+                jitter=lambda ceiling: ceiling / 2,
+                sleeper=virtual_sleep,
                 max_attempts=2,
                 base_delay=0,
                 admission=admit,
@@ -771,11 +798,11 @@ class DescribeCloudCancellation:
             task = asyncio.create_task(
                 request(cloud_gateway(host, operation, policy), operation, counter_tool)
             )
-            await asyncio.wait_for(entered.wait(), 2)
+            await entered.wait()
             assert_wire(requests, captures, operation, 1)
             assert not task.done()
             release.set()
-            result = await asyncio.wait_for(task, 2)
+            result = await task
         assert_wire(requests, captures, operation, 2)
         assert result.recovery_report.outcome == "succeeded"
 
@@ -792,7 +819,12 @@ class DescribeCloudPrivacy:
             [(503, {"X-Request-ID": secret, "Warning": secret}, data)]
         ) as (host, requests):
             policy = RecoveryPolicy(
-                observer=lifecycle.append, wire_observer=captures.append
+                monotonic=clock,
+                wall=lambda: 0,
+                jitter=lambda ceiling: ceiling / 2,
+                sleeper=virtual_sleep,
+                observer=lifecycle.append,
+                wire_observer=captures.append,
             )
             with pytest.raises(RecoveryError) as caught:
                 await request(
@@ -842,7 +874,13 @@ class DescribeCloudPrivacy:
                 host,
                 "anthropic",
                 RecoveryPolicy(
-                    max_attempts=3, wire_observer=capture, observer=lifecycle.append
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                    wire_observer=capture,
+                    observer=lifecycle.append,
                 ),
             )
             with pytest.raises(RecoveryError) as caught:
@@ -877,7 +915,13 @@ class DescribeOpenAIStructuredBoundary:
             with pytest.raises(ValueError, match="not strict"):
                 gateway.complete(**args)
             assert requests == []
-            gateway.recovery_policy = RecoveryPolicy(max_attempts=3)
+            gateway.recovery_policy = RecoveryPolicy(
+                monotonic=clock,
+                wall=lambda: 0,
+                jitter=lambda ceiling: ceiling / 2,
+                sleeper=virtual_sleep,
+                max_attempts=3,
+            )
             with pytest.raises(RecoveryError) as caught:
                 await gateway.complete_with_recovery(**args)
         assert requests == []
@@ -888,7 +932,17 @@ class DescribeOpenAIStructuredBoundary:
 class DescribeAnthropicCapabilityBoundary:
     async def should_reject_unsupported_configured_json_format_before_dispatch(self):
         with scripted_http([(200, {}, success("anthropic"))]) as (host, requests):
-            gateway = cloud_gateway(host, "anthropic", RecoveryPolicy(max_attempts=3))
+            gateway = cloud_gateway(
+                host,
+                "anthropic",
+                RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                ),
+            )
             with pytest.raises(RecoveryError) as caught:
                 await gateway.complete_with_recovery(
                     model="claude-test",
@@ -910,7 +964,16 @@ class DescribeAnthropicCapabilityBoundary:
         ) as (host, requests):
             broker = broker_factory(
                 cloud_gateway(
-                    host, "anthropic", RecoveryPolicy(max_attempts=2, base_delay=0)
+                    host,
+                    "anthropic",
+                    RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        max_attempts=2,
+                        base_delay=0,
+                    ),
                 )
             )
             session = ChatSession(broker, tokenizer_gateway=broker.tokenizer)
@@ -930,7 +993,17 @@ class DescribeAnthropicCapabilityBoundary:
         self, operation, counter_tool
     ):
         with scripted_http([]) as (host, requests):
-            gateway = cloud_gateway(host, "anthropic", RecoveryPolicy(max_attempts=3))
+            gateway = cloud_gateway(
+                host,
+                "anthropic",
+                RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                ),
+            )
             args = {"model": "claude-test", "messages": [LLMMessage(content="private")]}
             args |= {
                 "tools": {"tools": [counter_tool]},
@@ -967,7 +1040,13 @@ class DescribeCloudRecovery:
         ):
             gateway = OpenAIGateway(api_key="private-key", base_url=host)
             gateway.recovery_policy = RecoveryPolicy(
-                max_attempts=3, wire_observer=capture, observer=lifecycle.append
+                monotonic=clock,
+                wall=lambda: 0,
+                jitter=lambda ceiling: ceiling / 2,
+                sleeper=virtual_sleep,
+                max_attempts=3,
+                wire_observer=capture,
+                observer=lifecycle.append,
             )
             gateway.recovery_call = None
             delivered = []

@@ -1,4 +1,4 @@
-"""EOF classification contracts through real public Ollama HTTP streams."""
+"""EOF classification contracts through public Ollama streams with an in-process transport."""
 
 import json
 import os
@@ -13,6 +13,7 @@ from mojentic.llm.gateways.ollama import OllamaGateway
 from mojentic.llm.gateways.ollama_recovery_spec import frame, scripted_http
 from mojentic.llm.gateways.ollama_stream_recovery_spec import allow, collect, ndjson
 from mojentic.llm.recovery import RecoveryError, RecoveryPolicy
+from scripts.inprocess_http import clock, virtual_sleep
 
 
 @pytest.fixture
@@ -65,6 +66,10 @@ class DescribeOllamaStreamEOF:
                 OllamaGateway(
                     host=host,
                     recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
                         max_attempts=2,
                         base_delay=0,
                         admission=allow,
@@ -134,6 +139,10 @@ class DescribeOllamaStreamEOF:
                 OllamaGateway(
                     host=host,
                     recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
                         max_attempts=2,
                         base_delay=0,
                         admission=admit,
@@ -207,6 +216,10 @@ class DescribeOllamaStreamEOF:
                 OllamaGateway(
                     host=host,
                     recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
                         max_attempts=2,
                         base_delay=0,
                         admission=admit,
@@ -286,6 +299,10 @@ class DescribeOllamaStreamEOF:
                 OllamaGateway(
                     host=host,
                     recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
                         max_attempts=3,
                         base_delay=0,
                         admission={True: None, False: admit}[decision is None],
@@ -407,6 +424,10 @@ class DescribeStreamEOFCallers:
             gateway = OllamaGateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
                     max_attempts=2,
                     base_delay=0,
                     admission={True: None, False: admit}[decision is None],
@@ -470,6 +491,10 @@ class DescribeStreamEOFCallers:
             gateway = OllamaGateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
                     max_attempts=2,
                     base_delay=0,
                     admission=allow,
@@ -521,6 +546,10 @@ class DescribeSharedEOFClassificationSafety:
             gateway = OllamaGateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
                     max_attempts=3,
                     base_delay=0,
                     admission=allow,

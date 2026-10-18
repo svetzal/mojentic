@@ -1,5 +1,3 @@
-import time
-
 from mojentic.tracer.tracer_events import (
     AgentInteractionTracerEvent,
     LLMCallTracerEvent,
@@ -19,7 +17,7 @@ class DescribeTracerEvents:
         Test creating a base tracer event.
         """
         # Given / When
-        event = TracerEvent(source=DescribeTracerEvents, timestamp=time.time())
+        event = TracerEvent(source=DescribeTracerEvents, timestamp=1700000000.0)
 
         # Then
         assert isinstance(event, TracerEvent)
@@ -34,7 +32,7 @@ class DescribeTracerEvents:
         messages = [{"role": "system", "content": "You are a helpful assistant"}]
         event = LLMCallTracerEvent(
             source=DescribeTracerEvents,
-            timestamp=time.time(),
+            timestamp=1700000000.0,
             model="test-model",
             messages=messages,
             temperature=0.7,
@@ -55,7 +53,7 @@ class DescribeTracerEvents:
         # Given / When
         event = LLMResponseTracerEvent(
             source=DescribeTracerEvents,
-            timestamp=time.time(),
+            timestamp=1700000000.0,
             model="test-model",
             content="This is a test response",
             call_duration_ms=150.5,
@@ -76,7 +74,7 @@ class DescribeTracerEvents:
         arguments = {"query": "test query"}
         event = ToolCallTracerEvent(
             source=DescribeTracerEvents,
-            timestamp=time.time(),
+            timestamp=1700000000.0,
             tool_name="test-tool",
             arguments=arguments,
             result="test result",
@@ -97,7 +95,7 @@ class DescribeTracerEvents:
         # Given / When
         event = AgentInteractionTracerEvent(
             source=DescribeTracerEvents,
-            timestamp=time.time(),
+            timestamp=1700000000.0,
             from_agent="AgentA",
             to_agent="AgentB",
             event_type="RequestEvent",

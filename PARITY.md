@@ -24,3 +24,14 @@ The October 12 root recovery amendment governs these decisions. Exception
 types alone do not establish nonacceptance. Remaining initiative work stays separate. The coordinated publication
 hold remains until all six ports satisfy owner scope and the owner authorizes
 release.
+
+## Deterministic Python verification
+
+Python's public API and binding decisions are unchanged. Recovery, reasoning,
+request fidelity, model metadata, streaming progress and first-token timing now
+verify against in-process HTTP transports and injected clocks/sleepers. All
+library tests reject network sockets and blocking sleeps. Both installed-wheel
+verification scripts retain their public entrypoints and contract coverage.
+Root recovery and metadata contract references match `mojentic-unify@4ae2f73`.
+Current decisions, contract hashes and results are maintained in
+`CONFORMANCE-3.0.0.md` and `RECOVERY-CONFORMANCE.md`.

@@ -1,117 +1,59 @@
-# Testing Guidelines
+# Testing
 
-## Specification-Style Testing
+Run the library specifications with `uv run pytest --cov --cov-fail-under=85`.
+Specifications live beside implementation modules as `*_spec.py`, with `Describe*`
+classes and `should_*` methods. Separate setup, action and assertions with blank
+lines. Test names explain behavior; method docstrings and phase comments add no
+required evidence.
 
-Mojentic uses a specification-style approach to testing that makes tests more readable and maintainable. This approach helps tests serve as both verification and documentation of the system's behavior.
+## Public APIs and I/O doubles
 
-### Key Principles
+Drive the API as a caller does. Real brokers, chat sessions, provider SDKs,
+decoders and recovery engines execute normally. Substitute gateway, HTTP
+transport, clock and sleeper boundaries only. Use `mocker.Mock(spec=GatewayClass)`
+for gateway mocks. Never patch SDK clients or private library methods in new tests.
 
-1. **Descriptive Naming**
-   - Use `*_spec.py` suffix for specification files
-   - Name test classes with `Describe` prefix
-   - Name test methods with `should_` prefix
-   - Names should read like natural language specifications
+`scripts/inprocess_http.py` supplies the shared HTTP transport double used by
+recovery, request fidelity, native reasoning, metadata and first-token specs.
+It intercepts both httpx and the OpenAI SDK's httpx2 network transport. Responses
+come from existing versioned contract cases or their documented provider
+response envelopes. Capture assertions compare encoded bytes, full JSON payloads,
+exact accepted IDs/codes and lifecycle order. A count alone is insufficient.
+The shared fixture exports remain available from their original spec modules.
 
-2. **Hierarchical Organization**
-   ```python
-   class DescribeComponent:
-       """Specification for the Component"""
+`scripted_http` supports finite statuses, headers, body chunks, injected read
+errors and truncated responses. Chunk delays advance a virtual monotonic clock;
+they never sleep. `unfinished_http` exposes started/closed events for cancelling
+an active send or closing a paused response. Use these events to prove cleanup.
+`virtual_sleep` records retry time on that clock. Inject deterministic jitter and
+use a scheduler clock when testing a pending budget deadline. First-token tests
+use exact binary-fraction values such as 31.25 ms and 156.25 ms.
 
-       class DescribeSpecificFeature:
-           """Specifications for a specific feature"""
+The autouse socket guard rejects AF_INET/AF_INET6 socket construction, DNS,
+connect and bind operations. It rejects blocking sleeps and substitutes a
+cooperative asynchronous sleeper. asyncio's internal Unix socketpair is allowed.
+Tests must explicitly inject a tokenizer gateway when token math is incidental,
+so a cold tiktoken cache cannot trigger a download. No live provider, service,
+local server, registry, credential or model installation is required.
 
-           def should_behave_in_specific_way(self):
-               """Test specific behavior"""
-   ```
+Dispatcher and recursive-agent specs synchronize on public results and events.
+Tool-runner specs assert active invocation counts and completion order; realtime
+interruption waits for tool entry and cleanup. No elapsed-time bound constitutes
+acceptance evidence. GitHub Actions jobs carry explicit time limits to bound
+broken or deadlocked runs.
 
-3. **Given-When-Then Pattern**
-   - Document scenarios in docstrings using Given-When-Then
-   - Use a blank line between Given, When, and Then sections
-   ```python
-   def should_handle_specific_case(self):
-       """
-       Given some initial condition
-       When an action occurs
-       Then expect specific outcome
-       """
-       initial_setup()
+## Packaged verification
 
-       result = perform_action()
+Both existing verification scripts retain their installed-wheel checks and
+public API responsibilities. Run them outside the checkout after installing the
+built wheel into a fresh uv environment. They load only JSON contracts from the
+checkout and share the in-process transport helper beside the scripts. They
+reject source production imports and network access. See the exact commands,
+source identity, contract hashes and actual outcomes in
+`CONFORMANCE-3.0.0.md` and
+`RECOVERY-CONFORMANCE.md` at the repository root.
 
-       assert_expected_outcome(result)
-   ```
-
-4. **Test Location**
-   - Co-locate tests with implementation files
-   - Use `*_spec.py` alongside the implementation file
-   - Example: `llm_broker.py` and `llm_broker_spec.py`
-
-### Example
-
-```python
-class DescribeLLMBroker:
-    """
-    Specification for the LLMBroker class which handles interactions with Language Learning Models.
-    """
-
-    class DescribeMessageGeneration:
-        """
-        Specifications for generating messages through the LLM broker
-        """
-
-        def should_generate_simple_response_for_user_message(self, llm_broker):
-            """
-            Given a simple user message
-            When generating a response
-            Then it should return the LLM's response content
-            """
-            # Given
-            messages = [LLMMessage(role=MessageRole.User, content="Hello")]
-
-            # When
-            result = llm_broker.generate(messages)
-
-            # Then
-            assert result == expected_response
-```
-
-### Best Practices
-
-1. **Clear Documentation**
-   - Always include docstrings for test classes and methods
-   - Use Given-When-Then format in docstrings
-   - Document edge cases and special conditions
-
-2. **Test Organization**
-   - Group related tests in nested classes
-   - Use descriptive names that explain the behavior
-   - Keep test methods focused and concise
-
-3. **Fixtures and Setup**
-   - Use pytest fixtures for common setup
-   - Keep setup code minimal and clear
-   - Document fixture purpose and usage
-
-4. **Assertions**
-   - Make assertions clear and specific
-   - Include meaningful error messages
-   - Test one behavior per test method
-
-### Running Tests
-
-```bash
-# Run all tests
-pytest
-
-# Run specific specification
-pytest path/to/specific_spec.py
-
-# Show specification-style output
-pytest --verbose
-```
-
-### Additional Resources
-
-- [Pytest Documentation](https://docs.pytest.org/)
-- [BDD with Pytest](https://pytest-bdd.readthedocs.io/)
-- [Writing Good Tests](https://docs.pytest.org/en/stable/goodpractices.html)
+Run `uv run flake8 src`, `uv run ruff check src`, `uv run bandit -c .bandit -r src`,
+`uv run pip-audit`, and `uv run mkdocs build` as well as the complete pytest gate.
+The lockfile export audit checks locked dependencies; package-manager and audit
+commands may access registries, while the tests and verification scripts may not.

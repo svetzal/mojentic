@@ -1,5 +1,4 @@
 import asyncio
-from unittest.mock import MagicMock
 
 import pytest
 import pytest_asyncio
@@ -42,11 +41,11 @@ class SyncTestAgent:
 
     def __init__(self):
         # Create a mock for tracking calls
-        self._mock = MagicMock()
+        self.received = []
 
     def receive_event(self, event):
         # Track the call
-        self._mock(event)
+        self.received.append(event)
 
         if isinstance(event, SampleEvent):
             return [
@@ -60,7 +59,7 @@ class SyncTestAgent:
 
     def assert_called_once(self):
         # Delegate to the mock
-        self._mock.assert_called_once()
+        assert len(self.received) == 1
 
 
 @pytest.fixture
@@ -91,7 +90,7 @@ async def dispatcher(router):
 
 
 @pytest.mark.asyncio
-async def test_async_dispatcher_init(router):
+async def should_dispatcher_init(router):
     """Test that the AsyncDispatcher initializes correctly."""
     dispatcher = AsyncDispatcher(router)
 
@@ -102,7 +101,7 @@ async def test_async_dispatcher_init(router):
 
 
 @pytest.mark.asyncio
-async def test_async_dispatcher_start_stop(router):
+async def should_dispatcher_start_stop(router):
     """Test that the AsyncDispatcher starts and stops correctly."""
     dispatcher = AsyncDispatcher(router)
 
@@ -117,7 +116,7 @@ async def test_async_dispatcher_start_stop(router):
 
 
 @pytest.mark.asyncio
-async def test_async_dispatcher_dispatch(dispatcher, router, async_agent):
+async def should_dispatcher_dispatch(dispatcher, router, async_agent):
     """Test that the AsyncDispatcher dispatches events correctly."""
     # Register the agent
     router.add_route(SampleEvent, async_agent)
@@ -127,14 +126,14 @@ async def test_async_dispatcher_dispatch(dispatcher, router, async_agent):
     dispatcher.dispatch(event)
 
     # Wait for the event to be processed
-    await dispatcher.wait_for_empty_queue(timeout=1)
+    await dispatcher.wait_for_empty_queue()
 
     # The event should have been processed and removed from the queue
     assert len(dispatcher.event_queue) == 0
 
 
 @pytest.mark.asyncio
-async def test_async_dispatcher_with_async_agent(dispatcher, router, async_agent):
+async def should_dispatcher_with_async_agent(dispatcher, router, async_agent):
     """Test that the AsyncDispatcher works with async agents."""
     # Register the agent
     router.add_route(SampleEvent, async_agent)
@@ -144,14 +143,14 @@ async def test_async_dispatcher_with_async_agent(dispatcher, router, async_agent
     dispatcher.dispatch(event)
 
     # Wait for the event to be processed
-    await dispatcher.wait_for_empty_queue(timeout=1)
+    await dispatcher.wait_for_empty_queue()
 
     # The event should have been processed and removed from the queue
     assert len(dispatcher.event_queue) == 0
 
 
 @pytest.mark.asyncio
-async def test_async_dispatcher_with_sync_agent(dispatcher, router, sync_agent):
+async def should_dispatcher_with_sync_agent(dispatcher, router, sync_agent):
     """Test that the AsyncDispatcher works with sync agents."""
     # Register the agent
     router.add_route(SampleEvent, sync_agent)
@@ -161,7 +160,7 @@ async def test_async_dispatcher_with_sync_agent(dispatcher, router, sync_agent):
     dispatcher.dispatch(event)
 
     # Wait for the event to be processed
-    await dispatcher.wait_for_empty_queue(timeout=1)
+    await dispatcher.wait_for_empty_queue()
 
     # The event should have been processed and removed from the queue
     assert len(dispatcher.event_queue) == 0
@@ -171,7 +170,7 @@ async def test_async_dispatcher_with_sync_agent(dispatcher, router, sync_agent):
 
 
 @pytest.mark.asyncio
-async def test_async_dispatcher_terminate_event(dispatcher, router):
+async def should_dispatcher_terminate_event(dispatcher, router):
     """Test that the AsyncDispatcher handles TerminateEvent correctly."""
 
     # Create a mock agent that returns a TerminateEvent
@@ -189,14 +188,14 @@ async def test_async_dispatcher_terminate_event(dispatcher, router):
     dispatcher.dispatch(event)
 
     # Wait a moment for the event to be processed
-    await asyncio.sleep(0.5)
+    await dispatcher.wait_for_empty_queue()
 
     # The dispatcher should have stopped
     assert dispatcher._stop_event.is_set()
 
 
 @pytest.mark.asyncio
-async def test_async_dispatcher_wait_for_empty_queue(dispatcher):
+async def should_dispatcher_wait_for_empty_queue(dispatcher):
     """Test that wait_for_empty_queue works correctly."""
     # Queue is initially empty
     assert await dispatcher.wait_for_empty_queue() is True
@@ -211,14 +210,14 @@ async def test_async_dispatcher_wait_for_empty_queue(dispatcher):
 
     # Wait for the queue to be empty with a sufficient timeout
     # The dispatcher should process all events
-    assert await dispatcher.wait_for_empty_queue(timeout=1) is True
+    assert await dispatcher.wait_for_empty_queue() is True
 
     # Verify the queue is empty
     assert len(dispatcher.event_queue) == 0
 
 
 @pytest.mark.asyncio
-async def test_async_dispatcher_batch_processing(dispatcher, router, async_agent):
+async def should_dispatcher_batch_processing(dispatcher, router, async_agent):
     """Test that the AsyncDispatcher processes events in batches."""
     # Register the agent
     router.add_route(SampleEvent, async_agent)
@@ -232,14 +231,14 @@ async def test_async_dispatcher_batch_processing(dispatcher, router, async_agent
         dispatcher.dispatch(event)
 
     # Wait for all events to be processed
-    await dispatcher.wait_for_empty_queue(timeout=2)
+    await dispatcher.wait_for_empty_queue()
 
     # All events should have been processed
     assert len(dispatcher.event_queue) == 0
 
 
 @pytest.mark.asyncio
-async def test_async_dispatcher_correlation_id(dispatcher):
+async def should_dispatcher_correlation_id(dispatcher):
     """Test that the AsyncDispatcher assigns correlation_id if not provided."""
     # Create an event without a correlation_id
     event = SampleEvent(source=str, message="Hello")
@@ -257,12 +256,14 @@ class DescribeAsyncDispatcherInFlightTracking:
     async def should_wait_for_in_flight_agent_followups(self, router):
         first_agent_received = []
         second_agent_received = []
+        entered, release = asyncio.Event(), asyncio.Event()
 
         class SlowFollowUpAgent(BaseAsyncAgent):
             async def receive_event_async(self, event):
                 if isinstance(event, SampleEvent):
                     first_agent_received.append(event)
-                    await asyncio.sleep(0.2)
+                    entered.set()
+                    await release.wait()
                     return [
                         SampleResponseEvent(
                             source=type(self),
@@ -290,7 +291,12 @@ class DescribeAsyncDispatcherInFlightTracking:
         event = SampleEvent(source=str, message="trigger")
         dispatcher.dispatch(event)
 
-        result = await dispatcher.wait_for_empty_queue(timeout=2)
+        await entered.wait()
+        waiting = asyncio.create_task(dispatcher.wait_for_empty_queue())
+        await asyncio.sleep(0)
+        assert not waiting.done()
+        release.set()
+        result = await waiting
 
         await dispatcher.stop()
 

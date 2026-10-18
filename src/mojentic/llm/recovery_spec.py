@@ -10,6 +10,7 @@ from mojentic.llm.recovery import (
     RecoveryPolicyError,
     parse_retry_after,
 )
+from scripts.inprocess_http import clock, virtual_sleep
 
 
 class DescribeRecoveryPolicy:
@@ -18,7 +19,12 @@ class DescribeRecoveryPolicy:
     )
     def should_bound_exponential_jitter_without_overflow(self, attempt, expected):
         policy = RecoveryPolicy(
-            base_delay=1, delay_ceiling=3, jitter=lambda ceiling: ceiling / 2
+            monotonic=clock,
+            wall=lambda: 0,
+            sleeper=virtual_sleep,
+            base_delay=1,
+            delay_ceiling=3,
+            jitter=lambda ceiling: ceiling / 2,
         )
         failure = Failure(
             operation="ordinary",
@@ -76,7 +82,13 @@ class DescribeRecoveryPolicy:
         async def admission(context):
             return "reject"
 
-        policy = RecoveryPolicy(admission=admission)
+        policy = RecoveryPolicy(
+            monotonic=clock,
+            wall=lambda: 0,
+            jitter=lambda ceiling: ceiling / 2,
+            sleeper=virtual_sleep,
+            admission=admission,
+        )
 
         assert "admission" not in policy.model_dump()
         assert "admission" not in repr(policy)

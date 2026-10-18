@@ -1,149 +1,973 @@
 {
-  "archive_event": "evt_8b85e0db95571847fade0956",
-  "archive_run": "00f265d2-4c38-4750-93ea-c900633988a1",
-  "session": "d720ac54-50bd-41b0-af9a-5e67bfae7cf2",
-  "earliest_acceptance": {
-    "session_item": "item_15",
-    "baseline_commit": "44e416eb87b30859cc5628a0d51b6ff95d987048",
-    "command": "UV_CACHE_DIR=/tmp/mojentic-uv-cache foundry capture --log-dir .foundry/logs -- uv run pytest src/mojentic/llm/gateways/anthropic_history_spec.py src/mojentic/llm/gateways/first_token_spec.py -q",
-    "exit_code": 0,
-    "passed": 111,
-    "seconds": 14.59,
-    "coverage_percent": 47,
-    "coverage_scope": "Focused run; not whole-suite coverage",
-    "selected_modules_sha256": {
-      "src/mojentic/llm/gateways/anthropic_history_spec.py": "02366c8668b70f4f453565430964041f26d2a94622308c4a233a4ff349097852",
-      "src/mojentic/llm/gateways/first_token_spec.py": "a5e7155751dc45f3897068b4b31ef6a5504d71171db53bce490ed1085475a0ac"
-    },
-    "selected_test_identities": [
-      "src.mojentic.llm.gateways.anthropic_history_spec.DescribeAnthropicHistory::should_resend_identical_full_history_with_stable_logical_identity",
-      "src.mojentic.llm.gateways.anthropic_history_spec.DescribeAnthropicHistory::should_preserve_ordered_history_system_images_controls_and_response[None]",
-      "src.mojentic.llm.gateways.anthropic_history_spec.DescribeAnthropicHistory::should_preserve_ordered_history_system_images_controls_and_response[policy1]",
-      "src.mojentic.llm.gateways.anthropic_history_spec.DescribeAnthropicHistory::should_preserve_explicit_controls_and_absent_system[controls0-expected0-None]",
-      "src.mojentic.llm.gateways.anthropic_history_spec.DescribeAnthropicHistory::should_preserve_explicit_controls_and_absent_system[controls0-expected0-policy1]",
-      "src.mojentic.llm.gateways.anthropic_history_spec.DescribeAnthropicHistory::should_preserve_explicit_controls_and_absent_system[controls1-expected1-None]",
-      "src.mojentic.llm.gateways.anthropic_history_spec.DescribeAnthropicHistory::should_preserve_explicit_controls_and_absent_system[controls1-expected1-policy1]",
-      "src.mojentic.llm.gateways.anthropic_history_spec.DescribeAnthropicHistory::should_preserve_explicit_controls_and_absent_system[controls2-expected2-None]",
-      "src.mojentic.llm.gateways.anthropic_history_spec.DescribeAnthropicHistory::should_preserve_explicit_controls_and_absent_system[controls2-expected2-policy1]",
-      "src.mojentic.llm.gateways.anthropic_history_spec.DescribeAnthropicHistory::should_send_first_assistant_answer_in_second_chat_turn[None]",
-      "src.mojentic.llm.gateways.anthropic_history_spec.DescribeAnthropicHistory::should_send_first_assistant_answer_in_second_chat_turn[policy1]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_preserve_invalid_stream_event_for_noniterable_choices[openai]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_preserve_invalid_stream_event_for_noniterable_choices[omlx]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_preserve_content_timing_before_invalid_choices[openai]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_preserve_content_timing_before_invalid_choices[omlx]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_retain_recovery_timing_immediately_after_public_close[legacy-ollama]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_retain_recovery_timing_immediately_after_public_close[legacy-omlx]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_retain_recovery_timing_immediately_after_public_close[legacy-openai]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_retain_recovery_timing_immediately_after_public_close[broker-ollama]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_retain_recovery_timing_immediately_after_public_close[broker-omlx]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_retain_recovery_timing_immediately_after_public_close[broker-openai]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_retain_recovery_timing_immediately_after_public_close[session-ollama]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_retain_recovery_timing_immediately_after_public_close[session-omlx]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_retain_recovery_timing_immediately_after_public_close[session-openai]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_leave_unsent_recovery_close_without_timing[legacy-ollama]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_leave_unsent_recovery_close_without_timing[legacy-omlx]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_leave_unsent_recovery_close_without_timing[legacy-openai]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_leave_unsent_recovery_close_without_timing[broker-ollama]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_leave_unsent_recovery_close_without_timing[broker-omlx]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_leave_unsent_recovery_close_without_timing[broker-openai]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_leave_unsent_recovery_close_without_timing[session-ollama]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_leave_unsent_recovery_close_without_timing[session-omlx]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_leave_unsent_recovery_close_without_timing[session-openai]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_exclude_capture_and_lazy_delay_at_actual_dispatch",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_supported_public_routes[events-ollama]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_supported_public_routes[events-omlx]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_supported_public_routes[events-openai]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_supported_public_routes[legacy-ollama]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_supported_public_routes[legacy-omlx]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_supported_public_routes[legacy-openai]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_supported_public_routes[broker-ollama]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_supported_public_routes[broker-omlx]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_supported_public_routes[broker-openai]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_supported_public_routes[session-ollama]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_supported_public_routes[session-omlx]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_supported_public_routes[session-openai]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_first_wire_frame_and_terminal_errors[thinking-success-ollama]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_first_wire_frame_and_terminal_errors[thinking-success-omlx]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_first_wire_frame_and_terminal_errors[thinking-success-openai]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_first_wire_frame_and_terminal_errors[thinking-failure-ollama]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_first_wire_frame_and_terminal_errors[thinking-failure-omlx]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_first_wire_frame_and_terminal_errors[thinking-failure-openai]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_first_wire_frame_and_terminal_errors[content-success-ollama]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_first_wire_frame_and_terminal_errors[content-success-omlx]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_first_wire_frame_and_terminal_errors[content-success-openai]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_first_wire_frame_and_terminal_errors[content-failure-ollama]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_first_wire_frame_and_terminal_errors[content-failure-omlx]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_first_wire_frame_and_terminal_errors[content-failure-openai]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_first_wire_frame_and_terminal_errors[arguments-success-ollama]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_first_wire_frame_and_terminal_errors[arguments-success-omlx]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_first_wire_frame_and_terminal_errors[arguments-success-openai]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_first_wire_frame_and_terminal_errors[arguments-failure-ollama]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_first_wire_frame_and_terminal_errors[arguments-failure-omlx]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_first_wire_frame_and_terminal_errors[arguments-failure-openai]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_first_wire_frame_and_terminal_errors[name-only-success-ollama]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_first_wire_frame_and_terminal_errors[name-only-success-omlx]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_first_wire_frame_and_terminal_errors[name-only-success-openai]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_first_wire_frame_and_terminal_errors[name-only-failure-ollama]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_first_wire_frame_and_terminal_errors[name-only-failure-omlx]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_first_wire_frame_and_terminal_errors[name-only-failure-openai]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_first_wire_frame_and_terminal_errors[empty-success-ollama]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_first_wire_frame_and_terminal_errors[empty-success-omlx]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_first_wire_frame_and_terminal_errors[empty-success-openai]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_first_wire_frame_and_terminal_errors[empty-failure-ollama]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_first_wire_frame_and_terminal_errors[empty-failure-omlx]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_first_wire_frame_and_terminal_errors[empty-failure-openai]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_include_admitted_retry_delay_on_one_clock[ollama]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_include_admitted_retry_delay_on_one_clock[omlx]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_include_admitted_retry_delay_on_one_clock[openai]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_report_dispatched_failure_without_inventing_tokens[{\"error\":\"failed\"}\\n-ollama]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_report_dispatched_failure_without_inventing_tokens[{\"error\":\"failed\"}\\n-omlx]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_report_dispatched_failure_without_inventing_tokens[{\"error\":\"failed\"}\\n-openai]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_report_dispatched_failure_without_inventing_tokens[not-json\\n-ollama]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_report_dispatched_failure_without_inventing_tokens[not-json\\n-omlx]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_report_dispatched_failure_without_inventing_tokens[not-json\\n-openai]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_keep_local_close_evidence_without_a_synthetic_terminal[ollama]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_keep_local_close_evidence_without_a_synthetic_terminal[omlx]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_keep_local_close_evidence_without_a_synthetic_terminal[openai]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_argument_fragment_before_later_failure[omlx]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_measure_argument_fragment_before_later_failure[openai]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_reset_continuation_clock_and_preserve_exact_tool_history[False-ollama]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_reset_continuation_clock_and_preserve_exact_tool_history[False-omlx]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_reset_continuation_clock_and_preserve_exact_tool_history[False-openai]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_reset_continuation_clock_and_preserve_exact_tool_history[True-ollama]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_reset_continuation_clock_and_preserve_exact_tool_history[True-omlx]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_reset_continuation_clock_and_preserve_exact_tool_history[True-openai]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_not_invent_dispatch_evidence_for_unsupported_model",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_keep_timing_on_explicit_recovery_cancellation[headers-ollama]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_keep_timing_on_explicit_recovery_cancellation[headers-omlx]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_keep_timing_on_explicit_recovery_cancellation[headers-openai]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_keep_timing_on_explicit_recovery_cancellation[body-ollama]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_keep_timing_on_explicit_recovery_cancellation[body-omlx]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_keep_timing_on_explicit_recovery_cancellation[body-openai]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_not_report_duration_if_request_capture_rejects_dispatch[ollama]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_not_report_duration_if_request_capture_rejects_dispatch[omlx]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_not_report_duration_if_request_capture_rejects_dispatch[openai]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_accept_old_evidence_without_optional_client_fields[CompletionMetadata]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_accept_old_evidence_without_optional_client_fields[StreamMetrics]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_ignore_token_frames_after_terminal_proof[ollama]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_ignore_token_frames_after_terminal_proof[omlx]",
-      "src.mojentic.llm.gateways.first_token_spec.DescribeFirstTokenTiming::should_ignore_token_frames_after_terminal_proof[openai]"
-    ],
-    "identity_recovery": "Original -q log prints dots, not node IDs. Identities recovered from archived final JUnit for these two modules; their source bytes match the original clean baseline exactly. This is retrospective identification, not a claim that -v was used."
+  "source": {
+    "base_commit": "d37a4cac069f5b2f514299132842f842820f8721",
+    "working_tree_source_id": "503e85601f3aca1e3b440b52ceeb57da8cc423d1c53dbe5828576e5b78012637",
+    "manifest": "docs/release_3_0_0_source.sha256",
+    "manifest_sha256": "5f7a3c11552546f768a91f31609aca702a0099bda9ce8c96325c8effc8e24a7f",
+    "state": "uncommitted correction; source ID includes public consumers, providers, specs, both verification scripts and transport helper"
   },
-  "chronology": [
-    "item_15: earliest recovered acceptance, exit 0, 111 passed before source/test expansion; real production HTTP suites, no rejecting run at this stage.",
-    "item_44: first full-suite result, exit 0, 2,565 passed in 122.62s, before the later clock mutation. The expanded public-boundary draft separately had verifier errors (57 failed/9 passed: invalid session signature and expected HTTP phase), subsequently corrected.",
-    "item_84: injected-clock draft, exit 1, five TypeErrors for unsupported clock parameter; this is not a production HTTP rejection.",
-    "item_88: later temporary constant-clock mutation rejected by should_exclude_capture_and_lazy_delay_at_actual_dispatch, exit 1, 1 failed/99 deselected, 25 <= 0.0 assertion.",
-    "item_89: monotonic clock restored, same command exit 0, 1 passed/99 deselected. This later check does not establish an initial rejecting probe."
+  "contracts": [
+    {
+      "path": "TRANSIENT-RECOVERY-2026-10.md",
+      "version": "root-recovery@4ae2f73",
+      "sha256": "141d4ee5fcfbc18c940a7e7fe8d5ba9e381abc41a6d03f300f541e0fd5236f9d"
+    },
+    {
+      "path": "src/mojentic/llm/contracts/context_window_v1.json",
+      "version": "context-window-v1",
+      "sha256": "f93a35e4de9c55e87c0a55551d4ab735289b040bbb673d87269fd3b4b8e41466"
+    },
+    {
+      "path": "src/mojentic/llm/gateways/fixtures/contracts/first_token_v1.json",
+      "version": "py-stream-first-token-v1",
+      "sha256": "78dc6691c65ba84faa6e9a3490e6361bc3330dfd8341a27de5a4d7c2af833ab5"
+    },
+    {
+      "path": "src/mojentic/llm/gateways/fixtures/contracts/native_reasoning_v1.json",
+      "version": "native-reasoning-v1",
+      "sha256": "be212ff011125f1d0927e3a65a0d7cd87eedbf9f5ff69e803b4112a80ae6b1f6"
+    },
+    {
+      "path": "src/mojentic/llm/gateways/fixtures/contracts/request_fidelity_v1.json",
+      "version": "request-fidelity-v1",
+      "sha256": "6a5ebca721a9f9e84323d0118b543d5dc71c7f68bb7067b2cdf6ad40daddcfc8"
+    }
   ],
-  "later_clock_command": "UV_CACHE_DIR=/tmp/mojentic-uv-cache foundry capture --log-dir .foundry/logs -- uv run pytest src/mojentic/llm/gateways/first_token_spec.py -k exclude_capture_and_lazy_delay --no-cov -q",
-  "archived_log_sha256": {
-    "2-1792277181283396433.stdout.log": "bef9f1480cec08419d3a611fdf7c0623eed149d862ad0ce7a23ac64f3fce8acd",
-    "2-1792277181283396433.stderr.log": "26db2a5607ca2a4d954f05e9a24154e269a2e327041d6629138888bdff6827f6",
-    "2-1792277320245654133.stdout.log": "d75b25da4f5e6d275ad31164a6cf408c8a92960f61c9c8ea0e93f8eed5c70795",
-    "2-1792277621507529165.stdout.log": "45a378b203f84d081801053a377bbb03de20785168549ce2f9e0fdfe0a5e8315",
-    "2-1792277639750372746.stdout.log": "6151e0300ab5de184e66cc22f45bbdf4a11ac836d7564dc5f13d3c544fc5ef3c",
-    "2-1792277645878283056.stdout.log": "c787884dad6d7fbda3b0193d468287d127c35f688dc71245ce1eb42bf3641f48"
-  }
+  "verification_result": "2657 passed; no failures, errors or skips",
+  "coverage_percent": 88.13,
+  "counting": "Decision rows may overlap; cases_verified counts selected JUnit parameter cases, executable_tests groups them by source test function. Exact expected values and complete case inputs remain in the identified executable source.",
+  "decisions": [
+    {
+      "decision": "503 recovery and 504 exhaustion",
+      "specifications": [
+        "ollama_recovery_spec.py",
+        "omlx_recovery_spec.py",
+        "cloud_recovery_spec.py"
+      ],
+      "public_entrypoints": [
+        "complete",
+        "complete_with_recovery",
+        "generate",
+        "generate_response",
+        "generate_object",
+        "ChatSession.send"
+      ],
+      "expected": "503 retries only with permission; 504 stops at max_attempts; exact payload bytes persist, attempt IDs differ within one logical ID, lifecycle and complete history agree.",
+      "executable_tests": [
+        "src/mojentic/llm/gateways/cloud_recovery_spec.py::DescribeCloudWireRecovery::should_bound_504_with_complete_history",
+        "src/mojentic/llm/gateways/cloud_recovery_spec.py::DescribeCloudWireRecovery::should_recover_503_with_literal_bytes_private_evidence_and_exact_lifecycle",
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeRecoveryBoundaries::should_exhaust_504_with_complete_typed_history_and_private_echoes",
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeRecoveryBoundaries::should_recover_admitted_503_with_identical_bytes",
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeRecoveryBoundaries::should_require_explicit_permission_for_ambiguous_local_503",
+        "src/mojentic/llm/gateways/omlx_recovery_spec.py::DescribeOMLXWireRecovery::should_bound_504_exhaustion_without_success",
+        "src/mojentic/llm/gateways/omlx_recovery_spec.py::DescribeOMLXWireRecovery::should_recover_503_with_stable_exact_semantic_bytes_and_lifecycle"
+      ],
+      "cases_verified": 39,
+      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "exit_code": 0
+    },
+    {
+      "decision": "429 and Retry-After",
+      "specifications": [
+        "omlx_429_recovery_spec.py",
+        "cloud_recovery_spec.py",
+        "ollama_recovery_spec.py"
+      ],
+      "public_entrypoints": [
+        "complete_with_recovery",
+        "complete_stream_with_recovery"
+      ],
+      "expected": "Seconds, IMF-fixdate, RFC850 and asctime retain the provider minimum; invalid/absent dates use deterministic backoff; ceiling/budget refuses excessive delays.",
+      "executable_tests": [
+        "src/mojentic/llm/gateways/cloud_recovery_spec.py::DescribeCloudWireRecovery::should_refuse_retry_after_limits_before_admission",
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeRecoveryBoundaries::should_honor_retry_after_without_shortening_minima",
+        "src/mojentic/llm/gateways/omlx_429_recovery_spec.py::DescribeOMLX429Recovery::should_recover_429_only_after_admission_with_exact_wire_evidence",
+        "src/mojentic/llm/gateways/omlx_429_recovery_spec.py::DescribeOMLX429Recovery::should_refuse_429_minimum_outside_limits_without_another_send",
+        "src/mojentic/llm/gateways/omlx_429_recovery_spec.py::DescribeOMLX429Recovery::should_refuse_eligible_429_without_admission"
+      ],
+      "cases_verified": 56,
+      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "exit_code": 0
+    },
+    {
+      "decision": "Ambiguous local execution and no-hook admission",
+      "specifications": [
+        "recovery_admission_spec.py",
+        "ollama_recovery_spec.py",
+        "omlx_recovery_spec.py"
+      ],
+      "public_entrypoints": [
+        "complete",
+        "complete_with_recovery",
+        "complete_stream_with_recovery"
+      ],
+      "expected": "Ollama/oMLX ambiguous failures require admission; allow/reject/pending/undecided remain distinct. Remote eligible failures may retry without a hook.",
+      "executable_tests": [
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeHttpBoundaryCorrection::should_cancel_at_admission_and_backoff_callbacks_without_resending",
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeHttpBoundaryCorrection::should_refuse_callback_expiry_without_phantom_retry",
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribePublicCancellationAndMetadata::should_cancel_a_synchronous_chat_session_during_admission",
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeRecoveryBoundaries::should_require_explicit_permission_for_ambiguous_local_503",
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeRecoveryCancellation::should_cancel_pending_waits_and_never_resend",
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeRecoveryCancellation::should_expire_budget_while_admission_is_pending",
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeRecoveryCancellation::should_leave_admission_pending_until_allowed",
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeRecoveryEdgeEvidence::should_freeze_images_and_controls_once_before_admission",
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeRecoveryEdgeEvidence::should_refuse_admission_that_consumed_the_recovery_budget",
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeRecoveryEdgeEvidence::should_reject_after_a_pending_admission_without_another_wire_attempt",
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeRecoveryEdgeEvidence::should_require_admission_after_an_actual_read_timeout",
+        "src/mojentic/llm/gateways/omlx_recovery_spec.py::DescribeOMLXCancellation::should_cancel_pending_admission_and_backoff_without_a_new_request",
+        "src/mojentic/llm/gateways/omlx_recovery_spec.py::DescribeOMLXCancellation::should_leave_admission_pending_until_explicit_allow",
+        "src/mojentic/llm/gateways/omlx_recovery_spec.py::DescribeOMLXStreamSafety::should_require_admission_after_keepalive_and_reset_frame_indices",
+        "src/mojentic/llm/gateways/omlx_recovery_spec.py::DescribeOMLXWireRecovery::should_require_admission_for_ambiguous_local_failure",
+        "src/mojentic/llm/gateways/recovery_admission_spec.py::DescribeRecoveryAdmission::should_apply_admission_without_changing_retry_bytes",
+        "src/mojentic/llm/gateways/recovery_admission_spec.py::DescribeRecoveryAdmission::should_stop_pending_admission",
+        "src/mojentic/llm/gateways/recovery_admission_spec.py::DescribeRecoveryAdmission::should_surface_undecided_through_synchronous_public_apis"
+      ],
+      "cases_verified": 107,
+      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "exit_code": 0
+    },
+    {
+      "decision": "Evidenced nonacceptance",
+      "specifications": [
+        "recovery_admission_spec.py"
+      ],
+      "public_entrypoints": [
+        "complete_with_recovery",
+        "complete_stream_with_recovery"
+      ],
+      "expected": "Transport emits connection.connect_tcp.failed with ECONNREFUSED; first acceptance is no, retry succeeds without hook, exactly one provider request follows two dispatch captures. Capture-hook ConnectError and validation exceptions retain unknown.",
+      "executable_tests": [
+        "src/mojentic/llm/gateways/recovery_admission_spec.py::DescribeRecoveryAdmission::should_keep_acceptance_unknown_when_caller_validation_fails",
+        "src/mojentic/llm/gateways/recovery_admission_spec.py::DescribeRecoveryAdmission::should_not_invent_nonacceptance_from_a_capture_hook_exception",
+        "src/mojentic/llm/gateways/recovery_admission_spec.py::DescribeRecoveryAdmission::should_retry_evidenced_connection_refusal_without_hook"
+      ],
+      "cases_verified": 32,
+      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "exit_code": 0
+    },
+    {
+      "decision": "Active cancellation and cleanup",
+      "specifications": [
+        "ollama_stream_recovery_spec.py",
+        "omlx_recovery_spec.py",
+        "openai_recovery_lifecycle_spec.py",
+        "cloud_recovery_spec.py"
+      ],
+      "public_entrypoints": [
+        "complete_with_recovery",
+        "complete_stream_with_recovery"
+      ],
+      "expected": "After transport entry, cancellation closes the suspended transport coroutine/body, preserves CancelledError and attempt 1, emits attempt_started / attempt_failed / cancelled, and never resends.",
+      "executable_tests": [
+        "src/mojentic/llm/gateways/cloud_recovery_spec.py::DescribeCloudCancellation::should_cancel_an_active_request_and_close_the_owned_transport",
+        "src/mojentic/llm/gateways/ollama_stream_recovery_spec.py::DescribeStreamCancellation::should_close_active_request_on_cancellation",
+        "src/mojentic/llm/gateways/omlx_recovery_spec.py::DescribeOMLXCancellation::should_cancel_active_request_and_close_transport",
+        "src/mojentic/llm/gateways/openai_recovery_lifecycle_spec.py::DescribeOpenAICancellation::should_cancel_active_request_and_close_transport"
+      ],
+      "cases_verified": 12,
+      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "exit_code": 0
+    },
+    {
+      "decision": "Admission and backoff cancellation",
+      "specifications": [
+        "ollama_recovery_spec.py",
+        "omlx_recovery_spec.py",
+        "openai_recovery_lifecycle_spec.py",
+        "cloud_recovery_spec.py"
+      ],
+      "public_entrypoints": [
+        "complete_with_recovery",
+        "ChatSession.send",
+        "complete_stream_with_recovery"
+      ],
+      "expected": "Explicit cancellation and native task cancellation settle pending hooks/sleepers through finally cleanup with one send; synchronous session cancellation reaches its worker.",
+      "executable_tests": [
+        "src/mojentic/llm/gateways/cloud_recovery_spec.py::DescribeCloudCancellation::should_cancel_owned_admission_or_backoff",
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeHttpBoundaryCorrection::should_cancel_at_admission_and_backoff_callbacks_without_resending",
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribePublicCancellationAndMetadata::should_cancel_a_synchronous_chat_session_during_admission",
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeRecoveryCancellation::should_cancel_pending_waits_and_never_resend",
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeRecoveryEdgeEvidence::should_make_native_task_cancellation_authoritative",
+        "src/mojentic/llm/gateways/omlx_recovery_spec.py::DescribeOMLXCancellation::should_cancel_pending_admission_and_backoff_without_a_new_request",
+        "src/mojentic/llm/gateways/openai_recovery_lifecycle_spec.py::DescribeOpenAICancellation::should_cancel_pending_admission_and_backoff_without_a_new_request"
+      ],
+      "cases_verified": 27,
+      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "exit_code": 0
+    },
+    {
+      "decision": "Pending budget expiry and active-generation deadline",
+      "specifications": [
+        "recovery_admission_spec.py",
+        "ollama_recovery_spec.py"
+      ],
+      "public_entrypoints": [
+        "complete_with_recovery",
+        "complete"
+      ],
+      "expected": "Injected scheduler expiry closes pending admission and returns budget_exhausted. Active generation may finish after the retry deadline; no fixed read timeout is introduced.",
+      "executable_tests": [
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeRecoveryBoundaries::should_honor_retry_after_without_shortening_minima",
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeRecoveryCancellation::should_expire_budget_while_admission_is_pending",
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeRecoveryEdgeEvidence::should_allow_active_generation_to_finish_after_recovery_deadline",
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeRecoveryEdgeEvidence::should_refuse_admission_that_consumed_the_recovery_budget",
+        "src/mojentic/llm/gateways/recovery_admission_spec.py::DescribeRecoveryAdmission::should_stop_pending_admission"
+      ],
+      "cases_verified": 14,
+      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "exit_code": 0
+    },
+    {
+      "decision": "No fixed active read timeout",
+      "specifications": [
+        "cloud_recovery_spec.py"
+      ],
+      "public_entrypoints": [
+        "complete_with_recovery",
+        "complete_stream_with_recovery"
+      ],
+      "expected": "Captured HTTP transport timeout extension has read=None for ordinary/structured/stream/tool-stream/Anthropic operations, independently of configured SDK read timeout.",
+      "executable_tests": [
+        "src/mojentic/llm/gateways/cloud_recovery_spec.py::DescribeCloudWireRecovery::should_leave_active_generation_without_a_fixed_read_timeout"
+      ],
+      "cases_verified": 5,
+      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "exit_code": 0
+    },
+    {
+      "decision": "Paused stream and local close",
+      "specifications": [
+        "cloud_recovery_spec.py",
+        "ollama_stream_recovery_spec.py",
+        "omlx_recovery_spec.py",
+        "openai_recovery_lifecycle_spec.py",
+        "first_token_spec.py"
+      ],
+      "public_entrypoints": [
+        "complete_stream_with_recovery",
+        "complete_stream",
+        "generate_stream",
+        "ChatSession.send_stream"
+      ],
+      "expected": "Paused-consumer cancellation and iterator close settle local resources; close emits no invented public terminal event; unsent close has no timing.",
+      "executable_tests": [
+        "src/mojentic/llm/gateways/cloud_recovery_spec.py::DescribeCloudCancellation::should_close_a_paused_openai_consumer_without_explicit_cancellation",
+        "src/mojentic/llm/gateways/first_token_spec.py::DescribeFirstTokenTiming::should_keep_local_close_evidence_without_a_synthetic_terminal",
+        "src/mojentic/llm/gateways/first_token_spec.py::DescribeFirstTokenTiming::should_leave_unsent_recovery_close_without_timing",
+        "src/mojentic/llm/gateways/first_token_spec.py::DescribeFirstTokenTiming::should_retain_recovery_timing_immediately_after_public_close",
+        "src/mojentic/llm/gateways/ollama_stream_recovery_spec.py::DescribeStreamCancellation::should_cancel_terminal_telemetry_while_consumer_is_paused",
+        "src/mojentic/llm/gateways/omlx_recovery_spec.py::DescribeOMLXCancellation::should_cancel_while_terminal_telemetry_consumption_is_paused",
+        "src/mojentic/llm/gateways/omlx_recovery_spec.py::DescribeOMLXStreamSafety::should_preserve_terminal_telemetry_and_reject_length",
+        "src/mojentic/llm/gateways/openai_recovery_lifecycle_spec.py::DescribeOpenAICancellation::should_cancel_while_terminal_telemetry_consumption_is_paused",
+        "src/mojentic/llm/gateways/openai_recovery_lifecycle_spec.py::DescribeOpenAIStreamSafety::should_preserve_terminal_telemetry_and_reject_length"
+      ],
+      "cases_verified": 38,
+      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "exit_code": 0
+    },
+    {
+      "decision": "Partial reasoning/content/tool fragments",
+      "specifications": [
+        "readiness_boundary_spec.py",
+        "ollama_stream_eof_spec.py",
+        "ollama_stream_recovery_spec.py",
+        "omlx_recovery_spec.py",
+        "openai_recovery_lifecycle_spec.py"
+      ],
+      "public_entrypoints": [
+        "complete_stream_with_recovery",
+        "generate_stream",
+        "ChatSession.send_stream"
+      ],
+      "expected": "Each observed semantic channel interrupts without replay, including failed capture and partial/truncated EOF; raw/observed/delivered progress and safe lifecycle fields remain distinct.",
+      "executable_tests": [
+        "src/mojentic/llm/gateways/ollama_stream_recovery_spec.py::DescribeOllamaStreamRecovery::should_retain_observed_semantics_when_capture_fails_without_delivery",
+        "src/mojentic/llm/gateways/ollama_stream_recovery_spec.py::DescribeStreamCallerSafety::should_execute_completed_tool_once_and_preserve_subsequent_failure",
+        "src/mojentic/llm/gateways/ollama_stream_recovery_spec.py::DescribeStreamPrivacyAndCapture::should_capture_failures_before_semantics_with_truthful_wire_counts",
+        "src/mojentic/llm/gateways/ollama_stream_recovery_spec.py::DescribeStreamPrivacyAndCapture::should_record_capture_failure_before_cancel_when_both_occur",
+        "src/mojentic/llm/gateways/ollama_stream_recovery_spec.py::DescribeStreamPrivacyAndCapture::should_retain_observed_evidence_on_capture_failure_without_replay",
+        "src/mojentic/llm/gateways/omlx_recovery_spec.py::DescribeOMLXCaptureEvidence::should_retain_all_observed_channels_before_capture_failure",
+        "src/mojentic/llm/gateways/omlx_recovery_spec.py::DescribeOMLXStreamSafety::should_interrupt_observed_semantics_without_replay",
+        "src/mojentic/llm/gateways/openai_recovery_lifecycle_spec.py::DescribeOpenAICaptureEvidence::should_retain_all_observed_channels_before_capture_failure",
+        "src/mojentic/llm/gateways/openai_recovery_lifecycle_spec.py::DescribeOpenAIStreamSafety::should_interrupt_observed_semantics_without_replay",
+        "src/mojentic/llm/gateways/openai_recovery_lifecycle_spec.py::DescribeOpenAIStreamSafety::should_not_let_provider_model_metadata_mask_observed_semantics",
+        "src/mojentic/llm/gateways/readiness_boundary_spec.py::DescribeReadinessBoundary::should_surface_partial_semantics_without_replay_through_public_streams"
+      ],
+      "cases_verified": 57,
+      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "exit_code": 0
+    },
+    {
+      "decision": "Malformed frames, empty EOF and stream errors",
+      "specifications": [
+        "ollama_stream_eof_spec.py",
+        "ollama_stream_events_spec.py",
+        "openai_stream_events_spec.py",
+        "omlx_stream_spec.py",
+        "first_token_spec.py"
+      ],
+      "public_entrypoints": [
+        "complete_stream_events",
+        "complete_stream_with_recovery"
+      ],
+      "expected": "Malformed data and incomplete terminal frames retain typed protocol/transport causes; noniterable choices are INVALID_STREAM_EVENT, with preserved earlier content and timing.",
+      "executable_tests": [
+        "src/mojentic/llm/gateways/first_token_spec.py::DescribeFirstTokenTiming::should_preserve_content_timing_before_invalid_choices",
+        "src/mojentic/llm/gateways/first_token_spec.py::DescribeFirstTokenTiming::should_preserve_invalid_stream_event_for_noniterable_choices",
+        "src/mojentic/llm/gateways/ollama_stream_eof_spec.py::DescribeOllamaStreamEOF::should_block_unfinished_frame_even_with_admission",
+        "src/mojentic/llm/gateways/ollama_stream_eof_spec.py::DescribeOllamaStreamEOF::should_recover_clean_keepalive_eof_after_admission",
+        "src/mojentic/llm/gateways/ollama_stream_eof_spec.py::DescribeOllamaStreamEOF::should_reject_unfinished_frame_after_complete_keepalive",
+        "src/mojentic/llm/gateways/ollama_stream_eof_spec.py::DescribeOllamaStreamEOF::should_require_admission_and_bound_keepalive_eof_history",
+        "src/mojentic/llm/gateways/ollama_stream_eof_spec.py::DescribeStreamEOFCallers::should_propagate_clean_keepalive_eof_admission",
+        "src/mojentic/llm/gateways/ollama_stream_eof_spec.py::DescribeStreamEOFCallers::should_propagate_unfinished_frames_without_tool_execution",
+        "src/mojentic/llm/gateways/ollama_stream_events_spec.py::DescribeParseOllamaStream::should_reject_malformed_evidence_or_message",
+        "src/mojentic/llm/gateways/openai_stream_events_spec.py::DescribeParseOpenAIStream::should_report_malformed_frames_as_invalid",
+        "src/mojentic/llm/gateways/openai_stream_events_spec.py::should_reject_malformed_provider_evidence_with_one_terminal_error"
+      ],
+      "cases_verified": 40,
+      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "exit_code": 0
+    },
+    {
+      "decision": "Keepalive-only progress",
+      "specifications": [
+        "ollama_stream_eof_spec.py",
+        "omlx_recovery_spec.py",
+        "omlx_stream_spec.py",
+        "first_token_spec.py"
+      ],
+      "public_entrypoints": [
+        "complete_stream_events",
+        "complete_stream_with_recovery"
+      ],
+      "expected": "Keepalive bytes remain raw progress, with no semantic token or frame-index/provider-metadata pollution; empty success has no first token.",
+      "executable_tests": [
+        "src/mojentic/llm/gateways/first_token_spec.py::DescribeFirstTokenTiming::should_measure_first_wire_frame_and_terminal_errors",
+        "src/mojentic/llm/gateways/ollama_stream_eof_spec.py::DescribeOllamaStreamEOF::should_recover_clean_keepalive_eof_after_admission",
+        "src/mojentic/llm/gateways/ollama_stream_eof_spec.py::DescribeOllamaStreamEOF::should_reject_unfinished_frame_after_complete_keepalive",
+        "src/mojentic/llm/gateways/ollama_stream_eof_spec.py::DescribeOllamaStreamEOF::should_require_admission_and_bound_keepalive_eof_history",
+        "src/mojentic/llm/gateways/ollama_stream_eof_spec.py::DescribeStreamEOFCallers::should_propagate_clean_keepalive_eof_admission",
+        "src/mojentic/llm/gateways/omlx_recovery_spec.py::DescribeOMLXStreamSafety::should_require_admission_after_keepalive_and_reset_frame_indices",
+        "src/mojentic/llm/gateways/omlx_stream_spec.py::DescribeDropKeepaliveFrames::should_drop_frames_whose_model_is_keepalive",
+        "src/mojentic/llm/gateways/omlx_stream_spec.py::DescribeDropKeepaliveFrames::should_remove_the_keepalive_frame_from_every_fixture_stream"
+      ],
+      "cases_verified": 24,
+      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "exit_code": 0
+    },
+    {
+      "decision": "Permanent errors and eligibility controls",
+      "specifications": [
+        "typed_errors_spec.py",
+        "readiness_boundary_spec.py",
+        "cloud_recovery_spec.py",
+        "ollama_recovery_spec.py"
+      ],
+      "public_entrypoints": [
+        "complete",
+        "complete_with_recovery",
+        "generate",
+        "generate_response",
+        "generate_object",
+        "ChatSession.send"
+      ],
+      "expected": "400/401/unsupported/malformed responses do not replay blindly; selected statuses/categories, including 500/502, change eligibility; redirects never create hidden sends.",
+      "executable_tests": [
+        "src/mojentic/llm/gateways/cloud_recovery_spec.py::DescribeAnthropicCapabilityBoundary::should_reject_unsupported_configured_json_format_before_dispatch",
+        "src/mojentic/llm/gateways/cloud_recovery_spec.py::DescribeAnthropicCapabilityBoundary::should_reject_unsupported_recovery_before_dispatch",
+        "src/mojentic/llm/gateways/cloud_recovery_spec.py::DescribeCloudWireRecovery::should_keep_truncated_permanent_status_despite_transport_eligibility",
+        "src/mojentic/llm/gateways/cloud_recovery_spec.py::DescribeCloudWireRecovery::should_not_follow_redirects",
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeRecoveryBoundaries::should_never_replay_permanent_status_even_when_body_transport_fails",
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeRecoveryBoundaries::should_not_follow_redirects_or_count_hidden_attempts",
+        "src/mojentic/llm/gateways/readiness_boundary_spec.py::DescribeReadinessBoundary::should_apply_selected_eligibility_and_recover_server_errors"
+      ],
+      "cases_verified": 77,
+      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "exit_code": 0
+    },
+    {
+      "decision": "Typed policy, provider and operation vocabulary",
+      "specifications": [
+        "typed_errors_spec.py",
+        "recovery_capabilities_spec.py"
+      ],
+      "public_entrypoints": [
+        "gateway constructors",
+        "complete",
+        "complete_with_recovery",
+        "generate_object",
+        "ChatSession.send"
+      ],
+      "expected": "Invalid policies use RecoveryPolicyError on every route; ordinary/structured/streaming and provider values are closed; capture/length/validation causes remain typed and private.",
+      "executable_tests": [
+        "src/mojentic/llm/gateways/typed_errors_spec.py::DescribeTypedErrorsV1::should_preserve_capture_type_original_and_evidence_through_public_callers",
+        "src/mojentic/llm/gateways/typed_errors_spec.py::DescribeTypedErrorsV1::should_preserve_length_cause_through_stream_consumers",
+        "src/mojentic/llm/gateways/typed_errors_spec.py::DescribeTypedErrorsV1::should_preserve_successful_ordinary_length_metadata",
+        "src/mojentic/llm/gateways/typed_errors_spec.py::DescribeTypedErrorsV1::should_preserve_typed_length_after_delivered_openai_content",
+        "src/mojentic/llm/gateways/typed_errors_spec.py::DescribeTypedErrorsV1::should_reject_missing_policy_with_the_same_type_before_dispatch",
+        "src/mojentic/llm/gateways/typed_errors_spec.py::DescribeTypedErrorsV1::should_retain_prior_failure_and_request_identity_when_capture_stops_a_retry",
+        "src/mojentic/llm/gateways/typed_errors_spec.py::DescribeTypedErrorsV1::should_retain_typed_length_for_openai_structured_completion",
+        "src/mojentic/llm/gateways/typed_errors_spec.py::DescribeTypedErrorsV1::should_stop_capture_before_semantics_without_inventing_attempts",
+        "src/mojentic/llm/gateways/typed_errors_spec.py::DescribeTypedErrorsV1::should_use_one_safe_policy_error_across_validation_entrypoints",
+        "src/mojentic/llm/gateways/typed_errors_spec.py::DescribeTypedErrorsV1::should_validate_policy_at_gateway_construction_without_disclosing_input"
+      ],
+      "cases_verified": 101,
+      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "exit_code": 0
+    },
+    {
+      "decision": "Safe provider IDs and code vocabulary",
+      "specifications": [
+        "provider_metadata_spec.py",
+        "ollama_recovery_spec.py"
+      ],
+      "public_entrypoints": [
+        "complete_with_recovery",
+        "complete_stream_with_recovery",
+        "generate_object",
+        "ChatSession.send"
+      ],
+      "expected": "Accepted request ID is req_12345678-1234-4234-8234-123456789abc and accepted codes include invalid_api_key, rate_limit_exceeded, server_error, and Anthropic overloaded_error. Distinct history ID 87654321-4321-4321-8321-cba987654321 remains exact; credential/payload echoes and duplicate header IDs return None.",
+      "executable_tests": [
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeHttpBoundaryCorrection::should_keep_uuid_shaped_secret_echoes_private",
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribePublicCancellationAndMetadata::should_expose_only_validated_provider_request_ids",
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeRecoveryBoundaries::should_exhaust_504_with_complete_typed_history_and_private_echoes",
+        "src/mojentic/llm/gateways/provider_metadata_spec.py::DescribeProviderMetadata::should_keep_status_and_header_metadata_after_truncated_permanent_body",
+        "src/mojentic/llm/gateways/provider_metadata_spec.py::DescribeProviderMetadata::should_preserve_anthropic_request_id_and_error_type",
+        "src/mojentic/llm/gateways/provider_metadata_spec.py::DescribeProviderMetadata::should_preserve_exact_validated_metadata_in_terminal_public_evidence",
+        "src/mojentic/llm/gateways/provider_metadata_spec.py::DescribeProviderMetadata::should_propagate_exact_metadata_through_public_broker_and_session",
+        "src/mojentic/llm/gateways/provider_metadata_spec.py::DescribeProviderMetadata::should_reject_ids_echoing_explicit_basic_password",
+        "src/mojentic/llm/gateways/provider_metadata_spec.py::DescribeProviderMetadata::should_reject_recognized_error_code_echoes",
+        "src/mojentic/llm/gateways/provider_metadata_spec.py::DescribeProviderMetadata::should_reject_uuid_shaped_outbound_echoes_but_keep_private_wire",
+        "src/mojentic/llm/gateways/provider_metadata_spec.py::DescribeProviderMetadata::should_retain_distinct_failed_attempt_metadata_after_success",
+        "src/mojentic/llm/gateways/provider_metadata_spec.py::DescribeProviderMetadata::should_retain_metadata_from_in_band_provider_error"
+      ],
+      "cases_verified": 99,
+      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "exit_code": 0
+    },
+    {
+      "decision": "Privacy and explicit raw inspection",
+      "specifications": [
+        "provider_metadata_spec.py",
+        "typed_errors_spec.py",
+        "cloud_recovery_spec.py",
+        "ollama_recovery_spec.py"
+      ],
+      "public_entrypoints": [
+        "complete",
+        "complete_with_recovery",
+        "complete_stream_with_recovery"
+      ],
+      "expected": "str/repr/JSON/lifecycle serialization omit secret payload/credential sentinels; raw response, headers and original causes are available only by explicit inspection.",
+      "executable_tests": [
+        "src/mojentic/llm/gateways/cloud_recovery_spec.py::DescribeCloudPrivacy::should_keep_header_and_payload_echoes_private_across_safe_surfaces",
+        "src/mojentic/llm/gateways/cloud_recovery_spec.py::DescribeCloudWireRecovery::should_recover_503_with_literal_bytes_private_evidence_and_exact_lifecycle",
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeHttpBoundaryCorrection::should_keep_predispatch_expiry_observer_failure_private",
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeHttpBoundaryCorrection::should_keep_uuid_shaped_secret_echoes_private",
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribePublicCancellationAndMetadata::should_expose_only_validated_provider_request_ids",
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeRecoveryBoundaries::should_exhaust_504_with_complete_typed_history_and_private_echoes",
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeRecoveryEdgeEvidence::should_keep_observer_exceptions_private_and_prohibit_replay",
+        "src/mojentic/llm/gateways/provider_metadata_spec.py::DescribeProviderMetadata::should_reject_ids_echoing_explicit_basic_password",
+        "src/mojentic/llm/gateways/provider_metadata_spec.py::DescribeProviderMetadata::should_reject_recognized_error_code_echoes",
+        "src/mojentic/llm/gateways/provider_metadata_spec.py::DescribeProviderMetadata::should_reject_uuid_shaped_outbound_echoes_but_keep_private_wire"
+      ],
+      "cases_verified": 74,
+      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "exit_code": 0
+    },
+    {
+      "decision": "Capabilities and supported legacy projections",
+      "specifications": [
+        "recovery_capabilities_spec.py"
+      ],
+      "public_entrypoints": [
+        "gateway.recovery_capabilities",
+        "model_dump",
+        "model_validate"
+      ],
+      "expected": "All four adapters expose local cancellation, remote cancellation, status, idempotency and exact-attempt termination with dated documentation evidence; exact termination stays unknown; supported old/new projections and JSON round trips remain valid.",
+      "executable_tests": [
+        "src/mojentic/llm/gateways/recovery_capabilities_spec.py::DescribeRecoveryCapabilitiesV1::should_accept_old_anthropic_unsupported_structured_projection",
+        "src/mojentic/llm/gateways/recovery_capabilities_spec.py::DescribeRecoveryCapabilitiesV1::should_preserve_legacy_access_and_serialized_values",
+        "src/mojentic/llm/gateways/recovery_capabilities_spec.py::DescribeRecoveryCapabilitiesV1::should_reject_claims_of_exact_attempt_termination",
+        "src/mojentic/llm/gateways/recovery_capabilities_spec.py::DescribeRecoveryCapabilitiesV1::should_reject_invalid_capability_values",
+        "src/mojentic/llm/gateways/recovery_capabilities_spec.py::DescribeRecoveryCapabilitiesV1::should_report_anthropic_local_cancellation_without_claiming_remote_support",
+        "src/mojentic/llm/gateways/recovery_capabilities_spec.py::DescribeRecoveryCapabilitiesV1::should_report_exact_attempt_termination_with_endpoint_evidence",
+        "src/mojentic/llm/gateways/recovery_capabilities_spec.py::DescribeRecoveryCapabilitiesV1::should_report_idempotency_with_endpoint_evidence",
+        "src/mojentic/llm/gateways/recovery_capabilities_spec.py::DescribeRecoveryCapabilitiesV1::should_report_local_cancellation_with_endpoint_evidence",
+        "src/mojentic/llm/gateways/recovery_capabilities_spec.py::DescribeRecoveryCapabilitiesV1::should_report_remote_cancellation_with_endpoint_evidence",
+        "src/mojentic/llm/gateways/recovery_capabilities_spec.py::DescribeRecoveryCapabilitiesV1::should_report_request_status_with_endpoint_evidence",
+        "src/mojentic/llm/gateways/recovery_capabilities_spec.py::DescribeRecoveryCapabilitiesV1::should_round_trip_new_evidence_in_python_and_json"
+      ],
+      "cases_verified": 54,
+      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "exit_code": 0
+    },
+    {
+      "decision": "Tool safety and recursion depth",
+      "specifications": [
+        "completed_tool_recovery_spec.py",
+        "openai_strict_tool_recovery_spec.py",
+        "openai_tool_roundtrip_spec.py",
+        "ollama_recovery_spec.py",
+        "omlx_recovery_spec.py"
+      ],
+      "public_entrypoints": [
+        "generate",
+        "generate_response",
+        "generate_object",
+        "ChatSession.send"
+      ],
+      "expected": "Validated completed tool counts match responses/reports/lifecycle events; tool executes once per round, byte-identical continuation retries preserve IDs/results/reasoning, and recovery never resets max_tool_iterations.",
+      "executable_tests": [
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeRecoveryToolSafety::should_execute_tool_once_and_recover_only_the_subsequent_completion",
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeRecoveryToolSafety::should_preserve_tool_depth_limit_across_recovered_completions",
+        "src/mojentic/llm/gateways/omlx_recovery_spec.py::DescribeOMLXCaptureEvidence::should_preserve_actual_fixture_usage_and_supported_thinking_and_tools",
+        "src/mojentic/llm/gateways/omlx_recovery_spec.py::DescribeOMLXCaptureEvidence::should_retain_all_observed_channels_before_capture_failure",
+        "src/mojentic/llm/gateways/omlx_recovery_spec.py::DescribeOMLXMalformedToolFields::should_reject_false_non_array_tool_fields",
+        "src/mojentic/llm/gateways/omlx_recovery_spec.py::DescribeOMLXMalformedToolFields::should_reject_false_non_object_tool_functions",
+        "src/mojentic/llm/gateways/omlx_recovery_spec.py::DescribeOMLXPublicCallers::should_execute_completed_tool_once_before_typed_subsequent_failure",
+        "src/mojentic/llm/gateways/omlx_recovery_spec.py::DescribeOMLXStreamSafety::should_complete_fragmented_tools_once_after_safe_terminal_marker",
+        "src/mojentic/llm/gateways/omlx_recovery_spec.py::DescribeOMLXStreamSafety::should_interrupt_observed_semantics_without_replay",
+        "src/mojentic/llm/gateways/openai_strict_tool_recovery_spec.py::DescribeStrictStructuredToolRecovery::should_execute_tool_once_through_supported_public_callers",
+        "src/mojentic/llm/gateways/openai_strict_tool_recovery_spec.py::DescribeStrictStructuredToolRecovery::should_preserve_omlx_ordinary_tool_only_success",
+        "src/mojentic/llm/gateways/openai_strict_tool_recovery_spec.py::DescribeStrictStructuredToolRecovery::should_preserve_omlx_structured_tool_only_rejection",
+        "src/mojentic/llm/gateways/openai_strict_tool_recovery_spec.py::DescribeStrictStructuredToolRecovery::should_reject_malformed_or_nonobject_tool_arguments",
+        "src/mojentic/llm/gateways/openai_strict_tool_recovery_spec.py::DescribeStrictStructuredToolRecovery::should_reject_nonstrict_tools_before_dispatch",
+        "src/mojentic/llm/gateways/openai_strict_tool_recovery_spec.py::DescribeStrictStructuredToolRecovery::should_reject_null_content_without_tools",
+        "src/mojentic/llm/gateways/openai_strict_tool_recovery_spec.py::DescribeStrictStructuredToolRecovery::should_reject_null_tool_content_without_safe_tool_finish",
+        "src/mojentic/llm/gateways/openai_strict_tool_recovery_spec.py::DescribeStrictStructuredToolRecovery::should_retain_null_object_and_exact_tool_through_public_recovery",
+        "src/mojentic/llm/gateways/openai_strict_tool_recovery_spec.py::DescribeStrictStructuredToolRecovery::should_return_tool_without_execution_through_public_broker_response",
+        "src/mojentic/llm/gateways/openai_strict_tool_recovery_spec.py::DescribeStrictStructuredToolRecovery::should_validate_nonnull_structured_content_even_with_tools",
+        "src/mojentic/llm/gateways/openai_tool_roundtrip_spec.py::DescribeOpenAIStreamingToolCallRoundTrip::should_carry_streamed_tool_call_id_into_follow_up_request",
+        "src/mojentic/llm/gateways/openai_tool_roundtrip_spec.py::DescribeOpenAIToolCallingRoundTrip::should_include_correct_assistant_tool_call_in_second_request",
+        "src/mojentic/llm/gateways/openai_tool_roundtrip_spec.py::DescribeOpenAIToolCallingRoundTrip::should_include_correct_tool_role_message_in_second_request",
+        "src/mojentic/llm/gateways/openai_tool_roundtrip_spec.py::DescribeOpenAIToolCallingRoundTrip::should_include_get_weather_in_first_request_tools",
+        "src/mojentic/llm/gateways/openai_tool_roundtrip_spec.py::DescribeOpenAIToolCallingRoundTrip::should_invoke_get_weather_tool_with_paris",
+        "src/mojentic/llm/gateways/openai_tool_roundtrip_spec.py::should_keep_both_parallel_tool_call_ids_in_the_broker_follow_up"
+      ],
+      "cases_verified": 60,
+      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "exit_code": 0
+    },
+    {
+      "decision": "Image/control freezing and authenticated bytes",
+      "specifications": [
+        "ollama_recovery_spec.py",
+        "cloud_recovery_spec.py",
+        "request_fidelity_spec.py"
+      ],
+      "public_entrypoints": [
+        "complete",
+        "generate",
+        "generate_response",
+        "generate_object",
+        "ChatSession.send"
+      ],
+      "expected": "Preparation freezes images, controls and tools before admission. Actual Authorization equals Basic dXNlcm5hbWU6cGFzc3dvcmQ= on both attempts; exact captured SDK body bytes match transport requests.",
+      "executable_tests": [
+        "src/mojentic/llm/gateways/cloud_recovery_spec.py::DescribeCloudWireRecovery::should_freeze_model_specific_controls_and_tool_capabilities",
+        "src/mojentic/llm/gateways/cloud_recovery_spec.py::DescribeCloudWireRecovery::should_reuse_frozen_literal_bytes_after_admission_mutates_caller_inputs",
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeHttpBoundaryCorrection::should_capture_the_authenticated_request_actually_sent",
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeRecoveryEdgeEvidence::should_freeze_images_and_controls_once_before_admission"
+      ],
+      "cases_verified": 13,
+      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "exit_code": 0
+    },
+    {
+      "decision": "Legacy one-send compatibility",
+      "specifications": [
+        "ollama_recovery_spec.py",
+        "omlx_recovery_spec.py",
+        "request_fidelity_spec.py"
+      ],
+      "public_entrypoints": [
+        "complete",
+        "complete_stream",
+        "generate",
+        "ChatSession.send"
+      ],
+      "expected": "Default success and disabled recovery retain one send, successful output, supported legacy/event routes and explicit 2.1 migration control settings.",
+      "executable_tests": [
+        "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeRecoveryBoundaries::should_preserve_legacy_success_and_one_send_by_default",
+        "src/mojentic/llm/gateways/request_fidelity_spec.py::DescribeSharedRequestFidelity::should_execute_shared_cases"
+      ],
+      "cases_verified": 43,
+      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "exit_code": 0
+    },
+    {
+      "decision": "Native reasoning controls and continuations",
+      "specifications": [
+        "native_reasoning_spec.py",
+        "anthropic_history_spec.py",
+        "anthropic_structured_spec.py"
+      ],
+      "public_entrypoints": [
+        "complete",
+        "complete_stream_events",
+        "generate",
+        "generate_object"
+      ],
+      "expected": "All native-reasoning-v1 controls produce exact provider fields. Visible/retained reasoning, structured objects, real tool continuations and native Anthropic history envelopes remain distinct and preserved.",
+      "executable_tests": [
+        "src/mojentic/llm/gateways/anthropic_history_spec.py::DescribeAnthropicHistory::should_preserve_explicit_controls_and_absent_system",
+        "src/mojentic/llm/gateways/anthropic_history_spec.py::DescribeAnthropicHistory::should_preserve_ordered_history_system_images_controls_and_response",
+        "src/mojentic/llm/gateways/anthropic_history_spec.py::DescribeAnthropicHistory::should_resend_identical_full_history_with_stable_logical_identity",
+        "src/mojentic/llm/gateways/anthropic_history_spec.py::DescribeAnthropicHistory::should_send_first_assistant_answer_in_second_chat_turn",
+        "src/mojentic/llm/gateways/anthropic_structured_spec.py::DescribeAnthropicStructuredContract::should_bound_attempts_and_refuse_permanent_errors",
+        "src/mojentic/llm/gateways/anthropic_structured_spec.py::DescribeAnthropicStructuredContract::should_freeze_schema_and_history_before_admission_mutates_inputs",
+        "src/mojentic/llm/gateways/anthropic_structured_spec.py::DescribeAnthropicStructuredContract::should_preserve_typed_decode_failures_without_replay",
+        "src/mojentic/llm/gateways/anthropic_structured_spec.py::DescribeAnthropicStructuredContract::should_replay_frozen_schema_history_and_controls_at_http_boundary",
+        "src/mojentic/llm/gateways/anthropic_structured_spec.py::DescribeAnthropicStructuredContract::should_require_explicit_admission_decision_when_hook_is_present",
+        "src/mojentic/llm/gateways/anthropic_structured_spec.py::DescribeAnthropicStructuredContract::should_stop_on_capture_failure_with_original_cause",
+        "src/mojentic/llm/gateways/anthropic_structured_spec.py::DescribeAnthropicStructuredContract::should_validate_constraints_removed_from_provider_schema",
+        "src/mojentic/llm/gateways/anthropic_structured_spec.py::DescribeAnthropicStructuredContract::should_validate_optional_fields_with_original_pydantic_model",
+        "src/mojentic/llm/gateways/anthropic_structured_spec.py::DescribeAnthropicStructuredContract::should_verify_identical_recovery_contract_for_gateway_and_broker",
+        "src/mojentic/llm/gateways/native_reasoning_spec.py::DescribeNativeReasoning::should_retain_native_history_separately_through_tool_continuation",
+        "src/mojentic/llm/gateways/native_reasoning_spec.py::DescribeNativeReasoningWireContract::should_accept_exact_qwen_profile_controls",
+        "src/mojentic/llm/gateways/native_reasoning_spec.py::DescribeNativeReasoningWireContract::should_discard_partial_native_history_when_caller_closes",
+        "src/mojentic/llm/gateways/native_reasoning_spec.py::DescribeNativeReasoningWireContract::should_discard_reasoning_after_provider_error_frame",
+        "src/mojentic/llm/gateways/native_reasoning_spec.py::DescribeNativeReasoningWireContract::should_exclude_capped_ordinary_reasoning_from_history",
+        "src/mojentic/llm/gateways/native_reasoning_spec.py::DescribeNativeReasoningWireContract::should_not_fabricate_history_on_stream_failure_or_close",
+        "src/mojentic/llm/gateways/native_reasoning_spec.py::DescribeNativeReasoningWireContract::should_not_retain_unfinished_stream_history",
+        "src/mojentic/llm/gateways/native_reasoning_spec.py::DescribeNativeReasoningWireContract::should_preserve_distinct_payloads_in_broker_tool_history",
+        "src/mojentic/llm/gateways/native_reasoning_spec.py::DescribeNativeReasoningWireContract::should_preserve_ordered_multiple_native_tool_calls",
+        "src/mojentic/llm/gateways/native_reasoning_spec.py::DescribeNativeReasoningWireContract::should_reject_history_for_a_profile_without_history",
+        "src/mojentic/llm/gateways/native_reasoning_spec.py::DescribeNativeReasoningWireContract::should_reject_incomplete_ordinary_ollama_history",
+        "src/mojentic/llm/gateways/native_reasoning_spec.py::DescribeNativeReasoningWireContract::should_reject_incomplete_recovery_ollama_history",
+        "src/mojentic/llm/gateways/native_reasoning_spec.py::DescribeNativeReasoningWireContract::should_reject_named_effort_for_boolean_only_profile",
+        "src/mojentic/llm/gateways/native_reasoning_spec.py::DescribeNativeReasoningWireContract::should_reject_native_history_on_openai",
+        "src/mojentic/llm/gateways/native_reasoning_spec.py::DescribeNativeReasoningWireContract::should_reject_new_openai_controls_before_http",
+        "src/mojentic/llm/gateways/native_reasoning_spec.py::DescribeNativeReasoningWireContract::should_reject_unsupported_qwen_controls",
+        "src/mojentic/llm/gateways/native_reasoning_spec.py::DescribeNativeReasoningWireContract::should_retain_completed_recovery_ollama_history_and_execute_tool_once",
+        "src/mojentic/llm/gateways/native_reasoning_spec.py::DescribeNativeReasoningWireContract::should_send_exact_controls_without_model_inference"
+      ],
+      "cases_verified": 274,
+      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "exit_code": 0
+    },
+    {
+      "decision": "Model window discovery",
+      "specifications": [
+        "context_window_spec.py"
+      ],
+      "public_entrypoints": [
+        "get_model_context_window",
+        "effective_context_window",
+        "complete"
+      ],
+      "expected": "All context-window-v1 cases preserve exact model selection, authorization, optional metadata, architecture prefixes, invalid values, 404 and registry behavior. Discovery leaves completion bytes unchanged; helper precedence and clamping match every fixture.",
+      "executable_tests": [
+        "src/mojentic/llm/gateways/context_window_spec.py::DescribeContextWindow::should_select_exact_model_through_authenticated_http",
+        "src/mojentic/llm/gateways/context_window_spec.py::DescribeContextWindowContract::should_apply_helper_precedence_and_clamping",
+        "src/mojentic/llm/gateways/context_window_spec.py::DescribeContextWindowContract::should_derive_gateway_double_from_verified_provider_case",
+        "src/mojentic/llm/gateways/context_window_spec.py::DescribeContextWindowContract::should_distinguish_transport_failure",
+        "src/mojentic/llm/gateways/context_window_spec.py::DescribeContextWindowContract::should_leave_same_model_completion_request_unchanged_after_discovery",
+        "src/mojentic/llm/gateways/context_window_spec.py::DescribeContextWindowContract::should_lookup_only_exact_registry_entries_without_http",
+        "src/mojentic/llm/gateways/context_window_spec.py::DescribeContextWindowContract::should_pin_the_shared_executable_contract_identity",
+        "src/mojentic/llm/gateways/context_window_spec.py::DescribeContextWindowContract::should_preserve_registry_completion_semantics_after_discovery",
+        "src/mojentic/llm/gateways/context_window_spec.py::DescribeContextWindowContract::should_return_not_advertised_for_unsupported_gateway",
+        "src/mojentic/llm/gateways/context_window_spec.py::DescribeContextWindowContract::should_verify_provider_semantics_and_exact_http_request"
+      ],
+      "cases_verified": 231,
+      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "exit_code": 0
+    },
+    {
+      "decision": "Request fidelity",
+      "specifications": [
+        "request_fidelity_spec.py"
+      ],
+      "public_entrypoints": [
+        "complete",
+        "generate",
+        "generate_response",
+        "generate_object",
+        "generate_stream",
+        "ChatSession.send",
+        "ChatSession.send_stream"
+      ],
+      "expected": "All seven request-fidelity-v1 configurations assert full payloads: unset omission, explicit zero/individual controls, provider naming and schema, structured/stream controls and retry/tool-history preservation.",
+      "executable_tests": [
+        "src/mojentic/llm/gateways/request_fidelity_spec.py::DescribeAnthropicFidelity::should_apply_only_required_fallback_and_explicit_controls",
+        "src/mojentic/llm/gateways/request_fidelity_spec.py::DescribeAnthropicMigration::should_reproduce_supported_former_sdk_and_config_limits",
+        "src/mojentic/llm/gateways/request_fidelity_spec.py::DescribeContinuationFidelity::should_keep_controls_and_tool_history_on_admitted_resend",
+        "src/mojentic/llm/gateways/request_fidelity_spec.py::DescribeMigrationFidelity::should_adapt_only_explicit_temperature_to_registered_fixed_value",
+        "src/mojentic/llm/gateways/request_fidelity_spec.py::DescribeMigrationFidelity::should_forward_only_explicit_deprecated_broker_keywords",
+        "src/mojentic/llm/gateways/request_fidelity_spec.py::DescribeMigrationFidelity::should_omit_controls_for_gateway_keywords_without_config",
+        "src/mojentic/llm/gateways/request_fidelity_spec.py::DescribeMigrationFidelity::should_warn_and_drop_effort_for_non_reasoning_model",
+        "src/mojentic/llm/gateways/request_fidelity_spec.py::DescribeRequestFidelity::should_omit_unset_session_controls_at_http_boundary",
+        "src/mojentic/llm/gateways/request_fidelity_spec.py::DescribeSharedRequestFidelity::should_execute_shared_cases",
+        "src/mojentic/llm/gateways/request_fidelity_spec.py::DescribeSharedRequestFidelity::should_preserve_controls_and_history_through_session_stream",
+        "src/mojentic/llm/gateways/request_fidelity_spec.py::DescribeSharedRequestFidelity::should_preserve_controls_through_broker_events",
+        "src/mojentic/llm/gateways/request_fidelity_spec.py::DescribeSharedRequestFidelity::should_preserve_controls_through_public_routes"
+      ],
+      "cases_verified": 433,
+      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "exit_code": 0
+    },
+    {
+      "decision": "First-token definition and supported routes",
+      "specifications": [
+        "first_token_spec.py",
+        "stream_timing_spec.py"
+      ],
+      "public_entrypoints": [
+        "complete_stream_events",
+        "complete_stream",
+        "complete_stream_with_recovery",
+        "generate_stream",
+        "ChatSession.send_stream"
+      ],
+      "expected": "Thinking/content/arguments select the first real frame; exact first-token and duration are 31.25 ms for a single delayed frame. Error after a later frame retains first=31.25 ms and duration=93.75 or 218.75 ms. Empty/error-without-token has None first-token evidence.",
+      "executable_tests": [
+        "src/mojentic/llm/gateways/first_token_spec.py::DescribeFirstTokenTiming::should_accept_old_evidence_without_optional_client_fields",
+        "src/mojentic/llm/gateways/first_token_spec.py::DescribeFirstTokenTiming::should_exclude_capture_and_lazy_delay_at_actual_dispatch",
+        "src/mojentic/llm/gateways/first_token_spec.py::DescribeFirstTokenTiming::should_ignore_token_frames_after_terminal_proof",
+        "src/mojentic/llm/gateways/first_token_spec.py::DescribeFirstTokenTiming::should_include_admitted_retry_delay_on_one_clock",
+        "src/mojentic/llm/gateways/first_token_spec.py::DescribeFirstTokenTiming::should_keep_local_close_evidence_without_a_synthetic_terminal",
+        "src/mojentic/llm/gateways/first_token_spec.py::DescribeFirstTokenTiming::should_keep_timing_on_explicit_recovery_cancellation",
+        "src/mojentic/llm/gateways/first_token_spec.py::DescribeFirstTokenTiming::should_leave_unsent_recovery_close_without_timing",
+        "src/mojentic/llm/gateways/first_token_spec.py::DescribeFirstTokenTiming::should_measure_argument_fragment_before_later_failure",
+        "src/mojentic/llm/gateways/first_token_spec.py::DescribeFirstTokenTiming::should_measure_first_wire_frame_and_terminal_errors",
+        "src/mojentic/llm/gateways/first_token_spec.py::DescribeFirstTokenTiming::should_measure_supported_public_routes",
+        "src/mojentic/llm/gateways/first_token_spec.py::DescribeFirstTokenTiming::should_not_invent_dispatch_evidence_for_unsupported_model",
+        "src/mojentic/llm/gateways/first_token_spec.py::DescribeFirstTokenTiming::should_not_report_duration_if_request_capture_rejects_dispatch",
+        "src/mojentic/llm/gateways/first_token_spec.py::DescribeFirstTokenTiming::should_preserve_content_timing_before_invalid_choices",
+        "src/mojentic/llm/gateways/first_token_spec.py::DescribeFirstTokenTiming::should_preserve_invalid_stream_event_for_noniterable_choices",
+        "src/mojentic/llm/gateways/first_token_spec.py::DescribeFirstTokenTiming::should_report_dispatched_failure_without_inventing_tokens",
+        "src/mojentic/llm/gateways/first_token_spec.py::DescribeFirstTokenTiming::should_reset_continuation_clock_and_preserve_exact_tool_history",
+        "src/mojentic/llm/gateways/first_token_spec.py::DescribeFirstTokenTiming::should_retain_recovery_timing_immediately_after_public_close",
+        "src/mojentic/llm/stream_timing_spec.py::DescribeStreamClock::should_measure_exact_first_token_and_duration_with_injected_monotonic_clock",
+        "src/mojentic/llm/stream_timing_spec.py::DescribeStreamClock::should_not_read_the_clock_before_dispatch",
+        "src/mojentic/llm/stream_timing_spec.py::DescribeStreamClock::should_report_empty_completion_without_inventing_a_first_token"
+      ],
+      "cases_verified": 105,
+      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "exit_code": 0
+    },
+    {
+      "decision": "Timing lifecycle exclusions and retry clock",
+      "specifications": [
+        "first_token_spec.py"
+      ],
+      "public_entrypoints": [
+        "complete_stream_with_recovery",
+        "generate_stream",
+        "ChatSession.send_stream"
+      ],
+      "expected": "Lazy/capture delays before dispatch are excluded (62.5 ms measured); admitted wait adds 125 ms to a 31.25 ms response (=156.25 ms); tool continuation resets its clock (prior first=125 ms, final=31.25 ms), with exact tool history.",
+      "executable_tests": [
+        "src/mojentic/llm/gateways/first_token_spec.py::DescribeFirstTokenTiming::should_exclude_capture_and_lazy_delay_at_actual_dispatch",
+        "src/mojentic/llm/gateways/first_token_spec.py::DescribeFirstTokenTiming::should_include_admitted_retry_delay_on_one_clock",
+        "src/mojentic/llm/gateways/first_token_spec.py::DescribeFirstTokenTiming::should_reset_continuation_clock_and_preserve_exact_tool_history"
+      ],
+      "cases_verified": 10,
+      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "exit_code": 0
+    },
+    {
+      "decision": "Dispatcher in-flight ordering",
+      "specifications": [
+        "async_dispatcher_spec.py"
+      ],
+      "public_entrypoints": [
+        "start",
+        "dispatch",
+        "wait_for_empty_queue",
+        "stop"
+      ],
+      "expected": "Termination settles through the queue; empty-queue wait remains pending while the agent is suspended, then includes its follow-up event before completing.",
+      "executable_tests": [
+        "src/mojentic/async_dispatcher_spec.py::DescribeAsyncDispatcherInFlightTracking::should_wait_for_in_flight_agent_followups",
+        "src/mojentic/async_dispatcher_spec.py::should_dispatcher_batch_processing",
+        "src/mojentic/async_dispatcher_spec.py::should_dispatcher_correlation_id",
+        "src/mojentic/async_dispatcher_spec.py::should_dispatcher_dispatch",
+        "src/mojentic/async_dispatcher_spec.py::should_dispatcher_init",
+        "src/mojentic/async_dispatcher_spec.py::should_dispatcher_start_stop",
+        "src/mojentic/async_dispatcher_spec.py::should_dispatcher_terminate_event",
+        "src/mojentic/async_dispatcher_spec.py::should_dispatcher_wait_for_empty_queue",
+        "src/mojentic/async_dispatcher_spec.py::should_dispatcher_with_async_agent",
+        "src/mojentic/async_dispatcher_spec.py::should_dispatcher_with_sync_agent"
+      ],
+      "cases_verified": 10,
+      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "exit_code": 0
+    },
+    {
+      "decision": "Recursive-agent public outcomes",
+      "specifications": [
+        "simple_recursive_agent_spec.py"
+      ],
+      "public_entrypoints": [
+        "solve",
+        "EventEmitter.emit"
+      ],
+      "expected": "Gateway-driven DONE/FAIL, case variants, prose substrings, max iterations, exact iteration sequence, prompts, lifecycle events and handler errors remain verified. An immediate caller deadline raises TimeoutError while background completion is explicitly settled.",
+      "executable_tests": [
+        "src/mojentic/agents/simple_recursive_agent_spec.py::DescribeEventEmitter::should_allow_subscribing_to_events",
+        "src/mojentic/agents/simple_recursive_agent_spec.py::DescribeEventEmitter::should_allow_unsubscribing_from_events",
+        "src/mojentic/agents/simple_recursive_agent_spec.py::DescribeEventEmitter::should_emit_events_to_subscribers",
+        "src/mojentic/agents/simple_recursive_agent_spec.py::DescribeEventEmitter::should_handle_async_callbacks",
+        "src/mojentic/agents/simple_recursive_agent_spec.py::DescribeGoalState::should_allow_custom_max_iterations",
+        "src/mojentic/agents/simple_recursive_agent_spec.py::DescribeGoalState::should_initialize_with_defaults",
+        "src/mojentic/agents/simple_recursive_agent_spec.py::DescribeSimpleRecursiveAgent::should_allow_caller_timeout_through_public_solve",
+        "src/mojentic/agents/simple_recursive_agent_spec.py::DescribeSimpleRecursiveAgent::should_emit_goal_achieved_event",
+        "src/mojentic/agents/simple_recursive_agent_spec.py::DescribeSimpleRecursiveAgent::should_emit_goal_failed_event",
+        "src/mojentic/agents/simple_recursive_agent_spec.py::DescribeSimpleRecursiveAgent::should_emit_goal_submitted_event",
+        "src/mojentic/agents/simple_recursive_agent_spec.py::DescribeSimpleRecursiveAgent::should_emit_iteration_completed_events",
+        "src/mojentic/agents/simple_recursive_agent_spec.py::DescribeSimpleRecursiveAgent::should_handle_case_insensitive_done_keyword",
+        "src/mojentic/agents/simple_recursive_agent_spec.py::DescribeSimpleRecursiveAgent::should_handle_case_insensitive_fail_keyword",
+        "src/mojentic/agents/simple_recursive_agent_spec.py::DescribeSimpleRecursiveAgent::should_handle_explicit_failure",
+        "src/mojentic/agents/simple_recursive_agent_spec.py::DescribeSimpleRecursiveAgent::should_handle_max_iterations_reached",
+        "src/mojentic/agents/simple_recursive_agent_spec.py::DescribeSimpleRecursiveAgent::should_have_event_handlers_registered",
+        "src/mojentic/agents/simple_recursive_agent_spec.py::DescribeSimpleRecursiveAgent::should_include_goal_in_prompt",
+        "src/mojentic/agents/simple_recursive_agent_spec.py::DescribeSimpleRecursiveAgent::should_increment_iteration_count",
+        "src/mojentic/agents/simple_recursive_agent_spec.py::DescribeSimpleRecursiveAgent::should_initialize_with_custom_parameters",
+        "src/mojentic/agents/simple_recursive_agent_spec.py::DescribeSimpleRecursiveAgent::should_initialize_with_required_parameters",
+        "src/mojentic/agents/simple_recursive_agent_spec.py::DescribeSimpleRecursiveAgent::should_not_false_positive_done_on_prose_with_done_substring",
+        "src/mojentic/agents/simple_recursive_agent_spec.py::DescribeSimpleRecursiveAgent::should_not_false_positive_fail_on_prose_with_fail_substring",
+        "src/mojentic/agents/simple_recursive_agent_spec.py::DescribeSimpleRecursiveAgent::should_propagate_handler_exceptions_to_solve_caller",
+        "src/mojentic/agents/simple_recursive_agent_spec.py::DescribeSimpleRecursiveAgent::should_solve_problem_with_immediate_success",
+        "src/mojentic/agents/simple_recursive_agent_spec.py::DescribeSimpleRecursiveAgent::should_solve_problem_with_multiple_iterations",
+        "src/mojentic/agents/simple_recursive_agent_spec.py::DescribeSimpleRecursiveAgent::should_use_public_gateway_for_chat_send"
+      ],
+      "cases_verified": 26,
+      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "exit_code": 0
+    },
+    {
+      "decision": "Aggregator immediate timeout",
+      "specifications": [
+        "async_aggregator_agent_spec.py"
+      ],
+      "public_entrypoints": [
+        "receive_event_async",
+        "wait_for_events"
+      ],
+      "expected": "An immediate scheduler timeout returns the exact partial result; complete event sets settle the waiting public future without sleeping.",
+      "executable_tests": [
+        "src/mojentic/agents/async_aggregator_agent_spec.py::should_capture_partial_results_through_public_receive",
+        "src/mojentic/agents/async_aggregator_agent_spec.py::should_initialize_aggregator",
+        "src/mojentic/agents/async_aggregator_agent_spec.py::should_isolate_different_correlation_ids",
+        "src/mojentic/agents/async_aggregator_agent_spec.py::should_preserve_base_no_output_behavior",
+        "src/mojentic/agents/async_aggregator_agent_spec.py::should_process_complete_event_sets",
+        "src/mojentic/agents/async_aggregator_agent_spec.py::should_process_reversed_event_order",
+        "src/mojentic/agents/async_aggregator_agent_spec.py::should_reset_results_after_processing",
+        "src/mojentic/agents/async_aggregator_agent_spec.py::should_return_empty_results_on_immediate_timeout",
+        "src/mojentic/agents/async_aggregator_agent_spec.py::should_return_partial_results_on_immediate_timeout",
+        "src/mojentic/agents/async_aggregator_agent_spec.py::should_wait_for_events_without_a_timer"
+      ],
+      "cases_verified": 10,
+      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "exit_code": 0
+    },
+    {
+      "decision": "Tool concurrency and order",
+      "specifications": [
+        "runner_spec.py"
+      ],
+      "public_entrypoints": [
+        "SerialToolRunner.run_batch",
+        "AsyncParallelToolRunner.run_batch"
+      ],
+      "expected": "Active concurrency peaks exactly at 4 or 2; no work remains active. Controlled completion c,b,a returns input order a,b,c. Pre-cancelled contexts skip pending calls with CancelledError; hooks and failures retain order.",
+      "executable_tests": [
+        "src/mojentic/llm/tools/runner_spec.py::DescribeAsyncParallelToolRunner::DescribeCancellation::should_skip_pending_calls_when_context_cancelled_before_start",
+        "src/mojentic/llm/tools/runner_spec.py::DescribeAsyncParallelToolRunner::DescribeConcurrency::should_dispatch_calls_in_parallel",
+        "src/mojentic/llm/tools/runner_spec.py::DescribeAsyncParallelToolRunner::DescribeConcurrency::should_preserve_input_order_in_outcomes",
+        "src/mojentic/llm/tools/runner_spec.py::DescribeAsyncParallelToolRunner::DescribeConcurrency::should_respect_max_concurrency",
+        "src/mojentic/llm/tools/runner_spec.py::DescribeAsyncParallelToolRunner::DescribeValidation::should_reject_non_positive_concurrency",
+        "src/mojentic/llm/tools/runner_spec.py::DescribeSerialToolRunner::DescribeBatchExecution::should_mark_outcome_as_failed_when_tool_not_found",
+        "src/mojentic/llm/tools/runner_spec.py::DescribeSerialToolRunner::DescribeBatchExecution::should_mark_outcome_as_failed_when_tool_raises",
+        "src/mojentic/llm/tools/runner_spec.py::DescribeSerialToolRunner::DescribeBatchExecution::should_preserve_input_order",
+        "src/mojentic/llm/tools/runner_spec.py::DescribeSerialToolRunner::DescribeBatchExecution::should_return_empty_for_no_calls",
+        "src/mojentic/llm/tools/runner_spec.py::DescribeSerialToolRunner::DescribeHooks::should_invoke_start_and_complete_hooks_in_order"
+      ],
+      "cases_verified": 10,
+      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "exit_code": 0
+    },
+    {
+      "decision": "Realtime interruption and cleanup",
+      "specifications": [
+        "session_spec.py"
+      ],
+      "public_entrypoints": [
+        "RealtimeSession.events",
+        "RealtimeSession.close"
+      ],
+      "expected": "Barge-in occurs only after tool entry, triggers interruption, settles the tool cleanup event and closes session; function outputs precede response.create.",
+      "executable_tests": [
+        "src/mojentic/realtime/session_spec.py::DescribeBuildSessionUpdate::should_emit_realtime_ga_shape",
+        "src/mojentic/realtime/session_spec.py::DescribeBuildSessionUpdate::should_include_function_tools",
+        "src/mojentic/realtime/session_spec.py::DescribeRealtimeSessionInterruption::should_cancel_in_flight_tool_on_barge_in",
+        "src/mojentic/realtime/session_spec.py::DescribeRealtimeSessionTextRoundTrip::should_emit_session_opened_immediately",
+        "src/mojentic/realtime/session_spec.py::DescribeRealtimeSessionTextRoundTrip::should_normalize_text_turn_into_kind_events",
+        "src/mojentic/realtime/session_spec.py::DescribeRealtimeSessionToolBatch::should_dispatch_parallel_tools_and_submit_outputs",
+        "src/mojentic/realtime/session_spec.py::DescribeRealtimeVoiceBroker::should_initialise_session_with_session_update",
+        "src/mojentic/realtime/session_spec.py::DescribeRealtimeVoiceBroker::should_merge_overrides_over_broker_config"
+      ],
+      "cases_verified": 8,
+      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "exit_code": 0
+    },
+    {
+      "decision": "Wall-time-independent utilities",
+      "specifications": [
+        "current_datetime_spec.py",
+        "date_resolver_spec.py",
+        "event_store_spec.py",
+        "tracer_events_spec.py",
+        "tracer_system_spec.py"
+      ],
+      "public_entrypoints": [
+        "CurrentDateTimeTool.run",
+        "ResolveDateTool.run",
+        "EventStore",
+        "TracerSystem"
+      ],
+      "expected": "Fixed winter/summer instants preserve local EST/EDT formatting and exact timestamps; next Friday resolves exactly 2023-10-06; tracer/store queries use a fixed epoch.",
+      "executable_tests": [
+        "src/mojentic/llm/tools/current_datetime_spec.py::DescribeCurrentDateTimeTool::should_format_local_offset_and_name_from_the_returned_instant",
+        "src/mojentic/llm/tools/current_datetime_spec.py::DescribeCurrentDateTimeTool::should_preserve_default_local_wall_clock_format",
+        "src/mojentic/llm/tools/date_resolver_spec.py::DescribeResolveDateTool::should_resolve_date_with_reference",
+        "src/mojentic/llm/tools/date_resolver_spec.py::DescribeResolveDateTool::should_resolve_date_without_reference",
+        "src/mojentic/tracer/event_store_spec.py::DescribeEventStore::should_apply_custom_filter_function",
+        "src/mojentic/tracer/event_store_spec.py::DescribeEventStore::should_call_callback_when_storing_event",
+        "src/mojentic/tracer/event_store_spec.py::DescribeEventStore::should_clear_events",
+        "src/mojentic/tracer/event_store_spec.py::DescribeEventStore::should_filter_events_by_type",
+        "src/mojentic/tracer/event_store_spec.py::DescribeEventStore::should_filter_tracer_events_by_time_range",
+        "src/mojentic/tracer/event_store_spec.py::DescribeEventStore::should_get_last_n_events",
+        "src/mojentic/tracer/event_store_spec.py::DescribeEventStore::should_get_last_n_events_by_type",
+        "src/mojentic/tracer/event_store_spec.py::DescribeEventStore::should_store_an_event",
+        "src/mojentic/tracer/tracer_events_spec.py::DescribeTracerEvents::should_create_agent_interaction_tracer_event",
+        "src/mojentic/tracer/tracer_events_spec.py::DescribeTracerEvents::should_create_base_tracer_event",
+        "src/mojentic/tracer/tracer_events_spec.py::DescribeTracerEvents::should_create_llm_call_tracer_event",
+        "src/mojentic/tracer/tracer_events_spec.py::DescribeTracerEvents::should_create_llm_response_tracer_event",
+        "src/mojentic/tracer/tracer_events_spec.py::DescribeTracerEvents::should_create_tool_call_tracer_event",
+        "src/mojentic/tracer/tracer_system_spec.py::DescribeResponseEvidence::should_accept_evidence_on_null_tracer",
+        "src/mojentic/tracer/tracer_system_spec.py::DescribeResponseEvidence::should_leave_evidence_unknown_when_not_reported",
+        "src/mojentic/tracer/tracer_system_spec.py::DescribeResponseEvidence::should_record_reported_provider_evidence_on_llm_responses",
+        "src/mojentic/tracer/tracer_system_spec.py::DescribeTracerPackage::should_export_tracer_system_and_event_store",
+        "src/mojentic/tracer/tracer_system_spec.py::DescribeTracerSystem::should_clear_events",
+        "src/mojentic/tracer/tracer_system_spec.py::DescribeTracerSystem::should_enable_and_disable",
+        "src/mojentic/tracer/tracer_system_spec.py::DescribeTracerSystem::should_filter_events_by_time_range",
+        "src/mojentic/tracer/tracer_system_spec.py::DescribeTracerSystem::should_get_last_n_tracer_events",
+        "src/mojentic/tracer/tracer_system_spec.py::DescribeTracerSystem::should_initialize_with_default_event_store",
+        "src/mojentic/tracer/tracer_system_spec.py::DescribeTracerSystem::should_initialize_with_provided_event_store",
+        "src/mojentic/tracer/tracer_system_spec.py::DescribeTracerSystem::should_not_record_when_disabled",
+        "src/mojentic/tracer/tracer_system_spec.py::DescribeTracerSystem::should_record_agent_interaction",
+        "src/mojentic/tracer/tracer_system_spec.py::DescribeTracerSystem::should_record_llm_call",
+        "src/mojentic/tracer/tracer_system_spec.py::DescribeTracerSystem::should_record_llm_response",
+        "src/mojentic/tracer/tracer_system_spec.py::DescribeTracerSystem::should_record_tool_call"
+      ],
+      "cases_verified": 34,
+      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "exit_code": 0
+    }
+  ]
 }

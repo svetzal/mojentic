@@ -38,8 +38,8 @@ Ollama server environment settings remain unknown, so the result is an upper
 bound. It does not change `ChatSession.max_context`, configure a request, or
 measure first-token timing.
 
-Python verifies the unchanged `context-window-v1` JSON contract in
-`src/mojentic/llm/contracts/context_window_v1.json` through loopback HTTP and
+Python verifies the `context-window-v1` JSON contract in
+`src/mojentic/llm/contracts/context_window_v1.json` through in-process HTTP transports and
 contract-derived gateway doubles. Run:
 
 ```bash
@@ -47,10 +47,12 @@ uv run pytest src/mojentic/llm/gateways/context_window_spec.py
 sha256sum --check src/mojentic/llm/contracts/context_window_v1.manifest.sha256
 ```
 
-These checks also run in the normal pytest gate. External server and
-cross-repository consumer verification remain unfinished; see
-[CONFORMANCE-3.0.0.md](https://github.com/svetzal/mojentic-py/blob/main/CONFORMANCE-3.0.0.md).
-The coordinated publication hold remains in force.
+The pytest checks run in the normal gate. Contract source hashes track the
+revised parent metadata contract at `mojentic-unify@4ae2f73`; behavioral cases
+are unchanged. The same public API also verifies a fresh installed wheel.
+Current source identities and results are in `CONFORMANCE-3.0.0.md` at the
+repository root. Changed running-service boundaries require paired contracts;
+this library-only test correction changes no application boundary.
 
 ::: mojentic.llm.model_context_window.ModelContextWindow
     options:

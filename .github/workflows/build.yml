@@ -16,6 +16,7 @@ permissions:
 
 jobs:
   lint:
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     # Skip job if actor is github-actions[bot] to ensure agent safety
     if: ${{ github.actor != 'github-actions[bot]' }}
@@ -39,6 +40,7 @@ jobs:
             --statistics --ignore=F401
 
   test:
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     # Skip job if actor is github-actions[bot] to ensure agent safety
     if: ${{ github.actor != 'github-actions[bot]' }}
@@ -65,6 +67,7 @@ jobs:
           path: junit/test-results.xml
 
   security:
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -97,6 +100,7 @@ jobs:
             pip-audit-report.json
 
   release-build:
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     needs: [lint, test, security]
     # Only run on release publish events
@@ -132,6 +136,7 @@ jobs:
           path: dist/
 
   deploy-docs:
+    timeout-minutes: 15
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -156,6 +161,7 @@ jobs:
         uses: actions/deploy-pages@v5
 
   pypi-publish:
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     needs:
       - release-build

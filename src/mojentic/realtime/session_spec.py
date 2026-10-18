@@ -93,16 +93,22 @@ class _EchoTool(LLMTool):
 class _SlowAbortableTool(LLMTool):
     """Async tool that obeys the cancel_event in its ctx."""
 
+    def __init__(self):
+        self.started = asyncio.Event()
+        self.closed = asyncio.Event()
+
     async def run(
         self, value: str = "x", delay_s: float = 0.5, ctx: ToolRunContext | None = None
     ) -> dict:
         # Bail early if the runner has already aborted this batch.
         if ctx is not None and ctx.cancelled:
             raise asyncio.CancelledError("ctx cancelled before start")
-        await asyncio.sleep(delay_s)
-        if ctx is not None and ctx.cancelled:
+        self.started.set()
+        try:
+            await ctx.cancel_event.wait()
             raise asyncio.CancelledError("ctx cancelled during run")
-        return {"value": value}
+        finally:
+            self.closed.set()
 
     @property
     def descriptor(self):
@@ -288,7 +294,7 @@ class DescribeRealtimeSessionToolBatch:
                         return
 
             reader_task = asyncio.create_task(reader())
-            await asyncio.wait_for(reader_task, timeout=2.0)
+            await reader_task
             await session.close()
             return collected, gateway_session.sent
 
@@ -359,18 +365,18 @@ class DescribeRealtimeSessionInterruption:
 
             reader_task = asyncio.create_task(reader())
 
-            # Give the tool batch a beat to start, then barge in.
-            await asyncio.sleep(0.05)
+            await tool.started.wait()
             gateway_session.push(
                 {
                     "type": "input_audio_buffer.speech_started",
                     "audio_start_ms": 0,
                 }
             )
-            await asyncio.wait_for(interrupted_event.wait(), timeout=2.0)
+            await interrupted_event.wait()
             gateway_session.end()
             await reader_task
             await session.close()
+            assert tool.closed.is_set()
             return collected, gateway_session.sent
 
         events, sent = asyncio.run(run())

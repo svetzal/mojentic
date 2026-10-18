@@ -13,6 +13,7 @@ from mojentic.llm.gateways.omlx_recovery_spec import allow, completion
 from mojentic.llm.gateways.openai import OpenAIGateway
 from mojentic.llm.gateways.openai_strict_tool_recovery_spec import StrictTool
 from mojentic.llm.recovery import RecoveryPolicy
+from scripts.inprocess_http import clock, virtual_sleep
 
 broker_factory = recovery_fixtures.broker_factory
 
@@ -42,7 +43,14 @@ def tool_round(provider, count):
         )
     lifecycle = []
     policy = RecoveryPolicy(
-        max_attempts=2, base_delay=0, admission=allow, observer=lifecycle.append
+        monotonic=clock,
+        wall=lambda: 0,
+        jitter=lambda ceiling: ceiling / 2,
+        sleeper=virtual_sleep,
+        max_attempts=2,
+        base_delay=0,
+        admission=allow,
+        observer=lifecycle.append,
     )
     with scripted_http(
         [

@@ -20,6 +20,7 @@ from mojentic.llm.llm_broker import LLMBroker
 from mojentic.llm.reasoning import ReasoningEffort, ReasoningProfile
 from mojentic.llm.recovery import RecoveryError, RecoveryPolicy
 from mojentic.llm.tools.llm_tool import LLMTool
+from scripts.inprocess_http import InProcessTokenizer, clock, virtual_sleep
 
 
 class DescribeNativeReasoning:
@@ -41,9 +42,9 @@ class DescribeNativeReasoning:
         messages = [LLMMessage(content="Resolve tomorrow")]
         config = CompletionConfig(reasoning_effort="low", retain_reasoning=True)
 
-        result = LLMBroker(model="arbitrary-alias", gateway=gateway).generate(
-            messages, tools=[ResolveDate()], config=config
-        )
+        result = LLMBroker(
+            tokenizer=InProcessTokenizer(), model="arbitrary-alias", gateway=gateway
+        ).generate(messages, tools=[ResolveDate()], config=config)
 
         first = json.loads((FIXTURES / "chat_tool_call.json").read_text())["choices"][
             0
@@ -129,7 +130,17 @@ def reply(provider, streaming=False, tool=False, terminal=True, finish=None):
 
 def gateway_for(provider, host, recovery=False):
     gateway = OllamaGateway if provider == "ollama" else OMLXGateway
-    return gateway(host=host, recovery_policy=RecoveryPolicy() if recovery else None)
+    return gateway(
+        host=host,
+        recovery_policy=RecoveryPolicy(
+            monotonic=clock,
+            wall=lambda: 0,
+            jitter=lambda ceiling: ceiling / 2,
+            sleeper=virtual_sleep,
+        )
+        if recovery
+        else None,
+    )
 
 
 def exercise_gateway(gateway, mode, args):
@@ -212,7 +223,9 @@ class DescribeNativeReasoningWireContract:
         ]
         with scripted_http(replies) as (host, requests):
             broker = LLMBroker(
-                model="alias", gateway=gateway_for(provider, host, recovery)
+                tokenizer=InProcessTokenizer(),
+                model="alias",
+                gateway=gateway_for(provider, host, recovery),
             )
             messages = [LLMMessage(content="question")]
             config = CompletionConfig(
@@ -260,7 +273,11 @@ class DescribeNativeReasoningWireContract:
             ]
         ) as (host, _requests):
             messages = [LLMMessage(content="question")]
-            broker = LLMBroker(model="alias", gateway=gateway_for(provider, host))
+            broker = LLMBroker(
+                tokenizer=InProcessTokenizer(),
+                model="alias",
+                gateway=gateway_for(provider, host),
+            )
 
             list(
                 broker.generate_stream(
@@ -277,7 +294,9 @@ class DescribeNativeReasoningWireContract:
         with scripted_http([(500, {}, b'{"error":"failed"}')]) as (host, _requests):
             messages = [LLMMessage(content="question")]
             stream = LLMBroker(
-                model="alias", gateway=gateway_for(provider, host)
+                tokenizer=InProcessTokenizer(),
+                model="alias",
+                gateway=gateway_for(provider, host),
             ).generate_stream(
                 messages,
                 tools=[Count()],
@@ -330,7 +349,14 @@ class DescribeNativeReasoningWireContract:
     def should_reject_new_openai_controls_before_http(self, config, mode):
         gateway = OpenAIGateway(
             api_key="unused",
-            recovery_policy=RecoveryPolicy() if mode == "recovery" else None,
+            recovery_policy=RecoveryPolicy(
+                monotonic=clock,
+                wall=lambda: 0,
+                jitter=lambda ceiling: ceiling / 2,
+                sleeper=virtual_sleep,
+            )
+            if mode == "recovery"
+            else None,
         )
         args = {
             "model": "gpt-4o",
@@ -349,7 +375,9 @@ class DescribeNativeReasoningWireContract:
         ):
             messages = [LLMMessage(content="question")]
             stream = LLMBroker(
-                model="alias", gateway=gateway_for(provider, host)
+                tokenizer=InProcessTokenizer(),
+                model="alias",
+                gateway=gateway_for(provider, host),
             ).generate_stream(
                 messages,
                 tools=[Count()],
@@ -367,7 +395,11 @@ class DescribeNativeReasoningWireContract:
             _requests,
         ):
             messages = [LLMMessage(content="question")]
-            broker = LLMBroker(model="alias", gateway=gateway_for("ollama", host))
+            broker = LLMBroker(
+                tokenizer=InProcessTokenizer(),
+                model="alias",
+                gateway=gateway_for("ollama", host),
+            )
 
             with pytest.raises(ValueError, match="incomplete Ollama response"):
                 broker.generate(
@@ -389,7 +421,9 @@ class DescribeNativeReasoningWireContract:
             ]
         ) as (host, requests):
             broker = LLMBroker(
-                model="alias", gateway=gateway_for("ollama", host, recovery=True)
+                tokenizer=InProcessTokenizer(),
+                model="alias",
+                gateway=gateway_for("ollama", host, recovery=True),
             )
 
             with pytest.raises(RecoveryError) as caught:
@@ -423,7 +457,9 @@ class DescribeNativeReasoningWireContract:
             ]
         ) as (host, requests):
             broker = LLMBroker(
-                model="alias", gateway=gateway_for("ollama", host, recovery=True)
+                tokenizer=InProcessTokenizer(),
+                model="alias",
+                gateway=gateway_for("ollama", host, recovery=True),
             )
 
             result = broker.generate(
@@ -452,7 +488,11 @@ class DescribeNativeReasoningWireContract:
             ]
         ) as (host, _requests):
             messages = [LLMMessage(content="question")]
-            broker = LLMBroker(model="alias", gateway=gateway_for(provider, host))
+            broker = LLMBroker(
+                tokenizer=InProcessTokenizer(),
+                model="alias",
+                gateway=gateway_for(provider, host),
+            )
 
             broker.generate(
                 messages,
@@ -531,7 +571,11 @@ class DescribeNativeReasoningWireContract:
         )
         with scripted_http([(200, {}, body)]) as (host, _requests):
             messages = [LLMMessage(content="question")]
-            broker = LLMBroker(model="alias", gateway=gateway_for("omlx", host))
+            broker = LLMBroker(
+                tokenizer=InProcessTokenizer(),
+                model="alias",
+                gateway=gateway_for("omlx", host),
+            )
 
             with pytest.raises(ValueError, match="stream failed"):
                 list(

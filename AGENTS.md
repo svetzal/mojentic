@@ -21,7 +21,7 @@ in CONFORMANCE-3.0.0.md.
 The October 17 library self-validation policy supersedes older requirements
 here and in historical conformance evidence for external/counterpart checks of
 an unreleased library. Validate through public APIs, binding contracts and
-fixtures, production gateways against controlled HTTP, and a fresh installation
+fixtures, production gateways against in-process HTTP transports, and a fresh installation
 of the packaged artifact. Dependents verify when adopting a released version.
 Changed boundaries between running applications/services still require both
 sides to verify the same versioned executable contracts in separately authorized
@@ -146,19 +146,28 @@ src/
 
 ## Testing
 
-- Tests are co-located with implementation files (test file must be in the same folder)
-- Tests are written as specifications in `*_spec.py` files
-- Test discovery includes: `test_*.py`, `*_test.py`, `*_spec.py` in `src/`
-- **Test naming**: Use `should_*` for test methods, `Describe*` for test classes
-- Use pytest with `mocker` fixture for mocking — do not use `unittest` or `MagicMock` directly
-- Use `@fixture` markers for pytest fixtures
-- Break large fixtures into smaller, focused fixtures
-- Do not write Given/When/Then or Act/Arrange/Assert comments
-- Do not write docstrings on `should_` methods
-- Separate test phases with a single blank line
-- Do not write conditional statements in tests
-- Each test must fail for only one clear reason
-- **Mocking rule**: Only mock our own gateway classes. Do not mock other library internals or private functions/methods in our own code
+- Co-locate specifications as `*_spec.py`, using `Describe*` classes and `should_*` methods.
+- Exercise public broker, session, gateway, dispatcher, agent and tool-runner entrypoints.
+- Substitute only gateway, transport, clock and sleeper boundaries. Do not mock SDK clients,
+  library internals or private methods. Use pytest's `mocker.Mock(spec=GatewayClass)` when a mock is needed.
+- All library tests and verification scripts run in process. Never create Internet sockets,
+  loopback servers, service calls or registry requests. `src/conftest.py` enforces this for
+  the library suite; the installed-wheel scripts enforce the same guard themselves.
+- Reuse `scripts/inprocess_http.py`: it captures actual SDK-encoded request bytes and
+  headers at the httpx/httpx2 transport boundaries, scripts body truncation/errors, and
+  exposes cancellation/cleanup rendezvous. Keep the shared `scripted_http`,
+  `unfinished_http`, `cloud_recovery_spec` and `omlx_recovery_spec` fixture exports compatible.
+- Inject retry sleepers and deterministic jitter. Use a virtual monotonic or scheduler
+  clock for budgets and timing. Use events for ordering, cancellation and cleanup;
+  assert exact measured values and accepted identifiers, never wall-clock thresholds.
+- Use `InProcessTokenizer` or a tokenizer gateway double where tokenization is incidental;
+  tests must not depend on a tiktoken cache or download it.
+- Separate phases with one blank line; no Given/When/Then comments, method docstrings,
+  conditional assertions, or mutable fixture defaults.
+- Run all `.hone-gates.json` gates and the quality checks below. Fresh-wheel verification
+  commands and the binding decision mapping live in `CONFORMANCE-3.0.0.md` and
+  `RECOVERY-CONFORMANCE.md`. Library self-validation uses the October 17 policy; changed
+  running-service boundaries still require paired versioned executable contracts.
 
 ## LLM Tool Development
 

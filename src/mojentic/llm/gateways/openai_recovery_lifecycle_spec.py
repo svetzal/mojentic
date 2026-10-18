@@ -25,6 +25,7 @@ from mojentic.llm.gateways.omlx_recovery_spec import (
 )
 from mojentic.llm.gateways.openai import OpenAIGateway
 from mojentic.llm.recovery import RecoveryCall, RecoveryError, RecoveryPolicy
+from scripts.inprocess_http import clock, virtual_sleep
 
 
 def completion(content="answer", **message):
@@ -82,7 +83,14 @@ class DescribeOpenAIStreamSafety:
             events = await collect(
                 openai_gateway(
                     host=host,
-                    recovery_policy=RecoveryPolicy(max_attempts=3, admission=allow),
+                    recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        max_attempts=3,
+                        admission=allow,
+                    ),
                 )
             )
         assert len(requests) == 1
@@ -100,7 +108,14 @@ class DescribeOpenAIStreamSafety:
             events = await collect(
                 openai_gateway(
                     host=host,
-                    recovery_policy=RecoveryPolicy(max_attempts=3, admission=allow),
+                    recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        max_attempts=3,
+                        admission=allow,
+                    ),
                 )
             )
         assert len(requests) == 1
@@ -119,7 +134,13 @@ class DescribeOpenAIStreamSafety:
                 openai_gateway(
                     host=host,
                     recovery_policy=RecoveryPolicy(
-                        max_attempts=2, base_delay=0, admission=allow
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        max_attempts=2,
+                        base_delay=0,
+                        admission=allow,
                     ),
                 )
             )
@@ -161,7 +182,12 @@ class DescribeOpenAIStreamSafety:
                 openai_gateway(
                     host,
                     recovery_policy=RecoveryPolicy(
-                        max_attempts=3, wire_observer=capture
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        max_attempts=3,
+                        wire_observer=capture,
                     ),
                 )
             )
@@ -190,7 +216,14 @@ class DescribeOpenAIStreamSafety:
             events = await collect(
                 openai_gateway(
                     host=host,
-                    recovery_policy=RecoveryPolicy(max_attempts=2, admission=allow),
+                    recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        max_attempts=2,
+                        admission=allow,
+                    ),
                 )
             )
         assert len(requests) == 1
@@ -228,7 +261,15 @@ class DescribeOpenAIStreamSafety:
         data += b"data: [DONE]\n\n"
         with scripted_http([(200, {}, data)]) as (host, requests):
             events = await collect(
-                openai_gateway(host=host, recovery_policy=RecoveryPolicy())
+                openai_gateway(
+                    host=host,
+                    recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                    ),
+                )
             )
         assert len(requests) == 1
         assert events[-1].kind == "completed"
@@ -261,7 +302,13 @@ class DescribeOpenAIPublicCallers:
                 openai_gateway(
                     host=host,
                     recovery_policy=RecoveryPolicy(
-                        max_attempts=2, base_delay=0, admission=allow
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        max_attempts=2,
+                        base_delay=0,
+                        admission=allow,
                     ),
                 )
             )
@@ -308,6 +355,10 @@ class DescribeOpenAIPublicCallers:
                 openai_gateway(
                     host=host,
                     recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
                         max_attempts=2,
                         base_delay=0,
                         admission=allow,
@@ -369,7 +420,14 @@ class DescribeOpenAIPublicCallers:
             broker = broker_factory(
                 openai_gateway(
                     host=host,
-                    recovery_policy=RecoveryPolicy(max_attempts=3, admission=allow),
+                    recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        max_attempts=3,
+                        admission=allow,
+                    ),
                 )
             )
             events = list(
@@ -384,7 +442,16 @@ class DescribeOpenAIPublicCallers:
             [(307, {"Location": "/leak"}, b"private"), (200, {}, stream("redirected"))]
         ) as (host, requests):
             broker = broker_factory(
-                openai_gateway(host, recovery_policy=RecoveryPolicy(max_attempts=3))
+                openai_gateway(
+                    host,
+                    recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        max_attempts=3,
+                    ),
+                )
             )
             events = list(
                 broker.generate_stream_events([LLMMessage(content="payload")])
@@ -398,7 +465,16 @@ class DescribeOpenAIPublicCallers:
     ):
         with scripted_http([(200, {}, stream("raw text"))]) as (host, requests):
             broker = broker_factory(
-                openai_gateway(host, recovery_policy=RecoveryPolicy(max_attempts=3))
+                openai_gateway(
+                    host,
+                    recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        max_attempts=3,
+                    ),
+                )
             )
             events = list(
                 broker.generate_stream_events([LLMMessage(content="payload")])
@@ -425,6 +501,9 @@ class DescribeOpenAICancellation:
                 closed.set()
 
         policy = RecoveryPolicy(
+            monotonic=clock,
+            wall=lambda: 0,
+            jitter=lambda ceiling: ceiling / 2,
             max_attempts=3,
             base_delay=0,
             observer=lifecycle.append,
@@ -436,12 +515,12 @@ class DescribeOpenAICancellation:
                 host=host, recovery_call=call, recovery_policy=policy
             )
             task = asyncio.create_task(invoke(gateway, operation))
-            await asyncio.wait_for(entered.wait(), 2)
+            await entered.wait()
             assert len(requests) == 1
             assert not task.done()
             call.cancel()
             with pytest.raises(RecoveryError) as caught:
-                await asyncio.wait_for(task, 2)
+                await task
         assert closed.is_set()
         assert len(requests) == 1
         assert caught.value.report.outcome == "cancelled"
@@ -470,15 +549,21 @@ class DescribeOpenAICancellation:
             gateway = openai_gateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
-                    max_attempts=2, base_delay=0, admission=admission
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=2,
+                    base_delay=0,
+                    admission=admission,
                 ),
             )
             task = asyncio.create_task(invoke(gateway, operation))
-            await asyncio.wait_for(entered.wait(), 2)
+            await entered.wait()
             assert len(requests) == 1
             assert not task.done()
             release.set()
-            result = await asyncio.wait_for(task, 2)
+            result = await task
         assert len(requests) == 2
         assert result.recovery_report.outcome == "succeeded"
 
@@ -504,14 +589,21 @@ class DescribeOpenAICancellation:
         )
         with scripted_http([(200, {}, data)]) as (host, requests):
             gateway = openai_gateway(
-                host=host, recovery_policy=RecoveryPolicy(observer=observe)
+                host=host,
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    observer=observe,
+                ),
             )
             iterator = gateway.complete_stream_with_recovery(
                 model="test", messages=[LLMMessage(content="payload")], call=call
             )
             received = [await anext(iterator) for _ in range(consumed)]
             call.cancel()
-            assert await asyncio.wait_for(asyncio.to_thread(cancelled.wait, 1), 2)
+            await asyncio.to_thread(cancelled.wait)
             remaining = [event async for event in iterator]
         assert len(requests) == 1
         assert all(event.kind in {"progress", "metrics"} for event in received)
@@ -525,51 +617,28 @@ class DescribeOpenAICancellation:
         assert "attempt_succeeded" not in transitions
 
     @pytest.mark.parametrize("operation", OPERATIONS)
-    async def should_cancel_active_request_and_close_local_socket(self, operation):
-        from contextlib import contextmanager
-        from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-
-        started, closed = threading.Event(), threading.Event()
-        requests = []
-
-        class Handler(BaseHTTPRequestHandler):
-            def do_POST(self):
-                requests.append(self.rfile.read(int(self.headers["Content-Length"])))
-                started.set()
-                self.connection.settimeout(2)
-                assert self.connection.recv(1) == b""
-                closed.set()
-
-            def log_message(self, *args):
-                pass
-
-        @contextmanager
-        def server():
-            http = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
-            thread = threading.Thread(
-                target=lambda: http.serve_forever(poll_interval=0.01), daemon=True
-            )
-            thread.start()
-            try:
-                yield f"http://127.0.0.1:{http.server_port}"
-            finally:
-                http.shutdown()
-                http.server_close()
-                thread.join()
+    async def should_cancel_active_request_and_close_transport(self, operation):
+        from scripts.inprocess_http import unfinished_http
 
         call, lifecycle = RecoveryCall(), []
-        with server() as host:
+        with unfinished_http() as (host, requests, started, closed):
             gateway = openai_gateway(
                 host=host,
                 recovery_call=call,
-                recovery_policy=RecoveryPolicy(observer=lifecycle.append),
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    observer=lifecycle.append,
+                ),
             )
             task = asyncio.create_task(invoke(gateway, operation))
-            assert await asyncio.wait_for(asyncio.to_thread(started.wait, 1), 2)
+            await started.wait()
             call.cancel()
             with pytest.raises(RecoveryError) as caught:
-                await asyncio.wait_for(task, 1)
-            assert await asyncio.wait_for(asyncio.to_thread(closed.wait, 1), 2)
+                await task
+            await closed.wait()
         assert len(requests) == 1
         assert isinstance(caught.value.inspect_cause(), asyncio.CancelledError)
         assert caught.value.report.identity.wire_attempt == 1
@@ -623,6 +692,10 @@ class DescribeOpenAICaptureEvidence:
             gateway = openai_gateway(
                 host=host,
                 recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
                     max_attempts=3,
                     admission=allow,
                     wire_observer=capture,
@@ -673,7 +746,14 @@ class DescribeOpenAIMalformedToolFields:
         with scripted_http([(200, {}, data)]) as (host, requests):
             gateway = openai_gateway(
                 host=host,
-                recovery_policy=RecoveryPolicy(max_attempts=3, admission=allow),
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=3,
+                    admission=allow,
+                ),
             )
             with pytest.raises(RecoveryError) as caught:
                 await invoke(gateway, operation)
@@ -696,7 +776,14 @@ class DescribeOpenAIMalformedToolFields:
             events = await collect(
                 openai_gateway(
                     host=host,
-                    recovery_policy=RecoveryPolicy(max_attempts=3, admission=allow),
+                    recovery_policy=RecoveryPolicy(
+                        monotonic=clock,
+                        wall=lambda: 0,
+                        jitter=lambda ceiling: ceiling / 2,
+                        sleeper=virtual_sleep,
+                        max_attempts=3,
+                        admission=allow,
+                    ),
                 )
             )
         assert len(requests) == 1
@@ -711,7 +798,15 @@ class DescribeOpenAIPreparationPrivacy:
         self, operation
     ):
         with scripted_http([]) as (host, requests):
-            gateway = openai_gateway(host=host, recovery_policy=RecoveryPolicy())
+            gateway = openai_gateway(
+                host=host,
+                recovery_policy=RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                ),
+            )
             args = {
                 "model": "test",
                 "messages": [],
