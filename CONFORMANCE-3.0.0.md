@@ -2,7 +2,7 @@
 
 This living record replaces superseded loopback and wall-clock proof claims.
 Production behavior, public APIs, dependency versions and package version are
-unchanged by this correction. The tested base commit is `8c20405f133cc79b5d0810bccd106d6b04f5d3f3`;
+unchanged by this correction. The tested base commit is `0e2d3dc52715313349a9b9a81292f94b659dd16a`;
 `docs/release_3_0_0_source.sha256` identifies the tested working-tree inputs,
 including specifications and the shared transport helper. Actual commands,
 source identity, artifact identity and results are maintained in
@@ -52,11 +52,26 @@ httpx2, plus monotonic/scheduler/wall clocks, sleepers and tokenizer gateways.
 It preserves real SDK request encoding, exact headers and payloads. The original
 `scripted_http`, `unfinished_http`, cloud and oMLX fixture exports remain usable
 by every importer. The library pytest guard and both installed-wheel scripts
-reject Internet socket construction, DNS, connect/bind and blocking sleep.
+use a scoped Python audit hook to reject Internet socket construction, DNS,
+connect (including connect_ex), bind and datagram sends before I/O, and reject
+blocking sleep. No native socket class or module method is replaced. The hook
+is permanently registered but inert outside offline contexts; a process-wide
+nesting count restores activation even when a context raises.
 Async sleepers cooperate without timers; injected retry waits advance virtual
 time. asyncio's internal Unix socketpair is permitted. Tests and verifiers call
 no service or registry. Package preparation and dependency audits may access
 registries; they are outside the acceptance boundary.
+
+`offline_spec.py` reconciles the preserved characterizations through
+`LLMBroker.generate_response`. Exact request byte assertions distinguish the
+SDK/httpx2 and recovery/httpx routes. Both retain Authorization and answer
+content; the supported recovery wire observer exposes the exact unmasked
+`x-request-id` and links its logical identity to the public recovery report.
+The ordinary success model has no `provider_metadata` projection. Native
+`socket.socket.__init__` is a standard-library Python function, while connect
+and bind remain native method descriptors. The original guard rejected this
+reconciled probe; the audit-hook correction passed. Nested guard unwinding,
+outer transport restoration and unhandled routes after transport exit all pass.
 
 ## Decision mapping
 
@@ -66,6 +81,7 @@ basenames under `src/mojentic/`; each name resolves uniquely in this checkout.
 
 | Binding decision | Replacement executable proof | Expected public result |
 | --- | --- | --- |
+| Offline enforcement with native socket methods | `offline_spec.py`; `LLMBroker.generate_response` | Seven cases preserve exact SDK/recovery serialization, Authorization, answer and raw request identity; nested contexts restore transports and deny unstubbed routes before I/O. |
 | 503 recovery and 504 exhaustion | `ollama_recovery_spec.py`, `omlx_recovery_spec.py`, `cloud_recovery_spec.py`; `complete`, `complete_with_recovery`, `generate`, `generate_response`, `generate_object`, `ChatSession.send` | 503 retries only with permission; 504 stops at max_attempts; exact payload bytes persist, attempt IDs differ within one logical ID, lifecycle and complete history agree. |
 | 429 and Retry-After | `omlx_429_recovery_spec.py`, `cloud_recovery_spec.py`, `ollama_recovery_spec.py`; `complete_with_recovery`, `complete_stream_with_recovery` | Seconds, IMF-fixdate, RFC850 and asctime retain the provider minimum; invalid/absent dates use deterministic backoff; ceiling/budget refuses excessive delays. |
 | Ambiguous local execution and no-hook admission | `recovery_admission_spec.py`, `ollama_recovery_spec.py`, `omlx_recovery_spec.py`; `complete`, `complete_with_recovery`, `complete_stream_with_recovery` | Ollama/oMLX ambiguous failures require admission; allow/reject/pending/undecided remain distinct. Remote eligible failures may retry without a hook. |
@@ -136,11 +152,14 @@ library tests. The `--source-id` digest includes both scripts and the helper.
 
 ## Quality and limits
 
-Final verification: **2,657 tests passed**, **88.13% coverage** (85% minimum),
+Final verification: **2,664 tests passed**, **86.74% coverage** in the configured
+`--cov=src` pytest gate (85% minimum),
 all four `.hone-gates.json` gates exited 0, full flake8/ruff/format checks passed,
 and both security audits reported no known vulnerabilities. Both installed-wheel
-scripts exited 0 under the socket/sleeper guards. The exact tested source ID is
-`619b58a4d22eadd3ee79a800ccb25141f972f14642413a2f0a98d8db99cbdde7`.
+scripts exited 0 under the audit-hook/sleeper guards. The additional bare
+`uv run pytest --cov` run also passed all 2,664 cases (88.06%, including
+executed helpers outside the configured source scope). The exact tested source ID is
+`6cadd9ab8dfeb22bd4f3930b925b0ae9ac783ff2a01fc0d6d65d3016ebe41b8d`.
 
 Nineteen previously dormant dispatcher/aggregator tests used `test_*` names while
 pytest collected only `should_*`. Their checks now run under the configured

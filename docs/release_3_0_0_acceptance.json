@@ -1,10 +1,10 @@
 {
   "source": {
-    "base_commit": "8c20405f133cc79b5d0810bccd106d6b04f5d3f3",
-    "working_tree_source_id": "619b58a4d22eadd3ee79a800ccb25141f972f14642413a2f0a98d8db99cbdde7",
+    "base_commit": "0e2d3dc52715313349a9b9a81292f94b659dd16a",
+    "working_tree_source_id": "6cadd9ab8dfeb22bd4f3930b925b0ae9ac783ff2a01fc0d6d65d3016ebe41b8d",
     "manifest": "docs/release_3_0_0_source.sha256",
-    "manifest_sha256": "cee1c146f7b3ebacb5bd00c8ebce0e704741254f384a55f02f736a044f12037d",
-    "state": "uncommitted reconciliation of preserved migration; source ID includes public consumers, production providers, real-SDK transport specs, both verification scripts and transport helper"
+    "manifest_sha256": "9578c9bb24afdcbf688d28bedf0613b9d5b717cabaf5f308a6a52ed76b4f78e5",
+    "state": "uncommitted test-only audit-hook correction; includes public consumers, production providers, all specifications, both installed-wheel verifiers and shared HTTP helper"
   },
   "contracts": [
     {
@@ -33,8 +33,8 @@
       "sha256": "6a5ebca721a9f9e84323d0118b543d5dc71c7f68bb7067b2cdf6ad40daddcfc8"
     }
   ],
-  "verification_result": "2657 passed; no failures, errors or skips",
-  "coverage_percent": 88.13,
+  "verification_result": "2664 passed; no failures, errors or skips",
+  "coverage_percent": 86.74,
   "counting": "Decision rows may overlap; cases_verified counts selected JUnit parameter cases, executable_tests groups them by source test function. Exact expected values and complete case inputs remain in the identified executable source.",
   "decisions": [
     {
@@ -63,7 +63,7 @@
         "src/mojentic/llm/gateways/omlx_recovery_spec.py::DescribeOMLXWireRecovery::should_recover_503_with_stable_exact_semantic_bytes_and_lifecycle"
       ],
       "cases_verified": 39,
-      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "actual": "passed; every mapped public assertion executed successfully in the final identified source suite",
       "exit_code": 0
     },
     {
@@ -86,7 +86,7 @@
         "src/mojentic/llm/gateways/omlx_429_recovery_spec.py::DescribeOMLX429Recovery::should_refuse_eligible_429_without_admission"
       ],
       "cases_verified": 56,
-      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "actual": "passed; every mapped public assertion executed successfully in the final identified source suite",
       "exit_code": 0
     },
     {
@@ -122,8 +122,8 @@
         "src/mojentic/llm/gateways/recovery_admission_spec.py::DescribeRecoveryAdmission::should_stop_pending_admission",
         "src/mojentic/llm/gateways/recovery_admission_spec.py::DescribeRecoveryAdmission::should_surface_undecided_through_synchronous_public_apis"
       ],
-      "cases_verified": 107,
-      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "cases_verified": 112,
+      "actual": "passed; every mapped public assertion executed successfully in the final identified source suite",
       "exit_code": 0
     },
     {
@@ -142,7 +142,7 @@
         "src/mojentic/llm/gateways/recovery_admission_spec.py::DescribeRecoveryAdmission::should_retry_evidenced_connection_refusal_without_hook"
       ],
       "cases_verified": 32,
-      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "actual": "passed; every mapped public assertion executed successfully in the final identified source suite",
       "exit_code": 0
     },
     {
@@ -165,7 +165,7 @@
         "src/mojentic/llm/gateways/openai_recovery_lifecycle_spec.py::DescribeOpenAICancellation::should_cancel_active_request_and_close_transport"
       ],
       "cases_verified": 12,
-      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "actual": "passed; every mapped public assertion executed successfully in the final identified source suite",
       "exit_code": 0
     },
     {
@@ -191,8 +191,8 @@
         "src/mojentic/llm/gateways/omlx_recovery_spec.py::DescribeOMLXCancellation::should_cancel_pending_admission_and_backoff_without_a_new_request",
         "src/mojentic/llm/gateways/openai_recovery_lifecycle_spec.py::DescribeOpenAICancellation::should_cancel_pending_admission_and_backoff_without_a_new_request"
       ],
-      "cases_verified": 27,
-      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "cases_verified": 31,
+      "actual": "passed; every mapped public assertion executed successfully in the final identified source suite",
       "exit_code": 0
     },
     {
@@ -213,8 +213,8 @@
         "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeRecoveryEdgeEvidence::should_refuse_admission_that_consumed_the_recovery_budget",
         "src/mojentic/llm/gateways/recovery_admission_spec.py::DescribeRecoveryAdmission::should_stop_pending_admission"
       ],
-      "cases_verified": 14,
-      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "cases_verified": 30,
+      "actual": "passed; every mapped public assertion executed successfully in the final identified source suite",
       "exit_code": 0
     },
     {
@@ -231,7 +231,7 @@
         "src/mojentic/llm/gateways/cloud_recovery_spec.py::DescribeCloudWireRecovery::should_leave_active_generation_without_a_fixed_read_timeout"
       ],
       "cases_verified": 5,
-      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "actual": "passed; every mapped public assertion executed successfully in the final identified source suite",
       "exit_code": 0
     },
     {
@@ -262,7 +262,7 @@
         "src/mojentic/llm/gateways/openai_recovery_lifecycle_spec.py::DescribeOpenAIStreamSafety::should_preserve_terminal_telemetry_and_reject_length"
       ],
       "cases_verified": 38,
-      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "actual": "passed; every mapped public assertion executed successfully in the final identified source suite",
       "exit_code": 0
     },
     {
@@ -293,8 +293,8 @@
         "src/mojentic/llm/gateways/openai_recovery_lifecycle_spec.py::DescribeOpenAIStreamSafety::should_not_let_provider_model_metadata_mask_observed_semantics",
         "src/mojentic/llm/gateways/readiness_boundary_spec.py::DescribeReadinessBoundary::should_surface_partial_semantics_without_replay_through_public_streams"
       ],
-      "cases_verified": 57,
-      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "cases_verified": 59,
+      "actual": "passed; every mapped public assertion executed successfully in the final identified source suite",
       "exit_code": 0
     },
     {
@@ -325,7 +325,7 @@
         "src/mojentic/llm/gateways/openai_stream_events_spec.py::should_reject_malformed_provider_evidence_with_one_terminal_error"
       ],
       "cases_verified": 40,
-      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "actual": "passed; every mapped public assertion executed successfully in the final identified source suite",
       "exit_code": 0
     },
     {
@@ -351,8 +351,8 @@
         "src/mojentic/llm/gateways/omlx_stream_spec.py::DescribeDropKeepaliveFrames::should_drop_frames_whose_model_is_keepalive",
         "src/mojentic/llm/gateways/omlx_stream_spec.py::DescribeDropKeepaliveFrames::should_remove_the_keepalive_frame_from_every_fixture_stream"
       ],
-      "cases_verified": 24,
-      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "cases_verified": 48,
+      "actual": "passed; every mapped public assertion executed successfully in the final identified source suite",
       "exit_code": 0
     },
     {
@@ -382,7 +382,7 @@
         "src/mojentic/llm/gateways/readiness_boundary_spec.py::DescribeReadinessBoundary::should_apply_selected_eligibility_and_recover_server_errors"
       ],
       "cases_verified": 77,
-      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "actual": "passed; every mapped public assertion executed successfully in the final identified source suite",
       "exit_code": 0
     },
     {
@@ -412,7 +412,7 @@
         "src/mojentic/llm/gateways/typed_errors_spec.py::DescribeTypedErrorsV1::should_validate_policy_at_gateway_construction_without_disclosing_input"
       ],
       "cases_verified": 101,
-      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "actual": "passed; every mapped public assertion executed successfully in the final identified source suite",
       "exit_code": 0
     },
     {
@@ -443,7 +443,7 @@
         "src/mojentic/llm/gateways/provider_metadata_spec.py::DescribeProviderMetadata::should_retain_metadata_from_in_band_provider_error"
       ],
       "cases_verified": 99,
-      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "actual": "passed; every mapped public assertion executed successfully in the final identified source suite",
       "exit_code": 0
     },
     {
@@ -472,8 +472,8 @@
         "src/mojentic/llm/gateways/provider_metadata_spec.py::DescribeProviderMetadata::should_reject_recognized_error_code_echoes",
         "src/mojentic/llm/gateways/provider_metadata_spec.py::DescribeProviderMetadata::should_reject_uuid_shaped_outbound_echoes_but_keep_private_wire"
       ],
-      "cases_verified": 74,
-      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "cases_verified": 75,
+      "actual": "passed; every mapped public assertion executed successfully in the final identified source suite",
       "exit_code": 0
     },
     {
@@ -501,7 +501,7 @@
         "src/mojentic/llm/gateways/recovery_capabilities_spec.py::DescribeRecoveryCapabilitiesV1::should_round_trip_new_evidence_in_python_and_json"
       ],
       "cases_verified": 54,
-      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "actual": "passed; every mapped public assertion executed successfully in the final identified source suite",
       "exit_code": 0
     },
     {
@@ -549,7 +549,7 @@
         "src/mojentic/llm/gateways/openai_tool_roundtrip_spec.py::should_keep_both_parallel_tool_call_ids_in_the_broker_follow_up"
       ],
       "cases_verified": 69,
-      "actual": "passed; real OpenAI SDK and production oMLX transport encode exact assistant/tool messages, IDs and JSON results through public broker calls; ordinary and fragmented SSE continuations retain final text and tool invocation locations",
+      "actual": "passed; every mapped public assertion executed successfully in the final identified source suite",
       "exit_code": 0
     },
     {
@@ -574,7 +574,7 @@
         "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeRecoveryEdgeEvidence::should_freeze_images_and_controls_once_before_admission"
       ],
       "cases_verified": 13,
-      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "actual": "passed; every mapped public assertion executed successfully in the final identified source suite",
       "exit_code": 0
     },
     {
@@ -595,8 +595,8 @@
         "src/mojentic/llm/gateways/ollama_recovery_spec.py::DescribeRecoveryBoundaries::should_preserve_legacy_success_and_one_send_by_default",
         "src/mojentic/llm/gateways/request_fidelity_spec.py::DescribeSharedRequestFidelity::should_execute_shared_cases"
       ],
-      "cases_verified": 43,
-      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "cases_verified": 169,
+      "actual": "passed; every mapped public assertion executed successfully in the final identified source suite",
       "exit_code": 0
     },
     {
@@ -647,7 +647,7 @@
         "src/mojentic/llm/gateways/native_reasoning_spec.py::DescribeNativeReasoningWireContract::should_send_exact_controls_without_model_inference"
       ],
       "cases_verified": 274,
-      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "actual": "passed; every mapped public assertion executed successfully in the final identified source suite",
       "exit_code": 0
     },
     {
@@ -674,7 +674,7 @@
         "src/mojentic/llm/gateways/context_window_spec.py::DescribeContextWindowContract::should_verify_provider_semantics_and_exact_http_request"
       ],
       "cases_verified": 231,
-      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "actual": "passed; every mapped public assertion executed successfully in the final identified source suite",
       "exit_code": 0
     },
     {
@@ -707,7 +707,7 @@
         "src/mojentic/llm/gateways/request_fidelity_spec.py::DescribeSharedRequestFidelity::should_preserve_controls_through_public_routes"
       ],
       "cases_verified": 433,
-      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "actual": "passed; every mapped public assertion executed successfully in the final identified source suite",
       "exit_code": 0
     },
     {
@@ -747,7 +747,7 @@
         "src/mojentic/llm/stream_timing_spec.py::DescribeStreamClock::should_report_empty_completion_without_inventing_a_first_token"
       ],
       "cases_verified": 105,
-      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "actual": "passed; every mapped public assertion executed successfully in the final identified source suite",
       "exit_code": 0
     },
     {
@@ -767,7 +767,7 @@
         "src/mojentic/llm/gateways/first_token_spec.py::DescribeFirstTokenTiming::should_reset_continuation_clock_and_preserve_exact_tool_history"
       ],
       "cases_verified": 10,
-      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "actual": "passed; every mapped public assertion executed successfully in the final identified source suite",
       "exit_code": 0
     },
     {
@@ -795,7 +795,7 @@
         "src/mojentic/async_dispatcher_spec.py::should_dispatcher_with_sync_agent"
       ],
       "cases_verified": 10,
-      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "actual": "passed; every mapped public assertion executed successfully in the final identified source suite",
       "exit_code": 0
     },
     {
@@ -837,7 +837,7 @@
         "src/mojentic/agents/simple_recursive_agent_spec.py::DescribeSimpleRecursiveAgent::should_use_public_gateway_for_chat_send"
       ],
       "cases_verified": 26,
-      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "actual": "passed; every mapped public assertion executed successfully in the final identified source suite",
       "exit_code": 0
     },
     {
@@ -863,7 +863,7 @@
         "src/mojentic/agents/async_aggregator_agent_spec.py::should_wait_for_events_without_a_timer"
       ],
       "cases_verified": 10,
-      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "actual": "passed; every mapped public assertion executed successfully in the final identified source suite",
       "exit_code": 0
     },
     {
@@ -889,7 +889,7 @@
         "src/mojentic/llm/tools/runner_spec.py::DescribeSerialToolRunner::DescribeHooks::should_invoke_start_and_complete_hooks_in_order"
       ],
       "cases_verified": 10,
-      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "actual": "passed; every mapped public assertion executed successfully in the final identified source suite",
       "exit_code": 0
     },
     {
@@ -913,7 +913,7 @@
         "src/mojentic/realtime/session_spec.py::DescribeRealtimeVoiceBroker::should_merge_overrides_over_broker_config"
       ],
       "cases_verified": 8,
-      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "actual": "passed; every mapped public assertion executed successfully in the final identified source suite",
       "exit_code": 0
     },
     {
@@ -967,7 +967,27 @@
         "src/mojentic/tracer/tracer_system_spec.py::DescribeTracerSystem::should_record_tool_call"
       ],
       "cases_verified": 34,
-      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "actual": "passed; every mapped public assertion executed successfully in the final identified source suite",
+      "exit_code": 0
+    },
+    {
+      "decision": "Offline enforcement with native socket methods",
+      "specifications": [
+        "offline_spec.py"
+      ],
+      "public_entrypoints": [
+        "LLMBroker.generate_response"
+      ],
+      "expected": "Exact SDK and recovery request bytes and Authorization; answer content and raw request identity retained; unstubbed provider route rejected before I/O across nested scopes and transport cleanup.",
+      "executable_tests": [
+        "src/mojentic/llm/offline_spec.py::DescribeOfflinePublicCalls::should_preserve_exact_sdk_serialization_and_authorization",
+        "src/mojentic/llm/offline_spec.py::DescribeOfflinePublicCalls::should_preserve_native_socket_type_and_exact_recovery_exchange",
+        "src/mojentic/llm/offline_spec.py::DescribeOfflinePublicCalls::should_reject_an_unhandled_provider_route_before_io",
+        "src/mojentic/llm/offline_spec.py::DescribeOfflinePublicCalls::should_reject_unhandled_route_after_scripted_transport_exits",
+        "src/mojentic/llm/offline_spec.py::DescribeOfflinePublicCalls::should_restore_outer_transport_after_inner_context_exits"
+      ],
+      "cases_verified": 7,
+      "actual": "passed; seven public acceptance cases with both httpx2 SDK and httpx recovery transport paths",
       "exit_code": 0
     }
   ]

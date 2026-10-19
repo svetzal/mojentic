@@ -7,8 +7,8 @@ maintained in `CONFORMANCE-3.0.0.md` and
 `docs/release_3_0_0_validation.json`; per-decision outcomes are in
 `docs/release_3_0_0_acceptance.json`.
 
-All 31 decision groups in the acceptance record passed. Final verification ran
-2,657 tests at 88.13% coverage, with all four project gates and both guarded
+All 32 decision groups in the acceptance record passed. Final verification ran
+2,664 tests at 86.74% coverage (configured source scope, 85% minimum), with all four project gates and both guarded
 installed-wheel scripts returning exit 0.
 
 The reconciled `openai_tool_roundtrip_spec.py` preserves all 11 ordinary, metadata,
@@ -18,6 +18,14 @@ requests, exact tool IDs/results, typed JSON arguments, provider usage/model/fin
 reason and final output. Injecting an incorrect tool result rejected all four parallel
 cases; restoring the canonical result passed. Canonical shared fixture bytes and
 production behavior remain unchanged.
+
+The shared offline guard now uses a Python audit hook with nested activation,
+leaving native socket methods intact. Seven `offline_spec.py` cases verify exact
+public broker SDK/recovery serialization, Authorization, answer content, raw
+request identity and pre-I/O rejection after nested/exception and transport
+contexts. `src/conftest.py`, both fresh-wheel verifiers and the shared cloud/oMLX
+fixtures retain their entrypoints and enforcement. All existing cancellation,
+cleanup and deterministic timing mappings continue to execute.
 
 ## Replacement proof by recovery decision
 

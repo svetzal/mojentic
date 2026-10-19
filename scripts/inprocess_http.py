@@ -6,6 +6,7 @@ transport is replaced; no client or Mojentic implementation is mocked.
 
 import asyncio
 import socket
+import sys
 import time
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from contextlib import contextmanager
@@ -39,19 +40,33 @@ class VirtualClock:
         self.now += seconds
 
 
-_socket_init = socket.socket.__init__
+_offline_depth = 0
 
 
-def no_internet_socket(
-    self: socket.socket,
-    family: int = socket.AF_INET,
-    type: int = socket.SOCK_STREAM,
-    proto: int = 0,
-    fileno: int | None = None,
-) -> None:
-    if family in {socket.AF_INET, socket.AF_INET6}:
+def reject_network_event(event: str, args: tuple[object, ...]) -> None:
+    """Reject audited network operations before I/O, leaving native sockets intact.
+
+    The permanent hook is inert outside offline contexts. A process-wide nesting
+    count also protects worker threads; asyncio's Unix socketpair stays usable.
+    """
+    if not _offline_depth:
+        return
+    if event == "socket.__new__" and args[1] in {socket.AF_INET, socket.AF_INET6}:
         forbidden_network()
-    _socket_init(self, family, type, proto, fileno)
+    if event in {
+        "socket.connect",
+        "socket.bind",
+        "socket.getaddrinfo",
+        "socket.gethostbyname",
+        "socket.gethostbyaddr",
+        "socket.getnameinfo",
+        "socket.sendto",
+        "socket.sendmsg",
+    }:
+        forbidden_network()
+
+
+sys.addaudithook(reject_network_event)
 
 
 clock = VirtualClock()
@@ -142,16 +157,16 @@ def forbidden_network(*args: object, **kwargs: object) -> None:
 @contextmanager
 def offline() -> Iterator[None]:
     """Fail immediately if any route escapes the in-process transport."""
-    with (
-        replace(socket.socket, "__init__", no_internet_socket),
-        replace(asyncio, "sleep", yield_control),
-        replace(time, "sleep", forbidden_sleep),
-        replace(socket.socket, "connect", forbidden_network),
-        replace(socket.socket, "connect_ex", forbidden_network),
-        replace(socket, "getaddrinfo", forbidden_network),
-        replace(socket.socket, "bind", forbidden_network),
-    ):
-        yield
+    global _offline_depth
+    _offline_depth += 1
+    try:
+        with (
+            replace(asyncio, "sleep", yield_control),
+            replace(time, "sleep", forbidden_sleep),
+        ):
+            yield
+    finally:
+        _offline_depth -= 1
 
 
 @contextmanager

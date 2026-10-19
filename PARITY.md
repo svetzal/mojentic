@@ -35,3 +35,11 @@ verification scripts retain their public entrypoints and contract coverage.
 Root recovery and metadata contract references match `mojentic-unify@4ae2f73`.
 Current decisions, contract hashes and results are maintained in
 `CONFORMANCE-3.0.0.md` and `RECOVERY-CONFORMANCE.md`.
+
+The test-only offline correction uses a scoped Python audit hook without
+replacing native socket methods. Public broker characterizations preserve exact
+SDK/recovery bytes, Authorization, content and raw request identity; nested
+contexts and unhandled-route rejection pass. The current 32 decision groups,
+2,664 passing tests, 86.74% configured coverage and both passing fresh-wheel
+verifiers are recorded in the conformance evidence above. Library behavior,
+public APIs, dependencies, versions and normative contracts are unchanged.
