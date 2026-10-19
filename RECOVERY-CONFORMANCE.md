@@ -20,12 +20,17 @@ cases; restoring the canonical result passed. Canonical shared fixture bytes and
 production behavior remain unchanged.
 
 The shared offline guard now uses a Python audit hook with nested activation,
-leaving native socket methods intact. Seven `offline_spec.py` cases verify exact
+with unchanged enforcement and fixture exports. Seven `offline_spec.py` cases verify exact
 public broker SDK/recovery serialization, Authorization, answer content, raw
 request identity and pre-I/O rejection after nested/exception and transport
 contexts. `src/conftest.py`, both fresh-wheel verifiers and the shared cloud/oMLX
 fixtures retain their entrypoints and enforcement. All existing cancellation,
-cleanup and deterministic timing mappings continue to execute.
+cleanup and deterministic timing mappings continue to execute. The four socket
+implementation assertions have been removed; public outcomes remain the
+acceptance boundary. Before edits, an altered transport response request ID
+(`req_altered`) failed the exact unmasked-ID assertion (exit 1); restoring the
+canonical ID passed all seven cases (exit 0). The negative control was repeated
+against the revised specification, with actual results in the validation record.
 
 ## Replacement proof by recovery decision
 

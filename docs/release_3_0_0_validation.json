@@ -1,11 +1,11 @@
 {
   "status": "passed",
   "source": {
-    "base_commit": "0e2d3dc52715313349a9b9a81292f94b659dd16a",
-    "working_tree_source_id": "6cadd9ab8dfeb22bd4f3930b925b0ae9ac783ff2a01fc0d6d65d3016ebe41b8d",
+    "base_commit": "9436ac5e0baece810f9aedb7908c6f79933f1ae6",
+    "working_tree_source_id": "6581879546b5e0516456a5d408f218d3ac7622e8c49bfe96164f13d069a6a0b7",
     "manifest": "docs/release_3_0_0_source.sha256",
-    "manifest_sha256": "9578c9bb24afdcbf688d28bedf0613b9d5b717cabaf5f308a6a52ed76b4f78e5",
-    "state": "uncommitted test-only audit-hook correction; includes public consumers, production providers, all specifications, both installed-wheel verifiers and shared HTTP helper"
+    "manifest_sha256": "e0bbd7a7789ca88ac52659b9e2569953805f68680a7f4f376b53b763dfa58a6f",
+    "state": "uncommitted test-only offline acceptance correction; public consumers and production providers tested together; production behavior, fixture exports and enforcement unchanged"
   },
   "contract_parent_revision": "4ae2f73a0a5465b0f6509b87e1148d254f3f64cd",
   "root_contract_hashes": {
@@ -43,11 +43,11 @@
   "consumer_verification": {
     "repository": "mojentic-py",
     "source": {
-      "base_commit": "0e2d3dc52715313349a9b9a81292f94b659dd16a",
-      "working_tree_source_id": "6cadd9ab8dfeb22bd4f3930b925b0ae9ac783ff2a01fc0d6d65d3016ebe41b8d",
+      "base_commit": "9436ac5e0baece810f9aedb7908c6f79933f1ae6",
+      "working_tree_source_id": "6581879546b5e0516456a5d408f218d3ac7622e8c49bfe96164f13d069a6a0b7",
       "manifest": "docs/release_3_0_0_source.sha256",
-      "manifest_sha256": "9578c9bb24afdcbf688d28bedf0613b9d5b717cabaf5f308a6a52ed76b4f78e5",
-      "state": "uncommitted test-only audit-hook correction; includes public consumers, production providers, all specifications, both installed-wheel verifiers and shared HTTP helper"
+      "manifest_sha256": "e0bbd7a7789ca88ac52659b9e2569953805f68680a7f4f376b53b763dfa58a6f",
+      "state": "uncommitted test-only offline acceptance correction; public consumers and production providers tested together; production behavior, fixture exports and enforcement unchanged"
     },
     "commands": [
       "pytest",
@@ -60,11 +60,11 @@
   "provider_verification": {
     "repository": "mojentic-py",
     "source": {
-      "base_commit": "0e2d3dc52715313349a9b9a81292f94b659dd16a",
-      "working_tree_source_id": "6cadd9ab8dfeb22bd4f3930b925b0ae9ac783ff2a01fc0d6d65d3016ebe41b8d",
+      "base_commit": "9436ac5e0baece810f9aedb7908c6f79933f1ae6",
+      "working_tree_source_id": "6581879546b5e0516456a5d408f218d3ac7622e8c49bfe96164f13d069a6a0b7",
       "manifest": "docs/release_3_0_0_source.sha256",
-      "manifest_sha256": "9578c9bb24afdcbf688d28bedf0613b9d5b717cabaf5f308a6a52ed76b4f78e5",
-      "state": "uncommitted test-only audit-hook correction; includes public consumers, production providers, all specifications, both installed-wheel verifiers and shared HTTP helper"
+      "manifest_sha256": "e0bbd7a7789ca88ac52659b9e2569953805f68680a7f4f376b53b763dfa58a6f",
+      "state": "uncommitted test-only offline acceptance correction; public consumers and production providers tested together; production behavior, fixture exports and enforcement unchanged"
     },
     "implementation": "Production gateways, SDK request encoders, decoders, recovery and streaming engines against the same versioned contract-derived transport responses",
     "commands": [
@@ -79,8 +79,8 @@
   "boundary": "Library self-validation under October 17 policy; no changed running-service or cross-repository application boundary; no external adoption/provider execution claimed.",
   "artifact": {
     "filename": "mojentic-3.0.0-py3-none-any.whl",
-    "sha256": "69e9d08576646076b28555f73b12046ae100cd5f88753d30f995c4640718c799",
-    "installed_environment": "/tmp/mojentic-guard-consumer/.venv",
+    "sha256": "d8816e579155779a8b39d2d33f8d653680e6b5e5d6857c1d68de077d2bd2f8c2",
+    "installed_environment": "/tmp/mojentic-offline-c6-consumer/.venv",
     "imports": "site-packages only; verifiers assert production imports are outside checkout"
   },
   "runtime_guards": [
@@ -116,19 +116,19 @@
       "name": "bandit",
       "command": "uv run bandit -c .bandit -r src",
       "exit_code": 0,
-      "result": "Working... \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 100% 0:00:06\nRun started:2026-10-19 00:07:01.390677+00:00\n\nTest results:\n\tNo issues identified.\n\nCode scanned:\n\tTotal lines of code: 33018\n\tTotal lines skipped (#nosec): 0\n\tTotal potential issues skipped due to specifically being disabled (e.g., #nosec BXXX): 0\n\nRun metrics:\n\tTotal issues (by severity):\n\t\tUndefined: 0\n\t\tLow: 0\n\t\tMedium: 0\n\t\tHigh: 0\n\tTotal issues (by confidence):\n\t\tUndefined: 0\n\t\tLow: 0\n\t\tMedium: 0\n\t\tHigh: 0\nFiles skipped (0):\n[main]\tINFO\tprofile include tests: None\n[main]\tINFO\tprofile exclude tests: B105,B101,B113,B108\n[main]\tINFO\tcli include tests: None\n[main]\tINFO\tcli exclude tests: None\n[main]\tINFO\tusing config: .bandit\n[main]\tINFO\trunning on Python 3.13.15"
+      "result": "No issues identified."
     },
     {
       "name": "pip-audit",
       "command": "uv run pip-audit",
       "exit_code": 0,
-      "result": "WARNING: The directory '/home/svetzal/.cache/pip' or its parent directory is not owned or is not writable by the current user. The cache has been disabled. Check the permissions and owner of that directory. If executing pip with sudo, you should use sudo's -H flag.\nNo known vulnerabilities found"
+      "result": "No known vulnerabilities found."
     },
     {
       "name": "outdated",
       "command": "uv pip list --outdated",
       "exit_code": 0,
-      "result": "Package            Version   Latest     Type\n------------------ --------- ---------- -----\nbackrefs           8.0       8.1        wheel\ncertifi            2026.7.22 2026.10.18 wheel\ncharset-normalizer 3.5.1     3.5.2      wheel\ncoverage           7.16.1    7.16.2     wheel\nfilelock           4.2.0     4.2.2      wheel\ngriffelib          2.3.0     2.3.2      wheel\nhttpcore2          2.13.1    2.14.0     wheel\nhttpx2             2.13.1    2.14.0     wheel\niniconfig          2.3.0     2.3.1      wheel\nmarkdown           3.10.3    3.11.1     wheel\nmarkupsafe         3.0.3     3.0.4      wheel\nmsgpack            1.2.2     1.2.3      wheel\nopenai             3.33.0    3.35.1     wheel\nplatformdirs       4.11.13   4.13.4     wheel\npluggy             1.6.0     1.7.0      wheel\npyflakes           4.0.0     4.0.3      wheel\npytest-mock        3.16.0    3.17.0     wheel\nregex              2026.9.10 2026.9.29  wheel\ntomli              2.4.1     2.5.0      wheel\ntruststore         0.10.4    0.10.5     wheel",
+      "result": "Package            Version   Latest     Type\n------------------ --------- ---------- -----\nbackrefs           8.0       8.1        wheel\ncertifi            2026.7.22 2026.10.18 wheel\ncharset-normalizer 3.5.1     3.5.2      wheel\ncoverage           7.16.1    7.16.2     wheel\ngriffelib          2.3.0     2.3.2      wheel\nhttpcore2          2.13.1    2.14.0     wheel\nhttpx2             2.13.1    2.14.0     wheel\niniconfig          2.3.0     2.3.1      wheel\nmarkdown           3.10.3    3.11.1     wheel\nmarkupsafe         3.0.3     3.0.4      wheel\nmsgpack            1.2.2     1.2.3      wheel\nplatformdirs       4.11.13   4.13.5     wheel\npluggy             1.6.0     1.7.0      wheel\npyflakes           4.0.0     4.0.3      wheel\nregex              2026.9.10 2026.9.29  wheel\ntomli              2.4.1     2.5.0      wheel\ntruststore         0.10.4    0.10.5     wheel",
       "decision": "Inventory only; both audits report no advisory requiring dependency changes. Dependencies frozen."
     },
     {
@@ -150,7 +150,7 @@
     },
     {
       "name": "coverage",
-      "command": "uv run pytest --cov --junitxml=.foundry/results.xml",
+      "command": "uv run pytest --cov",
       "exit_code": 0,
       "passed": 2664,
       "coverage_percent": 88.06,
@@ -172,11 +172,11 @@
       "name": "locked-audit",
       "command": "uv export --format requirements-txt --no-emit-project | uvx pip-audit -r /dev/stdin --disable-pip",
       "exit_code": 0,
-      "result": "Resolved 100 packages in 5ms\nNo known vulnerabilities found"
+      "result": "No known vulnerabilities found."
     },
     {
       "name": "venv",
-      "command": "uv venv /tmp/mojentic-guard-consumer/.venv",
+      "command": "uv venv /tmp/mojentic-offline-c6-consumer/.venv",
       "exit_code": 0
     },
     {
@@ -186,20 +186,20 @@
     },
     {
       "name": "install",
-      "command": "uv pip install --python /tmp/mojentic-guard-consumer/.venv/bin/python -r .foundry/runtime-requirements.txt dist/mojentic-3.0.0-py3-none-any.whl",
+      "command": "uv pip install --python /tmp/mojentic-offline-c6-consumer/.venv/bin/python -r .foundry/runtime-requirements.txt dist/mojentic-3.0.0-py3-none-any.whl",
       "exit_code": 0
     },
     {
       "name": "wheel-readiness",
-      "command": "uv run --offline --no-project --no-sync --directory /tmp/mojentic-guard-consumer --python /tmp/mojentic-guard-consumer/.venv/bin/python /home/svetzal/.foundry/worktrees/mojentic-py/mojentic-py-no-network-tests-c4-ee67cb/scripts/verify_readiness.py /home/svetzal/.foundry/worktrees/mojentic-py/mojentic-py-no-network-tests-c4-ee67cb",
+      "command": "uv run --offline --no-project --no-sync --directory /tmp/mojentic-offline-c6-consumer --python /tmp/mojentic-offline-c6-consumer/.venv/bin/python /home/svetzal/.foundry/worktrees/mojentic-py/mojentic-py-no-network-tests-c6-21418c/scripts/verify_readiness.py /home/svetzal/.foundry/worktrees/mojentic-py/mojentic-py-no-network-tests-c6-21418c",
       "exit_code": 0,
-      "result": "installed: /tmp/mojentic-guard-consumer/.venv/lib/python3.13/site-packages/mojentic/__init__.py\ncontract: context_window_v1.json f93a35e4de9c55e87c0a55551d4ab735289b040bbb673d87269fd3b4b8e41466\ncontract: first_token_v1.json 78dc6691c65ba84faa6e9a3490e6361bc3330dfd8341a27de5a4d7c2af833ab5\ncontract: native_reasoning_v1.json be212ff011125f1d0927e3a65a0d7cd87eedbf9f5ff69e803b4112a80ae6b1f6\ncontract: request_fidelity_v1.json 6a5ebca721a9f9e84323d0118b543d5dc71c7f68bb7067b2cdf6ad40daddcfc8\nmetadata: all provider cases and exact requests passed\nreasoning: distinct controls, structured output, native tool continuation passed\nrecovery/history: SDK success, admitted byte-identical retry and permanent failure passed"
+      "result": "installed: /tmp/mojentic-offline-c6-consumer/.venv/lib/python3.13/site-packages/mojentic/__init__.py\ncontract: context_window_v1.json f93a35e4de9c55e87c0a55551d4ab735289b040bbb673d87269fd3b4b8e41466\ncontract: first_token_v1.json 78dc6691c65ba84faa6e9a3490e6361bc3330dfd8341a27de5a4d7c2af833ab5\ncontract: native_reasoning_v1.json be212ff011125f1d0927e3a65a0d7cd87eedbf9f5ff69e803b4112a80ae6b1f6\ncontract: request_fidelity_v1.json 6a5ebca721a9f9e84323d0118b543d5dc71c7f68bb7067b2cdf6ad40daddcfc8\nmetadata: all provider cases and exact requests passed\nreasoning: distinct controls, structured output, native tool continuation passed\nrecovery/history: SDK success, admitted byte-identical retry and permanent failure passed"
     },
     {
       "name": "wheel-timing",
-      "command": "uv run --offline --no-project --no-sync --directory /tmp/mojentic-guard-consumer --python /tmp/mojentic-guard-consumer/.venv/bin/python /home/svetzal/.foundry/worktrees/mojentic-py/mojentic-py-no-network-tests-c4-ee67cb/scripts/verify_stream_timing.py /home/svetzal/.foundry/worktrees/mojentic-py/mojentic-py-no-network-tests-c4-ee67cb/src/mojentic/llm/gateways/fixtures/contracts/first_token_v1.json",
+      "command": "uv run --offline --no-project --no-sync --directory /tmp/mojentic-offline-c6-consumer --python /tmp/mojentic-offline-c6-consumer/.venv/bin/python /home/svetzal/.foundry/worktrees/mojentic-py/mojentic-py-no-network-tests-c6-21418c/scripts/verify_stream_timing.py /home/svetzal/.foundry/worktrees/mojentic-py/mojentic-py-no-network-tests-c6-21418c/src/mojentic/llm/gateways/fixtures/contracts/first_token_v1.json",
       "exit_code": 0,
-      "result": "installed: /tmp/mojentic-guard-consumer/.venv/lib/python3.13/site-packages/mojentic/__init__.py\ncontract: py-stream-first-token-v1 78dc6691c65ba84faa6e9a3490e6361bc3330dfd8341a27de5a4d7c2af833ab5\nollama events/session/recovery: passed\nollama malformed events/public recovery close: passed\nomlx events/session/recovery: passed\nomlx malformed events/public recovery close: passed\nopenai events/session/recovery: passed\nopenai malformed events/public recovery close: passed"
+      "result": "installed: /tmp/mojentic-offline-c6-consumer/.venv/lib/python3.13/site-packages/mojentic/__init__.py\ncontract: py-stream-first-token-v1 78dc6691c65ba84faa6e9a3490e6361bc3330dfd8341a27de5a4d7c2af833ab5\nollama events/session/recovery: passed\nollama malformed events/public recovery close: passed\nomlx events/session/recovery: passed\nomlx malformed events/public recovery close: passed\nopenai events/session/recovery: passed\nopenai malformed events/public recovery close: passed"
     },
     {
       "name": "manifest",
@@ -215,22 +215,25 @@
       "name": "source-id",
       "command": "uv run python scripts/verify_stream_timing.py --source-id",
       "exit_code": 0,
-      "result": "6cadd9ab8dfeb22bd4f3930b925b0ae9ac783ff2a01fc0d6d65d3016ebe41b8d"
+      "result": "6581879546b5e0516456a5d408f218d3ac7622e8c49bfe96164f13d069a6a0b7"
     },
     {
       "name": "offline-acceptance",
       "command": "uv run pytest src/mojentic/llm/offline_spec.py --no-cov",
       "exit_code": 0,
       "passed": 7
+    },
+    {
+      "name": "decision-mapping-suite",
+      "command": "uv run pytest --junitxml=.foundry/pytest.xml",
+      "exit_code": 0,
+      "passed": 2664,
+      "result": "All 32 decision mappings resolve to successful test cases and match parameter case counts."
     }
   ],
   "resolved_execution_failures": [
-    "Initial uv cache/tools directories were read-only; redirected UV_CACHE_DIR and UV_TOOL_DIR to writable /tmp locations.",
-    "Authentication-loss red probe rejected all five entrypoints; corrected transport capture preserves exact Authorization and encoded bytes.",
-    "Fixture conversion import placement, SDK httpx2 transport coverage, read-timeout injection and test adapter wiring were corrected; final verification passed.",
-    "Previously dormant dispatcher/aggregator test_* checks did not match configured should_* discovery; enabled and replaced those checks through public APIs. Final 2,657 tests include all 19 restored checks.",
-    "Replaced remaining OpenAI SDK mocks in the local tool-roundtrip spec with shared in-process HTTP transport capture. Wrong tool-result input failed all four parallel cases; restoring the canonical result passed. Exact usage assertions include SDK-normalized null detail fields.",
-    "Reconciled unsupported success provider_metadata projection using the supported public wire observer and recovery report; exact SDK and recovery serialization are asserted independently. Original socket-method guard failed the reconciled native-method check (exit 1); audit-hook correction passed (exit 0). Redirected read-only uv cache/tool directories. Coverage export attempted during a new pytest run had no data; rerun after the completed gate passed the 85% threshold."
+    "Default uv cache was read-only before the first behavioral probe; redirected UV_CACHE_DIR and UV_TOOL_DIR to writable /tmp locations. The actual request-ID rejection then exited 1 and the canonical seven-case probe exited 0 before source edits.",
+    "The existing source manifest contained a stale uv.lock digest. Reconciled it to the unchanged trunk lockfile; no dependencies or versions were modified."
   ],
   "finalization": "Working tree left modified for Foundry. No production implementation, package/dependency version, ref or sibling repository changed.",
   "roundtrip_reconciliation": {
@@ -243,10 +246,22 @@
   "offline_guard_correction": {
     "specification": "src/mojentic/llm/offline_spec.py",
     "cases_passed": 7,
-    "mechanism": "sys.addaudithook with process-wide nested activation; inert outside offline contexts. Native socket.socket type and methods stay intact. Asyncio Unix socketpair remains usable.",
-    "early_characterizations": "Original preserved exchange rejected unsupported provider_metadata (exit 1); preserved unhandled-route rejection passed (exit 0), recorded before guard implementation.",
-    "rejecting": "Reconciled public exchange with original guard rejected replacement socket.__init__ (exit 1).",
-    "corrected": "Same public probe passed after replacing socket method patches with the audit hook (exit 0); final seven-case probe passed.",
-    "results": "Exact SDK/httpx2 and recovery/httpx body bytes, Authorization, answer, unmasked x-request-id and recovery logical identity; unhandled routes rejected after nested/exception contexts and after scripted transport exits; outer transport restored. Full cancellation/cleanup, fixture and deterministic timing decisions remain passing."
+    "mechanism": "Existing audit hook, nested activation, transport substitutions, clock/sleeper guards and fixture exports unchanged. Removed four socket implementation assertions and their unused imports; renamed the recovery exchange case around its public result.",
+    "early_characterizations": "Before source edits, canonical public broker outcomes passed all seven cases (exit 0). Altering only x-request-id in the scripted transport response to req_altered failed the exact unmasked-ID assertion (exit 1), after the public broker returned answer. Actual red/green logs and the acceptance plan were recorded before edits in Foundry execution evidence.",
+    "rejecting": "Repeated transport input mutation against should_preserve_exact_recovery_exchange_and_request_identity failed the exact request-ID assertion (exit 1; one failed, six deselected).",
+    "corrected": "Canonical response passed all seven offline public cases (exit 0), with all 2,664 full-suite cases also passing.",
+    "results": "Exact SDK/httpx2 and recovery/httpx body bytes, Authorization, answer, unmasked x-request-id and recovery logical identity preserved; unhandled routes rejected after nested/exception contexts and scripted transport exits; outer transport restored.",
+    "negative_control_transport_input": {
+      "status": 200,
+      "canonical_x_request_id": "req_12345678-1234-4234-8234-123456789abc",
+      "altered_x_request_id": "req_altered",
+      "assertion": "(\"x-request-id\", request_id) in headers.headers",
+      "rejecting_exit_code": 1,
+      "corrected_exit_code": 0,
+      "command": "PYTHONPATH=\"$PWD/.foundry:$PYTHONPATH\" uv run pytest src/mojentic/llm/offline_spec.py -k exact_recovery_exchange -p request_id_negative --no-cov",
+      "harness": "Execution-only pytest collection hook replaces the specification module scripted_http transport with a wrapper returning the same status and body and headers | {\"x-request-id\": \"req_altered\"}. No SDK, production method or assertion is replaced. The scratch plugin and complete output are archived by Foundry."
+    },
+    "specification_sha256": "8391f40d183193fe4cc0ed406dcd06bc16fd9d80646ea577d7ad7fb32ddb12a9",
+    "decision_mapping_verification": "All 32 decision rows resolve to successful JUnit test cases; each cases_verified count equals the matching parameter case count."
   }
 }

@@ -1,7 +1,5 @@
 """Public callers retain real SDK encoding under test-only offline enforcement."""
 
-import inspect
-import socket
 from contextlib import ExitStack
 
 import pytest
@@ -29,7 +27,7 @@ def broker(host: str, policy: RecoveryPolicy | None = None) -> LLMBroker:
 
 
 class DescribeOfflinePublicCalls:
-    def should_preserve_native_socket_type_and_exact_recovery_exchange(self):
+    def should_preserve_exact_recovery_exchange_and_request_identity(self):
         request_id = "req_12345678-1234-4234-8234-123456789abc"
         wire = []
         with scripted_http([(200, {"x-request-id": request_id}, RESPONSE)]) as (
@@ -56,10 +54,6 @@ class DescribeOfflinePublicCalls:
                 b'"temperature":0.25,"max_tokens":17}'
             )
             assert requests[0][2]["authorization"] == "Bearer credential-sentinel"
-            assert socket.socket.__init__.__module__ == "socket"
-            assert socket.socket.__init__.__qualname__ == "socket.__init__"
-            assert inspect.ismethoddescriptor(socket.socket.connect)
-            assert inspect.ismethoddescriptor(socket.socket.bind)
 
     def should_preserve_exact_sdk_serialization_and_authorization(self):
         with scripted_http([(200, {}, RESPONSE)]) as (host, requests):

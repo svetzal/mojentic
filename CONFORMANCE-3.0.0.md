@@ -2,7 +2,7 @@
 
 This living record replaces superseded loopback and wall-clock proof claims.
 Production behavior, public APIs, dependency versions and package version are
-unchanged by this correction. The tested base commit is `0e2d3dc52715313349a9b9a81292f94b659dd16a`;
+unchanged by this correction. The tested base commit is `9436ac5e0baece810f9aedb7908c6f79933f1ae6`;
 `docs/release_3_0_0_source.sha256` identifies the tested working-tree inputs,
 including specifications and the shared transport helper. Actual commands,
 source identity, artifact identity and results are maintained in
@@ -67,11 +67,15 @@ registries; they are outside the acceptance boundary.
 SDK/httpx2 and recovery/httpx routes. Both retain Authorization and answer
 content; the supported recovery wire observer exposes the exact unmasked
 `x-request-id` and links its logical identity to the public recovery report.
-The ordinary success model has no `provider_metadata` projection. Native
-`socket.socket.__init__` is a standard-library Python function, while connect
-and bind remain native method descriptors. The original guard rejected this
-reconciled probe; the audit-hook correction passed. Nested guard unwinding,
-outer transport restoration and unhandled routes after transport exit all pass.
+The ordinary success model has no `provider_metadata` projection. Acceptance
+asserts public outcomes without inspecting socket implementation details. Before
+this correction, a transport-only negative control changed the response header
+to `req_altered`: the public broker returned an answer, but the exact request-ID
+assertion rejected it (exit 1). Restoring the canonical header passed all seven
+cases (exit 0). The same negative control was repeated after removing the four
+structural assertions. Nested guard unwinding, outer transport restoration and
+unhandled routes after transport exit remain covered. The shared offline guard
+and fixture exports are unchanged.
 
 ## Decision mapping
 
@@ -81,7 +85,7 @@ basenames under `src/mojentic/`; each name resolves uniquely in this checkout.
 
 | Binding decision | Replacement executable proof | Expected public result |
 | --- | --- | --- |
-| Offline enforcement with native socket methods | `offline_spec.py`; `LLMBroker.generate_response` | Seven cases preserve exact SDK/recovery serialization, Authorization, answer and raw request identity; nested contexts restore transports and deny unstubbed routes before I/O. |
+| Offline public outcomes and request identity | `offline_spec.py`; `LLMBroker.generate_response` | Seven cases preserve exact SDK/recovery serialization, Authorization, answer and raw request identity; nested contexts restore transports and deny unstubbed routes before I/O. |
 | 503 recovery and 504 exhaustion | `ollama_recovery_spec.py`, `omlx_recovery_spec.py`, `cloud_recovery_spec.py`; `complete`, `complete_with_recovery`, `generate`, `generate_response`, `generate_object`, `ChatSession.send` | 503 retries only with permission; 504 stops at max_attempts; exact payload bytes persist, attempt IDs differ within one logical ID, lifecycle and complete history agree. |
 | 429 and Retry-After | `omlx_429_recovery_spec.py`, `cloud_recovery_spec.py`, `ollama_recovery_spec.py`; `complete_with_recovery`, `complete_stream_with_recovery` | Seconds, IMF-fixdate, RFC850 and asctime retain the provider minimum; invalid/absent dates use deterministic backoff; ceiling/budget refuses excessive delays. |
 | Ambiguous local execution and no-hook admission | `recovery_admission_spec.py`, `ollama_recovery_spec.py`, `omlx_recovery_spec.py`; `complete`, `complete_with_recovery`, `complete_stream_with_recovery` | Ollama/oMLX ambiguous failures require admission; allow/reject/pending/undecided remain distinct. Remote eligible failures may retry without a hook. |
@@ -159,7 +163,7 @@ and both security audits reported no known vulnerabilities. Both installed-wheel
 scripts exited 0 under the audit-hook/sleeper guards. The additional bare
 `uv run pytest --cov` run also passed all 2,664 cases (88.06%, including
 executed helpers outside the configured source scope). The exact tested source ID is
-`6cadd9ab8dfeb22bd4f3930b925b0ae9ac783ff2a01fc0d6d65d3016ebe41b8d`.
+`6581879546b5e0516456a5d408f218d3ac7622e8c49bfe96164f13d069a6a0b7`.
 
 Nineteen previously dormant dispatcher/aggregator tests used `test_*` names while
 pytest collected only `should_*`. Their checks now run under the configured

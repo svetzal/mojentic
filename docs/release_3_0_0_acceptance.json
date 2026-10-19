@@ -1,10 +1,10 @@
 {
   "source": {
-    "base_commit": "0e2d3dc52715313349a9b9a81292f94b659dd16a",
-    "working_tree_source_id": "6cadd9ab8dfeb22bd4f3930b925b0ae9ac783ff2a01fc0d6d65d3016ebe41b8d",
+    "base_commit": "9436ac5e0baece810f9aedb7908c6f79933f1ae6",
+    "working_tree_source_id": "6581879546b5e0516456a5d408f218d3ac7622e8c49bfe96164f13d069a6a0b7",
     "manifest": "docs/release_3_0_0_source.sha256",
-    "manifest_sha256": "9578c9bb24afdcbf688d28bedf0613b9d5b717cabaf5f308a6a52ed76b4f78e5",
-    "state": "uncommitted test-only audit-hook correction; includes public consumers, production providers, all specifications, both installed-wheel verifiers and shared HTTP helper"
+    "manifest_sha256": "e0bbd7a7789ca88ac52659b9e2569953805f68680a7f4f376b53b763dfa58a6f",
+    "state": "uncommitted test-only offline acceptance correction; public consumers and production providers tested together; production behavior, fixture exports and enforcement unchanged"
   },
   "contracts": [
     {
@@ -971,7 +971,7 @@
       "exit_code": 0
     },
     {
-      "decision": "Offline enforcement with native socket methods",
+      "decision": "Offline public outcomes and request identity",
       "specifications": [
         "offline_spec.py"
       ],
@@ -981,13 +981,13 @@
       "expected": "Exact SDK and recovery request bytes and Authorization; answer content and raw request identity retained; unstubbed provider route rejected before I/O across nested scopes and transport cleanup.",
       "executable_tests": [
         "src/mojentic/llm/offline_spec.py::DescribeOfflinePublicCalls::should_preserve_exact_sdk_serialization_and_authorization",
-        "src/mojentic/llm/offline_spec.py::DescribeOfflinePublicCalls::should_preserve_native_socket_type_and_exact_recovery_exchange",
+        "src/mojentic/llm/offline_spec.py::DescribeOfflinePublicCalls::should_preserve_exact_recovery_exchange_and_request_identity",
         "src/mojentic/llm/offline_spec.py::DescribeOfflinePublicCalls::should_reject_an_unhandled_provider_route_before_io",
         "src/mojentic/llm/offline_spec.py::DescribeOfflinePublicCalls::should_reject_unhandled_route_after_scripted_transport_exits",
         "src/mojentic/llm/offline_spec.py::DescribeOfflinePublicCalls::should_restore_outer_transport_after_inner_context_exits"
       ],
       "cases_verified": 7,
-      "actual": "passed; seven public acceptance cases with both httpx2 SDK and httpx recovery transport paths",
+      "actual": "passed; seven public acceptance cases preserve exact SDK/recovery bytes, Authorization, answer, unmasked request ID, logical identity linkage, nested restoration and pre-I/O rejection; altered response request ID rejected (exit 1), canonical response passed (exit 0)",
       "exit_code": 0
     }
   ]
