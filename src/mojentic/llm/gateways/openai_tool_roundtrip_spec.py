@@ -1,5 +1,5 @@
 """
-Parity-protective spec for the OpenAI tool-calling round-trip at the adapter boundary.
+Parity-protective spec for tool round trips through the public broker and real SDK.
 
 Uses the canonical get_weather fixtures shared across mojentic-py, mojentic-ts,
 mojentic-ex, and mojentic-ru. The fixture JSON files in
@@ -16,7 +16,6 @@ Verifies that:
 
 import json
 from pathlib import Path
-from unittest.mock import MagicMock
 
 import pytest
 
@@ -24,12 +23,12 @@ from mojentic.llm.gateways.models import LLMMessage, MessageRole
 from mojentic.llm.gateways.openai import OpenAIGateway
 from mojentic.llm.llm_broker import LLMBroker
 from mojentic.llm.tools.llm_tool import LLMTool
-from scripts.inprocess_http import InProcessTokenizer
+from scripts.inprocess_http import InProcessTokenizer, scripted_http
 
 _FIXTURES_DIR = Path(__file__).parent / "fixtures" / "openai_tool_roundtrip"
 
 
-def _load_fixture(name):
+def _load_fixture(name: str) -> dict:
     with open(_FIXTURES_DIR / name) as f:
         return json.load(f)
 
@@ -37,11 +36,15 @@ def _load_fixture(name):
 class GetWeatherTool(LLMTool):
     """Real LLMTool that returns the canonical tool-result fixture."""
 
-    def run(self, location: str):
+    def run(self, location: str) -> dict:
+        self.locations.append(location)
         return _load_fixture("tool-result.json")
 
+    def __init__(self) -> None:
+        self.locations: list[str] = []
+
     @property
-    def descriptor(self):
+    def descriptor(self) -> dict:
         return {
             "type": "function",
             "function": {
@@ -58,140 +61,140 @@ class GetWeatherTool(LLMTool):
         }
 
 
-@pytest.fixture
-def mock_openai_client(mocker):
-    """Build a mock OpenAI client backed by the canonical round-trip fixtures."""
-    fixture1 = _load_fixture("response-1-tool-call.json")
-    fixture2 = _load_fixture("response-2-final.json")
+def _broker(provider: str = "openai", model: str = "gpt-4o") -> LLMBroker:
+    from mojentic.llm.gateways.omlx import OMLXGateway
 
-    from openai.types.chat import ChatCompletion
-
-    resp1 = ChatCompletion.model_validate(fixture1)
-    resp2 = ChatCompletion.model_validate(fixture2)
-
-    mock_client = MagicMock()
-    mock_client.chat.completions.create.side_effect = [resp1, resp2]
-
-    mocker.patch("mojentic.llm.gateways.openai.OpenAI", return_value=mock_client)
-    return mock_client
-
-
-@pytest.fixture
-def openai_gateway(mock_openai_client):
-    return OpenAIGateway(api_key="test-key")
-
-
-@pytest.fixture
-def broker(openai_gateway):
-    return LLMBroker(
-        tokenizer=InProcessTokenizer(), model="gpt-4o", gateway=openai_gateway
+    gateway = (
+        OpenAIGateway(api_key="test-key") if provider == "openai" else OMLXGateway()
     )
+    return LLMBroker(tokenizer=InProcessTokenizer(), model=model, gateway=gateway)
+
+
+def _stream_chunk(delta: dict, finish_reason: str | None = None) -> dict:
+    return {
+        "id": "chatcmpl-stream",
+        "object": "chat.completion.chunk",
+        "created": 0,
+        "model": "gpt-4o",
+        "choices": [{"index": 0, "delta": delta, "finish_reason": finish_reason}],
+    }
+
+
+def _reply(data: dict | list[dict]) -> tuple:
+    if isinstance(data, list):
+        body = "".join(f"data: {json.dumps(chunk)}\n\n" for chunk in data)
+        return (
+            200,
+            {"content-type": "text/event-stream"},
+            (body + "data: [DONE]\n\n").encode(),
+        )
+    return 200, {"content-type": "application/json"}, json.dumps(data).encode()
+
+
+def _streams(calls: list[dict]) -> list[list[dict]]:
+    return [
+        [
+            _stream_chunk(
+                {
+                    "role": "assistant",
+                    "tool_calls": [
+                        {
+                            "index": index,
+                            "id": call["id"],
+                            "type": "function",
+                            "function": {"name": "get_weather", "arguments": ""},
+                        }
+                        for index, call in enumerate(calls)
+                    ],
+                }
+            ),
+            _stream_chunk(
+                {
+                    "tool_calls": [
+                        {
+                            "index": index,
+                            "function": {"arguments": call["function"]["arguments"]},
+                        }
+                        for index, call in enumerate(calls)
+                    ]
+                }
+            ),
+            _stream_chunk({}, "tool_calls"),
+        ],
+        [
+            _stream_chunk({"role": "assistant", "content": "Sunny."}),
+            _stream_chunk({}, "stop"),
+        ],
+    ]
+
+
+def _assert_follow_up(body: dict, calls: list[dict], prompt: str) -> None:
+    assert body["model"] == "gpt-4o"
+    assert body["messages"] == [
+        {"role": "user", "content": prompt},
+        {"role": "assistant", "content": "", "tool_calls": calls},
+        *[
+            {
+                "role": "tool",
+                "tool_call_id": call["id"],
+                "content": json.dumps(_load_fixture("tool-result.json")),
+            }
+            for call in calls
+        ],
+    ]
+    assert [json.loads(call["function"]["arguments"]) for call in calls] == [
+        {"location": location} for location in ["Paris", "London"][: len(calls)]
+    ]
 
 
 @pytest.fixture
-def tool():
+def tool() -> GetWeatherTool:
     return GetWeatherTool()
 
 
+@pytest.fixture
+def round_trip(tool):
+    first = _load_fixture("response-1-tool-call.json")
+    final = _load_fixture("response-2-final.json")
+    prompt = "What's the weather in Paris?"
+    with scripted_http([_reply(first), _reply(final)]) as (_, requests):
+        result = _broker().generate(
+            [LLMMessage(role=MessageRole.User, content=prompt)], tools=[tool]
+        )
+    bodies = [json.loads(body) for _, body, _ in requests]
+    assert [path for path, _, _ in requests] == ["/v1/chat/completions"] * 2
+    assert [headers["authorization"] for _, _, headers in requests] == [
+        "Bearer test-key"
+    ] * 2
+    return bodies, result, first["choices"][0]["message"]["tool_calls"], prompt
+
+
 class DescribeOpenAIToolCallingRoundTrip:
-    def should_include_get_weather_in_first_request_tools(
-        self, broker, tool, mock_openai_client
-    ):
-        messages = [
-            LLMMessage(role=MessageRole.User, content="What's the weather in Paris?")
-        ]
+    def should_include_get_weather_in_first_request_tools(self, round_trip, tool):
+        bodies, _, _, prompt = round_trip
 
-        broker.generate(messages, tools=[tool])
+        assert bodies[0]["model"] == "gpt-4o"
+        assert bodies[0]["messages"] == [{"role": "user", "content": prompt}]
+        assert bodies[0]["tools"] == [tool.descriptor]
 
-        first_call_kwargs = mock_openai_client.chat.completions.create.call_args_list[
-            0
-        ][1]
-        tool_names = [t["function"]["name"] for t in first_call_kwargs["tools"]]
-        assert "get_weather" in tool_names
+    def should_invoke_get_weather_tool_with_paris(self, round_trip, tool):
+        assert tool.locations == ["Paris"]
 
-    def should_invoke_get_weather_tool_with_paris(
-        self, broker, tool, mock_openai_client, mocker
-    ):
-        spy = mocker.spy(tool, "run")
-        messages = [
-            LLMMessage(role=MessageRole.User, content="What's the weather in Paris?")
-        ]
+    def should_include_correct_assistant_tool_call_in_second_request(self, round_trip):
+        bodies, _, calls, prompt = round_trip
 
-        broker.generate(messages, tools=[tool])
+        _assert_follow_up(bodies[1], calls, prompt)
 
-        spy.assert_called_once_with(location="Paris")
+    def should_include_correct_tool_role_message_in_second_request(self, round_trip):
+        bodies, _, calls, prompt = round_trip
 
-    def should_include_correct_assistant_tool_call_in_second_request(
-        self, broker, tool, mock_openai_client
-    ):
-        messages = [
-            LLMMessage(role=MessageRole.User, content="What's the weather in Paris?")
-        ]
+        _assert_follow_up(bodies[1], calls, prompt)
 
-        broker.generate(messages, tools=[tool])
-
-        second_call_kwargs = mock_openai_client.chat.completions.create.call_args_list[
-            1
-        ][1]
-        second_messages = second_call_kwargs["messages"]
-
-        # Must contain the original user message
-        user_msgs = [m for m in second_messages if m.get("role") == "user"]
-        assert any(
-            m.get("content") == "What's the weather in Paris?" for m in user_msgs
-        )
-
-        # Must contain an assistant message with a tool_call whose arguments parse to a dict
-        assistant_msgs = [m for m in second_messages if m.get("role") == "assistant"]
-        assert len(assistant_msgs) >= 1
-        tool_call_msgs = [m for m in assistant_msgs if "tool_calls" in m]
-        assert len(tool_call_msgs) >= 1
-        args_str = tool_call_msgs[0]["tool_calls"][0]["function"]["arguments"]
-        parsed_args = json.loads(args_str)
-        assert isinstance(parsed_args, dict), (
-            "arguments must parse to a dict, not a nested string"
-        )
-        assert parsed_args == {"location": "Paris"}
-
-    def should_include_correct_tool_role_message_in_second_request(
-        self, broker, tool, mock_openai_client
-    ):
-        messages = [
-            LLMMessage(role=MessageRole.User, content="What's the weather in Paris?")
-        ]
-
-        broker.generate(messages, tools=[tool])
-
-        second_call_kwargs = mock_openai_client.chat.completions.create.call_args_list[
-            1
-        ][1]
-        second_messages = second_call_kwargs["messages"]
-
-        tool_msgs = [m for m in second_messages if m.get("role") == "tool"]
-        assert len(tool_msgs) == 1
-        tool_msg = tool_msgs[0]
-        assert tool_msg.get("tool_call_id") == "call_fixture_get_weather"
-        assert "tool_calls" not in tool_msg, (
-            "tool-role message must not contain tool_calls array"
-        )
-        content_parsed = json.loads(tool_msg["content"])
-        assert content_parsed == {"temperature_c": 22, "conditions": "sunny"}
-
-    def should_return_final_text_from_second_response(
-        self, broker, tool, mock_openai_client
-    ):
-        messages = [
-            LLMMessage(role=MessageRole.User, content="What's the weather in Paris?")
-        ]
-
-        result = broker.generate(messages, tools=[tool])
-
-        assert result == "It's currently 22°C and sunny in Paris."
+    def should_return_final_text_from_second_response(self, round_trip):
+        assert round_trip[1] == "It's currently 22°C and sunny in Paris."
 
 
-def should_preserve_json_argument_types_and_provider_metadata(mocker):
-    from openai.types.chat import ChatCompletion
-
+def should_preserve_json_argument_types_and_provider_metadata():
     fixture = _load_fixture("response-1-tool-call.json")
     arguments = {
         "count": 2,
@@ -203,195 +206,48 @@ def should_preserve_json_argument_types_and_provider_metadata(mocker):
         json.dumps(arguments)
     )
     fixture["usage"] = {"prompt_tokens": 10, "completion_tokens": 4, "total_tokens": 14}
-    client = MagicMock()
-    client.chat.completions.create.return_value = ChatCompletion.model_validate(fixture)
-    mocker.patch("mojentic.llm.gateways.openai.OpenAI", return_value=client)
-    broker = LLMBroker(
-        tokenizer=InProcessTokenizer(),
-        model="configured-model",
-        gateway=OpenAIGateway(api_key="test-key"),
-    )
-    response = broker.generate_response(
-        [LLMMessage(role=MessageRole.User, content="hi")]
-    )
+    with scripted_http([_reply(fixture)]) as (_, requests):
+        response = _broker(model="configured-model").generate_response(
+            [LLMMessage(role=MessageRole.User, content="hi")]
+        )
+
+    assert json.loads(requests[0][1])["messages"] == [{"role": "user", "content": "hi"}]
+    assert json.loads(requests[0][1])["model"] == "configured-model"
+    assert response.tool_calls[0].id == "call_fixture_get_weather"
+    assert response.tool_calls[0].name == "get_weather"
     assert response.tool_calls[0].arguments == arguments
-    assert response.usage["prompt_tokens"] == 10
+    assert type(response.tool_calls[0].arguments["count"]) is int
+    assert type(response.tool_calls[0].arguments["enabled"]) is bool
+    assert response.usage == {
+        **fixture["usage"],
+        "completion_tokens_details": None,
+        "prompt_tokens_details": None,
+    }
     assert response.model == fixture["model"]
     assert response.finish_reason == "tool_calls"
 
 
-def _stream_chunk(delta, finish_reason=None):
-    from openai.types.chat import ChatCompletionChunk
-
-    return ChatCompletionChunk.model_validate(
-        {
-            "id": "chatcmpl-stream",
-            "object": "chat.completion.chunk",
-            "created": 0,
-            "model": "gpt-4o",
-            "choices": [{"index": 0, "delta": delta, "finish_reason": finish_reason}],
-        }
-    )
-
-
 class DescribeOpenAIStreamingToolCallRoundTrip:
-    @pytest.fixture
-    def streaming_client(self, mocker):
-        tool_call_stream = [
-            _stream_chunk(
-                {
-                    "role": "assistant",
-                    "tool_calls": [
-                        {
-                            "index": 0,
-                            "id": "call_abc123",
-                            "type": "function",
-                            "function": {"name": "get_weather", "arguments": ""},
-                        }
-                    ],
-                }
-            ),
-            _stream_chunk(
-                {
-                    "tool_calls": [
-                        {"index": 0, "function": {"arguments": '{"location": "Paris"}'}}
-                    ]
-                }
-            ),
-            _stream_chunk({}, finish_reason="tool_calls"),
+    def should_carry_streamed_tool_call_id_into_follow_up_request(self, tool):
+        calls = _load_fixture("response-1-tool-call.json")["choices"][0]["message"][
+            "tool_calls"
         ]
-        final_stream = [
-            _stream_chunk({"role": "assistant", "content": "Sunny."}),
-            _stream_chunk({}, finish_reason="stop"),
-        ]
-        client = MagicMock()
-        client.chat.completions.create.side_effect = [
-            iter(tool_call_stream),
-            iter(final_stream),
-        ]
-        mocker.patch("mojentic.llm.gateways.openai.OpenAI", return_value=client)
-        return client
-
-    def should_carry_streamed_tool_call_id_into_follow_up_request(
-        self, streaming_client, tool
-    ):
-        broker = LLMBroker(
-            tokenizer=InProcessTokenizer(),
-            model="gpt-4o",
-            gateway=OpenAIGateway(api_key="test-key"),
-        )
-        messages = [
-            LLMMessage(role=MessageRole.User, content="What's the weather in Paris?")
-        ]
-
-        list(broker.generate_stream(messages, tools=[tool]))
-
-        follow_up = streaming_client.chat.completions.create.call_args_list[1].kwargs[
-            "messages"
-        ]
-        assert [m["tool_call_id"] for m in follow_up if m["role"] == "tool"] == [
-            "call_abc123"
-        ]
-
-
-@pytest.fixture(params=["openai", "omlx"])
-def parallel_round_trip(request, streaming, mocker):
-    provider = request.param
-    import httpx
-    from openai import OpenAI
-
-    from mojentic.llm.gateways.omlx import OMLXGateway, OMLXTransport
-
-    calls = [
-        {
-            "id": "call_paris",
-            "type": "function",
-            "function": {"name": "get_weather", "arguments": '{"location": "Paris"}'},
-        },
-        {
-            "id": "call_london",
-            "type": "function",
-            "function": {"name": "get_weather", "arguments": '{"location": "London"}'},
-        },
-    ]
-    first = _load_fixture("response-1-tool-call.json")
-    first["choices"][0]["message"]["tool_calls"] = calls
-    final = _load_fixture("response-2-final.json")
-    first_chunks = [
-        _stream_chunk(
-            {
-                "role": "assistant",
-                "tool_calls": [
-                    {
-                        "index": index,
-                        "id": call["id"],
-                        "type": "function",
-                        "function": {"name": "get_weather", "arguments": ""},
-                    }
-                    for index, call in enumerate(calls)
-                ],
-            }
-        ),
-        _stream_chunk(
-            {
-                "tool_calls": [
-                    {
-                        "index": index,
-                        "function": {"arguments": call["function"]["arguments"]},
-                    }
-                    for index, call in enumerate(calls)
-                ]
-            }
-        ),
-        _stream_chunk({}, finish_reason="tool_calls"),
-    ]
-    final_chunks = [
-        _stream_chunk({"content": "Sunny."}),
-        _stream_chunk({}, finish_reason="stop"),
-    ]
-    streams = [
-        [f"data: {chunk.model_dump_json()}" for chunk in chunks] + ["data: [DONE]"]
-        for chunks in [first_chunks, final_chunks]
-    ]
-    requests = []
-
-    def respond(request):
-        requests.append(json.loads(request.content))
-        index = len(requests) - 1
-        if streaming:
-            return httpx.Response(
-                200,
-                text="\n\n".join(streams[index]) + "\n\n",
-                headers={"Content-Type": "text/event-stream"},
+        calls[0]["id"] = "call_abc123"
+        prompt = "What's the weather in Paris?"
+        with scripted_http([_reply(chunks) for chunks in _streams(calls)]) as (
+            _,
+            requests,
+        ):
+            output = list(
+                _broker().generate_stream(
+                    [LLMMessage(role=MessageRole.User, content=prompt)], tools=[tool]
+                )
             )
-        return httpx.Response(200, json=[first, final][index])
 
-    if provider == "openai":
-        gateway = OpenAIGateway(api_key="test-key")
-        gateway.client = OpenAI(
-            api_key="test-key",
-            http_client=httpx.Client(transport=httpx.MockTransport(respond)),
-        )
-    else:
-        transport = mocker.Mock(spec=OMLXTransport)
-
-        def post(path, body):
-            requests.append(body)
-            return httpx.Response(200, json=[first, final][len(requests) - 1])
-
-        def stream_lines(path, body):
-            requests.append(body)
-            yield from streams[len(requests) - 1]
-
-        transport.post.side_effect = post
-        transport.stream_lines.side_effect = stream_lines
-        gateway = OMLXGateway(transport=transport)
-    broker = LLMBroker(tokenizer=InProcessTokenizer(), model="gpt-4o", gateway=gateway)
-    messages = [
-        LLMMessage(role=MessageRole.User, content="Compare Paris and London weather.")
-    ]
-
-    return broker, messages, requests, calls
+        assert "".join(output) == "Sunny."
+        assert tool.locations == ["Paris"]
+        assert [json.loads(body)["stream"] for _, body, _ in requests] == [True, True]
+        _assert_follow_up(json.loads(requests[1][1]), calls, prompt)
 
 
 @pytest.fixture(params=[False, True], ids=["ordinary", "streaming"])
@@ -399,28 +255,45 @@ def streaming(request):
     return request.param
 
 
-@pytest.fixture
-def generate(streaming):
-    if streaming:
-        return lambda broker, messages, tools: list(
-            broker.generate_stream(messages, tools=tools)
+@pytest.fixture(params=["openai", "omlx"])
+def parallel_round_trip(request, streaming, tool):
+    calls = [
+        {
+            "id": identifier,
+            "type": "function",
+            "function": {
+                "name": "get_weather",
+                "arguments": json.dumps({"location": location}),
+            },
+        }
+        for identifier, location in [("call_paris", "Paris"), ("call_london", "London")]
+    ]
+    first = _load_fixture("response-1-tool-call.json")
+    first["choices"][0]["message"]["tool_calls"] = calls
+    final = _load_fixture("response-2-final.json")
+    replies = _streams(calls) if streaming else [first, final]
+    prompt = "Compare Paris and London weather."
+    messages = [LLMMessage(role=MessageRole.User, content=prompt)]
+    with scripted_http([_reply(reply) for reply in replies]) as (_, requests):
+        broker = _broker(request.param)
+        output = (
+            "".join(broker.generate_stream(messages, tools=[tool]))
+            if streaming
+            else broker.generate(messages, tools=[tool])
         )
-    return lambda broker, messages, tools: broker.generate(messages, tools=tools)
+    expected = {False: "It's currently 22°C and sunny in Paris.", True: "Sunny."}[
+        streaming
+    ]
+    return requests, calls, messages, prompt, output, expected
 
 
 def should_keep_both_parallel_tool_call_ids_in_the_broker_follow_up(
-    parallel_round_trip, generate, tool
+    parallel_round_trip, streaming, tool
 ):
-    broker, messages, requests, calls = parallel_round_trip
+    requests, calls, messages, prompt, output, expected = parallel_round_trip
 
-    generate(broker, messages, [tool])
-
-    follow_up = requests[1]["messages"]
-    assistant_calls = [
-        message["tool_calls"] for message in follow_up if message["role"] == "assistant"
-    ]
-    assert assistant_calls == [calls]
-    assert [
-        message["tool_call_id"] for message in follow_up if message["role"] == "tool"
-    ] == ["call_paris", "call_london"]
+    assert output == expected
+    assert tool.locations == ["Paris", "London"]
+    assert json.loads(requests[0][1])["tools"] == [tool.descriptor]
+    _assert_follow_up(json.loads(requests[1][1]), calls, prompt)
     assert [call.id for call in messages[1].tool_calls] == ["call_paris", "call_london"]

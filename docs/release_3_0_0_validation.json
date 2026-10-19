@@ -1,11 +1,11 @@
 {
   "status": "passed",
   "source": {
-    "base_commit": "d37a4cac069f5b2f514299132842f842820f8721",
-    "working_tree_source_id": "503e85601f3aca1e3b440b52ceeb57da8cc423d1c53dbe5828576e5b78012637",
+    "base_commit": "8c20405f133cc79b5d0810bccd106d6b04f5d3f3",
+    "working_tree_source_id": "619b58a4d22eadd3ee79a800ccb25141f972f14642413a2f0a98d8db99cbdde7",
     "manifest": "docs/release_3_0_0_source.sha256",
-    "manifest_sha256": "5f7a3c11552546f768a91f31609aca702a0099bda9ce8c96325c8effc8e24a7f",
-    "state": "uncommitted correction; source ID includes public consumers, providers, specs, both verification scripts and transport helper"
+    "manifest_sha256": "cee1c146f7b3ebacb5bd00c8ebce0e704741254f384a55f02f736a044f12037d",
+    "state": "uncommitted reconciliation of preserved migration; source ID includes public consumers, production providers, real-SDK transport specs, both verification scripts and transport helper"
   },
   "contract_parent_revision": "4ae2f73a0a5465b0f6509b87e1148d254f3f64cd",
   "root_contract_hashes": {
@@ -43,11 +43,11 @@
   "consumer_verification": {
     "repository": "mojentic-py",
     "source": {
-      "base_commit": "d37a4cac069f5b2f514299132842f842820f8721",
-      "working_tree_source_id": "503e85601f3aca1e3b440b52ceeb57da8cc423d1c53dbe5828576e5b78012637",
+      "base_commit": "8c20405f133cc79b5d0810bccd106d6b04f5d3f3",
+      "working_tree_source_id": "619b58a4d22eadd3ee79a800ccb25141f972f14642413a2f0a98d8db99cbdde7",
       "manifest": "docs/release_3_0_0_source.sha256",
-      "manifest_sha256": "5f7a3c11552546f768a91f31609aca702a0099bda9ce8c96325c8effc8e24a7f",
-      "state": "uncommitted correction; source ID includes public consumers, providers, specs, both verification scripts and transport helper"
+      "manifest_sha256": "cee1c146f7b3ebacb5bd00c8ebce0e704741254f384a55f02f736a044f12037d",
+      "state": "uncommitted reconciliation of preserved migration; source ID includes public consumers, production providers, real-SDK transport specs, both verification scripts and transport helper"
     },
     "commands": [
       "pytest",
@@ -60,11 +60,11 @@
   "provider_verification": {
     "repository": "mojentic-py",
     "source": {
-      "base_commit": "d37a4cac069f5b2f514299132842f842820f8721",
-      "working_tree_source_id": "503e85601f3aca1e3b440b52ceeb57da8cc423d1c53dbe5828576e5b78012637",
+      "base_commit": "8c20405f133cc79b5d0810bccd106d6b04f5d3f3",
+      "working_tree_source_id": "619b58a4d22eadd3ee79a800ccb25141f972f14642413a2f0a98d8db99cbdde7",
       "manifest": "docs/release_3_0_0_source.sha256",
-      "manifest_sha256": "5f7a3c11552546f768a91f31609aca702a0099bda9ce8c96325c8effc8e24a7f",
-      "state": "uncommitted correction; source ID includes public consumers, providers, specs, both verification scripts and transport helper"
+      "manifest_sha256": "cee1c146f7b3ebacb5bd00c8ebce0e704741254f384a55f02f736a044f12037d",
+      "state": "uncommitted reconciliation of preserved migration; source ID includes public consumers, production providers, real-SDK transport specs, both verification scripts and transport helper"
     },
     "implementation": "Production gateways, SDK request encoders, decoders, recovery and streaming engines against the same versioned contract-derived transport responses",
     "commands": [
@@ -79,8 +79,8 @@
   "boundary": "Library self-validation under October 17 policy; no changed running-service or cross-repository application boundary; no external adoption/provider execution claimed.",
   "artifact": {
     "filename": "mojentic-3.0.0-py3-none-any.whl",
-    "sha256": "756ff3c7bc17d6e71a342e7d771e08d62233b4d1c92507e893d9e73ce25445af",
-    "installed_environment": "/tmp/mojentic-inprocess-consumer/.venv",
+    "sha256": "25a0e18ce9b720933701ad393b72c86ca335c1e44d2a9fff3cee9ec5e045cc0d",
+    "installed_environment": "/tmp/mojentic-roundtrip-consumer",
     "imports": "site-packages only; verifiers assert production imports are outside checkout"
   },
   "runtime_guards": [
@@ -133,7 +133,7 @@
     },
     {
       "name": "format",
-      "command": "uv run ruff format src scripts",
+      "command": "uv run ruff format src",
       "exit_code": 0
     },
     {
@@ -152,7 +152,7 @@
       "command": "uv pip list --outdated",
       "exit_code": 0,
       "result": "Package            Version   Latest     Type\n------------------ --------- ---------- -----\nbackrefs           8.0       8.1        wheel\ncertifi            2026.7.22 2026.10.18 wheel\ncharset-normalizer 3.5.1     3.5.2      wheel\ncoverage           7.16.1    7.16.2     wheel\nfilelock           4.2.0     4.2.2      wheel\ngriffelib          2.3.0     2.3.2      wheel\nhttpcore2          2.13.1    2.14.0     wheel\nhttpx2             2.13.1    2.14.0     wheel\niniconfig          2.3.0     2.3.1      wheel\nmarkdown           3.10.3    3.11.1     wheel\nmarkupsafe         3.0.3     3.0.4      wheel\nmsgpack            1.2.2     1.2.3      wheel\nopenai             3.33.0    3.35.1     wheel\nplatformdirs       4.11.13   4.13.4     wheel\npluggy             1.6.0     1.7.0      wheel\npyflakes           4.0.0     4.0.3      wheel\npytest-mock        3.16.0    3.17.0     wheel\nregex              2026.9.10 2026.9.29  wheel\ntomli              2.4.1     2.5.0      wheel\ntruststore         0.10.4    0.10.5     wheel",
-      "decision": "Inventory only; audits report no fixed advisory requiring dependency changes."
+      "decision": "Inventory only; audits report no advisory requiring dependency changes."
     },
     {
       "name": "build",
@@ -160,21 +160,31 @@
       "exit_code": 0
     },
     {
+      "name": "venv",
+      "command": "uv venv /tmp/mojentic-roundtrip-consumer",
+      "exit_code": 0
+    },
+    {
+      "name": "export-runtime",
+      "command": "uv export --no-dev --format requirements-txt --no-emit-project --output-file .foundry/runtime-requirements.txt",
+      "exit_code": 0
+    },
+    {
       "name": "install",
-      "command": "uv pip install --reinstall-package mojentic --python /tmp/mojentic-inprocess-consumer/.venv/bin/python -r .foundry/runtime-requirements.txt dist/mojentic-3.0.0-py3-none-any.whl",
+      "command": "uv pip install --reinstall-package mojentic --python /tmp/mojentic-roundtrip-consumer/bin/python -r .foundry/runtime-requirements.txt dist/mojentic-3.0.0-py3-none-any.whl",
       "exit_code": 0
     },
     {
       "name": "wheel-readiness",
-      "command": "uv run --offline --no-project --no-sync --directory /tmp/mojentic-inprocess-consumer --python /tmp/mojentic-inprocess-consumer/.venv/bin/python /home/svetzal/.foundry/worktrees/mojentic-py/mojentic-py-no-network-tests-c1-83a9e0/scripts/verify_readiness.py /home/svetzal/.foundry/worktrees/mojentic-py/mojentic-py-no-network-tests-c1-83a9e0",
+      "command": "uv run --offline --no-project --directory /tmp --python /tmp/mojentic-roundtrip-consumer/bin/python /home/svetzal/.foundry/worktrees/mojentic-py/mojentic-py-no-network-tests-c2-11292e/scripts/verify_readiness.py /home/svetzal/.foundry/worktrees/mojentic-py/mojentic-py-no-network-tests-c2-11292e",
       "exit_code": 0,
-      "result": "installed: /tmp/mojentic-inprocess-consumer/.venv/lib/python3.13/site-packages/mojentic/__init__.py\ncontract: context_window_v1.json f93a35e4de9c55e87c0a55551d4ab735289b040bbb673d87269fd3b4b8e41466\ncontract: first_token_v1.json 78dc6691c65ba84faa6e9a3490e6361bc3330dfd8341a27de5a4d7c2af833ab5\ncontract: native_reasoning_v1.json be212ff011125f1d0927e3a65a0d7cd87eedbf9f5ff69e803b4112a80ae6b1f6\ncontract: request_fidelity_v1.json 6a5ebca721a9f9e84323d0118b543d5dc71c7f68bb7067b2cdf6ad40daddcfc8\nmetadata: all provider cases and exact requests passed\nreasoning: distinct controls, structured output, native tool continuation passed\nrecovery/history: SDK success, admitted byte-identical retry and permanent failure passed\nwarning: `--no-sync` has no effect when used alongside `--no-project`"
+      "result": "installed: /tmp/mojentic-roundtrip-consumer/lib/python3.13/site-packages/mojentic/__init__.py\ncontract: context_window_v1.json f93a35e4de9c55e87c0a55551d4ab735289b040bbb673d87269fd3b4b8e41466\ncontract: first_token_v1.json 78dc6691c65ba84faa6e9a3490e6361bc3330dfd8341a27de5a4d7c2af833ab5\ncontract: native_reasoning_v1.json be212ff011125f1d0927e3a65a0d7cd87eedbf9f5ff69e803b4112a80ae6b1f6\ncontract: request_fidelity_v1.json 6a5ebca721a9f9e84323d0118b543d5dc71c7f68bb7067b2cdf6ad40daddcfc8\nmetadata: all provider cases and exact requests passed\nreasoning: distinct controls, structured output, native tool continuation passed\nrecovery/history: SDK success, admitted byte-identical retry and permanent failure passed"
     },
     {
       "name": "wheel-timing",
-      "command": "uv run --offline --no-project --no-sync --directory /tmp/mojentic-inprocess-consumer --python /tmp/mojentic-inprocess-consumer/.venv/bin/python /home/svetzal/.foundry/worktrees/mojentic-py/mojentic-py-no-network-tests-c1-83a9e0/scripts/verify_stream_timing.py /home/svetzal/.foundry/worktrees/mojentic-py/mojentic-py-no-network-tests-c1-83a9e0/src/mojentic/llm/gateways/fixtures/contracts/first_token_v1.json",
+      "command": "uv run --offline --no-project --directory /tmp --python /tmp/mojentic-roundtrip-consumer/bin/python /home/svetzal/.foundry/worktrees/mojentic-py/mojentic-py-no-network-tests-c2-11292e/scripts/verify_stream_timing.py /home/svetzal/.foundry/worktrees/mojentic-py/mojentic-py-no-network-tests-c2-11292e/src/mojentic/llm/gateways/fixtures/contracts/first_token_v1.json",
       "exit_code": 0,
-      "result": "installed: /tmp/mojentic-inprocess-consumer/.venv/lib/python3.13/site-packages/mojentic/__init__.py\ncontract: py-stream-first-token-v1 78dc6691c65ba84faa6e9a3490e6361bc3330dfd8341a27de5a4d7c2af833ab5\nollama events/session/recovery: passed\nollama malformed events/public recovery close: passed\nomlx events/session/recovery: passed\nomlx malformed events/public recovery close: passed\nopenai events/session/recovery: passed\nopenai malformed events/public recovery close: passed\nwarning: `--no-sync` has no effect when used alongside `--no-project`"
+      "result": "installed: /tmp/mojentic-roundtrip-consumer/lib/python3.13/site-packages/mojentic/__init__.py\ncontract: py-stream-first-token-v1 78dc6691c65ba84faa6e9a3490e6361bc3330dfd8341a27de5a4d7c2af833ab5\nollama events/session/recovery: passed\nollama malformed events/public recovery close: passed\nomlx events/session/recovery: passed\nomlx malformed events/public recovery close: passed\nopenai events/session/recovery: passed\nopenai malformed events/public recovery close: passed"
     },
     {
       "name": "manifest",
@@ -189,15 +199,22 @@
     {
       "name": "documentation",
       "command": "uv run mkdocs build",
-      "exit_code": 0,
-      "result": "Documentation built successfully."
+      "exit_code": 0
     }
   ],
   "resolved_execution_failures": [
     "Initial uv cache/tools directories were read-only; redirected UV_CACHE_DIR and UV_TOOL_DIR to writable /tmp locations.",
     "Authentication-loss red probe rejected all five entrypoints; corrected transport capture preserves exact Authorization and encoded bytes.",
     "Fixture conversion import placement, SDK httpx2 transport coverage, read-timeout injection and test adapter wiring were corrected; final verification passed.",
-    "Previously dormant dispatcher/aggregator test_* checks did not match configured should_* discovery; enabled and replaced those checks through public APIs. Final 2,657 tests include all 19 restored checks."
+    "Previously dormant dispatcher/aggregator test_* checks did not match configured should_* discovery; enabled and replaced those checks through public APIs. Final 2,657 tests include all 19 restored checks.",
+    "Replaced remaining OpenAI SDK mocks in the local tool-roundtrip spec with shared in-process HTTP transport capture. Wrong tool-result input failed all four parallel cases; restoring the canonical result passed. Exact usage assertions include SDK-normalized null detail fields."
   ],
-  "finalization": "Working tree left modified for Foundry. No production implementation, package/dependency version, ref or sibling repository changed."
+  "finalization": "Working tree left modified for Foundry. No production implementation, package/dependency version, ref or sibling repository changed.",
+  "roundtrip_reconciliation": {
+    "specification": "src/mojentic/llm/gateways/openai_tool_roundtrip_spec.py",
+    "cases_passed": 11,
+    "rejection": "Injected temperature_c=-1 and conditions=wrong-result in the local tool double; all four OpenAI/oMLX ordinary/streaming parallel cases failed exact serialized continuation messages (exit 1).",
+    "correction": "Restored canonical tool-result input; the same four cases passed (exit 0). Full specification passed all 11 cases.",
+    "preserved": "Canonical shared fixture bytes, production implementations, public APIs, dependencies and package version unchanged."
+  }
 }

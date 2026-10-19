@@ -1,10 +1,10 @@
 {
   "source": {
-    "base_commit": "d37a4cac069f5b2f514299132842f842820f8721",
-    "working_tree_source_id": "503e85601f3aca1e3b440b52ceeb57da8cc423d1c53dbe5828576e5b78012637",
+    "base_commit": "8c20405f133cc79b5d0810bccd106d6b04f5d3f3",
+    "working_tree_source_id": "619b58a4d22eadd3ee79a800ccb25141f972f14642413a2f0a98d8db99cbdde7",
     "manifest": "docs/release_3_0_0_source.sha256",
-    "manifest_sha256": "5f7a3c11552546f768a91f31609aca702a0099bda9ce8c96325c8effc8e24a7f",
-    "state": "uncommitted correction; source ID includes public consumers, providers, specs, both verification scripts and transport helper"
+    "manifest_sha256": "cee1c146f7b3ebacb5bd00c8ebce0e704741254f384a55f02f736a044f12037d",
+    "state": "uncommitted reconciliation of preserved migration; source ID includes public consumers, production providers, real-SDK transport specs, both verification scripts and transport helper"
   },
   "contracts": [
     {
@@ -545,10 +545,11 @@
         "src/mojentic/llm/gateways/openai_tool_roundtrip_spec.py::DescribeOpenAIToolCallingRoundTrip::should_include_correct_tool_role_message_in_second_request",
         "src/mojentic/llm/gateways/openai_tool_roundtrip_spec.py::DescribeOpenAIToolCallingRoundTrip::should_include_get_weather_in_first_request_tools",
         "src/mojentic/llm/gateways/openai_tool_roundtrip_spec.py::DescribeOpenAIToolCallingRoundTrip::should_invoke_get_weather_tool_with_paris",
+        "src/mojentic/llm/gateways/openai_tool_roundtrip_spec.py::DescribeOpenAIToolCallingRoundTrip::should_return_final_text_from_second_response",
         "src/mojentic/llm/gateways/openai_tool_roundtrip_spec.py::should_keep_both_parallel_tool_call_ids_in_the_broker_follow_up"
       ],
-      "cases_verified": 60,
-      "actual": "passed; all selected parametrizations returned their exact asserted public outcomes",
+      "cases_verified": 69,
+      "actual": "passed; real OpenAI SDK and production oMLX transport encode exact assistant/tool messages, IDs and JSON results through public broker calls; ordinary and fragmented SSE continuations retain final text and tool invocation locations",
       "exit_code": 0
     },
     {

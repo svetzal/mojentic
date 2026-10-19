@@ -2,11 +2,19 @@
 
 This living record replaces superseded loopback and wall-clock proof claims.
 Production behavior, public APIs, dependency versions and package version are
-unchanged by this correction. The tested base commit is `d37a4cac069f5b2f514299132842f842820f8721`;
+unchanged by this correction. The tested base commit is `8c20405f133cc79b5d0810bccd106d6b04f5d3f3`;
 `docs/release_3_0_0_source.sha256` identifies the tested working-tree inputs,
 including specifications and the shared transport helper. Actual commands,
 source identity, artifact identity and results are maintained in
 `docs/release_3_0_0_validation.json` and `docs/release_3_0_0_acceptance.json`.
+
+The reconciled `openai_tool_roundtrip_spec.py` preserves all 11 ordinary, metadata,
+streaming and parallel-tool cases through public broker APIs. The real OpenAI SDK and
+production oMLX transport run against `scripted_http`; assertions inspect serialized
+requests, exact tool IDs/results, typed JSON arguments, provider usage/model/finish
+reason and final output. Injecting an incorrect tool result rejected all four parallel
+cases; restoring the canonical result passed. Canonical shared fixture bytes and
+production behavior remain unchanged.
 
 ## Binding identities
 
@@ -132,7 +140,7 @@ Final verification: **2,657 tests passed**, **88.13% coverage** (85% minimum),
 all four `.hone-gates.json` gates exited 0, full flake8/ruff/format checks passed,
 and both security audits reported no known vulnerabilities. Both installed-wheel
 scripts exited 0 under the socket/sleeper guards. The exact tested source ID is
-`503e85601f3aca1e3b440b52ceeb57da8cc423d1c53dbe5828576e5b78012637`.
+`619b58a4d22eadd3ee79a800ccb25141f972f14642413a2f0a98d8db99cbdde7`.
 
 Nineteen previously dormant dispatcher/aggregator tests used `test_*` names while
 pytest collected only `should_*`. Their checks now run under the configured

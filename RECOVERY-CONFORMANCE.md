@@ -11,6 +11,14 @@ All 31 decision groups in the acceptance record passed. Final verification ran
 2,657 tests at 88.13% coverage, with all four project gates and both guarded
 installed-wheel scripts returning exit 0.
 
+The reconciled `openai_tool_roundtrip_spec.py` preserves all 11 ordinary, metadata,
+streaming and parallel-tool cases through public broker APIs. The real OpenAI SDK and
+production oMLX transport run against `scripted_http`; assertions inspect serialized
+requests, exact tool IDs/results, typed JSON arguments, provider usage/model/finish
+reason and final output. Injecting an incorrect tool result rejected all four parallel
+cases; restoring the canonical result passed. Canonical shared fixture bytes and
+production behavior remain unchanged.
+
 ## Replacement proof by recovery decision
 
 The authoritative contract is `root-recovery@4ae2f73`, copied byte-for-byte into
