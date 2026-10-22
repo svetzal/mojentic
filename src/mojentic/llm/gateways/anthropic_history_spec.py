@@ -85,20 +85,24 @@ class DescribeAnthropicHistory:
         )
 
     @pytest.mark.parametrize(
-        "policy",
+        ("policy", "credential", "api_version"),
         [
-            None,
-            RecoveryPolicy(
-                monotonic=clock,
-                wall=lambda: 0,
-                jitter=lambda ceiling: ceiling / 2,
-                sleeper=virtual_sleep,
-                max_attempts=1,
+            (None, ("authorization", "Bearer test-key"), "2026-10-21"),
+            (
+                RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=1,
+                ),
+                ("x-api-key", "test-key"),
+                "2023-06-01",
             ),
         ],
     )
     def should_preserve_ordered_history_system_images_controls_and_response(
-        self, policy, tmp_path
+        self, policy, credential, api_version, tmp_path
     ):
         image = tmp_path / "pixel.png"
         image.write_bytes(b"image-bytes")
@@ -153,8 +157,9 @@ class DescribeAnthropicHistory:
             "max_tokens": 17,
         }
         headers = {key.lower(): value for key, value in requests[0][2].items()}
-        assert headers["x-api-key"] == "test-key"
-        assert headers["anthropic-version"] == "2023-06-01"
+        credential_header, credential_value = credential
+        assert headers[credential_header] == credential_value
+        assert headers["anthropic-version"] == api_version
         assert response.content == "answer"
         assert response.model == "reported"
         assert response.finish_reason == "end_turn"
