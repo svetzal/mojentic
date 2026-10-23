@@ -7,6 +7,11 @@ released versions when adopting them; other-port readiness is not asserted here.
 Cross-repository running-service boundaries still require shared executable
 contracts on both sides. The coordinated publication hold remains in force.
 
+The Anthropic 2.1.0 dependency upgrade pins both SDK and recovery requests to
+`anthropic-version: 2023-06-01`, preserving configured temperature, top-p and
+top-k. The shared public-gateway wire assertions and upgrade acceptance evidence
+are recorded in [CONFORMANCE-3.0.0.md](CONFORMANCE-3.0.0.md#anthropic-sdk-upgrade).
+
 | Owner decision | Python verification | Cross-port status |
 | --- | --- | --- |
 | Final Python readiness assessment, RELEASE parts 1–5 | [Current decision map and actual results](CONFORMANCE-3.0.0.md): all October 12 amendments; `readiness_boundary_spec.py` adds public HTTP 500/502, selected eligibility and partial semantic interruption; literal metadata side-effect comparison including both OpenAI registry variants; recovered initial acceptance command/identities distinguished from the later clock mutation; deterministic clock tests; fresh installed-wheel recovery/reasoning/metadata/fidelity/timing probes | Python self-validates the library; part 4 is Kotlin-specific. Historical external gaps below do not block this unreleased library. Other ports and owner release authorization remain outside this assessment. |

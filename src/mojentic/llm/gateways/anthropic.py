@@ -20,6 +20,8 @@ from mojentic.llm.recovery import (
 
 logger = structlog.get_logger()
 
+_ANTHROPIC_VERSION = "2023-06-01"
+
 
 class AnthropicGateway(LLMGateway):
     """Anthropic completion with optional owned HTTP recovery.
@@ -45,7 +47,9 @@ class AnthropicGateway(LLMGateway):
         recovery_call: RecoveryCall | None = None,
     ):
         self.client = Anthropic(
-            api_key=api_key, **({"base_url": base_url} if base_url else {})
+            api_key=api_key,
+            default_headers={"anthropic-version": _ANTHROPIC_VERSION},
+            **({"base_url": base_url} if base_url else {}),
         )
         self.recovery_policy = (
             RecoveryPolicy.model_validate(recovery_policy)
@@ -63,7 +67,7 @@ class AnthropicGateway(LLMGateway):
     def _recovery_headers(self) -> dict[str, str]:
         return {
             "x-api-key": self.client.api_key,
-            "anthropic-version": "2023-06-01",
+            "anthropic-version": _ANTHROPIC_VERSION,
             "Content-Type": "application/json",
             "Accept-Encoding": "identity",
         }

@@ -85,20 +85,23 @@ class DescribeAnthropicHistory:
         )
 
     @pytest.mark.parametrize(
-        "policy",
+        ("policy", "credential"),
         [
-            None,
-            RecoveryPolicy(
-                monotonic=clock,
-                wall=lambda: 0,
-                jitter=lambda ceiling: ceiling / 2,
-                sleeper=virtual_sleep,
-                max_attempts=1,
+            (None, ("authorization", "Bearer test-key")),
+            (
+                RecoveryPolicy(
+                    monotonic=clock,
+                    wall=lambda: 0,
+                    jitter=lambda ceiling: ceiling / 2,
+                    sleeper=virtual_sleep,
+                    max_attempts=1,
+                ),
+                ("x-api-key", "test-key"),
             ),
         ],
     )
     def should_preserve_ordered_history_system_images_controls_and_response(
-        self, policy, tmp_path
+        self, policy, credential, tmp_path
     ):
         image = tmp_path / "pixel.png"
         image.write_bytes(b"image-bytes")
@@ -120,7 +123,9 @@ class DescribeAnthropicHistory:
             response = gateway.complete(
                 model="claude-test",
                 messages=messages,
-                config=CompletionConfig(temperature=0, max_tokens=17),
+                config=CompletionConfig(
+                    temperature=0, max_tokens=17, top_p=0.7, top_k=4
+                ),
                 temperature=0.9,
                 max_tokens=999,
             )
@@ -151,9 +156,12 @@ class DescribeAnthropicHistory:
             ],
             "temperature": 0,
             "max_tokens": 17,
+            "top_p": 0.7,
+            "top_k": 4,
         }
         headers = {key.lower(): value for key, value in requests[0][2].items()}
-        assert headers["x-api-key"] == "test-key"
+        credential_header, credential_value = credential
+        assert headers[credential_header] == credential_value
         assert headers["anthropic-version"] == "2023-06-01"
         assert response.content == "answer"
         assert response.model == "reported"

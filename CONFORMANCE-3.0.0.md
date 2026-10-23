@@ -177,3 +177,42 @@ validation record. Coverage must remain above 85%; no cases, gates, thresholds,
 audit scope or production APIs were weakened. GitHub Actions jobs each have
 `timeout-minutes: 15`. Foundry owns Git finalization; no commit, push, release,
 version bump or ref mutation is part of this correction.
+
+## Anthropic SDK upgrade
+
+Reused the dependency-only changes from
+`origin/foundry-task/mojentic-py-89e635a36b52` at
+`b1168f80ccb388cf5e76fedcb60df815bcddd1da`: `anthropic>=2.1.0` with
+Anthropic 2.1.0 locked. The public gateway API and package version are unchanged.
+The SDK constructor explicitly accepts `default_headers`; its `default_headers`
+property merges custom headers after its own version header. Both were inspected
+in the installed 2.1.0 SDK's `_client.py` and exercised through real SDK request
+encoding at the in-process HTTP transport boundary.
+
+`anthropic_history_spec.py` retains one literal `2023-06-01` wire assertion for
+both normal SDK and owned recovery requests. The SDK uses Bearer authorization;
+recovery retains its API-key header. Both routes send exactly the configured
+temperature `0`, max tokens `17`, top-p `0.7` and top-k `4`, together with ordered
+history, system text and image content. No SDK client or private library method
+is mocked in this verification. With only the dependency upgrade applied, the
+SDK case failed because its header was `2026-10-21`; setting the supported
+`default_headers` parameter restores the assertion. A single internal version
+constant now supplies both transport paths.
+
+Tested base commit: `7a553e16dfc3068bafe3c518cee942648ec0718c`, plus the uncommitted
+upgrade correction. Tested source ID from `scripts/verify_stream_timing.py --source-id`:
+`d00ab98f2d41abc90a05b282bef614508e7792ba0989200de6dbc3da1dd48a7d`.
+The executable history spec SHA-256 is
+`811c72390677ba9ea179e4ba7b06efb2a0960d9ff068b45156af324c8a9ba6b9`.
+Focused history and structured-output verification passed all 41 cases.
+Both `uv run pytest` and `uv run pytest --cov` passed all 2,664 cases, with
+86.74% configured source coverage and 86.80% bare `--cov` coverage, above 85%.
+All four
+`.hone-gates.json` gates passed, as did full flake8, Ruff lint and format checks,
+the locked-dependency audit, documentation build and wheel build. Both security
+audits found no known vulnerabilities; Bandit reported no issues. The outdated
+dependency inventory was collected without widening this upgrade's scope.
+Both existing installed-wheel verification scripts passed from a fresh external
+uv environment using the locked runtime dependencies, including SDK success,
+byte-identical recovery retries and permanent failures. These are local library
+self-validation results; no live provider or sibling-port verification is claimed.
