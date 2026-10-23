@@ -211,6 +211,7 @@ class SimpleRecursiveAgent:
                 "If you cannot solve a problem completely in one step, you make progress and identify what to do next."
             ),
             tools=self.available_tools,
+            tokenizer_gateway=llm.tokenizer,
         )
 
         # Set up event handlers

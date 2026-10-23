@@ -14,6 +14,7 @@ from mojentic.llm.gateways.stream_events import (
     StreamError,
     StreamErrorReason,
 )
+from scripts.inprocess_http import InProcessTokenizer
 
 
 class DescribeOpenAIGateway:
@@ -236,7 +237,8 @@ class DescribeOpenAIEmbeddings:
             http_client=httpx.Client(transport=httpx.MockTransport(respond)),
         ) as client:
             gateway.client = client
-            result = gateway.calculate_embeddings(" word" * 8291)
+            gateway._embedding_tokenizer = InProcessTokenizer()
+            result = gateway.calculate_embeddings("w" * 8291)
 
         norm = math.hypot(8191, 100)
         assert result == pytest.approx([8191 / norm, 100 / norm])

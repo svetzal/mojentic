@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `SimpleRecursiveAgent` now builds its chat session with its broker's tokenizer
+  instead of loading a second default tiktoken encoding, so a broker configured
+  with a custom tokenizer is honoured throughout the agent.
+- The library suite no longer depends on a warm tiktoken cache: specs inject the
+  in-process tokenizer and the autouse offline guard points tiktoken at an empty
+  cache, matching CI.
+
 ## [3.0.0] - 2026-10-18
 
 ### Added

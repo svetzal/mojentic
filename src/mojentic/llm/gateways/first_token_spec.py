@@ -536,7 +536,7 @@ def close_route(gateway, broker, route):
         return gateway, gateway.complete_stream(model="gpt-4o", messages=messages)
     if route == "broker":
         return broker, broker.generate_stream(messages)
-    session = ChatSession(broker)
+    session = ChatSession(broker, tokenizer_gateway=InProcessTokenizer())
     return session, session.send_stream("hello")
 
 
@@ -555,6 +555,6 @@ def public_route_metrics(gateway, route: str) -> dict:
     if route == "broker":
         assert "".join(broker.generate_stream(messages)) == "answer"
         return broker.last_stream_metrics.model_dump()
-    session = ChatSession(broker)
+    session = ChatSession(broker, tokenizer_gateway=InProcessTokenizer())
     assert "".join(session.send_stream("hello")) == "answer"
     return session.last_stream_metrics.model_dump()

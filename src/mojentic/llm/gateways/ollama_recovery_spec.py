@@ -12,7 +12,7 @@ import pytest
 from mojentic.llm.gateways.models import LLMMessage, MessageRole
 from mojentic.llm.gateways.ollama import OllamaGateway
 from mojentic.llm.llm_broker import LLMBroker
-from scripts.inprocess_http import clock, scripted_http, virtual_sleep
+from scripts.inprocess_http import InProcessTokenizer, clock, scripted_http, virtual_sleep
 
 
 def frame(content="answer", **message):
@@ -131,7 +131,7 @@ class DescribeHttpBoundaryCorrection:
                 "generate": lambda: broker.generate(messages),
                 "generate_response": lambda: broker.generate_response(messages),
                 "generate_object": lambda: broker.generate_object(messages, Answer),
-                "session": lambda: ChatSession(broker).send("payload-sentinel"),
+                "session": lambda: ChatSession(broker, tokenizer_gateway=InProcessTokenizer()).send("payload-sentinel"),
             }
             operations[entrypoint]()
 
@@ -541,7 +541,7 @@ class DescribeRecoveryBoundaries:
                 "generate_object": lambda: broker.generate_object(
                     messages, Answer, config=config
                 ).model_dump_json(),
-                "send": lambda: ChatSession(broker, config=config).send(
+                "send": lambda: ChatSession(broker, tokenizer_gateway=InProcessTokenizer(), config=config).send(
                     "payload-sentinel"
                 ),
             }
@@ -1238,7 +1238,7 @@ class DescribeRecoveryToolSafety:
                 "generate": lambda: broker.generate(
                     messages, tools=[tool], config=config
                 ),
-                "send": lambda: ChatSession(broker, tools=[tool], config=config).send(
+                "send": lambda: ChatSession(broker, tokenizer_gateway=InProcessTokenizer(), tools=[tool], config=config).send(
                     "payload-sentinel"
                 ),
             }
@@ -1714,7 +1714,7 @@ class DescribePublicCancellationAndMetadata:
                     admission=admission,
                 ),
             )
-            session = ChatSession(broker_factory(gateway))
+            session = ChatSession(broker_factory(gateway), tokenizer_gateway=InProcessTokenizer())
             task = asyncio.create_task(asyncio.to_thread(session.send, "hello"))
             await asyncio.to_thread(entered.wait)
             call.cancel()

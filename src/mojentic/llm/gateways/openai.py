@@ -141,6 +141,7 @@ class OpenAIGateway(LLMGateway):
             else None
         )
         self.recovery_call = recovery_call
+        self._embedding_tokenizer: TokenizerGateway | None = None
         self.model_registry = get_model_registry()
         self.stream_transport = stream_transport or OpenAIStreamTransport(self.client)
 
@@ -1050,7 +1051,7 @@ class OpenAIGateway(LLMGateway):
             yield batch
 
     def _chunked_tokens(self, text, chunk_length):
-        tokenizer = TokenizerGateway()
+        tokenizer = self._embedding_tokenizer or TokenizerGateway()
         tokens = tokenizer.encode(text)
         chunks_iterator = self._batched(tokens, chunk_length)
         yield from chunks_iterator

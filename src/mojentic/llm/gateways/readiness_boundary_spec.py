@@ -90,7 +90,7 @@ class DescribeReadinessBoundary:
                 model="test",
                 gateway=gateway_for(provider, host, policy),
             )
-            session = ChatSession(broker, system_prompt="system", config=CONFIG)
+            session = ChatSession(broker, tokenizer_gateway=InProcessTokenizer(), system_prompt="system", config=CONFIG)
 
             invoke = {
                 "broker": lambda: broker.generate(
@@ -157,7 +157,7 @@ class DescribeReadinessBoundary:
                 model="test",
                 gateway=gateway_for(provider, host, policy),
             )
-            session = ChatSession(broker, system_prompt="system", config=CONFIG)
+            session = ChatSession(broker, tokenizer_gateway=InProcessTokenizer(), system_prompt="system", config=CONFIG)
             stream = {
                 "broker": lambda: broker.generate_stream(
                     [LLMMessage(content="prompt")], config=CONFIG

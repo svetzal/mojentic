@@ -53,7 +53,7 @@ class DescribeRequestFidelity:
                 ),
                 tracer=TracerSystem(),
             )
-            session = ChatSession(broker, max_context=8192)
+            session = ChatSession(broker, tokenizer_gateway=InProcessTokenizer(), max_context=8192)
 
             assert session.send("hello") == "answer"
 
@@ -175,7 +175,7 @@ class DescribeSharedRequestFidelity:
                 tracer=TracerSystem(),
             )
             session = ChatSession(
-                broker, config=CompletionConfig(**case["config"]), max_context=4096
+                broker, tokenizer_gateway=InProcessTokenizer(), config=CompletionConfig(**case["config"]), max_context=4096
             )
             session.insert_message(
                 LLMMessage(role=MessageRole.User, content="previous question")
@@ -283,7 +283,7 @@ def public_route(
     if route == "stream":
         return "".join(broker.generate_stream(messages, config=config))
     if route == "session":
-        return ChatSession(broker, config=config, max_context=8192).send("hello")
+        return ChatSession(broker, tokenizer_gateway=InProcessTokenizer(), config=config, max_context=8192).send("hello")
     return broker.generate(messages, config=config)
 
 
@@ -346,7 +346,7 @@ class DescribeContinuationFidelity:
                 tracer=TracerSystem(),
             )
             result = ChatSession(
-                broker, tools=[tool], config=CompletionConfig(**case["config"])
+                broker, tokenizer_gateway=InProcessTokenizer(), tools=[tool], config=CompletionConfig(**case["config"])
             ).send("hello")
 
         assert result == "answer"
