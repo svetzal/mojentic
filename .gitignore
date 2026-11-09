@@ -12,3 +12,6 @@ mojentic.egg-info
 /junit/test-results.xml
 junit
 htmlcov
+
+# Claude Code local settings can hold approved commands verbatim, secrets included
+**/.claude/settings.local.json
